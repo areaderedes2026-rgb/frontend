@@ -1,9 +1,14 @@
+import { useEffect } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth.js'
 import { APP_NAME, ROUTES } from '../../utils/constants.js'
 import { Container } from '../ui/Container.jsx'
 import { Button } from '../ui/Button.jsx'
 import { PageTransitionOutlet } from './PageTransitionOutlet.jsx'
+import {
+  preloadAdminRoute,
+  preloadCommonAdminRoutes,
+} from '../../routes/adminRoutePreload.js'
 
 function navClass({ isActive }) {
   return `relative rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-all duration-200 sm:px-4 ${
@@ -31,6 +36,20 @@ export function AdminLayout() {
   const citizenAttentionActive =
     pathname === ROUTES.adminCitizenAttention ||
     pathname.startsWith(`${ROUTES.adminCitizenAttention}/`)
+
+  useEffect(() => {
+    const run = () => {
+      preloadCommonAdminRoutes()
+    }
+
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      const id = window.requestIdleCallback(run, { timeout: 1500 })
+      return () => window.cancelIdleCallback(id)
+    }
+
+    const timer = setTimeout(run, 400)
+    return () => clearTimeout(timer)
+  }, [])
 
   return (
     <div className="flex min-h-dvh flex-col bg-slate-50">
@@ -83,11 +102,19 @@ export function AdminLayout() {
           aria-label="Administración"
         >
           <Container className="flex flex-wrap gap-1 py-2.5 sm:gap-2">
-            <NavLink to="/admin/dashboard" className={navClass} end>
+            <NavLink
+              to="/admin/dashboard"
+              className={navClass}
+              end
+              onMouseEnter={() => preloadAdminRoute('dashboard')}
+              onFocus={() => preloadAdminRoute('dashboard')}
+            >
               Inicio
             </NavLink>
             <NavLink
               to={ROUTES.adminNews}
+              onMouseEnter={() => preloadAdminRoute('news')}
+              onFocus={() => preloadAdminRoute('news')}
               className={({ isActive }) =>
                 navClass({ isActive: isActive || newsActive })
               }
@@ -96,6 +123,8 @@ export function AdminLayout() {
             </NavLink>
             <NavLink
               to={ROUTES.adminAreas}
+              onMouseEnter={() => preloadAdminRoute('areas')}
+              onFocus={() => preloadAdminRoute('areas')}
               className={({ isActive }) =>
                 navClass({ isActive: isActive || areasActive })
               }
@@ -104,6 +133,8 @@ export function AdminLayout() {
             </NavLink>
             <NavLink
               to={ROUTES.adminHistory}
+              onMouseEnter={() => preloadAdminRoute('history')}
+              onFocus={() => preloadAdminRoute('history')}
               className={({ isActive }) =>
                 navClass({ isActive: isActive || historyActive })
               }
@@ -112,6 +143,8 @@ export function AdminLayout() {
             </NavLink>
             <NavLink
               to={ROUTES.adminCitizenAttention}
+              onMouseEnter={() => preloadAdminRoute('citizenAttention')}
+              onFocus={() => preloadAdminRoute('citizenAttention')}
               className={({ isActive }) =>
                 navClass({ isActive: isActive || citizenAttentionActive })
               }
@@ -120,6 +153,8 @@ export function AdminLayout() {
             </NavLink>
             <NavLink
               to={ROUTES.adminSettings}
+              onMouseEnter={() => preloadAdminRoute('settingsLayout')}
+              onFocus={() => preloadAdminRoute('settingsLayout')}
               className={({ isActive }) =>
                 navClass({ isActive: isActive || settingsActive })
               }

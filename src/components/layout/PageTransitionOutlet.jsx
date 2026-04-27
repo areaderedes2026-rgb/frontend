@@ -1,4 +1,4 @@
-import { AnimatePresence, useReducedMotion, m as M } from 'motion/react'
+import { useReducedMotion, m as M } from 'motion/react'
 import { Outlet, useLocation } from 'react-router-dom'
 
 const easeOut = [0.22, 1, 0.36, 1]
@@ -46,19 +46,16 @@ export function PageTransitionOutlet({ className = '', scope = 'public' }) {
 
   return (
     <div className={`relative min-w-0 w-full ${className}`.trim()}>
-      <AnimatePresence mode="wait" initial={false}>
-        <M.div
-          key={pathKey}
-          className="min-w-0 w-full"
-          variants={variants}
-          initial="initial"
-          animate="animate"
-          exit="exit"
-          transition={transition}
-        >
-          <Outlet />
-        </M.div>
-      </AnimatePresence>
+      <M.div
+        key={pathKey}
+        className="min-w-0 w-full"
+        variants={variants}
+        initial="initial"
+        animate="animate"
+        transition={transition}
+      >
+        <Outlet />
+      </M.div>
     </div>
   )
 }

@@ -1,12 +1,28 @@
+import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { Navbar } from './Navbar.jsx'
 import { Footer } from './Footer.jsx'
 import { FloatingSocialButtons } from './FloatingSocialButtons.jsx'
 import { PageTransitionOutlet } from './PageTransitionOutlet.jsx'
+import { preloadCommonPublicRoutes } from '../../routes/publicRoutePreload.js'
 
 export function MainLayout() {
   const { pathname } = useLocation()
   const isHome = pathname === '/' || pathname === ''
+
+  useEffect(() => {
+    const run = () => {
+      preloadCommonPublicRoutes()
+    }
+
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      const id = window.requestIdleCallback(run, { timeout: 1800 })
+      return () => window.cancelIdleCallback(id)
+    }
+
+    const timer = setTimeout(run, 500)
+    return () => clearTimeout(timer)
+  }, [])
 
   return (
     <div className="flex min-h-dvh flex-col bg-slate-50">

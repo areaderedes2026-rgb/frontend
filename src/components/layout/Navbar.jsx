@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { NavLink, useLocation } from 'react-router-dom'
 import { Container } from '../ui/Container.jsx'
 import { useAreas } from '../../hooks/useAreas.js'
+import { preloadPublicRoute } from '../../routes/publicRoutePreload.js'
 
 const startLinks = [
   { to: '/', label: 'Inicio', end: true },
@@ -23,12 +24,23 @@ const afterAreasLinks = [
 /** Ítems del menú Áreas en escritorio: "Ver todas" + cada área. Scroll solo si supera este número. */
 const DESKTOP_AREAS_MENU_SCROLL_THRESHOLD = 10
 
-function DesktopNavLink({ to, label, ariaLabel, end, onClick, compact }) {
+function DesktopNavLink({
+  to,
+  label,
+  ariaLabel,
+  end,
+  onClick,
+  onMouseEnter,
+  onFocus,
+  compact,
+}) {
   return (
     <NavLink
       to={to}
       end={end}
       onClick={onClick}
+      onMouseEnter={onMouseEnter}
+      onFocus={onFocus}
       aria-label={ariaLabel}
       className="inline-flex rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#161a21]"
     >
@@ -369,6 +381,8 @@ export function Navbar() {
             to={newsLink.to}
             label={newsLink.label}
             end={newsLink.end}
+            onMouseEnter={() => preloadPublicRoute('newsList')}
+            onFocus={() => preloadPublicRoute('newsList')}
             compact={scrolled}
           />
 
@@ -438,6 +452,8 @@ export function Navbar() {
                       }`
                     }
                     end
+                    onMouseEnter={() => preloadPublicRoute('areasIndex')}
+                    onFocus={() => preloadPublicRoute('areasIndex')}
                     onClick={() => setAreasOpen(false)}
                   >
                     Ver todas
@@ -459,6 +475,8 @@ export function Navbar() {
                             : 'text-white/90 hover:bg-white/5 hover:text-white'
                         }`
                       }
+                      onMouseEnter={() => preloadPublicRoute('areaDetail')}
+                      onFocus={() => preloadPublicRoute('areaDetail')}
                       onClick={() => setAreasOpen(false)}
                     >
                       {area.title}
@@ -476,6 +494,12 @@ export function Navbar() {
               label={link.label}
               ariaLabel={link.ariaLabel}
               end={link.end}
+              onMouseEnter={() => {
+                if (link.to === '/history') preloadPublicRoute('history')
+              }}
+              onFocus={() => {
+                if (link.to === '/history') preloadPublicRoute('history')
+              }}
               compact={scrolled}
             />
           ))}
