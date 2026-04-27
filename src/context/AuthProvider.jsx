@@ -108,9 +108,10 @@ export function AuthProvider({ children }) {
       setSession(readSession())
       return { ok: true }
     } catch {
+      const base = getApiBase()
       return {
         ok: false,
-        error: 'No se pudo conectar con el servidor. Revisá la API o la red.',
+        error: `No se pudo conectar con el servidor (${base || 'API sin configurar'}). Revisa la API o la red.`,
       }
     }
   }, [])
