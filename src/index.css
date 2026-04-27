@@ -1,0 +1,390 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans:
+    'Source Sans 3', ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
+  /* Titulares estilo diario (noticias) */
+  --font-news-serif:
+    'Merriweather', Georgia, 'Times New Roman', serif;
+}
+
+@layer base {
+  :root {
+    /* Fallback antes de que Navbar fije la altura real (barra fija + contenido). */
+    --navbar-h: 5rem;
+  }
+
+  html {
+    @apply m-0 scroll-smooth p-0 antialiased;
+    scroll-padding-top: var(--navbar-h, 5rem);
+}
+
+body {
+    @apply m-0 min-h-dvh overflow-x-hidden overflow-y-auto bg-slate-50 p-0 font-sans text-slate-900;
+    -webkit-overflow-scrolling: touch;
+}
+
+#root {
+    @apply m-0 min-h-dvh p-0;
+  }
+
+  ::selection {
+    @apply bg-sky-200/80 text-slate-900;
+  }
+}
+
+/* Carrusel de áreas: desplazamiento continuo (se pausa con animation-play-state) */
+@keyframes areas-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+/* Hero inicio: entrada lenta y fluida (cada visita / recarga del componente) */
+@keyframes hero-soft-rise {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 1.75rem, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes news-fade-up {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0.85rem, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes news-ticker-marquee {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-45%, 0, 0);
+  }
+}
+
+/*
+ * Carrusel de categorías: N copias idénticas del mismo bloque.
+ * El desplazamiento es -100%/N del ancho total del carril → al completarse,
+ * el contenido visible coincide con el fotograma inicial (bucle continuo).
+ */
+@keyframes news-category-marquee {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(
+      calc(-100% / var(--news-category-segments, 4)),
+      0,
+      0
+    );
+  }
+}
+
+@layer utilities {
+  .animate-areas-marquee {
+    animation: areas-marquee 85s linear infinite;
+  }
+
+  .hero-enter-eyebrow {
+    opacity: 0;
+    animation: hero-soft-rise 1.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation-delay: 0.08s;
+  }
+
+  .hero-enter-title {
+    opacity: 0;
+    animation: hero-soft-rise 1.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation-delay: 0.18s;
+  }
+
+  .hero-enter-subtitle {
+    opacity: 0;
+    animation: hero-soft-rise 1.75s cubic-bezier(0.19, 1, 0.35, 1) forwards;
+    animation-delay: 0.52s;
+  }
+
+  .hero-enter-actions {
+    opacity: 0;
+    animation: hero-soft-rise 1.55s cubic-bezier(0.16, 1, 0.32, 1) forwards;
+    animation-delay: 0.88s;
+  }
+
+  .news-fade-up {
+    opacity: 0;
+    animation: news-fade-up 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .news-fade-up-delayed {
+    opacity: 0;
+    animation: news-fade-up 0.75s cubic-bezier(0.2, 1, 0.34, 1) forwards;
+    animation-delay: 0.12s;
+  }
+
+  /* Panel de administración: misma curva de animación que noticias públicas */
+  .admin-fade-up {
+    opacity: 0;
+    animation: news-fade-up 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .admin-fade-up-delayed {
+    opacity: 0;
+    animation: news-fade-up 0.65s cubic-bezier(0.2, 1, 0.34, 1) forwards;
+    animation-delay: 0.08s;
+  }
+
+  .animate-news-ticker {
+    animation: news-ticker-marquee 28s linear infinite;
+    will-change: transform;
+  }
+
+  .news-category-marquee-wrap {
+    width: 100%;
+    min-width: 0;
+    display: block;
+  }
+
+  .news-category-marquee-track {
+    --news-category-segments: 4;
+    display: flex;
+    width: max-content;
+    max-width: none;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: center;
+    animation: news-category-marquee 48s linear infinite;
+    will-change: transform;
+  }
+
+  .news-category-marquee-wrap:hover .news-category-marquee-track {
+    animation-play-state: paused;
+  }
+
+  /**
+   * Filtros noticias: selects nativos minimalistas (mismo aspecto que orden).
+   * El desplegable del sistema muestra scroll cuando hay muchas opciones.
+   */
+  .news-select-minimal {
+    -webkit-appearance: none;
+    appearance: none;
+    box-sizing: border-box;
+    width: 100%;
+    border-radius: 0.5rem;
+    border: 1px solid rgb(216 213 205);
+    background-color: rgb(255 255 255);
+    padding: 0.625rem 2.5rem 0.625rem 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: rgb(23 27 34);
+    box-shadow: none;
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E");
+    background-position: right 0.6rem center;
+    background-repeat: no-repeat;
+    background-size: 1.1rem;
+  }
+
+  .news-select-minimal:hover {
+    border-color: rgb(192 188 178);
+  }
+
+  .news-select-minimal:focus {
+    outline: none;
+    border-color: rgb(14 165 233);
+    box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
+  }
+
+  .news-select-minimal:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+
+  /**
+   * Botón que abre el listado de categorías (mismo aspecto que el select nativo).
+   */
+  .news-select-minimal-trigger {
+    -webkit-appearance: none;
+    appearance: none;
+    box-sizing: border-box;
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid rgb(216 213 205);
+    background-color: rgb(255 255 255);
+    padding: 0.625rem 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: rgb(23 27 34);
+    box-shadow: none;
+    cursor: pointer;
+    text-align: left;
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+
+  .news-select-minimal-trigger:hover {
+    border-color: rgb(192 188 178);
+  }
+
+  .news-select-minimal-trigger:focus {
+    outline: none;
+    border-color: rgb(14 165 233);
+    box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
+  }
+
+  .news-select-minimal-trigger[data-open='true'] {
+    border-color: rgb(14 165 233);
+    box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
+  }
+
+  /**
+   * Sistema editorial — noticias (escala fluida móvil → desktop)
+   * Cuerpo: Source Sans (heredado). Titulares: Merriweather.
+   */
+  .news-editorial {
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .news-editorial-masthead {
+    font-family: var(--font-news-serif);
+    font-size: clamp(2rem, 1.2rem + 3.2vw, 3.125rem);
+    font-weight: 700;
+    line-height: 1.06;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+  }
+
+  .news-editorial-masthead-sub {
+    font-family: var(--font-news-serif);
+    font-size: clamp(1.625rem, 1.15rem + 1.6vw, 2.375rem);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+  }
+
+  .news-editorial-headline-feature {
+    font-family: var(--font-news-serif);
+    font-size: clamp(1.5rem, 1.1rem + 1.25vw, 2rem);
+    font-weight: 700;
+    line-height: 1.14;
+    letter-spacing: -0.02em;
+  }
+
+  .news-editorial-headline-secondary {
+    font-family: var(--font-news-serif);
+    font-size: clamp(1.25rem, 1.05rem + 0.75vw, 1.625rem);
+    font-weight: 700;
+    line-height: 1.18;
+    letter-spacing: -0.018em;
+  }
+
+  .news-editorial-headline-card {
+    font-family: var(--font-news-serif);
+    font-size: clamp(1rem, 0.92rem + 0.28vw, 1.125rem);
+    font-weight: 700;
+    line-height: 1.28;
+    letter-spacing: -0.012em;
+  }
+
+  .news-editorial-article-title {
+    font-family: var(--font-news-serif);
+    font-size: clamp(1.75rem, 1.2rem + 1.85vw, 3rem);
+    font-weight: 700;
+    line-height: 1.08;
+    letter-spacing: -0.028em;
+    text-wrap: balance;
+  }
+
+  .news-editorial-deck {
+    font-size: clamp(0.9375rem, 0.9rem + 0.2vw, 1.125rem);
+    line-height: 1.55;
+    font-weight: 400;
+  }
+
+  .news-editorial-deck-lg {
+    font-size: clamp(1.0625rem, 0.98rem + 0.35vw, 1.3125rem);
+    line-height: 1.52;
+    font-weight: 400;
+  }
+
+  .news-editorial-body {
+    font-family: var(--font-news-serif);
+    font-size: clamp(1.03rem, 0.98rem + 0.18vw, 1.14rem);
+    line-height: 1.64;
+    font-weight: 400;
+    letter-spacing: -0.004em;
+    color: rgb(17 24 39);
+  }
+
+  .news-editorial-section-label {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    line-height: 1.35;
+  }
+
+  @media (min-width: 640px) {
+    .news-editorial-section-label {
+      font-size: 0.75rem;
+    }
+  }
+
+  .news-editorial-sidebar-title {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    line-height: 1.35;
+  }
+
+  @media (min-width: 640px) {
+    .news-editorial-sidebar-title {
+      font-size: 0.75rem;
+    }
+  }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-enter-eyebrow,
+  .hero-enter-title,
+  .hero-enter-subtitle,
+  .hero-enter-actions,
+  .news-fade-up,
+  .news-fade-up-delayed,
+  .admin-fade-up,
+  .admin-fade-up-delayed,
+  .animate-news-ticker,
+  .news-category-marquee-track {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .news-category-marquee-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
