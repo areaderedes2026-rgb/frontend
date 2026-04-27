@@ -1,17 +1,39 @@
+function namedLazy(loader, exportName) {
+  return () => loader().then((m) => ({ default: m[exportName] }))
+}
+
 export const adminRouteLoaders = {
-  dashboard: () => import('../pages/admin/Dashboard.jsx'),
-  news: () => import('../pages/admin/AdminNews.jsx'),
-  areas: () => import('../pages/admin/AdminAreaProfiles.jsx'),
-  history: () => import('../pages/admin/AdminHistory.jsx'),
-  citizenAttention: () => import('../pages/admin/AdminCitizenAttention.jsx'),
-  tourismPlaces: () => import('../pages/admin/AdminTourismPlaces.jsx'),
-  createNews: () => import('../pages/admin/CreateNews.jsx'),
-  editNews: () => import('../pages/admin/EditNews.jsx'),
-  settingsLayout: () => import('../pages/admin/AdminSettingsLayout.jsx'),
-  settingsHome: () => import('../pages/admin/AdminSettingsHome.jsx'),
-  settingsCategories: () => import('../pages/admin/AdminCategories.jsx'),
-  settingsHomeMap: () => import('../pages/admin/AdminSettingsHomeMap.jsx'),
-  settingsUsers: () => import('../pages/admin/AdminUsers.jsx'),
+  dashboard: namedLazy(() => import('../pages/admin/Dashboard.jsx'), 'Dashboard'),
+  news: namedLazy(() => import('../pages/admin/AdminNews.jsx'), 'AdminNews'),
+  areas: namedLazy(() => import('../pages/admin/AdminAreaProfiles.jsx'), 'AdminAreaProfiles'),
+  history: namedLazy(() => import('../pages/admin/AdminHistory.jsx'), 'AdminHistory'),
+  citizenAttention: namedLazy(
+    () => import('../pages/admin/AdminCitizenAttention.jsx'),
+    'AdminCitizenAttention',
+  ),
+  tourismPlaces: namedLazy(
+    () => import('../pages/admin/AdminTourismPlaces.jsx'),
+    'AdminTourismPlaces',
+  ),
+  createNews: namedLazy(() => import('../pages/admin/CreateNews.jsx'), 'CreateNews'),
+  editNews: namedLazy(() => import('../pages/admin/EditNews.jsx'), 'EditNews'),
+  settingsLayout: namedLazy(
+    () => import('../pages/admin/AdminSettingsLayout.jsx'),
+    'AdminSettingsLayout',
+  ),
+  settingsHome: namedLazy(
+    () => import('../pages/admin/AdminSettingsHome.jsx'),
+    'AdminSettingsHome',
+  ),
+  settingsCategories: namedLazy(
+    () => import('../pages/admin/AdminCategories.jsx'),
+    'AdminCategories',
+  ),
+  settingsHomeMap: namedLazy(
+    () => import('../pages/admin/AdminSettingsHomeMap.jsx'),
+    'AdminSettingsHomeMap',
+  ),
+  settingsUsers: namedLazy(() => import('../pages/admin/AdminUsers.jsx'), 'AdminUsers'),
 }
 
 export function preloadAdminRoute(key) {

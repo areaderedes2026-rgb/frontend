@@ -1,10 +1,17 @@
+function namedLazy(loader, exportName) {
+  return () => loader().then((m) => ({ default: m[exportName] }))
+}
+
 export const publicRouteLoaders = {
-  history: () => import('../pages/History.jsx'),
-  tourismPlaceDetail: () => import('../pages/history/TourismPlaceDetail.jsx'),
-  areasIndex: () => import('../pages/areas/AreasIndex.jsx'),
-  areaDetail: () => import('../pages/areas/AreaDetail.jsx'),
-  newsList: () => import('../pages/news/NewsList.jsx'),
-  newsDetail: () => import('../pages/news/NewsDetail.jsx'),
+  history: namedLazy(() => import('../pages/History.jsx'), 'History'),
+  tourismPlaceDetail: namedLazy(
+    () => import('../pages/history/TourismPlaceDetail.jsx'),
+    'TourismPlaceDetail',
+  ),
+  areasIndex: namedLazy(() => import('../pages/areas/AreasIndex.jsx'), 'AreasIndex'),
+  areaDetail: namedLazy(() => import('../pages/areas/AreaDetail.jsx'), 'AreaDetail'),
+  newsList: namedLazy(() => import('../pages/news/NewsList.jsx'), 'NewsList'),
+  newsDetail: namedLazy(() => import('../pages/news/NewsDetail.jsx'), 'NewsDetail'),
 }
 
 export function preloadPublicRoute(key) {
