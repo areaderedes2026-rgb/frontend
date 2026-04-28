@@ -2,7 +2,6 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { NavLink, useLocation } from 'react-router-dom'
 import { Container } from '../ui/Container.jsx'
-import { useAreas } from '../../hooks/useAreas.js'
 import { preloadPublicRoute } from '../../routes/publicRoutePreload.js'
 
 const startLinks = [
@@ -22,8 +21,10 @@ const afterAreasLinks = [
   },
 ]
 
-/** Ítems del menú Áreas en escritorio: "Ver todas" + cada área. Scroll solo si supera este número. */
-const DESKTOP_AREAS_MENU_SCROLL_THRESHOLD = 10
+const governmentLinks = [
+  { to: '/gobierno/intendencia', label: 'Intendencia', preload: 'governmentIntendencia' },
+  { to: '/areas', label: 'Áreas (ver todas)', preload: 'areasIndex' },
+]
 
 function DesktopNavLink({
   to,
@@ -82,18 +83,15 @@ function mobileSubLinkClass({ isActive }) {
 }
 
 export function Navbar() {
-  const { areas } = useAreas()
   const [open, setOpen] = useState(false)
-  const [areasOpen, setAreasOpen] = useState(false)
-  const [mobileAreasOpen, setMobileAreasOpen] = useState(false)
+  const [governmentOpen, setGovernmentOpen] = useState(false)
+  const [mobileGovernmentOpen, setMobileGovernmentOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const headerRef = useRef(null)
   const dropdownRef = useRef(null)
   const location = useLocation()
-  const areasActive = location.pathname.startsWith('/areas')
-  const desktopAreasMenuItemCount = 1 + areas.length
-  const desktopAreasMenuNeedsScroll =
-    desktopAreasMenuItemCount > DESKTOP_AREAS_MENU_SCROLL_THRESHOLD
+  const governmentActive =
+    location.pathname.startsWith('/gobierno') || location.pathname.startsWith('/areas')
 
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : ''
@@ -107,7 +105,7 @@ export function Navbar() {
     function onKey(e) {
       if (e.key === 'Escape') {
         setOpen(false)
-        setMobileAreasOpen(false)
+        setMobileGovernmentOpen(false)
       }
     }
     document.addEventListener('keydown', onKey)
@@ -148,10 +146,10 @@ export function Navbar() {
   }, [])
 
   useEffect(() => {
-    if (!areasOpen) return
+    if (!governmentOpen) return
     function handlePointerDown(e) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setAreasOpen(false)
+        setGovernmentOpen(false)
       }
     }
     document.addEventListener('mousedown', handlePointerDown)
@@ -160,16 +158,16 @@ export function Navbar() {
       document.removeEventListener('mousedown', handlePointerDown)
       document.removeEventListener('touchstart', handlePointerDown)
     }
-  }, [areasOpen])
+  }, [governmentOpen])
 
   useEffect(() => {
-    if (!areasOpen) return
+    if (!governmentOpen) return
     function handleKey(e) {
-      if (e.key === 'Escape') setAreasOpen(false)
+      if (e.key === 'Escape') setGovernmentOpen(false)
     }
     document.addEventListener('keydown', handleKey)
     return () => document.removeEventListener('keydown', handleKey)
-  }, [areasOpen])
+  }, [governmentOpen])
 
   const mobileMenuLayer =
     typeof document !== 'undefined' &&
@@ -237,7 +235,7 @@ export function Navbar() {
                 end={newsLink.end}
                 onClick={() => {
                   setOpen(false)
-                  setMobileAreasOpen(false)
+                  setMobileGovernmentOpen(false)
                 }}
               >
                 {newsLink.label}
@@ -248,15 +246,15 @@ export function Navbar() {
               <button
                 type="button"
                 className={`flex min-h-12 w-full shrink-0 items-center justify-between rounded-xl px-4 py-3 text-left text-base font-semibold tracking-wide text-white transition-colors duration-300 hover:bg-white/5 active:bg-white/10 ${
-                  areasActive || mobileAreasOpen ? 'bg-white/6' : 'text-white/90'
+                  governmentActive || mobileGovernmentOpen ? 'bg-white/6' : 'text-white/90'
                 }`}
-                aria-expanded={mobileAreasOpen}
-                onClick={() => setMobileAreasOpen((v) => !v)}
+                aria-expanded={mobileGovernmentOpen}
+                onClick={() => setMobileGovernmentOpen((v) => !v)}
               >
-                Áreas
+                Gobierno
                 <svg
                   className={`h-5 w-5 shrink-0 transition-transform duration-300 ease-out ${
-                    mobileAreasOpen ? 'rotate-180' : ''
+                    mobileGovernmentOpen ? 'rotate-180' : ''
                   }`}
                   fill="none"
                   viewBox="0 0 24 24"
@@ -273,35 +271,25 @@ export function Navbar() {
               </button>
               <div
                 className={`grid transition-[grid-template-rows] duration-300 ease-out ${
-                  mobileAreasOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+                  mobileGovernmentOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
                 }`}
               >
                 <div className="overflow-hidden">
                   <ul className="mt-3 space-y-1.5 border-l border-white/10 pl-3.5">
-                    <li className="shrink-0">
-                      <NavLink
-                        to="/areas"
-                        className={mobileSubLinkClass}
-                        end
-                        onClick={() => {
-                          setOpen(false)
-                          setMobileAreasOpen(false)
-                        }}
-                      >
-                        Ver todas
-                      </NavLink>
-                    </li>
-                    {areas.map((area) => (
-                      <li key={area.slug} className="shrink-0">
+                    {governmentLinks.map((item) => (
+                      <li key={item.to} className="shrink-0">
                         <NavLink
-                          to={`/areas/${area.slug}`}
+                          to={item.to}
                           className={mobileSubLinkClass}
+                          end={item.to === '/areas'}
+                          onMouseEnter={() => preloadPublicRoute(item.preload)}
+                          onFocus={() => preloadPublicRoute(item.preload)}
                           onClick={() => {
                             setOpen(false)
-                            setMobileAreasOpen(false)
+                            setMobileGovernmentOpen(false)
                           }}
                         >
-                          {area.title}
+                          {item.label}
                         </NavLink>
                       </li>
                     ))}
@@ -393,16 +381,16 @@ export function Navbar() {
               className={`group relative inline-flex items-center gap-1.5 rounded-lg px-3 font-semibold tracking-wide text-white transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
                 scrolled ? 'py-1.5 text-[0.8125rem]' : 'py-2 text-sm'
               }`}
-              aria-expanded={areasOpen}
+              aria-expanded={governmentOpen}
               aria-haspopup="true"
-              aria-controls="menu-areas-escritorio"
-              id="boton-menu-areas"
-              onClick={() => setAreasOpen((v) => !v)}
+              aria-controls="menu-gobierno-escritorio"
+              id="boton-menu-gobierno"
+              onClick={() => setGovernmentOpen((v) => !v)}
             >
-              <span className="relative">Áreas</span>
+              <span className="relative">Gobierno</span>
               <svg
                 className={`relative h-4 w-4 transition-transform duration-300 ease-out ${
-                  areasOpen ? 'rotate-180' : ''}`}
+                  governmentOpen ? 'rotate-180' : ''}`}
                 fill="none"
                 viewBox="0 0 24 24"
                 strokeWidth={2}
@@ -419,55 +407,26 @@ export function Navbar() {
                 className={`absolute left-3 right-3 h-[2px] origin-center rounded-full bg-sky-200 transition-transform duration-300 ease-out ${
                   scrolled ? 'bottom-0.5' : 'bottom-1'
                 } ${
-                  areasActive || areasOpen ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'
+                  governmentActive || governmentOpen ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'
                 }`}
               />
             </button>
 
             <div
-              id="menu-areas-escritorio"
+              id="menu-gobierno-escritorio"
               role="menu"
-              aria-labelledby="boton-menu-areas"
+              aria-labelledby="boton-menu-gobierno"
               className={`absolute left-0 top-full z-50 mt-1.5 w-[min(15rem,calc(100vw-1.25rem))] origin-top overflow-hidden rounded-lg border border-white/8 bg-[#1a1d24]/98 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.6)] backdrop-blur-xl transition-all duration-300 ease-out ${
-                areasOpen
+                governmentOpen
                   ? 'pointer-events-auto translate-y-0 opacity-100'
                   : 'pointer-events-none -translate-y-1 opacity-0'
               }`}
             >
-              <ul
-                className={`py-1 ${
-                  desktopAreasMenuNeedsScroll
-                    ? 'max-h-[min(22rem,55dvh)] overflow-y-auto overscroll-contain [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.15)_transparent]'
-                    : ''
-                }`}
-              >
-                <li>
-                  <NavLink
-                    to="/areas"
-                    role="menuitem"
-                    className={({ isActive }) =>
-                      `block px-3 py-1.5 text-sm font-semibold tracking-wide transition-colors duration-200 ${
-                        isActive
-                          ? 'bg-white/10 text-white'
-                          : 'text-white/90 hover:bg-white/5 hover:text-white'
-                      }`
-                    }
-                    end
-                    onMouseEnter={() => preloadPublicRoute('areasIndex')}
-                    onFocus={() => preloadPublicRoute('areasIndex')}
-                    onClick={() => setAreasOpen(false)}
-                  >
-                    Ver todas
-                  </NavLink>
-                </li>
-                <li
-                  className="mx-2 my-0.5 h-px bg-white/8"
-                  aria-hidden
-                />
-                {areas.map((area) => (
-                  <li key={area.slug}>
+              <ul className="py-1">
+                {governmentLinks.map((item) => (
+                  <li key={item.to}>
                     <NavLink
-                      to={`/areas/${area.slug}`}
+                      to={item.to}
                       role="menuitem"
                       className={({ isActive }) =>
                         `block px-3 py-1.5 text-sm font-semibold tracking-wide transition-colors duration-200 ${
@@ -476,11 +435,12 @@ export function Navbar() {
                             : 'text-white/90 hover:bg-white/5 hover:text-white'
                         }`
                       }
-                      onMouseEnter={() => preloadPublicRoute('areaDetail')}
-                      onFocus={() => preloadPublicRoute('areaDetail')}
-                      onClick={() => setAreasOpen(false)}
+                      end={item.to === '/areas'}
+                      onMouseEnter={() => preloadPublicRoute(item.preload)}
+                      onFocus={() => preloadPublicRoute(item.preload)}
+                      onClick={() => setGovernmentOpen(false)}
                     >
-                      {area.title}
+                      {item.label}
                     </NavLink>
                   </li>
                 ))}

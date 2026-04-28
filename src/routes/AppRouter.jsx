@@ -31,6 +31,7 @@ const Events = lazy(publicRouteLoaders.events)
 const TourismPlaceDetail = lazy(publicRouteLoaders.tourismPlaceDetail)
 const AreasIndex = lazy(publicRouteLoaders.areasIndex)
 const AreaDetail = lazy(publicRouteLoaders.areaDetail)
+const Intendencia = lazy(publicRouteLoaders.governmentIntendencia)
 const NewsList = lazy(publicRouteLoaders.newsList)
 const NewsDetail = lazy(publicRouteLoaders.newsDetail)
 
@@ -202,6 +203,14 @@ export function AppRouter() {
           element={
             <Suspense fallback={<PublicRouteFallback />}>
               <Events />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/gobierno/intendencia"
+          element={
+            <Suspense fallback={<PublicRouteFallback />}>
+              <Intendencia />
             </Suspense>
           }
         />
