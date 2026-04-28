@@ -4,7 +4,7 @@ import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
 import { Button } from '../../components/ui/Button.jsx'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
 import { useNewsList } from '../../hooks/useNewsList.js'
-import { deleteNews } from '../../services/newsService.js'
+import { deleteNews, fetchNewsStatsOverview } from '../../services/newsService.js'
 import { formatDate } from '../../utils/formatDate.js'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
@@ -89,6 +89,7 @@ export function AdminNews() {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [page, setPage] = useState(1)
+  const [overview, setOverview] = useState(null)
 
   useEffect(() => {
     const msg = location.state?.flash
@@ -101,6 +102,20 @@ export function AdminNews() {
   useEffect(() => {
     setPage(1)
   }, [search, categoryFilter, dateFrom, dateTo])
+
+  useEffect(() => {
+    let cancelled = false
+    fetchNewsStatsOverview()
+      .then((data) => {
+        if (!cancelled) setOverview(data)
+      })
+      .catch(() => {
+        if (!cancelled) setOverview(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [items.length])
 
   const categoryOptions = useMemo(() => {
     const set = new Set(items.map((n) => n.category || 'General'))
@@ -179,6 +194,24 @@ export function AdminNews() {
 
   const deleteLoading =
     deleteTarget != null && deletingId != null && deletingId === deleteTarget.id
+
+  function socialCompact(n) {
+    const s = n?.stats?.shares || {}
+    const entries = [
+      ['Fb', Number(s.facebook || 0)],
+      ['Wa', Number(s.whatsapp || 0)],
+      ['Ig', Number(s.instagram || 0)],
+      ['Native', Number(s.native || 0)],
+      ['Link', Number(s.copyLink || 0)],
+    ].filter(([, v]) => v > 0)
+    if (!entries.length) return 'Sin compartidas'
+    return entries.map(([k, v]) => `${k}:${v}`).join(' · ')
+  }
+
+  function actorText(user, fallback = 'Sistema') {
+    if (!user) return fallback
+    return user.fullName || user.username || fallback
+  }
 
   return (
     <>
@@ -431,6 +464,11 @@ export function AdminNews() {
                           <th className="w-36 whitespace-nowrap px-3 py-3.5 sm:px-4">
                             Fecha
                           </th>
+                            <th className="w-24 whitespace-nowrap px-3 py-3.5 sm:px-4">
+                              Vistas
+                            </th>
+                            <th className="w-56 px-3 py-3.5 sm:px-4">Compartidas</th>
+                            <th className="w-44 px-3 py-3.5 sm:px-4">Auditoría</th>
                           <th className="w-48 px-3 py-3.5 text-right sm:px-4">Acciones</th>
                         </tr>
                       </thead>
@@ -458,6 +496,19 @@ export function AdminNews() {
                             </td>
                             <td className="whitespace-nowrap px-3 py-3 align-middle tabular-nums text-slate-600 sm:px-4">
                               {formatDate(n.publishedAt)}
+                            </td>
+                            <td className="whitespace-nowrap px-3 py-3 align-middle text-sm tabular-nums text-slate-700 sm:px-4">
+                              {Number(n?.stats?.views || 0)}
+                            </td>
+                            <td className="px-3 py-3 align-middle text-xs text-slate-600 sm:px-4">
+                              <span className="font-semibold text-slate-800">
+                                {Number(n?.stats?.shares?.total || 0)}
+                              </span>{' '}
+                              total · {socialCompact(n)}
+                            </td>
+                            <td className="px-3 py-3 align-middle text-xs text-slate-600 sm:px-4">
+                              <p>Publicó: {actorText(n.createdByUser, 'Sin dato')}</p>
+                              <p>Editó: {actorText(n.updatedByUser, 'Sin ediciones')}</p>
                             </td>
                             <td className="px-3 py-3 text-right align-middle sm:px-4">
                               <div className="flex flex-wrap items-center justify-end gap-2">
@@ -512,7 +563,17 @@ export function AdminNews() {
                             <span className="text-xs tabular-nums text-slate-500">
                               {formatDate(n.publishedAt)}
                             </span>
+                            <span className="text-xs tabular-nums text-slate-500">
+                              {Number(n?.stats?.views || 0)} vistas
+                            </span>
                           </div>
+                          <p className="mt-2 text-xs text-slate-600">
+                            Compartidas: {Number(n?.stats?.shares?.total || 0)} ({socialCompact(n)})
+                          </p>
+                          <p className="mt-1 text-xs text-slate-600">
+                            Publicó: {actorText(n.createdByUser, 'Sin dato')} · Editó:{' '}
+                            {actorText(n.updatedByUser, 'Sin ediciones')}
+                          </p>
                           <div className="mt-3 flex flex-wrap gap-2">
                             <Link
                               to={ROUTES.adminNewsEdit(n.id)}
@@ -618,6 +679,83 @@ export function AdminNews() {
                       </div>
                     ) : null}
                   </nav>
+
+                  <section className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6">
+                    <h3 className="text-base font-semibold text-slate-900">
+                      Estadísticas de noticias
+                    </h3>
+                    <p className="mt-1 text-sm text-slate-600">
+                      Resumen global de visualizaciones, compartidas y rendimiento por red.
+                    </p>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                      <article className="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
+                        <p className="text-xs uppercase tracking-wide text-slate-500">Visualizaciones</p>
+                        <p className="mt-1 text-2xl font-bold tabular-nums text-slate-900">
+                          {Number(overview?.totals?.total_views || 0)}
+                        </p>
+                      </article>
+                      <article className="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
+                        <p className="text-xs uppercase tracking-wide text-slate-500">Compartidas</p>
+                        <p className="mt-1 text-2xl font-bold tabular-nums text-slate-900">
+                          {Number(overview?.totals?.total_shares || 0)}
+                        </p>
+                      </article>
+                      <article className="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
+                        <p className="text-xs uppercase tracking-wide text-slate-500">Ratio share/vista</p>
+                        <p className="mt-1 text-2xl font-bold tabular-nums text-slate-900">
+                          {Number(overview?.totals?.total_views || 0) > 0
+                            ? `${Math.round((Number(overview?.totals?.total_shares || 0) / Number(overview?.totals?.total_views || 1)) * 100)}%`
+                            : '0%'}
+                        </p>
+                      </article>
+                      <article className="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
+                        <p className="text-xs uppercase tracking-wide text-slate-500">Promedio vistas/noticia</p>
+                        <p className="mt-1 text-2xl font-bold tabular-nums text-slate-900">
+                          {Number(overview?.totals?.total_news || 0) > 0
+                            ? Math.round(
+                                Number(overview?.totals?.total_views || 0) /
+                                  Number(overview?.totals?.total_news || 1),
+                              )
+                            : 0}
+                        </p>
+                      </article>
+                    </div>
+                    <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                      <article className="rounded-xl border border-slate-200 p-4">
+                        <p className="text-sm font-semibold text-slate-800">Por red social</p>
+                        <p className="mt-2 text-sm text-slate-600">
+                          Facebook: {Number(overview?.totals?.total_facebook || 0)} · WhatsApp:{' '}
+                          {Number(overview?.totals?.total_whatsapp || 0)} · Instagram:{' '}
+                          {Number(overview?.totals?.total_instagram || 0)} · Compartir:{' '}
+                          {Number(overview?.totals?.total_native || 0)} · Copiar link:{' '}
+                          {Number(overview?.totals?.total_copy_link || 0)}
+                        </p>
+                      </article>
+                      <article className="rounded-xl border border-slate-200 p-4">
+                        <p className="text-sm font-semibold text-slate-800">Top noticias</p>
+                        <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Más vistas
+                        </p>
+                        <ul className="mt-1 space-y-1 text-sm text-slate-700">
+                          {(overview?.topViews || []).slice(0, 3).map((row) => (
+                            <li key={`v-${row.id}`} className="truncate">
+                              {row.title} ({Number(row.views_count || 0)})
+                            </li>
+                          ))}
+                        </ul>
+                        <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Más compartidas
+                        </p>
+                        <ul className="mt-1 space-y-1 text-sm text-slate-700">
+                          {(overview?.topShares || []).slice(0, 3).map((row) => (
+                            <li key={`s-${row.id}`} className="truncate">
+                              {row.title} ({Number(row.shares_count || 0)})
+                            </li>
+                          ))}
+                        </ul>
+                      </article>
+                    </div>
+                  </section>
                 </>
               )}
             </div>

@@ -1,7 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Container } from '../../components/ui/Container.jsx'
-import { fetchNewsById, fetchNewsList } from '../../services/newsService.js'
+import {
+  fetchNewsById,
+  fetchNewsList,
+  recordNewsInteraction,
+} from '../../services/newsService.js'
 import { formatDate } from '../../utils/formatDate.js'
 import { NewsCoverMedia } from '../../components/news/NewsCoverMedia.jsx'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
@@ -70,7 +74,9 @@ function NewsDetailContent({ id }) {
   const [related, setRelated] = useState([])
   const [copied, setCopied] = useState(false)
   const [shareHint, setShareHint] = useState('')
-  const [nativeShareAvailable, setNativeShareAvailable] = useState(false)
+  const trackedViewsRef = useRef(new Set())
+  const nativeShareAvailable =
+    typeof navigator !== 'undefined' && typeof navigator.share === 'function'
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
@@ -142,16 +148,12 @@ function NewsDetailContent({ id }) {
     return () => clearTimeout(t)
   }, [shareHint])
 
-  useEffect(() => {
-    if (typeof navigator === 'undefined') return
-    setNativeShareAvailable(typeof navigator.share === 'function')
-  }, [])
-
   async function handleCopyLink() {
     const url = window.location.href
     try {
       await navigator.clipboard.writeText(url)
       setCopied(true)
+      recordNewsInteraction(item?.id || id, { type: 'share', channel: 'copy_link' })
     } catch {
       setCopied(false)
     }
@@ -163,6 +165,7 @@ function NewsDetailContent({ id }) {
     try {
       await navigator.clipboard.writeText(text)
       setShareHint('Enlace copiado. Pegalo en Instagram.')
+      recordNewsInteraction(item?.id || id, { type: 'share', channel: 'instagram' })
     } catch {
       setShareHint('No se pudo copiar el enlace.')
     }
@@ -178,10 +181,18 @@ function NewsDetailContent({ id }) {
         text: newsTitle,
         url,
       })
+      recordNewsInteraction(item?.id || id, { type: 'share', channel: 'native' })
     } catch {
       // Cancelado por usuario o no soportado por el navegador.
     }
   }
+
+  useEffect(() => {
+    if (!item?.id) return
+    if (trackedViewsRef.current.has(item.id)) return
+    trackedViewsRef.current.add(item.id)
+    recordNewsInteraction(item.id, { type: 'view' })
+  }, [item?.id])
 
   function readingMinutes(news) {
     const txt = `${news?.summary || ''} ${news?.body || ''}`.trim()
@@ -311,11 +322,20 @@ function NewsDetailContent({ id }) {
                 {item.summary}
               </p>
               <div className="mt-5 flex flex-wrap items-center gap-2.5">
+                <p className="w-full text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                  Botones para compartir esta noticia
+                </p>
                 <a
                   href={facebookShareUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border border-blue-500/40 bg-linear-to-br from-blue-600/90 via-blue-700/90 to-indigo-800/90 px-3 py-1.5 text-xs font-semibold text-white transition hover:-translate-y-0.5"
+                  onClick={() =>
+                    recordNewsInteraction(item?.id || id, {
+                      type: 'share',
+                      channel: 'facebook',
+                    })
+                  }
+                  className="hidden items-center gap-2 rounded-full border border-blue-500/40 bg-linear-to-br from-blue-600/90 via-blue-700/90 to-indigo-800/90 px-3 py-1.5 text-xs font-semibold text-white transition hover:-translate-y-0.5 md:inline-flex"
                 >
                   <FacebookIcon />
                   Facebook
@@ -324,7 +344,13 @@ function NewsDetailContent({ id }) {
                   href={whatsappShareUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border border-emerald-500/40 bg-linear-to-br from-emerald-600/90 via-emerald-700/90 to-emerald-800/90 px-3 py-1.5 text-xs font-semibold text-white transition hover:-translate-y-0.5"
+                  onClick={() =>
+                    recordNewsInteraction(item?.id || id, {
+                      type: 'share',
+                      channel: 'whatsapp',
+                    })
+                  }
+                  className="hidden items-center gap-2 rounded-full border border-emerald-500/40 bg-linear-to-br from-emerald-600/90 via-emerald-700/90 to-emerald-800/90 px-3 py-1.5 text-xs font-semibold text-white transition hover:-translate-y-0.5 md:inline-flex"
                 >
                   <WhatsAppIcon />
                   WhatsApp
@@ -332,27 +358,24 @@ function NewsDetailContent({ id }) {
                 <button
                   type="button"
                   onClick={() => handleInstagramShare(item.title)}
-                  className="inline-flex items-center gap-2 rounded-full border border-fuchsia-500/40 bg-linear-to-br from-fuchsia-600/90 via-pink-600/90 to-violet-700/90 px-3 py-1.5 text-xs font-semibold text-white transition hover:-translate-y-0.5"
+                  className="hidden items-center gap-2 rounded-full border border-fuchsia-500/40 bg-linear-to-br from-fuchsia-600/90 via-pink-600/90 to-violet-700/90 px-3 py-1.5 text-xs font-semibold text-white transition hover:-translate-y-0.5 md:inline-flex"
                 >
                   <InstagramIcon />
                   Instagram
                 </button>
-                {nativeShareAvailable ? (
-                  <button
-                    type="button"
-                    onClick={() => handleNativeShare(item.title)}
-                    className="inline-flex items-center gap-2 rounded-full border border-sky-500/40 bg-linear-to-br from-sky-600/90 via-sky-700/90 to-cyan-800/90 px-3 py-1.5 text-xs font-semibold text-white transition hover:-translate-y-0.5"
-                  >
-                    <ShareIcon />
-                    Compartir
-                  </button>
-                ) : null}
                 <button
                   type="button"
-                  onClick={handleCopyLink}
-                  className="inline-flex items-center gap-2 rounded-full border border-[#2a313b] bg-[#171b22] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#222831]"
+                  onClick={() => {
+                    if (nativeShareAvailable) {
+                      handleNativeShare(item.title)
+                    } else {
+                      handleCopyLink()
+                    }
+                  }}
+                  className="inline-flex items-center gap-2 rounded-full border border-sky-500/40 bg-linear-to-br from-sky-600/90 via-sky-700/90 to-cyan-800/90 px-3 py-1.5 text-xs font-semibold text-white transition hover:-translate-y-0.5 md:hidden"
                 >
-                  {copied ? 'Enlace copiado' : 'Copiar enlace'}
+                  <ShareIcon />
+                  {copied ? 'Enlace copiado' : 'Compartir'}
                 </button>
               </div>
               {shareHint ? (

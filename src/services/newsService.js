@@ -110,6 +110,27 @@ Se destacó el trabajo de entrenadores y familias en la organización de los eve
 
 let mockStore = [...MOCK_INITIAL]
 
+function withDefaultStats(news) {
+  const current = news?.stats || {}
+  const shares = current.shares || {}
+  return {
+    ...news,
+    stats: {
+      views: Number(current.views || 0),
+      shares: {
+        facebook: Number(shares.facebook || 0),
+        whatsapp: Number(shares.whatsapp || 0),
+        instagram: Number(shares.instagram || 0),
+        native: Number(shares.native || 0),
+        copyLink: Number(shares.copyLink || 0),
+        total: Number(shares.total || 0),
+      },
+      lastViewedAt: current.lastViewedAt || null,
+      lastSharedAt: current.lastSharedAt || null,
+    },
+  }
+}
+
 function delay(ms = 200) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
@@ -171,12 +192,13 @@ export async function fetchNewsList() {
       const msg = await apiErrorMessage(res)
       throw new Error(msg || 'No se pudieron cargar las noticias')
     }
-    return res.json()
+    const data = await res.json()
+    return Array.isArray(data) ? data.map(withDefaultStats) : []
   }
   await delay()
-  return [...mockStore].sort(
-    (a, b) => new Date(b.publishedAt) - new Date(a.publishedAt),
-  )
+  return [...mockStore]
+    .map(withDefaultStats)
+    .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt))
 }
 
 export async function fetchNewsById(id) {
@@ -187,10 +209,99 @@ export async function fetchNewsById(id) {
       const msg = await apiErrorMessage(res)
       throw new Error(msg || 'No se pudo cargar la noticia')
     }
-    return res.json()
+    const data = await res.json()
+    return withDefaultStats(data)
   }
   await delay()
-  return mockStore.find((n) => n.id === id || n.slug === id) ?? null
+  const found = mockStore.find((n) => n.id === id || n.slug === id) ?? null
+  return found ? withDefaultStats(found) : null
+}
+
+export async function recordNewsInteraction(idOrSlug, payload) {
+  if (API_BASE) {
+    const res = await fetch(`${API_BASE}/api/news/${idOrSlug}/interactions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    if (!res.ok) return null
+    return res.json().catch(() => null)
+  }
+  await delay(50)
+  const idx = mockStore.findIndex((n) => n.id === idOrSlug || n.slug === idOrSlug)
+  if (idx === -1) return null
+  const news = withDefaultStats(mockStore[idx])
+  if (payload?.type === 'view') {
+    news.stats.views += 1
+    news.stats.lastViewedAt = new Date().toISOString()
+  }
+  if (payload?.type === 'share' && payload?.channel) {
+    const keyMap = {
+      facebook: 'facebook',
+      whatsapp: 'whatsapp',
+      instagram: 'instagram',
+      native: 'native',
+      copy_link: 'copyLink',
+    }
+    const key = keyMap[payload.channel]
+    if (key) {
+      news.stats.shares[key] += 1
+      news.stats.shares.total += 1
+      news.stats.lastSharedAt = new Date().toISOString()
+    }
+  }
+  mockStore[idx] = news
+  return { ok: true, stats: news.stats }
+}
+
+export async function fetchNewsStatsOverview() {
+  if (!API_BASE) {
+    await delay(100)
+    const list = mockStore.map(withDefaultStats)
+    const totals = list.reduce(
+      (acc, n) => {
+        acc.total_news += 1
+        acc.total_views += n.stats.views
+        acc.total_shares += n.stats.shares.total
+        acc.total_facebook += n.stats.shares.facebook
+        acc.total_whatsapp += n.stats.shares.whatsapp
+        acc.total_instagram += n.stats.shares.instagram
+        acc.total_native += n.stats.shares.native
+        acc.total_copy_link += n.stats.shares.copyLink
+        return acc
+      },
+      {
+        total_news: 0,
+        total_views: 0,
+        total_shares: 0,
+        total_facebook: 0,
+        total_whatsapp: 0,
+        total_instagram: 0,
+        total_native: 0,
+        total_copy_link: 0,
+      },
+    )
+    return {
+      totals,
+      topViews: [...list]
+        .sort((a, b) => b.stats.views - a.stats.views)
+        .slice(0, 5)
+        .map((n) => ({ id: n.id, title: n.title, slug: n.slug, views_count: n.stats.views })),
+      topShares: [...list]
+        .sort((a, b) => b.stats.shares.total - a.stats.shares.total)
+        .slice(0, 5)
+        .map((n) => ({ id: n.id, title: n.title, slug: n.slug, shares_count: n.stats.shares.total })),
+    }
+  }
+  const res = await fetch(`${API_BASE}/api/news/stats/overview`, {
+    headers: { ...getAuthHeaders() },
+  })
+  notifyUnauthorizedIfNeeded(res)
+  if (!res.ok) {
+    const msg = await apiErrorMessage(res)
+    throw new Error(msg || 'No se pudieron cargar las estadísticas de noticias')
+  }
+  return res.json()
 }
 
 export async function createNews(payload) {
