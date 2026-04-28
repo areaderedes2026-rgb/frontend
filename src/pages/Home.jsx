@@ -10,6 +10,7 @@ import { Container } from '../components/ui/Container.jsx'
 import { LinkButton } from '../components/ui/LinkButton.jsx'
 import { DEFAULT_HOME_MAP_CONTENT, mergeHomeMapContent } from '../data/homeMapContent.js'
 import { useNewsList } from '../hooks/useNewsList.js'
+import { fetchPublicEvents } from '../services/eventsService.js'
 import { fetchHomeMapContent } from '../services/homeMapService.js'
 import { formatShortDate } from '../utils/formatDate.js'
 import { ROUTES } from '../utils/constants.js'
@@ -58,9 +59,21 @@ function excerptWords(text, maxWords = 14) {
 export function Home() {
   const { items: news } = useNewsList()
   const [homeMapContent, setHomeMapContent] = useState(DEFAULT_HOME_MAP_CONTENT)
+  const [events, setEvents] = useState([])
+  const [eventsLoading, setEventsLoading] = useState(true)
+  const [mobileEventSlide, setMobileEventSlide] = useState(0)
+  const [mobileSliderPaused, setMobileSliderPaused] = useState(() =>
+    typeof window !== 'undefined'
+      ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      : false,
+  )
 
   const featuredNews = news[0] ?? null
   const secondaryNews = useMemo(() => news.slice(1, 5), [news])
+  const featuredEvent = events[0] ?? null
+  const secondaryEvents = useMemo(() => events.slice(1, 4), [events])
+  const safeMobileEventSlide =
+    secondaryEvents.length > 0 ? mobileEventSlide % secondaryEvents.length : 0
 
   useEffect(() => {
     let cancelled = false
@@ -77,6 +90,36 @@ export function Home() {
       }
     }
     void loadMap()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    if (secondaryEvents.length <= 1 || mobileSliderPaused) return undefined
+    const id = window.setInterval(() => {
+      if (document.hidden) return
+      setMobileEventSlide((prev) => (prev + 1) % secondaryEvents.length)
+    }, 4800)
+    return () => window.clearInterval(id)
+  }, [secondaryEvents.length, mobileSliderPaused])
+
+  useEffect(() => {
+    let cancelled = false
+    fetchPublicEvents()
+      .then((list) => {
+        if (cancelled) return
+        const sorted = (Array.isArray(list) ? list : []).sort(
+          (a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime(),
+        )
+        setEvents(sorted)
+      })
+      .catch(() => {
+        if (!cancelled) setEvents([])
+      })
+      .finally(() => {
+        if (!cancelled) setEventsLoading(false)
+      })
     return () => {
       cancelled = true
     }
@@ -115,6 +158,170 @@ export function Home() {
           </div>
         </Container>
       </section>
+
+      <StorySection
+        eyebrow="Agenda activa"
+        title="Eventos en Trancas"
+        subtitle="Descubrí próximos encuentros culturales, deportivos e institucionales desde la portada."
+        actions={
+          <div className="flex flex-wrap gap-3">
+            <LinkButton to={ROUTES.events}>
+              Ver agenda completa
+            </LinkButton>
+            <LinkButton to={ROUTES.atencionCiudadano} variant="secondary">
+              Consultar un evento
+            </LinkButton>
+          </div>
+        }
+        tone="soft"
+        className="relative"
+      >
+        {featuredEvent ? (
+          <div className="grid gap-5 lg:grid-cols-12">
+            <RevealOnScroll className="lg:col-span-7" variant="slow">
+              <article className="group overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm ring-1 ring-[#1a1d24]/5 transition-all duration-500 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-lg hover:shadow-sky-500/10">
+                <div className="relative flex min-h-72 items-center justify-center bg-slate-900/95 p-3 sm:min-h-80">
+                  <img
+                    src={featuredEvent.flyerUrl}
+                    alt={featuredEvent.title}
+                    className="max-h-120 w-auto max-w-full rounded-md object-contain transition duration-500 group-hover:scale-[1.02]"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <span className="absolute left-4 top-4 rounded-full border border-sky-300/50 bg-slate-900/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-sky-100">
+                    Destacado
+                  </span>
+                </div>
+                <div className="p-6">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-sky-800">
+                    {formatShortDate(featuredEvent.eventDate)} · {featuredEvent.place}
+                  </p>
+                  <h3 className="mt-2 font-serif text-2xl font-bold tracking-tight text-[#171b22]">
+                    {featuredEvent.title}
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed text-[#4b505a]">
+                    {excerptWords(featuredEvent.summary, 26)}
+                  </p>
+                  <Link
+                    to={ROUTES.events}
+                    className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-sky-800 transition hover:text-[#0f1319]"
+                  >
+                    Ver evento y calendario
+                    <span aria-hidden>→</span>
+                  </Link>
+                </div>
+              </article>
+            </RevealOnScroll>
+            <RevealOnScroll className="lg:col-span-5 lg:h-full" variant="slow" delayMs={120}>
+              <div className="sm:hidden">
+                {secondaryEvents.length > 0 ? (
+                  <div
+                    className="rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-4 shadow-sm ring-1 ring-[#1a1d24]/5"
+                    onMouseEnter={() => setMobileSliderPaused(true)}
+                    onMouseLeave={() => setMobileSliderPaused(false)}
+                  >
+                    <article key={secondaryEvents[safeMobileEventSlide].id}>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-sky-800">
+                        {formatShortDate(secondaryEvents[safeMobileEventSlide].eventDate)}
+                      </p>
+                      <h4 className="mt-1 line-clamp-2 text-base font-semibold text-[#171b22]">
+                        {secondaryEvents[safeMobileEventSlide].title}
+                      </h4>
+                      <p className="mt-1 line-clamp-3 text-sm leading-relaxed text-[#4b505a]">
+                        {excerptWords(secondaryEvents[safeMobileEventSlide].summary, 14)}
+                      </p>
+                      <p className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                        {secondaryEvents[safeMobileEventSlide].place}
+                      </p>
+                    </article>
+                    {secondaryEvents.length > 1 ? (
+                      <div className="mt-4 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-1.5" role="tablist" aria-label="Eventos secundarios">
+                          {secondaryEvents.map((event, index) => (
+                            <button
+                              key={event.id}
+                              type="button"
+                              role="tab"
+                              aria-selected={safeMobileEventSlide === index}
+                              aria-label={`Ir al evento ${index + 1}`}
+                              className={`h-2.5 w-2.5 rounded-full transition ${
+                                safeMobileEventSlide === index ? 'bg-sky-700' : 'bg-slate-300'
+                              }`}
+                              onClick={() => setMobileEventSlide(index)}
+                            />
+                          ))}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-900"
+                            onClick={() =>
+                              setMobileEventSlide(
+                                (prev) =>
+                                  (prev - 1 + secondaryEvents.length) % secondaryEvents.length,
+                              )
+                            }
+                            aria-label="Evento anterior"
+                          >
+                            ‹
+                          </button>
+                          <button
+                            type="button"
+                            className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-900"
+                            onClick={() =>
+                              setMobileEventSlide((prev) => (prev + 1) % secondaryEvents.length)
+                            }
+                            aria-label="Evento siguiente"
+                          >
+                            ›
+                          </button>
+                          <button
+                            type="button"
+                            className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-900"
+                            onClick={() => setMobileSliderPaused((prev) => !prev)}
+                            aria-label={
+                              mobileSliderPaused ? 'Reanudar reproducción' : 'Pausar reproducción'
+                            }
+                          >
+                            {mobileSliderPaused ? 'Reanudar' : 'Pausar'}
+                          </button>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+              <div className="hidden auto-rows-fr gap-4 sm:grid sm:grid-cols-2 lg:h-full lg:grid-cols-1">
+                {secondaryEvents.map((event) => (
+                  <article
+                    key={event.id}
+                    className="rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-4 shadow-sm ring-1 ring-[#1a1d24]/5 transition-all duration-500 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-lg hover:shadow-sky-500/10 sm:p-5"
+                  >
+                    <p className="text-xs font-semibold uppercase tracking-wide text-sky-800">
+                      {formatShortDate(event.eventDate)}
+                    </p>
+                    <h4 className="mt-1 line-clamp-2 text-base font-semibold text-[#171b22]">
+                      {event.title}
+                    </h4>
+                    <p className="mt-1 line-clamp-3 text-sm leading-relaxed text-[#4b505a]">
+                      {excerptWords(event.summary, 14)}
+                    </p>
+                    <p className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                      {event.place}
+                    </p>
+                  </article>
+                ))}
+              </div>
+            </RevealOnScroll>
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-6 text-sm text-[#4b505a]">
+            {eventsLoading
+              ? 'Cargando próximos eventos...'
+              : 'Todavía no hay eventos publicados. Pronto se mostrarán aquí.'}
+          </div>
+        )}
+      </StorySection>
 
       <StorySection
         id="servicios-rapidos"
