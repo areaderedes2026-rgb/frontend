@@ -11,25 +11,37 @@ import { isApiConfigured } from '../../utils/apiConfig.js'
 import { ROUTES } from '../../utils/constants.js'
 
 export function Intendencia() {
-  const [content, setContent] = useState(DEFAULT_INTENDENCIA_CONTENT)
+  const apiEnabled = isApiConfigured()
+  const [content, setContent] = useState(() =>
+    apiEnabled
+      ? {
+          ...DEFAULT_INTENDENCIA_CONTENT,
+          heroImageUrl: '',
+          mayorPhotoUrl: '',
+        }
+      : DEFAULT_INTENDENCIA_CONTENT,
+  )
+  const [loadingContent, setLoadingContent] = useState(apiEnabled)
 
   useEffect(() => {
     let cancelled = false
     async function loadContent() {
-      if (!isApiConfigured()) return
+      if (!apiEnabled) return
       try {
         const remote = await fetchIntendenciaContent()
         if (!remote || cancelled) return
         setContent(mergeIntendenciaContent(DEFAULT_INTENDENCIA_CONTENT, remote))
       } catch {
         // Si falla API, se mantiene el contenido por defecto.
+      } finally {
+        if (!cancelled) setLoadingContent(false)
       }
     }
     loadContent()
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [apiEnabled])
 
   return (
     <section className="relative overflow-hidden bg-linear-to-b from-[#f7f9fc] via-[#fcfcfa] to-white pb-12 sm:pb-16">
@@ -77,12 +89,19 @@ export function Intendencia() {
               <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
                 Despacho del Intendente
               </h2>
-              <div className="mt-5 grid gap-5 sm:grid-cols-[13rem_1fr] lg:grid-cols-[14rem_1fr]">
-                <img
-                  src={content.mayorPhotoUrl || content.heroImageUrl}
-                  alt={content.mayorName}
-                  className="h-[30rem] w-full rounded-2xl object-cover object-top ring-1 ring-slate-200/80 sm:h-full"
-                />
+              <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-start">
+                {loadingContent ? (
+                  <div
+                    className="h-[30rem] w-full rounded-2xl bg-slate-100 ring-1 ring-slate-200/80 sm:w-[13rem] lg:w-[14rem]"
+                    aria-hidden
+                  />
+                ) : (
+                  <img
+                    src={content.mayorPhotoUrl || content.heroImageUrl || '/favicon.png?v=2'}
+                    alt={content.mayorName}
+                    className="h-[30rem] w-full rounded-2xl object-cover object-top ring-1 ring-slate-200/80 sm:w-[13rem] lg:w-[14rem]"
+                  />
+                )}
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-700">
                     Intendente
