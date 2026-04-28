@@ -37,6 +37,10 @@ export const adminRouteLoaders = {
     () => import('../pages/admin/AdminSettingsHomeMap.jsx'),
     'AdminSettingsHomeMap',
   ),
+  settingsIntendencia: namedLazy(
+    () => import('../pages/admin/AdminIntendencia.jsx'),
+    'AdminIntendencia',
+  ),
   settingsUsers: namedLazy(() => import('../pages/admin/AdminUsers.jsx'), 'AdminUsers'),
 }
 

@@ -25,6 +25,7 @@ const AdminSettingsLayout = lazy(adminRouteLoaders.settingsLayout)
 const AdminSettingsHome = lazy(adminRouteLoaders.settingsHome)
 const AdminCategories = lazy(adminRouteLoaders.settingsCategories)
 const AdminSettingsHomeMap = lazy(adminRouteLoaders.settingsHomeMap)
+const AdminIntendencia = lazy(adminRouteLoaders.settingsIntendencia)
 const AdminUsers = lazy(adminRouteLoaders.settingsUsers)
 const History = lazy(publicRouteLoaders.history)
 const Events = lazy(publicRouteLoaders.events)
@@ -160,6 +161,14 @@ export function AppRouter() {
               element={
                 <Suspense fallback={<AdminRouteFallback />}>
                   <AdminSettingsHomeMap />
+                </Suspense>
+              }
+            />
+            <Route
+              path="intendencia"
+              element={
+                <Suspense fallback={<AdminRouteFallback />}>
+                  <AdminIntendencia />
                 </Suspense>
               }
             />

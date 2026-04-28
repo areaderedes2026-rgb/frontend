@@ -31,6 +31,7 @@ export const ROUTES = {
   adminSettings: '/admin/settings',
   adminSettingsCategories: '/admin/settings/categories',
   adminSettingsHomeMap: '/admin/settings/home-map',
+  adminSettingsIntendencia: '/admin/settings/intendencia',
 }
 
 export const SOCIAL_LINKS = {
