@@ -20,6 +20,7 @@ export const ROUTES = {
   adminLogin: '/admin/login',
   adminDashboard: '/admin/dashboard',
   adminNews: '/admin/news',
+  adminEvents: '/admin/events',
   adminNewsStats: '/admin/news/stats',
   adminAreas: '/admin/areas',
   adminHistory: '/admin/history',

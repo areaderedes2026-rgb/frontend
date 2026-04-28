@@ -30,6 +30,9 @@ export function AdminLayout() {
   const areasActive =
     pathname === ROUTES.adminAreas ||
     pathname.startsWith(`${ROUTES.adminAreas}/`)
+  const eventsActive =
+    pathname === ROUTES.adminEvents ||
+    pathname.startsWith(`${ROUTES.adminEvents}/`)
   const historyActive =
     pathname === ROUTES.adminHistory ||
     pathname.startsWith(`${ROUTES.adminHistory}/`)
@@ -120,6 +123,16 @@ export function AdminLayout() {
               }
             >
               Noticias
+            </NavLink>
+            <NavLink
+              to={ROUTES.adminEvents}
+              onMouseEnter={() => preloadAdminRoute('events')}
+              onFocus={() => preloadAdminRoute('events')}
+              className={({ isActive }) =>
+                navClass({ isActive: isActive || eventsActive })
+              }
+            >
+              Eventos
             </NavLink>
             <NavLink
               to={ROUTES.adminAreas}

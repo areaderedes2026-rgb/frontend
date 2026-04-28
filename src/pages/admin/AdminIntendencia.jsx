@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
+import { SingleImageUploadField } from '../../components/admin/SingleImageUploadField.jsx'
 import { Button } from '../../components/ui/Button.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
 import {
@@ -159,15 +160,16 @@ export function AdminIntendencia() {
                   disabled={loading || saving}
                 />
               </label>
-              <label className={`${labelClass} sm:col-span-2`}>
-                Imagen de portada (URL)
-                <input
-                  className={inputClass}
+              <div className="sm:col-span-2">
+                <SingleImageUploadField
+                  label="Imagen de portada"
+                  helpText="Subí imagen principal de la sección o importala por URL."
                   value={form.heroImageUrl}
-                  onChange={(e) => setForm((prev) => ({ ...prev, heroImageUrl: e.target.value }))}
+                  onChange={(value) => setForm((prev) => ({ ...prev, heroImageUrl: value }))}
+                  kind="cover"
                   disabled={loading || saving}
                 />
-              </label>
+              </div>
             </div>
           </section>
 
@@ -201,15 +203,16 @@ export function AdminIntendencia() {
                   disabled={loading || saving}
                 />
               </label>
-              <label className={`${labelClass} sm:col-span-2`}>
-                Foto del intendente (URL)
-                <input
-                  className={inputClass}
+              <div className="sm:col-span-2">
+                <SingleImageUploadField
+                  label="Foto del intendente"
+                  helpText="Subí una foto en formato retrato o importala por URL."
                   value={form.mayorPhotoUrl}
-                  onChange={(e) => setForm((prev) => ({ ...prev, mayorPhotoUrl: e.target.value }))}
+                  onChange={(value) => setForm((prev) => ({ ...prev, mayorPhotoUrl: value }))}
+                  kind="cover"
                   disabled={loading || saving}
                 />
-              </label>
+              </div>
               <label className={labelClass}>
                 Correo
                 <input

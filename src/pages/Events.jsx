@@ -1,91 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Container } from '../components/ui/Container.jsx'
 import { RevealOnScroll } from '../components/home/RevealOnScroll.jsx'
 import { LinkButton } from '../components/ui/LinkButton.jsx'
 import { EventsInteractiveCalendar } from '../components/events/EventsInteractiveCalendar.jsx'
+import { fetchPublicEvents } from '../services/eventsService.js'
 import { ROUTES } from '../utils/constants.js'
 
 const HERO_IMAGE =
   'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1900&q=80'
-
-const EVENT_TYPES = ['Todos', 'Institucional', 'Cultural', 'Deportivo', 'Comunitario']
-
-const EVENTS = [
-  {
-    id: 'feria-gastronomica',
-    title: 'Feria gastronomica local',
-    type: 'Cultural',
-    dateLabel: 'Sab 04 Jul · 18:30',
-    datetime: '2026-07-04T18:30:00-03:00',
-    place: 'Plaza principal',
-    summary:
-      'Food trucks, cocina regional y espectaculos en vivo para toda la familia.',
-    imageUrl:
-      'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1200&q=80',
-    featured: true,
-  },
-  {
-    id: 'encuentro-areas',
-    title: 'Encuentro abierto de areas municipales',
-    type: 'Institucional',
-    dateLabel: 'Mie 09 Jul · 10:00',
-    datetime: '2026-07-09T10:00:00-03:00',
-    place: 'Salon municipal',
-    summary:
-      'Espacio participativo para conocer programas, resolver dudas y presentar propuestas.',
-    imageUrl:
-      'https://images.unsplash.com/photo-1515169067868-5387ec356754?auto=format&fit=crop&w=1200&q=80',
-  },
-  {
-    id: 'carrera-trancas',
-    title: 'Carrera ciudad de Trancas 10K',
-    type: 'Deportivo',
-    dateLabel: 'Dom 13 Jul · 08:00',
-    datetime: '2026-07-13T08:00:00-03:00',
-    place: 'Circuito urbano',
-    summary:
-      'Competencia y circuito recreativo de 3K con inscripcion gratuita y cupos limitados.',
-    imageUrl:
-      'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?auto=format&fit=crop&w=1200&q=80',
-  },
-  {
-    id: 'cine-barrio',
-    title: 'Cine bajo las estrellas',
-    type: 'Comunitario',
-    dateLabel: 'Vie 18 Jul · 20:00',
-    datetime: '2026-07-18T20:00:00-03:00',
-    place: 'Barrio Centro',
-    summary:
-      'Jornada de cine al aire libre con propuestas para infancias y buffet comunitario.',
-    imageUrl:
-      'https://images.unsplash.com/photo-1489599809996-1324e8fdd849?auto=format&fit=crop&w=1200&q=80',
-  },
-  {
-    id: 'festival-folklore',
-    title: 'Festival municipal de folklore',
-    type: 'Cultural',
-    dateLabel: 'Sab 26 Jul · 19:30',
-    datetime: '2026-07-26T19:30:00-03:00',
-    place: 'Predio cultural',
-    summary:
-      'Noche de danza, musica en vivo y feria de artesanos con artistas locales.',
-    imageUrl:
-      'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=1200&q=80',
-  },
-  {
-    id: 'jornada-solidaria',
-    title: 'Jornada solidaria de invierno',
-    type: 'Comunitario',
-    dateLabel: 'Sab 02 Ago · 09:00',
-    datetime: '2026-08-02T09:00:00-03:00',
-    place: 'Centro civico',
-    summary:
-      'Colecta de abrigo y actividades de acompanamiento para familias de la comunidad.',
-    imageUrl:
-      'https://images.unsplash.com/photo-1529390079861-591de354faf5?auto=format&fit=crop&w=1200&q=80',
-  },
-]
 
 function EventTag({ children }) {
   return (
@@ -96,14 +19,33 @@ function EventTag({ children }) {
 }
 
 export function Events() {
-  const [typeFilter, setTypeFilter] = useState('Todos')
+  const [events, setEvents] = useState([])
+  const [loading, setLoading] = useState(true)
   const [calendarFocusDate, setCalendarFocusDate] = useState('')
-  const featured = EVENTS.find((event) => event.featured) || EVENTS[0]
+  const featured = events[0] || null
 
-  const visibleEvents = useMemo(() => {
-    if (typeFilter === 'Todos') return EVENTS
-    return EVENTS.filter((event) => event.type === typeFilter)
-  }, [typeFilter])
+  useEffect(() => {
+    let cancelled = false
+    fetchPublicEvents()
+      .then((list) => {
+        if (cancelled) return
+        const sorted = (Array.isArray(list) ? list : []).sort(
+          (a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime(),
+        )
+        setEvents(sorted)
+      })
+      .catch(() => {
+        if (!cancelled) setEvents([])
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const visibleEvents = useMemo(() => events, [events])
 
   return (
     <section className="relative -mt-[calc(var(--navbar-h,5rem)+1.5rem)] overflow-hidden bg-linear-to-b from-[#f1eee8] via-[#f7f7f5] to-[#fcfcfa] pb-12 sm:-mt-[calc(var(--navbar-h,5rem)+2rem)] sm:pb-16">
@@ -145,15 +87,22 @@ export function Events() {
             <div className="grid gap-0 border-t border-[#ddd7ca] lg:grid-cols-12">
               <div className="border-b border-[#ddd7ca] p-5 sm:p-6 lg:col-span-7 lg:border-r lg:border-b-0">
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-800">Evento destacado</p>
-                <h2 className="mt-2 font-serif text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
-                  {featured.title}
-                </h2>
-                <p className="mt-3 text-sm leading-relaxed text-[#4b505a]">{featured.summary}</p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <EventTag>{featured.type}</EventTag>
-                  <EventTag>{featured.dateLabel}</EventTag>
-                  <EventTag>{featured.place}</EventTag>
-                </div>
+                {featured ? (
+                  <>
+                    <h2 className="mt-2 font-serif text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
+                      {featured.title}
+                    </h2>
+                    <p className="mt-3 text-sm leading-relaxed text-[#4b505a]">{featured.summary}</p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <EventTag>{new Date(featured.eventDate).toLocaleString('es-AR')}</EventTag>
+                      <EventTag>{featured.place}</EventTag>
+                    </div>
+                  </>
+                ) : (
+                  <p className="mt-3 text-sm leading-relaxed text-[#4b505a]">
+                    {loading ? 'Cargando eventos destacados…' : 'Todavía no hay eventos publicados.'}
+                  </p>
+                )}
               </div>
               <aside className="p-5 sm:p-6 lg:col-span-5">
                 <h3 className="text-sm font-bold uppercase tracking-[0.16em] text-sky-800">Inscripciones</h3>
@@ -190,22 +139,9 @@ export function Events() {
                   Agenda de eventos
                 </h2>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {EVENT_TYPES.map((type) => (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => setTypeFilter(type)}
-                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                      type === typeFilter
-                        ? 'bg-[#171b22] text-white'
-                        : 'border border-[#d8d5cd] bg-white text-[#3e434d] hover:border-sky-200 hover:text-[#171b22]'
-                    }`}
-                  >
-                    {type}
-                  </button>
-                ))}
-              </div>
+              <p className="text-sm text-slate-500">
+                {loading ? 'Cargando agenda…' : `${visibleEvents.length} evento(s) disponible(s)`}
+              </p>
             </div>
           </RevealOnScroll>
 
@@ -225,19 +161,18 @@ export function Events() {
                     }}
                     className="group flex h-full w-full flex-col overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] text-left shadow-sm ring-1 ring-[#1a1d24]/5 transition duration-300 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-lg hover:shadow-sky-500/10"
                   >
-                    <div className={idx === 0 ? 'aspect-video' : 'aspect-16/10'}>
+                    <div className="relative flex min-h-72 items-center justify-center bg-slate-900/95 p-3 sm:min-h-80">
                       <img
-                        src={event.imageUrl}
+                        src={event.flyerUrl}
                         alt={event.title}
-                        className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                        className="max-h-120 w-auto max-w-full rounded-md object-contain transition duration-500 group-hover:scale-[1.02]"
                         loading="lazy"
                         decoding="async"
                       />
                     </div>
                     <div className="flex flex-1 flex-col p-5">
                       <div className="flex flex-wrap gap-2">
-                        <EventTag>{event.type}</EventTag>
-                        <EventTag>{event.dateLabel}</EventTag>
+                        <EventTag>{new Date(event.eventDate).toLocaleString('es-AR')}</EventTag>
                       </div>
                       <h3 className="mt-3 text-lg font-bold tracking-tight text-[#171b22]">
                         {event.title}
@@ -268,7 +203,17 @@ export function Events() {
             </p>
           </RevealOnScroll>
           <RevealOnScroll variant="slow" delayMs={120} className="lg:col-span-7">
-            <EventsInteractiveCalendar events={EVENTS} focusDate={calendarFocusDate} />
+            <EventsInteractiveCalendar
+              events={visibleEvents.map((event) => ({
+                id: event.id,
+                type: 'Evento',
+                title: event.title,
+                summary: event.summary,
+                place: event.place,
+                datetime: event.eventDate,
+              }))}
+              focusDate={calendarFocusDate}
+            />
           </RevealOnScroll>
         </section>
 

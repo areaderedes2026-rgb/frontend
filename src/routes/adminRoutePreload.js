@@ -5,6 +5,7 @@ function namedLazy(loader, exportName) {
 export const adminRouteLoaders = {
   dashboard: namedLazy(() => import('../pages/admin/Dashboard.jsx'), 'Dashboard'),
   news: namedLazy(() => import('../pages/admin/AdminNews.jsx'), 'AdminNews'),
+  events: namedLazy(() => import('../pages/admin/AdminEvents.jsx'), 'AdminEvents'),
   newsStats: namedLazy(
     () => import('../pages/admin/AdminNewsStats.jsx'),
     'AdminNewsStats',

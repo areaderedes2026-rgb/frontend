@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
+import { SingleImageUploadField } from '../../components/admin/SingleImageUploadField.jsx'
 import { Button } from '../../components/ui/Button.jsx'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
@@ -441,17 +442,18 @@ export function AdminAreaProfiles() {
                     required
                   />
                 </label>
-                <label className={`${labelClass} sm:col-span-2`}>
-                  Imagen de portada (URL)
-                  <input
-                    className={inputClass}
+                <div className="sm:col-span-2">
+                  <SingleImageUploadField
+                    label="Imagen de portada"
+                    helpText="Subí la portada del área o importala por URL."
                     value={newArea.coverImage}
-                    onChange={(e) =>
-                      setNewArea((prev) => ({ ...prev, coverImage: e.target.value }))
+                    onChange={(value) =>
+                      setNewArea((prev) => ({ ...prev, coverImage: value }))
                     }
+                    kind="cover"
                     disabled={creatingArea || areasLoading}
                   />
-                </label>
+                </div>
                 <div className="sm:col-span-2">
                   <Button type="submit" disabled={creatingArea || areasLoading}>
                     {creatingArea ? 'Creando…' : 'Crear área'}
@@ -577,10 +579,16 @@ export function AdminAreaProfiles() {
                       Cargo
                       <input className={inputClass} value={form.director.role} onChange={(e) => setDirectorField('role', e.target.value)} disabled={saving} />
                     </label>
-                    <label className={labelClass}>
-                      Foto (URL)
-                      <input className={inputClass} value={form.director.photoUrl} onChange={(e) => setDirectorField('photoUrl', e.target.value)} disabled={saving} />
-                    </label>
+                    <div>
+                      <SingleImageUploadField
+                        label="Foto del director/a"
+                        helpText="Subí la imagen principal del responsable del área."
+                        value={form.director.photoUrl}
+                        onChange={(value) => setDirectorField('photoUrl', value)}
+                        kind="cover"
+                        disabled={saving}
+                      />
+                    </div>
                     <label className={labelClass}>
                       Correo
                       <input className={inputClass} value={form.director.email} onChange={(e) => setDirectorField('email', e.target.value)} disabled={saving} />
