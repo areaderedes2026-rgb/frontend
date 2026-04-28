@@ -77,11 +77,11 @@ export function Intendencia() {
               <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
                 Despacho del Intendente
               </h2>
-              <div className="mt-5 grid gap-5 sm:grid-cols-[15rem_1fr] lg:grid-cols-[17rem_1fr]">
+              <div className="mt-5 grid gap-5 sm:grid-cols-[13rem_1fr] lg:grid-cols-[14rem_1fr]">
                 <img
                   src={content.mayorPhotoUrl || content.heroImageUrl}
                   alt={content.mayorName}
-                  className="h-72 w-full rounded-2xl object-cover object-top ring-1 ring-slate-200/80 sm:h-full"
+                  className="h-[30rem] w-full rounded-2xl object-cover object-top ring-1 ring-slate-200/80 sm:h-full"
                 />
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-700">
