@@ -102,7 +102,7 @@ export function Home() {
               Municipalidad de Trancas
             </p>
             <h1 className="hero-enter-title mt-2 font-serif text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
-              Ttrancas tierra gaucha
+              Trancas tierra gaucha
             </h1>
             <div className="hero-enter-actions mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-4">
               <LinkButton to={ROUTES.atencionCiudadano}>
