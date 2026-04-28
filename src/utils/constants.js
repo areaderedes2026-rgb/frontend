@@ -6,6 +6,7 @@ export const ROUTES = {
   history: '/history',
   tourismPlaceDetail: (slug) => `/history/lugares/${slug}`,
   services: '/services',
+  events: '/eventos',
   areas: '/areas',
   area: (slug) => `/areas/${slug}`,
   /** Atención al ciudadano (consultas y contacto). */

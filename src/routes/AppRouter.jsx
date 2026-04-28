@@ -26,6 +26,7 @@ const AdminCategories = lazy(adminRouteLoaders.settingsCategories)
 const AdminSettingsHomeMap = lazy(adminRouteLoaders.settingsHomeMap)
 const AdminUsers = lazy(adminRouteLoaders.settingsUsers)
 const History = lazy(publicRouteLoaders.history)
+const Events = lazy(publicRouteLoaders.events)
 const TourismPlaceDetail = lazy(publicRouteLoaders.tourismPlaceDetail)
 const AreasIndex = lazy(publicRouteLoaders.areasIndex)
 const AreaDetail = lazy(publicRouteLoaders.areaDetail)
@@ -187,6 +188,14 @@ export function AppRouter() {
         />
         <Route path="/about" element={<Navigate to="/history" replace />} />
         <Route path="/services" element={<Services />} />
+        <Route
+          path="/eventos"
+          element={
+            <Suspense fallback={<PublicRouteFallback />}>
+              <Events />
+            </Suspense>
+          }
+        />
         <Route
           path="/areas"
           element={

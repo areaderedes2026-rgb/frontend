@@ -13,6 +13,7 @@ const newsLink = { to: '/news', label: 'Noticias' }
 
 const afterAreasLinks = [
   { to: '/services', label: 'Servicios' },
+  { to: '/eventos', label: 'Eventos' },
   { to: '/history', label: 'Historia' },
   {
     to: '/atencion-ciudadano',
@@ -496,9 +497,11 @@ export function Navbar() {
               end={link.end}
               onMouseEnter={() => {
                 if (link.to === '/history') preloadPublicRoute('history')
+                if (link.to === '/eventos') preloadPublicRoute('events')
               }}
               onFocus={() => {
                 if (link.to === '/history') preloadPublicRoute('history')
+                if (link.to === '/eventos') preloadPublicRoute('events')
               }}
               compact={scrolled}
             />
