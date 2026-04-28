@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Container } from '../components/ui/Container.jsx'
 import { RevealOnScroll } from '../components/home/RevealOnScroll.jsx'
 import { LinkButton } from '../components/ui/LinkButton.jsx'
+import { EventsInteractiveCalendar } from '../components/events/EventsInteractiveCalendar.jsx'
 import { ROUTES } from '../utils/constants.js'
 
 const HERO_IMAGE =
@@ -16,6 +17,7 @@ const EVENTS = [
     title: 'Feria gastronomica local',
     type: 'Cultural',
     dateLabel: 'Sab 04 Jul · 18:30',
+    datetime: '2026-07-04T18:30:00-03:00',
     place: 'Plaza principal',
     summary:
       'Food trucks, cocina regional y espectaculos en vivo para toda la familia.',
@@ -28,6 +30,7 @@ const EVENTS = [
     title: 'Encuentro abierto de areas municipales',
     type: 'Institucional',
     dateLabel: 'Mie 09 Jul · 10:00',
+    datetime: '2026-07-09T10:00:00-03:00',
     place: 'Salon municipal',
     summary:
       'Espacio participativo para conocer programas, resolver dudas y presentar propuestas.',
@@ -39,6 +42,7 @@ const EVENTS = [
     title: 'Carrera ciudad de Trancas 10K',
     type: 'Deportivo',
     dateLabel: 'Dom 13 Jul · 08:00',
+    datetime: '2026-07-13T08:00:00-03:00',
     place: 'Circuito urbano',
     summary:
       'Competencia y circuito recreativo de 3K con inscripcion gratuita y cupos limitados.',
@@ -50,6 +54,7 @@ const EVENTS = [
     title: 'Cine bajo las estrellas',
     type: 'Comunitario',
     dateLabel: 'Vie 18 Jul · 20:00',
+    datetime: '2026-07-18T20:00:00-03:00',
     place: 'Barrio Centro',
     summary:
       'Jornada de cine al aire libre con propuestas para infancias y buffet comunitario.',
@@ -61,6 +66,7 @@ const EVENTS = [
     title: 'Festival municipal de folklore',
     type: 'Cultural',
     dateLabel: 'Sab 26 Jul · 19:30',
+    datetime: '2026-07-26T19:30:00-03:00',
     place: 'Predio cultural',
     summary:
       'Noche de danza, musica en vivo y feria de artesanos con artistas locales.',
@@ -72,19 +78,13 @@ const EVENTS = [
     title: 'Jornada solidaria de invierno',
     type: 'Comunitario',
     dateLabel: 'Sab 02 Ago · 09:00',
+    datetime: '2026-08-02T09:00:00-03:00',
     place: 'Centro civico',
     summary:
       'Colecta de abrigo y actividades de acompanamiento para familias de la comunidad.',
     imageUrl:
       'https://images.unsplash.com/photo-1529390079861-591de354faf5?auto=format&fit=crop&w=1200&q=80',
   },
-]
-
-const AGENDA = [
-  { day: '04', month: 'JUL', title: 'Feria gastronomica local', time: '18:30', zone: 'Plaza principal' },
-  { day: '09', month: 'JUL', title: 'Encuentro abierto de areas municipales', time: '10:00', zone: 'Salon municipal' },
-  { day: '13', month: 'JUL', title: 'Carrera ciudad de Trancas 10K', time: '08:00', zone: 'Circuito urbano' },
-  { day: '18', month: 'JUL', title: 'Cine bajo las estrellas', time: '20:00', zone: 'Barrio Centro' },
 ]
 
 function EventTag({ children }) {
@@ -97,6 +97,7 @@ function EventTag({ children }) {
 
 export function Events() {
   const [typeFilter, setTypeFilter] = useState('Todos')
+  const [calendarFocusDate, setCalendarFocusDate] = useState('')
   const featured = EVENTS.find((event) => event.featured) || EVENTS[0]
 
   const visibleEvents = useMemo(() => {
@@ -215,7 +216,15 @@ export function Events() {
                 className={idx === 0 ? 'sm:col-span-2 xl:col-span-7' : 'xl:col-span-5'}
               >
                 <RevealOnScroll variant="newsCardSlow" delayMs={idx * 80}>
-                  <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm ring-1 ring-[#1a1d24]/5 transition duration-300 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-lg hover:shadow-sky-500/10">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCalendarFocusDate(event.datetime)
+                      const node = document.getElementById('calendario-eventos')
+                      if (node) node.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                    }}
+                    className="group flex h-full w-full flex-col overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] text-left shadow-sm ring-1 ring-[#1a1d24]/5 transition duration-300 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-lg hover:shadow-sky-500/10"
+                  >
                     <div className={idx === 0 ? 'aspect-video' : 'aspect-16/10'}>
                       <img
                         src={event.imageUrl}
@@ -239,39 +248,27 @@ export function Events() {
                       <p className="mt-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
                         {event.place}
                       </p>
+                      <span className="mt-3 text-sm font-semibold text-sky-800 transition group-hover:text-[#0f1319]">
+                        Ver en calendario →
+                      </span>
                     </div>
-                  </article>
+                  </button>
                 </RevealOnScroll>
               </li>
             ))}
           </ul>
         </section>
 
-        <section className="mt-12 grid gap-8 lg:mt-16 lg:grid-cols-12 lg:gap-10">
+        <section id="calendario-eventos" className="mt-12 grid gap-8 lg:mt-16 lg:grid-cols-12 lg:gap-10">
           <RevealOnScroll variant="slow" className="lg:col-span-5">
-            <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-sky-800">Agenda semanal</h2>
-            <p className="mt-2 font-serif text-2xl font-bold text-[#171b22]">Organiza tu calendario</p>
+            <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-sky-800">Calendario interactivo</h2>
+            <p className="mt-2 font-serif text-2xl font-bold text-[#171b22]">Selecciona una fecha</p>
             <p className="mt-3 text-sm leading-relaxed text-[#4b505a]">
-              Revisa horarios y ubicaciones para planificar tu participacion en cada evento.
+              Los dias con actividades muestran un indicador. Hace clic para ver el detalle de cada evento.
             </p>
           </RevealOnScroll>
           <RevealOnScroll variant="slow" delayMs={120} className="lg:col-span-7">
-            <div className="divide-y divide-[#ddd7ca] rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm">
-              {AGENDA.map((item) => (
-                <article key={`${item.day}-${item.title}`} className="grid gap-4 p-4 sm:grid-cols-[70px_1fr] sm:items-center sm:p-5">
-                  <div className="inline-flex w-fit flex-col items-center rounded-xl border border-sky-100 bg-sky-50 px-3 py-2 text-sky-900">
-                    <span className="text-lg font-bold leading-none">{item.day}</span>
-                    <span className="text-[11px] font-bold uppercase tracking-[0.14em]">{item.month}</span>
-                  </div>
-                  <div>
-                    <h3 className="text-base font-semibold text-[#171b22]">{item.title}</h3>
-                    <p className="mt-1 text-sm text-[#4b505a]">
-                      {item.time} · {item.zone}
-                    </p>
-                  </div>
-                </article>
-              ))}
-            </div>
+            <EventsInteractiveCalendar events={EVENTS} focusDate={calendarFocusDate} />
           </RevealOnScroll>
         </section>
 
