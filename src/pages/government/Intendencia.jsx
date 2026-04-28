@@ -52,42 +52,14 @@ export function Intendencia() {
           </Link>
         </p>
 
-        <RevealOnScroll variant="slow">
-          <header className="mt-5 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm sm:p-8 lg:p-10">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-sky-700">
-              {content.heroEyebrow}
-            </p>
-            <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
-              {content.heroTitle}
-            </h1>
-            <p className="mt-4 max-w-4xl text-sm leading-relaxed text-slate-600 sm:text-base">
-              {content.heroSubtitle}
-            </p>
-            <div className="mt-6 flex flex-wrap gap-2">
-              <Link
-                to={ROUTES.areas}
-                className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-800 transition hover:border-slate-300 hover:bg-white"
-              >
-                Ver todas las áreas
-              </Link>
-              <a
-                href="#contacto-intendencia"
-                className="inline-flex min-h-11 items-center justify-center rounded-xl bg-sky-700 px-4 text-sm font-semibold text-white transition hover:bg-sky-800"
-              >
-                Contactar Intendencia
-              </a>
-            </div>
-          </header>
-        </RevealOnScroll>
-
-        <div className="mt-6 grid gap-6 lg:grid-cols-12">
+        <div className="mt-5 grid gap-6 lg:grid-cols-12">
           <RevealOnScroll variant="newsCardSlow" delayMs={80} className="lg:col-span-8">
             <section
               id="intendencia"
               className="h-full rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6"
             >
               <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-                Despacho del Intendente
+                Intendencia
               </h2>
               <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-start">
                 {loadingContent ? (
@@ -115,6 +87,20 @@ export function Intendencia() {
                   <p className="mt-4 text-sm leading-relaxed text-slate-700 sm:text-base">
                     {content.mayorBio}
                   </p>
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    <Link
+                      to={ROUTES.areas}
+                      className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-800 transition hover:border-slate-300 hover:bg-white"
+                    >
+                      Ver todas las áreas
+                    </Link>
+                    <a
+                      href="#contacto-intendencia"
+                      className="inline-flex min-h-11 items-center justify-center rounded-xl bg-sky-700 px-4 text-sm font-semibold text-white transition hover:bg-sky-800"
+                    >
+                      Contactar Intendencia
+                    </a>
+                  </div>
                 </div>
               </div>
             </section>
