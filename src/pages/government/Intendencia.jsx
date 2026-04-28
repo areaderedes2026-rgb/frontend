@@ -69,10 +69,10 @@ export function Intendencia() {
         </RevealOnScroll>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-12">
-          <RevealOnScroll variant="newsCardSlow" delayMs={80}>
+          <RevealOnScroll variant="newsCardSlow" delayMs={80} className="lg:col-span-8">
             <section
               id="intendencia"
-              className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6 lg:col-span-8"
+              className="h-full rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6"
             >
               <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
                 Despacho del Intendente
@@ -101,10 +101,10 @@ export function Intendencia() {
             </section>
           </RevealOnScroll>
 
-          <RevealOnScroll variant="slow" delayMs={120}>
+          <RevealOnScroll variant="slow" delayMs={120} className="lg:col-span-4">
             <aside
               id="contacto-intendencia"
-              className="rounded-3xl border border-slate-200/80 bg-slate-900 p-5 text-slate-100 shadow-sm sm:p-6 lg:col-span-4"
+              className="h-full rounded-3xl border border-slate-200/80 bg-slate-900 p-5 text-slate-100 shadow-sm sm:p-6"
             >
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-300">
                 Contacto directo
