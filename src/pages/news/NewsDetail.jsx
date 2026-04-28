@@ -12,6 +12,56 @@ export function NewsDetail() {
   return <NewsDetailContent key={id} id={id} />
 }
 
+function FacebookIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden className="h-3.5 w-3.5">
+      <path
+        d="M14.8 8.1h2.1V4.7h-2.4c-3.3 0-4.8 1.9-4.8 4.9v2H7.5v3.3h2.2v4.4h3.6v-4.4h2.6l.4-3.3h-3V10c0-1.1.3-1.9 1.5-1.9Z"
+        fill="currentColor"
+      />
+    </svg>
+  )
+}
+
+function WhatsAppIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden className="h-3.5 w-3.5">
+      <path
+        d="M20 11.8a8 8 0 1 0-14.4 4.7L4.5 20l3.6-1.1a8 8 0 0 0 3.9 1 8 8 0 0 0 8-8.1Z"
+        fill="currentColor"
+      />
+      <path
+        d="M9.2 8.9c.2-.5.4-.5.7-.5h.6c.2 0 .4 0 .5.4l.6 1.5c.1.2 0 .4-.1.6l-.4.5c-.1.1-.2.3 0 .6.3.6.9 1.4 2 2 .9.5 1.2.4 1.5.3l.7-.8c.2-.2.4-.2.6-.1l1.4.7c.2.1.4.2.4.4s0 .8-.3 1.2c-.3.4-1 .9-2.2.7-1.2-.2-2.6-.9-3.8-2s-1.9-2.6-2.1-3.8c-.2-1.3.4-1.9.7-2.2Z"
+        fill="#0b1220"
+      />
+    </svg>
+  )
+}
+
+function InstagramIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden className="h-3.5 w-3.5">
+      <rect x="3.5" y="3.5" width="17" height="17" rx="5" stroke="currentColor" strokeWidth="1.8" />
+      <circle cx="12" cy="12" r="3.8" stroke="currentColor" strokeWidth="1.8" />
+      <circle cx="17.3" cy="6.7" r="1.1" fill="currentColor" />
+    </svg>
+  )
+}
+
+function ShareIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden className="h-3.5 w-3.5">
+      <path
+        d="M7 12a3 3 0 1 0-2.6-4.5l8.3 4.1A3 3 0 0 0 18 9a3 3 0 1 0-2.6 4.5l-8.3 4.1A3 3 0 1 0 7 12Z"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
 function NewsDetailContent({ id }) {
   const [item, setItem] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -20,6 +70,7 @@ function NewsDetailContent({ id }) {
   const [related, setRelated] = useState([])
   const [copied, setCopied] = useState(false)
   const [shareHint, setShareHint] = useState('')
+  const [nativeShareAvailable, setNativeShareAvailable] = useState(false)
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
@@ -91,6 +142,11 @@ function NewsDetailContent({ id }) {
     return () => clearTimeout(t)
   }, [shareHint])
 
+  useEffect(() => {
+    if (typeof navigator === 'undefined') return
+    setNativeShareAvailable(typeof navigator.share === 'function')
+  }, [])
+
   async function handleCopyLink() {
     const url = window.location.href
     try {
@@ -111,6 +167,20 @@ function NewsDetailContent({ id }) {
       setShareHint('No se pudo copiar el enlace.')
     }
     window.open('https://www.instagram.com/', '_blank', 'noopener,noreferrer')
+  }
+
+  async function handleNativeShare(newsTitle) {
+    if (typeof navigator === 'undefined' || typeof navigator.share !== 'function') return
+    const url = window.location.href
+    try {
+      await navigator.share({
+        title: newsTitle,
+        text: newsTitle,
+        url,
+      })
+    } catch {
+      // Cancelado por usuario o no soportado por el navegador.
+    }
   }
 
   function readingMinutes(news) {
@@ -247,6 +317,7 @@ function NewsDetailContent({ id }) {
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 rounded-full border border-blue-500/40 bg-linear-to-br from-blue-600/90 via-blue-700/90 to-indigo-800/90 px-3 py-1.5 text-xs font-semibold text-white transition hover:-translate-y-0.5"
                 >
+                  <FacebookIcon />
                   Facebook
                 </a>
                 <a
@@ -255,6 +326,7 @@ function NewsDetailContent({ id }) {
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 rounded-full border border-emerald-500/40 bg-linear-to-br from-emerald-600/90 via-emerald-700/90 to-emerald-800/90 px-3 py-1.5 text-xs font-semibold text-white transition hover:-translate-y-0.5"
                 >
+                  <WhatsAppIcon />
                   WhatsApp
                 </a>
                 <button
@@ -262,8 +334,19 @@ function NewsDetailContent({ id }) {
                   onClick={() => handleInstagramShare(item.title)}
                   className="inline-flex items-center gap-2 rounded-full border border-fuchsia-500/40 bg-linear-to-br from-fuchsia-600/90 via-pink-600/90 to-violet-700/90 px-3 py-1.5 text-xs font-semibold text-white transition hover:-translate-y-0.5"
                 >
+                  <InstagramIcon />
                   Instagram
                 </button>
+                {nativeShareAvailable ? (
+                  <button
+                    type="button"
+                    onClick={() => handleNativeShare(item.title)}
+                    className="inline-flex items-center gap-2 rounded-full border border-sky-500/40 bg-linear-to-br from-sky-600/90 via-sky-700/90 to-cyan-800/90 px-3 py-1.5 text-xs font-semibold text-white transition hover:-translate-y-0.5"
+                  >
+                    <ShareIcon />
+                    Compartir
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   onClick={handleCopyLink}
