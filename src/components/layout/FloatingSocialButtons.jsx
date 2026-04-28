@@ -29,6 +29,18 @@ function FacebookIcon() {
   )
 }
 
+function YouTubeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden className="h-4.5 w-4.5">
+      <path
+        d="M21.2 8.2a2.9 2.9 0 0 0-2-2.1C17.4 5.6 12 5.6 12 5.6s-5.4 0-7.2.5a2.9 2.9 0 0 0-2 2.1c-.5 1.8-.5 3.8-.5 3.8s0 2 .5 3.8a2.9 2.9 0 0 0 2 2.1c1.8.5 7.2.5 7.2.5s5.4 0 7.2-.5a2.9 2.9 0 0 0 2-2.1c.5-1.8.5-3.8.5-3.8s0-2-.5-3.8Z"
+        fill="currentColor"
+      />
+      <path d="m10.4 14.6 4.5-2.6-4.5-2.6v5.2Z" fill="#0b1220" />
+    </svg>
+  )
+}
+
 export function FloatingSocialButtons() {
   return (
     <div className="pointer-events-none fixed bottom-4 right-3 z-40 flex flex-col gap-2 rounded-2xl border border-slate-700/60 bg-slate-950/70 p-2 backdrop-blur-sm sm:bottom-5 sm:right-5">
@@ -49,6 +61,15 @@ export function FloatingSocialButtons() {
         className="pointer-events-auto inline-flex h-11 w-11 items-center justify-center rounded-xl border border-blue-500/40 bg-linear-to-br from-blue-600/85 via-blue-700/85 to-indigo-800/85 text-white shadow-md shadow-black/30 transition-all duration-200 hover:-translate-y-0.5 hover:scale-[1.03] hover:from-blue-500 hover:to-indigo-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-400/50"
       >
         <FacebookIcon />
+      </a>
+      <a
+        href={SOCIAL_LINKS.youtube}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="YouTube de la municipalidad"
+        className="pointer-events-auto inline-flex h-11 w-11 items-center justify-center rounded-xl border border-red-500/40 bg-linear-to-br from-red-600/85 via-rose-600/85 to-red-700/85 text-white shadow-md shadow-black/30 transition-all duration-200 hover:-translate-y-0.5 hover:scale-[1.03] hover:from-red-500 hover:to-red-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-400/50"
+      >
+        <YouTubeIcon />
       </a>
     </div>
   )

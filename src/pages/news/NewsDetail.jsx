@@ -19,6 +19,7 @@ function NewsDetailContent({ id }) {
   const [lightboxIndex, setLightboxIndex] = useState(null)
   const [related, setRelated] = useState([])
   const [copied, setCopied] = useState(false)
+  const [shareHint, setShareHint] = useState('')
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
@@ -84,6 +85,12 @@ function NewsDetailContent({ id }) {
     return () => clearTimeout(t)
   }, [copied])
 
+  useEffect(() => {
+    if (!shareHint) return
+    const t = setTimeout(() => setShareHint(''), 2200)
+    return () => clearTimeout(t)
+  }, [shareHint])
+
   async function handleCopyLink() {
     const url = window.location.href
     try {
@@ -92,6 +99,18 @@ function NewsDetailContent({ id }) {
     } catch {
       setCopied(false)
     }
+  }
+
+  async function handleInstagramShare(newsTitle) {
+    const url = window.location.href
+    const text = `${newsTitle}\n${url}`
+    try {
+      await navigator.clipboard.writeText(text)
+      setShareHint('Enlace copiado. Pegalo en Instagram.')
+    } catch {
+      setShareHint('No se pudo copiar el enlace.')
+    }
+    window.open('https://www.instagram.com/', '_blank', 'noopener,noreferrer')
   }
 
   function readingMinutes(news) {
@@ -179,6 +198,10 @@ function NewsDetailContent({ id }) {
     .filter(Boolean)
   const leadParagraph = paragraphs[0] || ''
   const bodyParagraphs = paragraphs.slice(1)
+  const currentUrl = typeof window !== 'undefined' ? window.location.href : ''
+  const shareText = `${item.title} - ${currentUrl}`.trim()
+  const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}`
+  const whatsappShareUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`
 
   return (
     <article className="news-editorial pb-12">
@@ -217,13 +240,41 @@ function NewsDetailContent({ id }) {
               <p className="news-editorial-deck-lg mt-4 text-slate-600">
                 {item.summary}
               </p>
-              <button
-                type="button"
-                onClick={handleCopyLink}
-                className="mt-5 inline-flex items-center gap-2 rounded-full border border-[#2a313b] bg-[#171b22] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#222831]"
-              >
-                {copied ? 'Enlace copiado' : 'Copiar enlace'}
-              </button>
+              <div className="mt-5 flex flex-wrap items-center gap-2.5">
+                <a
+                  href={facebookShareUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full border border-blue-500/40 bg-linear-to-br from-blue-600/90 via-blue-700/90 to-indigo-800/90 px-3 py-1.5 text-xs font-semibold text-white transition hover:-translate-y-0.5"
+                >
+                  Facebook
+                </a>
+                <a
+                  href={whatsappShareUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full border border-emerald-500/40 bg-linear-to-br from-emerald-600/90 via-emerald-700/90 to-emerald-800/90 px-3 py-1.5 text-xs font-semibold text-white transition hover:-translate-y-0.5"
+                >
+                  WhatsApp
+                </a>
+                <button
+                  type="button"
+                  onClick={() => handleInstagramShare(item.title)}
+                  className="inline-flex items-center gap-2 rounded-full border border-fuchsia-500/40 bg-linear-to-br from-fuchsia-600/90 via-pink-600/90 to-violet-700/90 px-3 py-1.5 text-xs font-semibold text-white transition hover:-translate-y-0.5"
+                >
+                  Instagram
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopyLink}
+                  className="inline-flex items-center gap-2 rounded-full border border-[#2a313b] bg-[#171b22] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#222831]"
+                >
+                  {copied ? 'Enlace copiado' : 'Copiar enlace'}
+                </button>
+              </div>
+              {shareHint ? (
+                <p className="mt-2 text-xs font-medium text-sky-800">{shareHint}</p>
+              ) : null}
               </header>
             </RevealOnScroll>
 

@@ -33,4 +33,5 @@ export const ROUTES = {
 export const SOCIAL_LINKS = {
   instagram: 'https://www.instagram.com/municipalidaddetrancas/',
   facebook: 'https://www.facebook.com/profile.php?id=100050317032987',
+  youtube: 'https://www.youtube.com/@canal6municipal-trancas888',
 }
