@@ -5,6 +5,10 @@ function namedLazy(loader, exportName) {
 export const adminRouteLoaders = {
   dashboard: namedLazy(() => import('../pages/admin/Dashboard.jsx'), 'Dashboard'),
   news: namedLazy(() => import('../pages/admin/AdminNews.jsx'), 'AdminNews'),
+  newsStats: namedLazy(
+    () => import('../pages/admin/AdminNewsStats.jsx'),
+    'AdminNewsStats',
+  ),
   areas: namedLazy(() => import('../pages/admin/AdminAreaProfiles.jsx'), 'AdminAreaProfiles'),
   history: namedLazy(() => import('../pages/admin/AdminHistory.jsx'), 'AdminHistory'),
   citizenAttention: namedLazy(

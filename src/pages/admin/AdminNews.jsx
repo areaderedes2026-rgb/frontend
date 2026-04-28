@@ -4,7 +4,7 @@ import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
 import { Button } from '../../components/ui/Button.jsx'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
 import { useNewsList } from '../../hooks/useNewsList.js'
-import { deleteNews, fetchNewsStatsOverview } from '../../services/newsService.js'
+import { deleteNews } from '../../services/newsService.js'
 import { formatDate } from '../../utils/formatDate.js'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
@@ -89,7 +89,6 @@ export function AdminNews() {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [page, setPage] = useState(1)
-  const [overview, setOverview] = useState(null)
 
   useEffect(() => {
     const msg = location.state?.flash
@@ -102,20 +101,6 @@ export function AdminNews() {
   useEffect(() => {
     setPage(1)
   }, [search, categoryFilter, dateFrom, dateTo])
-
-  useEffect(() => {
-    let cancelled = false
-    fetchNewsStatsOverview()
-      .then((data) => {
-        if (!cancelled) setOverview(data)
-      })
-      .catch(() => {
-        if (!cancelled) setOverview(null)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [items.length])
 
   const categoryOptions = useMemo(() => {
     const set = new Set(items.map((n) => n.category || 'General'))
@@ -253,12 +238,20 @@ export function AdminNews() {
         maxWidthClass="max-w-6xl"
         variant="plain"
         actions={
-          <Link
-            to={ROUTES.adminNewsCreate}
-            className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-sky-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-800 sm:w-auto"
-          >
-            Nueva noticia
-          </Link>
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+            <Link
+              to={ROUTES.adminNewsStats}
+              className="inline-flex min-h-11 items-center justify-center rounded-xl border border-violet-200 bg-violet-50 px-5 py-2.5 text-sm font-semibold text-violet-800 shadow-sm transition hover:border-violet-300 hover:bg-violet-100"
+            >
+              Estadísticas
+            </Link>
+            <Link
+              to={ROUTES.adminNewsCreate}
+              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-sky-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-800"
+            >
+              Nueva noticia
+            </Link>
+          </div>
         }
       >
         {flash ? (
@@ -680,82 +673,6 @@ export function AdminNews() {
                     ) : null}
                   </nav>
 
-                  <section className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6">
-                    <h3 className="text-base font-semibold text-slate-900">
-                      Estadísticas de noticias
-                    </h3>
-                    <p className="mt-1 text-sm text-slate-600">
-                      Resumen global de visualizaciones, compartidas y rendimiento por red.
-                    </p>
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                      <article className="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
-                        <p className="text-xs uppercase tracking-wide text-slate-500">Visualizaciones</p>
-                        <p className="mt-1 text-2xl font-bold tabular-nums text-slate-900">
-                          {Number(overview?.totals?.total_views || 0)}
-                        </p>
-                      </article>
-                      <article className="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
-                        <p className="text-xs uppercase tracking-wide text-slate-500">Compartidas</p>
-                        <p className="mt-1 text-2xl font-bold tabular-nums text-slate-900">
-                          {Number(overview?.totals?.total_shares || 0)}
-                        </p>
-                      </article>
-                      <article className="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
-                        <p className="text-xs uppercase tracking-wide text-slate-500">Ratio share/vista</p>
-                        <p className="mt-1 text-2xl font-bold tabular-nums text-slate-900">
-                          {Number(overview?.totals?.total_views || 0) > 0
-                            ? `${Math.round((Number(overview?.totals?.total_shares || 0) / Number(overview?.totals?.total_views || 1)) * 100)}%`
-                            : '0%'}
-                        </p>
-                      </article>
-                      <article className="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
-                        <p className="text-xs uppercase tracking-wide text-slate-500">Promedio vistas/noticia</p>
-                        <p className="mt-1 text-2xl font-bold tabular-nums text-slate-900">
-                          {Number(overview?.totals?.total_news || 0) > 0
-                            ? Math.round(
-                                Number(overview?.totals?.total_views || 0) /
-                                  Number(overview?.totals?.total_news || 1),
-                              )
-                            : 0}
-                        </p>
-                      </article>
-                    </div>
-                    <div className="mt-4 grid gap-3 lg:grid-cols-2">
-                      <article className="rounded-xl border border-slate-200 p-4">
-                        <p className="text-sm font-semibold text-slate-800">Por red social</p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          Facebook: {Number(overview?.totals?.total_facebook || 0)} · WhatsApp:{' '}
-                          {Number(overview?.totals?.total_whatsapp || 0)} · Instagram:{' '}
-                          {Number(overview?.totals?.total_instagram || 0)} · Compartir:{' '}
-                          {Number(overview?.totals?.total_native || 0)} · Copiar link:{' '}
-                          {Number(overview?.totals?.total_copy_link || 0)}
-                        </p>
-                      </article>
-                      <article className="rounded-xl border border-slate-200 p-4">
-                        <p className="text-sm font-semibold text-slate-800">Top noticias</p>
-                        <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                          Más vistas
-                        </p>
-                        <ul className="mt-1 space-y-1 text-sm text-slate-700">
-                          {(overview?.topViews || []).slice(0, 3).map((row) => (
-                            <li key={`v-${row.id}`} className="truncate">
-                              {row.title} ({Number(row.views_count || 0)})
-                            </li>
-                          ))}
-                        </ul>
-                        <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                          Más compartidas
-                        </p>
-                        <ul className="mt-1 space-y-1 text-sm text-slate-700">
-                          {(overview?.topShares || []).slice(0, 3).map((row) => (
-                            <li key={`s-${row.id}`} className="truncate">
-                              {row.title} ({Number(row.shares_count || 0)})
-                            </li>
-                          ))}
-                        </ul>
-                      </article>
-                    </div>
-                  </section>
                 </>
               )}
             </div>

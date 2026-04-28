@@ -14,6 +14,7 @@ import { publicRouteLoaders } from './publicRoutePreload.js'
 
 const Dashboard = lazy(adminRouteLoaders.dashboard)
 const AdminNews = lazy(adminRouteLoaders.news)
+const AdminNewsStats = lazy(adminRouteLoaders.newsStats)
 const AdminAreaProfiles = lazy(adminRouteLoaders.areas)
 const AdminHistory = lazy(adminRouteLoaders.history)
 const AdminCitizenAttention = lazy(adminRouteLoaders.citizenAttention)
@@ -70,6 +71,14 @@ export function AppRouter() {
             element={
               <Suspense fallback={<AdminRouteFallback />}>
                 <AdminNews />
+              </Suspense>
+            }
+          />
+          <Route
+            path="news/stats"
+            element={
+              <Suspense fallback={<AdminRouteFallback />}>
+                <AdminNewsStats />
               </Suspense>
             }
           />

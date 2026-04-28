@@ -18,6 +18,7 @@ export const ROUTES = {
   adminLogin: '/admin/login',
   adminDashboard: '/admin/dashboard',
   adminNews: '/admin/news',
+  adminNewsStats: '/admin/news/stats',
   adminAreas: '/admin/areas',
   adminHistory: '/admin/history',
   adminCitizenAttention: '/admin/citizen-attention',
