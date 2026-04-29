@@ -9,6 +9,11 @@ import {
 import { fetchIntendenciaContent } from '../../services/intendenciaService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
 import { ROUTES } from '../../utils/constants.js'
+import {
+  HydrationDarkPanelRows,
+  HydrationIntendenciaBioLines,
+  HydrationIntendenciaPortrait,
+} from '../../components/skeleton/PageHydrationSkeleton.jsx'
 
 export function Intendencia() {
   const apiEnabled = isApiConfigured()
@@ -69,10 +74,7 @@ export function Intendencia() {
               </h2>
               <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-start">
                 {loadingContent ? (
-                  <div
-                    className="h-120 w-full rounded-2xl bg-slate-100 ring-1 ring-slate-200/80 sm:w-52 lg:w-56"
-                    aria-hidden
-                  />
+                  <HydrationIntendenciaPortrait />
                 ) : (
                   <img
                     src={content.mayorPhotoUrl || content.heroImageUrl || '/favicon.png?v=2'}
@@ -85,12 +87,7 @@ export function Intendencia() {
                     Intendente
                   </p>
                   {loadingContent ? (
-                    <div className="mt-2 animate-pulse space-y-3">
-                      <div className="h-8 w-56 rounded bg-slate-200" />
-                      <div className="h-4 w-44 rounded bg-slate-200" />
-                      <div className="h-4 w-full rounded bg-slate-100" />
-                      <div className="h-4 w-11/12 rounded bg-slate-100" />
-                    </div>
+                    <HydrationIntendenciaBioLines />
                   ) : (
                     <>
                       <h3 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">
@@ -132,11 +129,7 @@ export function Intendencia() {
                 Contacto directo
               </p>
               {loadingContent ? (
-                <div className="mt-4 animate-pulse space-y-2">
-                  <div className="h-10 rounded-xl bg-white/10" />
-                  <div className="h-10 rounded-xl bg-white/10" />
-                  <div className="h-10 rounded-xl bg-white/10" />
-                </div>
+                <HydrationDarkPanelRows rows={3} className="mt-4" />
               ) : (
                 <div className="mt-4 space-y-2 text-sm leading-relaxed">
                   <p className="rounded-xl border border-white/15 bg-white/5 px-3 py-2">

@@ -13,6 +13,11 @@ import {
 import { createCitizenInquiry, fetchCitizenAttentionContent } from '../services/citizenAttentionService.js'
 import { isApiConfigured } from '../utils/apiConfig.js'
 import { ROUTES } from '../utils/constants.js'
+import {
+  HydrationCitizenChannelGrid,
+  HydrationHeroDarkBackdrop,
+  HydrationHeroLightTextBlock,
+} from '../components/skeleton/PageHydrationSkeleton.jsx'
 
 function ChannelIcon({ name, className = 'h-6 w-6' }) {
   const common = { className, fill: 'none', viewBox: '0 0 24 24', strokeWidth: 1.65, stroke: 'currentColor' }
@@ -124,9 +129,10 @@ const EMPTY_FORM = {
 }
 
 export function AtencionCiudadano() {
+  const apiEnabled = isApiConfigured()
   const formId = useId()
   const [content, setContent] = useState(DEFAULT_CITIZEN_ATTENTION_CONTENT)
-  const [loadingContent, setLoadingContent] = useState(true)
+  const [loadingContent, setLoadingContent] = useState(apiEnabled)
   const [loadError, setLoadError] = useState('')
   const [form, setForm] = useState(EMPTY_FORM)
   const [formError, setFormError] = useState('')
@@ -137,6 +143,10 @@ export function AtencionCiudadano() {
   useEffect(() => {
     let cancelled = false
     async function load() {
+      if (!apiEnabled) {
+        setLoadingContent(false)
+        return
+      }
       setLoadingContent(true)
       setLoadError('')
       try {
@@ -159,7 +169,8 @@ export function AtencionCiudadano() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [apiEnabled])
+  const showContentSkeleton = apiEnabled && loadingContent
 
   function updateField(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }))
@@ -231,28 +242,37 @@ export function AtencionCiudadano() {
         <div className="relative min-h-[52dvh] overflow-hidden border-b border-white/10 bg-[#171b22] sm:min-h-[56dvh] lg:min-h-[58dvh]">
           <div className="relative min-h-[52dvh] sm:min-h-[56dvh] lg:min-h-[58dvh]">
             <img
-              src={content.heroImageUrl}
+              src={showContentSkeleton ? '' : content.heroImageUrl}
               alt=""
               width={1920}
               height={1080}
               fetchPriority="high"
               decoding="async"
-              className="absolute inset-0 h-full w-full object-cover object-[center_30%]"
+              className={`absolute inset-0 h-full w-full object-cover object-[center_30%] ${
+                showContentSkeleton ? 'opacity-0' : 'opacity-100'
+              }`}
             />
+            {showContentSkeleton ? <HydrationHeroDarkBackdrop /> : null}
             <div
               className="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/88 to-slate-900/25"
               aria-hidden
             />
             <Container className="relative z-10 flex min-h-[52dvh] flex-col justify-center pt-[calc(var(--navbar-h,5rem)+1rem)] pb-8 sm:min-h-[56dvh] sm:pt-[calc(var(--navbar-h,5rem)+1.5rem)] sm:pb-10 lg:min-h-[58dvh] lg:pb-12">
-              <p className="hero-enter-eyebrow text-[11px] font-bold uppercase tracking-[0.28em] text-sky-200 sm:text-xs">
-                {content.heroEyebrow}
-              </p>
-              <h1 className="hero-enter-title mt-2 max-w-3xl font-serif text-3xl font-bold tracking-tight text-white drop-shadow-sm sm:text-4xl lg:text-5xl">
-                {content.heroTitle}
-              </h1>
-              <p className="hero-enter-subtitle mt-3 max-w-2xl text-sm leading-relaxed text-slate-100/95 sm:text-base">
-                {content.heroSubtitle}
-              </p>
+              {showContentSkeleton ? (
+                <HydrationHeroLightTextBlock />
+              ) : (
+                <>
+                  <p className="hero-enter-eyebrow text-[11px] font-bold uppercase tracking-[0.28em] text-sky-200 sm:text-xs">
+                    {content.heroEyebrow}
+                  </p>
+                  <h1 className="hero-enter-title mt-2 max-w-3xl font-serif text-3xl font-bold tracking-tight text-white drop-shadow-sm sm:text-4xl lg:text-5xl">
+                    {content.heroTitle}
+                  </h1>
+                  <p className="hero-enter-subtitle mt-3 max-w-2xl text-sm leading-relaxed text-slate-100/95 sm:text-base">
+                    {content.heroSubtitle}
+                  </p>
+                </>
+              )}
               <div className="hero-enter-actions mt-6 flex flex-wrap gap-3">
                 <a
                   href="#consulta-ciudadano"
@@ -273,23 +293,27 @@ export function AtencionCiudadano() {
 
         <Container className="relative">
           <RevealOnScroll variant="slow">
-            <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
-              {content.channels.map((ch) => (
-                <article
-                  key={ch.id}
-                  className="group relative flex flex-col overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-5 shadow-sm ring-1 ring-[#1a1d24]/5 transition duration-300 hover:-translate-y-1 hover:border-sky-200/80 hover:shadow-lg hover:shadow-sky-500/10 sm:p-6"
-                >
-                  <div
-                    className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-[#2a313b] bg-[#171b22] text-sky-200 shadow-md transition group-hover:scale-105"
+            {showContentSkeleton ? (
+              <HydrationCitizenChannelGrid className="mt-10" />
+            ) : (
+              <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
+                {content.channels.map((ch) => (
+                  <article
+                    key={ch.id}
+                    className="group relative flex flex-col overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-5 shadow-sm ring-1 ring-[#1a1d24]/5 transition duration-300 hover:-translate-y-1 hover:border-sky-200/80 hover:shadow-lg hover:shadow-sky-500/10 sm:p-6"
                   >
-                    <ChannelIcon name={ch.icon} />
-                  </div>
-                  <h2 className="text-base font-bold text-[#171b22]">{ch.title}</h2>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-sky-700">{ch.subtitle}</p>
-                  <p className="mt-2 flex-1 text-sm leading-relaxed text-[#4b505a]">{ch.description}</p>
-                </article>
-              ))}
-            </div>
+                    <div
+                      className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-[#2a313b] bg-[#171b22] text-sky-200 shadow-md transition group-hover:scale-105"
+                    >
+                      <ChannelIcon name={ch.icon} />
+                    </div>
+                    <h2 className="text-base font-bold text-[#171b22]">{ch.title}</h2>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-sky-700">{ch.subtitle}</p>
+                    <p className="mt-2 flex-1 text-sm leading-relaxed text-[#4b505a]">{ch.description}</p>
+                  </article>
+                ))}
+              </div>
+            )}
           </RevealOnScroll>
 
           <RevealOnScroll variant="slow" delayMs={60} className="mt-12 lg:mt-16">

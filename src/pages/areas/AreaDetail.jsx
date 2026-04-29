@@ -6,6 +6,12 @@ import { getAreaProfileBySlug, mergeAreaProfile } from '../../data/areaProfiles.
 import { fetchAreaProfile } from '../../services/areaProfilesService.js'
 import { fetchAreaPublicBySlug } from '../../services/areasService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
+import {
+  HydrationAreaCoverBand,
+  HydrationDirectorCopyBlock,
+  HydrationDirectorPhoto,
+  HydrationHeroLightTextBlock,
+} from '../../components/skeleton/PageHydrationSkeleton.jsx'
 
 export function AreaDetail() {
   const { slug } = useParams()
@@ -124,7 +130,7 @@ export function AreaDetail() {
         <article className="mt-5 rounded-3xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm">
           <header className="relative overflow-hidden rounded-t-3xl">
             {showHeaderSkeleton ? (
-              <div className="h-56 w-full animate-pulse bg-slate-200 sm:h-64 lg:h-72" />
+              <HydrationAreaCoverBand />
             ) : (
               <img
                 src={area.coverImage}
@@ -135,12 +141,7 @@ export function AreaDetail() {
             <div className="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-900/45 to-slate-900/10" />
             <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8 lg:p-10">
               {showHeaderSkeleton ? (
-                <div className="animate-pulse space-y-3">
-                  <div className="h-3 w-36 rounded bg-white/40" />
-                  <div className="h-10 w-72 rounded bg-white/45" />
-                  <div className="h-4 w-full max-w-3xl rounded bg-white/35" />
-                  <div className="h-4 w-10/12 max-w-3xl rounded bg-white/30" />
-                </div>
+                <HydrationHeroLightTextBlock />
               ) : (
                 <>
                   <p className="text-xs font-bold uppercase tracking-[0.2em] text-sky-200">
@@ -200,24 +201,14 @@ export function AreaDetail() {
                       className="h-56 w-full rounded-2xl object-cover ring-1 ring-slate-200/80 sm:h-full"
                     />
                   ) : (
-                    <div className="h-56 w-full animate-pulse rounded-2xl bg-slate-100 ring-1 ring-slate-200/80 sm:h-full" />
+                    <HydrationDirectorPhoto />
                   )}
                   <div>
                     <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-700">
                       Responsable
                     </p>
                     {showDirectorSkeleton ? (
-                      <div className="mt-2 animate-pulse space-y-3">
-                        <div className="h-8 w-56 rounded bg-slate-200" />
-                        <div className="h-4 w-44 rounded bg-slate-200" />
-                        <div className="h-4 w-full rounded bg-slate-100" />
-                        <div className="h-4 w-11/12 rounded bg-slate-100" />
-                        <div className="mt-5 grid gap-2 sm:grid-cols-2">
-                          <div className="h-10 rounded-xl bg-slate-100" />
-                          <div className="h-10 rounded-xl bg-slate-100" />
-                          <div className="h-10 rounded-xl bg-slate-100 sm:col-span-2" />
-                        </div>
-                      </div>
+                      <HydrationDirectorCopyBlock />
                     ) : (
                       <>
                         <h3 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">
