@@ -4,6 +4,7 @@ import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
 import { SingleImageUploadField } from '../../components/admin/SingleImageUploadField.jsx'
 import { Button } from '../../components/ui/Button.jsx'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
+import { Modal } from '../../components/ui/Modal.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
 import {
   formErrorClass,
@@ -18,6 +19,7 @@ import {
   createArea,
   deleteArea,
   fetchAreasAdmin,
+  updateArea,
 } from '../../services/areasService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
 
@@ -103,8 +105,12 @@ export function AdminAreaProfiles() {
     coverImage: '',
   })
   const [creatingArea, setCreatingArea] = useState(false)
+  const [createModalOpen, setCreateModalOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deletingAreaId, setDeletingAreaId] = useState(null)
+  const [areaMeta, setAreaMeta] = useState({ title: '', coverImage: '' })
+  const [searchQuery, setSearchQuery] = useState('')
+  const [page, setPage] = useState(1)
 
   const activeTab = useMemo(() => {
     const t = searchParams.get('tab')
@@ -132,6 +138,18 @@ export function AdminAreaProfiles() {
     () => areas.find((a) => a.slug === selectedSlug) || null,
     [areas, selectedSlug],
   )
+  const PAGE_SIZE = 8
+  const filteredAreas = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase()
+    if (!q) return areas
+    return areas.filter((area) => String(area.title || '').toLowerCase().includes(q))
+  }, [areas, searchQuery])
+  const totalPages = Math.max(1, Math.ceil(filteredAreas.length / PAGE_SIZE))
+  const safePage = Math.min(Math.max(1, page), totalPages)
+  const paginatedAreas = useMemo(() => {
+    const start = (safePage - 1) * PAGE_SIZE
+    return filteredAreas.slice(start, start + PAGE_SIZE)
+  }, [filteredAreas, safePage])
 
   const loadAreas = useCallback(async () => {
     setCatalogError('')
@@ -196,6 +214,13 @@ export function AdminAreaProfiles() {
     }
   }, [selectedSlug, selectedArea])
 
+  useEffect(() => {
+    setAreaMeta({
+      title: selectedArea?.title || '',
+      coverImage: selectedArea?.coverImage || '',
+    })
+  }, [selectedArea])
+
   function setDirectorField(field, value) {
     setForm((prev) => ({ ...prev, director: { ...prev.director, [field]: value } }))
   }
@@ -239,9 +264,15 @@ export function AdminAreaProfiles() {
     }
     setSaving(true)
     try {
+      if (!selectedArea?.id) {
+        throw new Error('No hay un área seleccionada para editar.')
+      }
+      await updateArea(selectedArea.id, {
+        title: areaMeta.title.trim(),
+        coverImage: areaMeta.coverImage.trim(),
+      })
       const payload = {
         heroTag: form.heroTag.trim(),
-        mission: form.mission.trim(),
         director: {
           name: form.director.name.trim(),
           role: form.director.role.trim(),
@@ -263,10 +294,14 @@ export function AdminAreaProfiles() {
         },
       }
       const saved = await updateAreaProfile(selectedSlug, payload)
+      await loadAreas()
       const base = getAreaProfileBySlug(selectedSlug)
       const merged = saved && base ? mergeAreaProfile(base, saved) : base
       if (merged) setForm(mapProfileToForm(merged))
-      setToast({ type: 'success', message: 'Perfil del área actualizado correctamente.' })
+      setToast({
+        type: 'success',
+        message: 'Área y perfil actualizados correctamente.',
+      })
     } catch (e) {
       setError(e.message || 'No se pudo guardar.')
       setToast({ type: 'error', message: e.message || 'No se pudo guardar.' })
@@ -303,6 +338,7 @@ export function AdminAreaProfiles() {
       if (created?.slug) setSelectedSlug(created.slug)
       if (created?.slug) setTab('edit')
       setNewArea({ title: '', slug: '', description: '', coverImage: '' })
+      setCreateModalOpen(false)
       setToast({ type: 'success', message: 'Área creada correctamente.' })
     } catch (e) {
       setToast({ type: 'error', message: e.message || 'No se pudo crear el área.' })
@@ -352,12 +388,85 @@ export function AdminAreaProfiles() {
         onConfirm={handleConfirmDeleteArea}
         variant="danger"
       />
+      <Modal
+        open={createModalOpen}
+        onClose={() => {
+          if (!creatingArea) setCreateModalOpen(false)
+        }}
+        loading={creatingArea}
+        size="wide"
+        title="Crear nueva área"
+        description="Completá los datos base para publicar una nueva área municipal."
+      >
+        <form className="grid gap-3 sm:grid-cols-2" onSubmit={handleCreateArea}>
+          <label className={labelClass}>
+            Título
+            <input
+              className={inputClass}
+              value={newArea.title}
+              onChange={(e) =>
+                setNewArea((prev) => ({ ...prev, title: e.target.value }))
+              }
+              disabled={creatingArea || areasLoading}
+              required
+            />
+          </label>
+          <label className={labelClass}>
+            Slug (opcional)
+            <input
+              className={inputClass}
+              value={newArea.slug}
+              onChange={(e) =>
+                setNewArea((prev) => ({ ...prev, slug: e.target.value }))
+              }
+              disabled={creatingArea || areasLoading}
+            />
+          </label>
+          <label className={`${labelClass} sm:col-span-2`}>
+            Descripción base
+            <textarea
+              className={`${textareaClass} min-h-24`}
+              value={newArea.description}
+              onChange={(e) =>
+                setNewArea((prev) => ({ ...prev, description: e.target.value }))
+              }
+              disabled={creatingArea || areasLoading}
+              required
+            />
+          </label>
+          <div className="sm:col-span-2">
+            <SingleImageUploadField
+              label="Imagen de portada"
+              helpText="Subí la portada del área o importala por URL."
+              value={newArea.coverImage}
+              onChange={(value) =>
+                setNewArea((prev) => ({ ...prev, coverImage: value }))
+              }
+              kind="cover"
+              disabled={creatingArea || areasLoading}
+            />
+          </div>
+          <div className="sm:col-span-2 flex justify-end gap-2 border-t border-slate-200/80 pt-4">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setCreateModalOpen(false)}
+              disabled={creatingArea}
+            >
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={creatingArea || areasLoading}>
+              {creatingArea ? 'Creando…' : 'Crear área'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       <AdminPageShell
         showBackLink={false}
         eyebrow="Configuración"
         title="Perfiles de áreas"
-        subtitle="Editá el contenido público que se muestra en cada área: misión, dirección, servicios, ubicación y contacto."
+        subtitle="Editá el contenido público que se muestra en cada área: identidad, dirección, servicios, ubicación y contacto."
         maxWidthClass="max-w-6xl"
         variant="plain"
       >
@@ -396,109 +505,139 @@ export function AdminAreaProfiles() {
 
         {activeTab === 'catalog' ? (
           <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-            <h2 className="text-base font-semibold text-slate-900">
-              Catálogo de áreas (crear / eliminar)
-            </h2>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-base font-semibold text-slate-900">Catálogo de áreas</h2>
+              <Button
+                type="button"
+                onClick={() => setCreateModalOpen(true)}
+                disabled={!isApiConfigured()}
+              >
+                + Crear área
+              </Button>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 sm:items-end">
+              <label className={labelClass}>
+                Búsqueda rápida por nombre
+                <input
+                  className={inputClass}
+                  placeholder="Ej: Deportes, Cultura, Obras..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value)
+                    setPage(1)
+                  }}
+                  disabled={areasLoading}
+                />
+              </label>
+              <p className="text-xs text-slate-500 sm:text-right">
+                {filteredAreas.length} área(s) encontrada(s)
+              </p>
+            </div>
             {catalogError ? (
               <p className={`mt-3 ${formErrorClass}`} role="alert">
                 {catalogError}
               </p>
             ) : null}
-
-            <div className="mt-4 rounded-xl border border-slate-200/80 bg-slate-50/60 p-4">
-              <form className="grid gap-3 sm:grid-cols-2" onSubmit={handleCreateArea}>
-                <label className={labelClass}>
-                  Título
-                  <input
-                    className={inputClass}
-                    value={newArea.title}
-                    onChange={(e) =>
-                      setNewArea((prev) => ({ ...prev, title: e.target.value }))
-                    }
-                    disabled={creatingArea || areasLoading}
-                    required
-                  />
-                </label>
-                <label className={labelClass}>
-                  Slug (opcional)
-                  <input
-                    className={inputClass}
-                    value={newArea.slug}
-                    onChange={(e) =>
-                      setNewArea((prev) => ({ ...prev, slug: e.target.value }))
-                    }
-                    disabled={creatingArea || areasLoading}
-                  />
-                </label>
-                <label className={`${labelClass} sm:col-span-2`}>
-                  Descripción
-                  <textarea
-                    className={`${textareaClass} min-h-24`}
-                    value={newArea.description}
-                    onChange={(e) =>
-                      setNewArea((prev) => ({ ...prev, description: e.target.value }))
-                    }
-                    disabled={creatingArea || areasLoading}
-                    required
-                  />
-                </label>
-                <div className="sm:col-span-2">
-                  <SingleImageUploadField
-                    label="Imagen de portada"
-                    helpText="Subí la portada del área o importala por URL."
-                    value={newArea.coverImage}
-                    onChange={(value) =>
-                      setNewArea((prev) => ({ ...prev, coverImage: value }))
-                    }
-                    kind="cover"
-                    disabled={creatingArea || areasLoading}
-                  />
-                </div>
-                <div className="sm:col-span-2">
-                  <Button type="submit" disabled={creatingArea || areasLoading}>
-                    {creatingArea ? 'Creando…' : 'Crear área'}
-                  </Button>
-                </div>
-              </form>
+            <div className="mt-4 overflow-hidden rounded-xl border border-slate-200/80">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th className="px-3 py-3">Portada</th>
+                    <th className="px-3 py-3">Área</th>
+                    <th className="px-3 py-3">Slug</th>
+                    <th className="px-3 py-3">Descripción</th>
+                    <th className="px-3 py-3 text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedAreas.map((area) => (
+                    <tr key={area.slug} className="border-t border-slate-100">
+                      <td className="px-3 py-2.5">
+                        {area.coverImage ? (
+                          <img
+                            src={area.coverImage}
+                            alt=""
+                            className="h-14 w-20 rounded-md object-cover ring-1 ring-slate-200"
+                          />
+                        ) : (
+                          <div className="flex h-14 w-20 items-center justify-center rounded-md bg-slate-100 text-[11px] font-semibold text-slate-500 ring-1 ring-slate-200">
+                            Sin imagen
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-3 py-2.5 font-semibold text-slate-900">{area.title}</td>
+                      <td className="px-3 py-2.5 text-slate-600">{area.slug}</td>
+                      <td className="max-w-xs truncate px-3 py-2.5 text-slate-600">
+                        {area.description}
+                      </td>
+                      <td className="px-3 py-2.5 text-right">
+                        <div className="inline-flex gap-2">
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            className="px-2.5! py-1.5! text-xs!"
+                            onClick={() => {
+                              setSelectedSlug(area.slug)
+                              setTab('edit')
+                            }}
+                          >
+                            Editar
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="danger"
+                            className="px-2.5! py-1.5! text-xs!"
+                            onClick={() => setDeleteTarget(area)}
+                            disabled={
+                              creatingArea ||
+                              Boolean(deletingAreaId) ||
+                              areasLoading ||
+                              !isApiConfigured()
+                            }
+                          >
+                            Eliminar
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {paginatedAreas.length === 0 ? (
+                    <tr>
+                      <td className="px-3 py-6 text-center text-sm text-slate-500" colSpan={5}>
+                        No hay áreas que coincidan con la búsqueda.
+                      </td>
+                    </tr>
+                  ) : null}
+                </tbody>
+              </table>
             </div>
-
-            <div className="mt-4 grid gap-2">
-              {areas.map((area) => (
-                <div
-                  key={area.slug}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200/80 bg-white px-3 py-2.5"
-                >
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedSlug(area.slug)
-                    setTab('edit')
-                    }}
-                    className={`text-left text-sm font-semibold transition ${
-                      area.slug === selectedSlug
-                        ? 'text-sky-800'
-                        : 'text-slate-800 hover:text-sky-800'
-                    }`}
-                  >
-                    {area.title}
-                  </button>
+            {filteredAreas.length > PAGE_SIZE ? (
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                <p className="text-xs text-slate-500">
+                  Página {safePage} de {totalPages}
+                </p>
+                <div className="inline-flex items-center gap-2">
                   <Button
                     type="button"
-                    variant="danger"
+                    variant="secondary"
                     className="px-2.5! py-1.5! text-xs!"
-                    onClick={() => setDeleteTarget(area)}
-                    disabled={
-                      creatingArea ||
-                      Boolean(deletingAreaId) ||
-                      areasLoading ||
-                      !isApiConfigured()
-                    }
+                    disabled={safePage <= 1}
+                    onClick={() => setPage((prev) => Math.max(1, prev - 1))}
                   >
-                    Eliminar
+                    Anterior
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="px-2.5! py-1.5! text-xs!"
+                    disabled={safePage >= totalPages}
+                    onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+                  >
+                    Siguiente
                   </Button>
                 </div>
-              ))}
-            </div>
+              </div>
+            ) : null}
           </section>
         ) : null}
 
@@ -548,6 +687,17 @@ export function AdminAreaProfiles() {
                   <h2 className="text-base font-semibold text-slate-900">Identidad del área</h2>
                   <div className="mt-4 space-y-4">
                     <label className={labelClass}>
+                      Nombre del área
+                      <input
+                        className={inputClass}
+                        value={areaMeta.title}
+                        onChange={(e) =>
+                          setAreaMeta((prev) => ({ ...prev, title: e.target.value }))
+                        }
+                        disabled={saving}
+                      />
+                    </label>
+                    <label className={labelClass}>
                       Etiqueta superior
                       <input
                         className={inputClass}
@@ -556,15 +706,16 @@ export function AdminAreaProfiles() {
                         disabled={saving}
                       />
                     </label>
-                    <label className={labelClass}>
-                      Misión / Introducción
-                      <textarea
-                        className={`${textareaClass} min-h-32`}
-                        value={form.mission}
-                        onChange={(e) => setForm((p) => ({ ...p, mission: e.target.value }))}
-                        disabled={saving}
-                      />
-                    </label>
+                    <SingleImageUploadField
+                      label="Imagen de portada del área"
+                      helpText="Se usa en la cabecera pública del detalle del área."
+                      value={areaMeta.coverImage}
+                      onChange={(value) =>
+                        setAreaMeta((prev) => ({ ...prev, coverImage: value }))
+                      }
+                      kind="cover"
+                      disabled={saving}
+                    />
                   </div>
                 </section>
 

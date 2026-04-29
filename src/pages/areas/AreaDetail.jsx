@@ -110,7 +110,6 @@ export function AreaDetail() {
                 </p>
                 <ul className="mt-4 space-y-2">
                   {[
-                    ['#sobre-area', 'Sobre el área'],
                     ['#director-area', 'Dirección'],
                     ['#servicios-area', 'Servicios'],
                     ['#iniciativas-area', 'Iniciativas'],
@@ -132,25 +131,6 @@ export function AreaDetail() {
             </aside>
 
             <div className="space-y-10 lg:col-span-8">
-              <RevealOnScroll variant="slow">
-                <section id="sobre-area">
-                <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-                  ¿De qué trata esta área?
-                </h2>
-                <p className="mt-3 text-sm leading-relaxed text-[#4b505a] sm:text-base">
-                  {area.description}
-                </p>
-                <ul className="mt-4 space-y-2 rounded-2xl border border-[#ddd7ca] bg-[#f8f7f3] p-4 text-sm text-[#3e434d] sm:p-5">
-                  {profile.notices.map((notice) => (
-                    <li key={notice} className="flex items-start gap-2 leading-relaxed">
-                      <span className="mt-1 h-1.5 w-1.5 rounded-full bg-sky-600" />
-                      <span>{notice}</span>
-                    </li>
-                  ))}
-                </ul>
-                </section>
-              </RevealOnScroll>
-
               <RevealOnScroll variant="newsCardSlow" delayMs={90}>
                 <section id="director-area" className="rounded-3xl border border-[#ddd7ca] bg-[#fcfcfa] p-5 shadow-sm sm:p-6">
                 <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
