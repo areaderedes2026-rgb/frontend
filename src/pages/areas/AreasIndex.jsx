@@ -74,7 +74,7 @@ export function AreasIndex() {
           alt=""
           className="absolute inset-0 h-full w-full object-cover object-center"
         />
-        <div className="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/88 to-slate-900/35" />
+        <div className="absolute inset-0 bg-linear-to-t from-black/76 via-black/62 to-black/36" />
         <Container className="relative z-10 flex min-h-[52dvh] flex-col justify-center pt-[calc(var(--navbar-h,5rem)+1rem)] pb-8 sm:min-h-[56dvh] sm:pt-[calc(var(--navbar-h,5rem)+1.5rem)] sm:pb-10 lg:min-h-[58dvh] lg:pb-12">
           <div className="max-w-4xl">
             <p className="hero-enter-eyebrow text-[11px] font-bold uppercase tracking-[0.28em] text-sky-200/95 sm:text-xs sm:tracking-[0.32em]">
