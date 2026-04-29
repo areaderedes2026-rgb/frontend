@@ -18,6 +18,12 @@ export function Intendencia() {
           ...DEFAULT_INTENDENCIA_CONTENT,
           heroImageUrl: '',
           mayorPhotoUrl: '',
+          mayorName: '',
+          mayorRole: '',
+          mayorBio: '',
+          contactEmail: '',
+          contactPhone: '',
+          officeHours: '',
         }
       : DEFAULT_INTENDENCIA_CONTENT,
   )
@@ -64,29 +70,40 @@ export function Intendencia() {
               <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-start">
                 {loadingContent ? (
                   <div
-                    className="h-[30rem] w-full rounded-2xl bg-slate-100 ring-1 ring-slate-200/80 sm:w-[13rem] lg:w-[14rem]"
+                    className="h-120 w-full rounded-2xl bg-slate-100 ring-1 ring-slate-200/80 sm:w-52 lg:w-56"
                     aria-hidden
                   />
                 ) : (
                   <img
                     src={content.mayorPhotoUrl || content.heroImageUrl || '/favicon.png?v=2'}
                     alt={content.mayorName}
-                    className="h-[30rem] w-full rounded-2xl object-cover object-top ring-1 ring-slate-200/80 sm:w-[13rem] lg:w-[14rem]"
+                    className="h-120 w-full rounded-2xl object-cover object-top ring-1 ring-slate-200/80 sm:w-52 lg:w-56"
                   />
                 )}
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-700">
                     Intendente
                   </p>
-                  <h3 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">
-                    {content.mayorName}
-                  </h3>
-                  <p className="mt-1 text-sm font-semibold text-slate-600">
-                    {content.mayorRole}
-                  </p>
-                  <p className="mt-4 text-sm leading-relaxed text-slate-700 sm:text-base">
-                    {content.mayorBio}
-                  </p>
+                  {loadingContent ? (
+                    <div className="mt-2 animate-pulse space-y-3">
+                      <div className="h-8 w-56 rounded bg-slate-200" />
+                      <div className="h-4 w-44 rounded bg-slate-200" />
+                      <div className="h-4 w-full rounded bg-slate-100" />
+                      <div className="h-4 w-11/12 rounded bg-slate-100" />
+                    </div>
+                  ) : (
+                    <>
+                      <h3 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">
+                        {content.mayorName}
+                      </h3>
+                      <p className="mt-1 text-sm font-semibold text-slate-600">
+                        {content.mayorRole}
+                      </p>
+                      <p className="mt-4 text-sm leading-relaxed text-slate-700 sm:text-base">
+                        {content.mayorBio}
+                      </p>
+                    </>
+                  )}
                   <div className="mt-5 flex flex-wrap gap-2">
                     <Link
                       to={ROUTES.areas}
@@ -114,17 +131,25 @@ export function Intendencia() {
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-300">
                 Contacto directo
               </p>
-              <div className="mt-4 space-y-2 text-sm leading-relaxed">
-                <p className="rounded-xl border border-white/15 bg-white/5 px-3 py-2">
-                  <span className="font-semibold">Correo:</span> {content.contactEmail}
-                </p>
-                <p className="rounded-xl border border-white/15 bg-white/5 px-3 py-2">
-                  <span className="font-semibold">Teléfono:</span> {content.contactPhone}
-                </p>
-                <p className="rounded-xl border border-white/15 bg-white/5 px-3 py-2">
-                  <span className="font-semibold">Horario:</span> {content.officeHours}
-                </p>
-              </div>
+              {loadingContent ? (
+                <div className="mt-4 animate-pulse space-y-2">
+                  <div className="h-10 rounded-xl bg-white/10" />
+                  <div className="h-10 rounded-xl bg-white/10" />
+                  <div className="h-10 rounded-xl bg-white/10" />
+                </div>
+              ) : (
+                <div className="mt-4 space-y-2 text-sm leading-relaxed">
+                  <p className="rounded-xl border border-white/15 bg-white/5 px-3 py-2">
+                    <span className="font-semibold">Correo:</span> {content.contactEmail}
+                  </p>
+                  <p className="rounded-xl border border-white/15 bg-white/5 px-3 py-2">
+                    <span className="font-semibold">Teléfono:</span> {content.contactPhone}
+                  </p>
+                  <p className="rounded-xl border border-white/15 bg-white/5 px-3 py-2">
+                    <span className="font-semibold">Horario:</span> {content.officeHours}
+                  </p>
+                </div>
+              )}
               <div className="mt-5 rounded-xl border border-sky-300/30 bg-sky-500/10 p-3 text-xs text-sky-100">
                 La intendencia articula con todas las áreas para priorizar obras, servicios y
                 acciones comunitarias.

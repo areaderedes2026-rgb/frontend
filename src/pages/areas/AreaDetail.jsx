@@ -29,6 +29,7 @@ export function AreaDetail() {
     [baseProfile, remoteProfile],
   )
   const area = profile?.area || null
+  const showDirectorSkeleton = isApiConfigured() && !profileHydrated
   const directorPhotoUrl =
     !isApiConfigured() || profileHydrated ? profile?.director?.photoUrl || '' : ''
 
@@ -172,29 +173,45 @@ export function AreaDetail() {
                     <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-700">
                       Responsable
                     </p>
-                    <h3 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">
-                      {profile.director.name}
-                    </h3>
-                    <p className="mt-1 text-sm font-semibold text-[#4b505a]">
-                      {profile.director.role}
-                    </p>
-                    <p className="mt-4 text-sm leading-relaxed text-[#4b505a] sm:text-base">
-                      {profile.director.bio}
-                    </p>
-                    <div className="mt-5 grid gap-2 text-sm text-[#3e434d] sm:grid-cols-2">
-                      <p className="rounded-xl border border-[#ddd7ca] bg-[#f8f7f3] px-3 py-2">
-                        <span className="font-semibold">Correo:</span>{' '}
-                        {profile.director.email}
-                      </p>
-                      <p className="rounded-xl border border-[#ddd7ca] bg-[#f8f7f3] px-3 py-2">
-                        <span className="font-semibold">Teléfono:</span>{' '}
-                        {profile.director.phone}
-                      </p>
-                      <p className="rounded-xl border border-[#ddd7ca] bg-[#f8f7f3] px-3 py-2 sm:col-span-2">
-                        <span className="font-semibold">Horario:</span>{' '}
-                        {profile.director.officeHours}
-                      </p>
-                    </div>
+                    {showDirectorSkeleton ? (
+                      <div className="mt-2 animate-pulse space-y-3">
+                        <div className="h-8 w-56 rounded bg-slate-200" />
+                        <div className="h-4 w-44 rounded bg-slate-200" />
+                        <div className="h-4 w-full rounded bg-slate-100" />
+                        <div className="h-4 w-11/12 rounded bg-slate-100" />
+                        <div className="mt-5 grid gap-2 sm:grid-cols-2">
+                          <div className="h-10 rounded-xl bg-slate-100" />
+                          <div className="h-10 rounded-xl bg-slate-100" />
+                          <div className="h-10 rounded-xl bg-slate-100 sm:col-span-2" />
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <h3 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">
+                          {profile.director.name}
+                        </h3>
+                        <p className="mt-1 text-sm font-semibold text-[#4b505a]">
+                          {profile.director.role}
+                        </p>
+                        <p className="mt-4 text-sm leading-relaxed text-[#4b505a] sm:text-base">
+                          {profile.director.bio}
+                        </p>
+                        <div className="mt-5 grid gap-2 text-sm text-[#3e434d] sm:grid-cols-2">
+                          <p className="rounded-xl border border-[#ddd7ca] bg-[#f8f7f3] px-3 py-2">
+                            <span className="font-semibold">Correo:</span>{' '}
+                            {profile.director.email}
+                          </p>
+                          <p className="rounded-xl border border-[#ddd7ca] bg-[#f8f7f3] px-3 py-2">
+                            <span className="font-semibold">Teléfono:</span>{' '}
+                            {profile.director.phone}
+                          </p>
+                          <p className="rounded-xl border border-[#ddd7ca] bg-[#f8f7f3] px-3 py-2 sm:col-span-2">
+                            <span className="font-semibold">Horario:</span>{' '}
+                            {profile.director.officeHours}
+                          </p>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
                 </section>
