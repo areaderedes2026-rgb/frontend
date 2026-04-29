@@ -5,6 +5,7 @@ import { Footer } from './Footer.jsx'
 import { FloatingSocialButtons } from './FloatingSocialButtons.jsx'
 import { PageTransitionOutlet } from './PageTransitionOutlet.jsx'
 import { preloadCommonPublicRoutes } from '../../routes/publicRoutePreload.js'
+import { SeoManager } from '../seo/SeoManager.jsx'
 
 export function MainLayout() {
   const { pathname } = useLocation()
@@ -26,6 +27,7 @@ export function MainLayout() {
 
   return (
     <div className="flex min-h-dvh flex-col bg-slate-50">
+      <SeoManager />
       <Navbar />
       <main
         id="contenido-principal"
