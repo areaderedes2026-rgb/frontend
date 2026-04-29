@@ -9,12 +9,19 @@ import { isApiConfigured } from '../../utils/apiConfig.js'
 
 export function AreaDetail() {
   const { slug } = useParams()
-  const [remoteArea, setRemoteArea] = useState(null)
+  const [remoteAreaState, setRemoteAreaState] = useState({
+    slug: '',
+    data: null,
+    hydrated: false,
+  })
   const [remoteProfileState, setRemoteProfileState] = useState({
     slug: '',
     data: null,
     hydrated: false,
   })
+  const remoteArea = remoteAreaState.slug === slug ? remoteAreaState.data : null
+  const areaHydrated =
+    !isApiConfigured() || (remoteAreaState.slug === slug && remoteAreaState.hydrated)
   const remoteProfile =
     remoteProfileState.slug === slug ? remoteProfileState.data : null
   const profileHydrated =
@@ -29,6 +36,7 @@ export function AreaDetail() {
     [baseProfile, remoteProfile],
   )
   const area = profile?.area || null
+  const showHeaderSkeleton = isApiConfigured() && !areaHydrated
   const showDirectorSkeleton = isApiConfigured() && !profileHydrated
   const directorPhotoUrl =
     !isApiConfigured() || profileHydrated ? profile?.director?.photoUrl || '' : ''
@@ -38,10 +46,20 @@ export function AreaDetail() {
     if (!isApiConfigured()) return () => {}
     fetchAreaPublicBySlug(slug)
       .then((data) => {
-        if (!cancelled) setRemoteArea(data || null)
+        if (cancelled) return
+        setRemoteAreaState({
+          slug,
+          data: data || null,
+          hydrated: true,
+        })
       })
       .catch(() => {
-        if (!cancelled) setRemoteArea(null)
+        if (cancelled) return
+        setRemoteAreaState({
+          slug,
+          data: null,
+          hydrated: true,
+        })
       })
     return () => {
       cancelled = true
@@ -105,22 +123,37 @@ export function AreaDetail() {
 
         <article className="mt-5 rounded-3xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm">
           <header className="relative overflow-hidden rounded-t-3xl">
-            <img
-              src={area.coverImage}
-              alt=""
-              className="h-56 w-full object-cover sm:h-64 lg:h-72"
-            />
+            {showHeaderSkeleton ? (
+              <div className="h-56 w-full animate-pulse bg-slate-200 sm:h-64 lg:h-72" />
+            ) : (
+              <img
+                src={area.coverImage}
+                alt=""
+                className="h-56 w-full object-cover sm:h-64 lg:h-72"
+              />
+            )}
             <div className="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-900/45 to-slate-900/10" />
             <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8 lg:p-10">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-sky-200">
-                {profile.heroTag}
-              </p>
-              <h1 className="mt-3 font-serif text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl">
-                {area.title}
-              </h1>
-              <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-100 sm:text-base">
-                {profile.mission}
-              </p>
+              {showHeaderSkeleton ? (
+                <div className="animate-pulse space-y-3">
+                  <div className="h-3 w-36 rounded bg-white/40" />
+                  <div className="h-10 w-72 rounded bg-white/45" />
+                  <div className="h-4 w-full max-w-3xl rounded bg-white/35" />
+                  <div className="h-4 w-10/12 max-w-3xl rounded bg-white/30" />
+                </div>
+              ) : (
+                <>
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-sky-200">
+                    {profile.heroTag}
+                  </p>
+                  <h1 className="mt-3 font-serif text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl">
+                    {area.title}
+                  </h1>
+                  <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-100 sm:text-base">
+                    {profile.mission}
+                  </p>
+                </>
+              )}
             </div>
           </header>
 
