@@ -10,7 +10,16 @@ import { isApiConfigured } from '../../utils/apiConfig.js'
 export function AreaDetail() {
   const { slug } = useParams()
   const [remoteArea, setRemoteArea] = useState(null)
-  const [remoteProfile, setRemoteProfile] = useState(null)
+  const [remoteProfileState, setRemoteProfileState] = useState({
+    slug: '',
+    data: null,
+    hydrated: false,
+  })
+  const remoteProfile =
+    remoteProfileState.slug === slug ? remoteProfileState.data : null
+  const profileHydrated =
+    !isApiConfigured() ||
+    (remoteProfileState.slug === slug && remoteProfileState.hydrated)
   const baseProfile = useMemo(
     () => getAreaProfileBySlug(slug, remoteArea),
     [slug, remoteArea],
@@ -20,6 +29,8 @@ export function AreaDetail() {
     [baseProfile, remoteProfile],
   )
   const area = profile?.area || null
+  const directorPhotoUrl =
+    !isApiConfigured() || profileHydrated ? profile?.director?.photoUrl || '' : ''
 
   useEffect(() => {
     let cancelled = false
@@ -42,9 +53,20 @@ export function AreaDetail() {
     fetchAreaProfile(slug)
       .then((remote) => {
         if (cancelled) return
-        setRemoteProfile(remote || null)
+        setRemoteProfileState({
+          slug,
+          data: remote || null,
+          hydrated: true,
+        })
       })
-      .catch(() => {})
+      .catch(() => {
+        if (cancelled) return
+        setRemoteProfileState({
+          slug,
+          data: null,
+          hydrated: true,
+        })
+      })
     return () => {
       cancelled = true
     }
@@ -137,11 +159,15 @@ export function AreaDetail() {
                   Dirección del área
                 </h2>
                 <div className="mt-5 grid gap-5 sm:grid-cols-[12rem_1fr]">
-                  <img
-                    src={profile.director.photoUrl}
-                    alt={profile.director.name}
-                    className="h-56 w-full rounded-2xl object-cover ring-1 ring-slate-200/80 sm:h-full"
-                  />
+                  {directorPhotoUrl ? (
+                    <img
+                      src={directorPhotoUrl}
+                      alt={profile.director.name}
+                      className="h-56 w-full rounded-2xl object-cover ring-1 ring-slate-200/80 sm:h-full"
+                    />
+                  ) : (
+                    <div className="h-56 w-full animate-pulse rounded-2xl bg-slate-100 ring-1 ring-slate-200/80 sm:h-full" />
+                  )}
                   <div>
                     <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-700">
                       Responsable
