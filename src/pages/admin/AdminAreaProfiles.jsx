@@ -22,6 +22,10 @@ import {
   updateArea,
 } from '../../services/areasService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
+import {
+  fetchAreasPageContent,
+  updateAreasPageContent,
+} from '../../services/areasPageService.js'
 
 function mapProfileToForm(profile) {
   return {
@@ -108,9 +112,16 @@ export function AdminAreaProfiles() {
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deletingAreaId, setDeletingAreaId] = useState(null)
-  const [areaMeta, setAreaMeta] = useState({ title: '', coverImage: '' })
+  const [areaMeta, setAreaMeta] = useState({
+    title: '',
+    slug: '',
+    description: '',
+    coverImage: '',
+  })
   const [searchQuery, setSearchQuery] = useState('')
   const [page, setPage] = useState(1)
+  const [globalCover, setGlobalCover] = useState('')
+  const [savingGlobalCover, setSavingGlobalCover] = useState(false)
 
   const activeTab = useMemo(() => {
     const t = searchParams.get('tab')
@@ -181,6 +192,19 @@ export function AdminAreaProfiles() {
 
   useEffect(() => {
     let cancelled = false
+    if (!isApiConfigured()) return () => {}
+    fetchAreasPageContent()
+      .then((content) => {
+        if (!cancelled) setGlobalCover(String(content?.heroImageUrl || ''))
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
     async function load() {
       setError('')
       setLoading(true)
@@ -217,6 +241,8 @@ export function AdminAreaProfiles() {
   useEffect(() => {
     setAreaMeta({
       title: selectedArea?.title || '',
+      slug: selectedArea?.slug || '',
+      description: selectedArea?.description || '',
       coverImage: selectedArea?.coverImage || '',
     })
   }, [selectedArea])
@@ -267,8 +293,10 @@ export function AdminAreaProfiles() {
       if (!selectedArea?.id) {
         throw new Error('No hay un área seleccionada para editar.')
       }
-      await updateArea(selectedArea.id, {
+      const updatedArea = await updateArea(selectedArea.id, {
         title: areaMeta.title.trim(),
+        slug: areaMeta.slug.trim(),
+        description: areaMeta.description.trim(),
         coverImage: areaMeta.coverImage.trim(),
       })
       const payload = {
@@ -293,9 +321,11 @@ export function AdminAreaProfiles() {
           mapExternalUrl: form.location.mapExternalUrl.trim(),
         },
       }
-      const saved = await updateAreaProfile(selectedSlug, payload)
+      const profileSlug = updatedArea?.slug || selectedSlug
+      const saved = await updateAreaProfile(profileSlug, payload)
       await loadAreas()
-      const base = getAreaProfileBySlug(selectedSlug)
+      setSelectedSlug(profileSlug)
+      const base = getAreaProfileBySlug(profileSlug, updatedArea || selectedArea)
       const merged = saved && base ? mergeAreaProfile(base, saved) : base
       if (merged) setForm(mapProfileToForm(merged))
       setToast({
@@ -359,6 +389,32 @@ export function AdminAreaProfiles() {
       setToast({ type: 'error', message: e.message || 'No se pudo eliminar el área.' })
     } finally {
       setDeletingAreaId(null)
+    }
+  }
+
+  async function handleSaveGlobalCover() {
+    if (!isApiConfigured()) {
+      setToast({
+        type: 'error',
+        message: 'No hay conexión disponible con el backend.',
+      })
+      return
+    }
+    setSavingGlobalCover(true)
+    try {
+      const saved = await updateAreasPageContent({ heroImageUrl: globalCover.trim() })
+      setGlobalCover(String(saved?.heroImageUrl || ''))
+      setToast({
+        type: 'success',
+        message: 'Portada global de Áreas actualizada.',
+      })
+    } catch (e) {
+      setToast({
+        type: 'error',
+        message: e.message || 'No se pudo guardar la portada global.',
+      })
+    } finally {
+      setSavingGlobalCover(false)
     }
   }
 
@@ -538,6 +594,33 @@ export function AdminAreaProfiles() {
                 {catalogError}
               </p>
             ) : null}
+            <div className="mt-4 rounded-xl border border-slate-200/80 bg-slate-50/60 p-4">
+              <h3 className="text-sm font-semibold text-slate-900">
+                Portada global de la sección Áreas
+              </h3>
+              <p className="mt-1 text-xs text-slate-600">
+                Esta imagen se muestra en el header de “Todas las áreas” (inicio del módulo).
+              </p>
+              <div className="mt-3">
+                <SingleImageUploadField
+                  label="Imagen de portada global"
+                  helpText="No depende de ninguna área individual."
+                  value={globalCover}
+                  onChange={setGlobalCover}
+                  kind="cover"
+                  disabled={savingGlobalCover}
+                />
+              </div>
+              <div className="mt-3 flex justify-end">
+                <Button
+                  type="button"
+                  onClick={() => void handleSaveGlobalCover()}
+                  disabled={savingGlobalCover}
+                >
+                  {savingGlobalCover ? 'Guardando…' : 'Guardar portada global'}
+                </Button>
+              </div>
+            </div>
             <div className="mt-4 overflow-hidden rounded-xl border border-slate-200/80">
               <table className="w-full text-left text-sm">
                 <thead className="bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500">
@@ -693,6 +776,34 @@ export function AdminAreaProfiles() {
                         value={areaMeta.title}
                         onChange={(e) =>
                           setAreaMeta((prev) => ({ ...prev, title: e.target.value }))
+                        }
+                        disabled={saving}
+                      />
+                    </label>
+                    <label className={labelClass}>
+                      Slug del área
+                      <input
+                        className={inputClass}
+                        value={areaMeta.slug}
+                        onChange={(e) =>
+                          setAreaMeta((prev) => ({
+                            ...prev,
+                            slug: e.target.value,
+                          }))
+                        }
+                        disabled={saving}
+                      />
+                    </label>
+                    <label className={labelClass}>
+                      Descripción del área
+                      <textarea
+                        className={`${textareaClass} min-h-28`}
+                        value={areaMeta.description}
+                        onChange={(e) =>
+                          setAreaMeta((prev) => ({
+                            ...prev,
+                            description: e.target.value,
+                          }))
                         }
                         disabled={saving}
                       />

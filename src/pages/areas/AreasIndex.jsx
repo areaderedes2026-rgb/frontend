@@ -1,12 +1,33 @@
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { RevealOnScroll } from '../../components/home/RevealOnScroll.jsx'
 import { Container } from '../../components/ui/Container.jsx'
 import { LinkButton } from '../../components/ui/LinkButton.jsx'
 import { useAreas } from '../../hooks/useAreas.js'
+import { fetchAreasPageContent } from '../../services/areasPageService.js'
 
 export function AreasIndex() {
   const { areas, loading, error } = useAreas()
+  const [globalCover, setGlobalCover] = useState('')
   const featured = areas[0] ?? null
+  const heroImage = useMemo(
+    () => globalCover || featured?.coverImage || '',
+    [globalCover, featured?.coverImage],
+  )
+
+  useEffect(() => {
+    let cancelled = false
+    fetchAreasPageContent()
+      .then((content) => {
+        if (!cancelled) setGlobalCover(String(content?.heroImageUrl || ''))
+      })
+      .catch(() => {
+        if (!cancelled) setGlobalCover('')
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   if (loading) {
     return (
@@ -49,7 +70,7 @@ export function AreasIndex() {
 
       <div className="relative min-h-[52dvh] overflow-hidden border-b border-white/10 bg-[#171b22] sm:min-h-[56dvh] lg:min-h-[58dvh]">
         <img
-          src={featured?.coverImage}
+          src={heroImage}
           alt=""
           className="absolute inset-0 h-full w-full object-cover object-center"
         />
