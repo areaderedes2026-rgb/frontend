@@ -322,7 +322,7 @@ export function mergeAreaProfile(baseProfile, custom = {}) {
     contactCards: custom.contactCards || baseProfile.contactCards || [],
     notices: custom.notices || baseProfile.notices || [],
     schoolsSection:
-      custom.schoolsSection !== undefined
+      'schoolsSection' in custom
         ? custom.schoolsSection
         : baseProfile.schoolsSection ?? null,
   }

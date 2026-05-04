@@ -345,9 +345,9 @@ export function AreaDetail() {
         </article>
         <div className="mt-6 rounded-2xl border border-sky-100 bg-linear-to-r from-sky-50 via-white to-sky-50/70 p-5 text-sm leading-relaxed text-slate-600 sm:p-6 sm:text-base">
           Todas las áreas comparten la misma base de navegación y secciones principales.
-          Algunas incorporan bloques adicionales según su competencia (por ejemplo, escuelas
-          en Cultura). El contenido remoto desde administración complementa estos datos sin
-          perder la coherencia del diseño.
+          Algunas pueden mostrar bloques extra (por ejemplo, escuelas en Cultura). Hasta que no
+          exista un perfil guardado en el servidor, puede verse contenido de referencia; una vez
+          guardado el perfil, lo publicado es el que definís en administración.
         </div>
       </Container>
     </section>
