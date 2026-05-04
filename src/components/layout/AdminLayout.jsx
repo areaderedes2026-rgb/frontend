@@ -23,7 +23,8 @@ export function AdminLayout() {
   const { user, logout } = useAuth()
   const sessionLabel = user?.username || user?.name || 'Usuario'
   const settingsActive =
-    pathname === ROUTES.adminSettings || pathname.startsWith(`${ROUTES.adminSettings}/`)
+    (pathname === ROUTES.adminSettings || pathname.startsWith(`${ROUTES.adminSettings}/`)) &&
+    pathname !== ROUTES.adminSettingsOfertaAcademica
   const newsActive =
     pathname === ROUTES.adminNews ||
     pathname.startsWith(`${ROUTES.adminNews}/`)
@@ -39,6 +40,7 @@ export function AdminLayout() {
   const citizenAttentionActive =
     pathname === ROUTES.adminCitizenAttention ||
     pathname.startsWith(`${ROUTES.adminCitizenAttention}/`)
+  const ofertaAcademicaActive = pathname === ROUTES.adminSettingsOfertaAcademica
 
   useEffect(() => {
     const run = () => {
@@ -163,6 +165,16 @@ export function AdminLayout() {
               }
             >
               Atención
+            </NavLink>
+            <NavLink
+              to={ROUTES.adminSettingsOfertaAcademica}
+              onMouseEnter={() => preloadAdminRoute('settingsOfertaAcademica')}
+              onFocus={() => preloadAdminRoute('settingsOfertaAcademica')}
+              className={({ isActive }) =>
+                navClass({ isActive: isActive || ofertaAcademicaActive })
+              }
+            >
+              Oferta académica
             </NavLink>
             <NavLink
               to={ROUTES.adminSettings}
