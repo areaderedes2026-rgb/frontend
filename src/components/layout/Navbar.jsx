@@ -22,8 +22,14 @@ const afterAreasLinks = [
 ]
 
 const governmentLinks = [
-  { to: '/gobierno/intendencia', label: 'Intendencia', preload: 'governmentIntendencia' },
-  { to: '/areas', label: 'Áreas (ver todas)', preload: 'areasIndex' },
+  { to: '/gobierno/intendencia', label: 'Intendencia', preload: 'governmentIntendencia', end: true },
+  {
+    to: '/gobierno/oferta-academica',
+    label: 'Oferta académica',
+    preload: 'governmentOfertaAcademica',
+    end: true,
+  },
+  { to: '/areas', label: 'Áreas (ver todas)', preload: 'areasIndex', end: true },
 ]
 
 function DesktopNavLink({
@@ -281,7 +287,7 @@ export function Navbar() {
                         <NavLink
                           to={item.to}
                           className={mobileSubLinkClass}
-                          end={item.to === '/areas'}
+                          end={Boolean(item.end)}
                           onMouseEnter={() => preloadPublicRoute(item.preload)}
                           onFocus={() => preloadPublicRoute(item.preload)}
                           onClick={() => {
@@ -435,7 +441,7 @@ export function Navbar() {
                             : 'text-white/90 hover:bg-white/5 hover:text-white'
                         }`
                       }
-                      end={item.to === '/areas'}
+                      end={Boolean(item.end)}
                       onMouseEnter={() => preloadPublicRoute(item.preload)}
                       onFocus={() => preloadPublicRoute(item.preload)}
                       onClick={() => setGovernmentOpen(false)}

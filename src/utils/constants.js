@@ -9,6 +9,7 @@ export const ROUTES = {
   events: '/eventos',
   government: '/gobierno/intendencia',
   governmentIntendencia: '/gobierno/intendencia',
+  ofertaAcademica: '/gobierno/oferta-academica',
   areas: '/areas',
   area: (slug) => `/areas/${slug}`,
   /** Atención al ciudadano (consultas y contacto). */
@@ -33,6 +34,7 @@ export const ROUTES = {
   adminSettingsCategories: '/admin/settings/categories',
   adminSettingsHomeMap: '/admin/settings/home-map',
   adminSettingsIntendencia: '/admin/settings/intendencia',
+  adminSettingsOfertaAcademica: '/admin/settings/oferta-academica',
 }
 
 export const SOCIAL_LINKS = {

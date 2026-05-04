@@ -27,6 +27,7 @@ const AdminSettingsHome = lazy(adminRouteLoaders.settingsHome)
 const AdminCategories = lazy(adminRouteLoaders.settingsCategories)
 const AdminSettingsHomeMap = lazy(adminRouteLoaders.settingsHomeMap)
 const AdminIntendencia = lazy(adminRouteLoaders.settingsIntendencia)
+const AdminOfertaAcademica = lazy(adminRouteLoaders.settingsOfertaAcademica)
 const AdminUsers = lazy(adminRouteLoaders.settingsUsers)
 const History = lazy(publicRouteLoaders.history)
 const Events = lazy(publicRouteLoaders.events)
@@ -34,6 +35,7 @@ const TourismPlaceDetail = lazy(publicRouteLoaders.tourismPlaceDetail)
 const AreasIndex = lazy(publicRouteLoaders.areasIndex)
 const AreaDetail = lazy(publicRouteLoaders.areaDetail)
 const Intendencia = lazy(publicRouteLoaders.governmentIntendencia)
+const OfertaAcademica = lazy(publicRouteLoaders.governmentOfertaAcademica)
 const NewsList = lazy(publicRouteLoaders.newsList)
 const NewsDetail = lazy(publicRouteLoaders.newsDetail)
 
@@ -181,6 +183,14 @@ export function AppRouter() {
                 </Suspense>
               }
             />
+            <Route
+              path="oferta-academica"
+              element={
+                <Suspense fallback={<AdminRouteFallback />}>
+                  <AdminOfertaAcademica />
+                </Suspense>
+              }
+            />
             <Route path="history" element={<Navigate to="/admin/history" replace />} />
             <Route element={<RequireAdminOutlet />}>
               <Route
@@ -229,6 +239,14 @@ export function AppRouter() {
           element={
             <Suspense fallback={<PublicRouteFallback />}>
               <Intendencia />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/gobierno/oferta-academica"
+          element={
+            <Suspense fallback={<PublicRouteFallback />}>
+              <OfertaAcademica />
             </Suspense>
           }
         />

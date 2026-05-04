@@ -42,6 +42,10 @@ export const adminRouteLoaders = {
     () => import('../pages/admin/AdminIntendencia.jsx'),
     'AdminIntendencia',
   ),
+  settingsOfertaAcademica: namedLazy(
+    () => import('../pages/admin/AdminOfertaAcademica.jsx'),
+    'AdminOfertaAcademica',
+  ),
   settingsUsers: namedLazy(() => import('../pages/admin/AdminUsers.jsx'), 'AdminUsers'),
 }
 

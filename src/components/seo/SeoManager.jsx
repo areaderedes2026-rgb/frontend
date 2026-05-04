@@ -92,6 +92,27 @@ function routeSeo(pathname) {
         'Canal oficial para consultas y contacto con la Municipalidad de Trancas.',
     }
   }
+  if (pathname === '/gobierno/intendencia') {
+    return {
+      title: 'Intendencia | Municipalidad de Trancas',
+      description:
+        'Informacion institucional de la Intendencia de Trancas: gestion, contacto y articulacion con las areas.',
+    }
+  }
+  if (pathname === '/gobierno/oferta-academica') {
+    return {
+      title: 'Oferta academica | Municipalidad de Trancas',
+      description:
+        'Oferta academica y formativa en Trancas: terciaria, cursos, idiomas y articulacion universitaria. Informacion orientativa para vecinos.',
+    }
+  }
+  if (pathname === '/history') {
+    return {
+      title: 'Historia y turismo | Municipalidad de Trancas',
+      description:
+        'Historia local, patrimonio y puntos turisticos del departamento de Trancas, Tucuman.',
+    }
+  }
   return { title: DEFAULT_TITLE, description: DEFAULT_DESCRIPTION }
 }
 

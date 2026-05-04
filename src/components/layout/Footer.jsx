@@ -46,6 +46,14 @@ export function Footer() {
               </li>
               <li>
                 <Link
+                  to={ROUTES.ofertaAcademica}
+                  className="text-slate-700 transition-colors hover:text-sky-700"
+                >
+                  Oferta académica
+                </Link>
+              </li>
+              <li>
+                <Link
                   to={ROUTES.atencionCiudadano}
                   className="text-slate-700 transition-colors hover:text-sky-700"
                 >
