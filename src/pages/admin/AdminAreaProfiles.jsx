@@ -27,6 +27,67 @@ import {
   updateAreasPageContent,
 } from '../../services/areasPageService.js'
 
+const EMPTY_SCHOOL_ROW = {
+  id: '',
+  name: '',
+  discipline: '',
+  schedule: '',
+  venue: '',
+  description: '',
+  imageUrl: '',
+}
+
+function mapSchoolsToForm(profile) {
+  const ss = profile.schoolsSection
+  if (ss && Array.isArray(ss.items) && ss.items.length > 0) {
+    return {
+      navLabel: ss.navLabel || 'Escuelas',
+      eyebrow: ss.eyebrow || '',
+      title: ss.title || '',
+      intro: ss.intro || '',
+      items: ss.items.map((x) => ({
+        id: String(x?.id || '').trim(),
+        name: String(x?.name || '').trim(),
+        discipline: String(x?.discipline || '').trim(),
+        schedule: String(x?.schedule || '').trim(),
+        venue: String(x?.venue || '').trim(),
+        description: String(x?.description || '').trim(),
+        imageUrl: String(x?.imageUrl || '').trim(),
+      })),
+    }
+  }
+  return {
+    navLabel: 'Escuelas',
+    eyebrow: '',
+    title: '',
+    intro: '',
+    items: [],
+  }
+}
+
+function buildSchoolsPayload(section) {
+  if (!section || !Array.isArray(section.items)) return null
+  const items = section.items
+    .map((row) => ({
+      id: String(row?.id || '').trim(),
+      name: String(row?.name || '').trim(),
+      discipline: String(row?.discipline || '').trim(),
+      schedule: String(row?.schedule || '').trim(),
+      venue: String(row?.venue || '').trim(),
+      description: String(row?.description || '').trim(),
+      imageUrl: String(row?.imageUrl || '').trim(),
+    }))
+    .filter((row) => row.name || row.description)
+  if (!items.length) return null
+  return {
+    navLabel: String(section.navLabel || '').trim() || 'Escuelas',
+    eyebrow: String(section.eyebrow || '').trim(),
+    title: String(section.title || '').trim(),
+    intro: String(section.intro || '').trim(),
+    items,
+  }
+}
+
 function mapProfileToForm(profile) {
   return {
     heroTag: profile.heroTag || '',
@@ -69,6 +130,7 @@ function mapProfileToForm(profile) {
       mapEmbedUrl: profile.location?.mapEmbedUrl || '',
       mapExternalUrl: profile.location?.mapExternalUrl || '',
     },
+    schoolsSection: mapSchoolsToForm(profile),
   }
 }
 
@@ -278,6 +340,44 @@ export function AdminAreaProfiles() {
     })
   }
 
+  function setSchoolsSectionField(field, value) {
+    setForm((prev) => ({
+      ...prev,
+      schoolsSection: { ...prev.schoolsSection, [field]: value },
+    }))
+  }
+
+  function updateSchoolItem(index, field, value) {
+    setForm((prev) => {
+      const items = [...(prev.schoolsSection?.items || [])]
+      items[index] = { ...items[index], [field]: value }
+      return {
+        ...prev,
+        schoolsSection: { ...prev.schoolsSection, items },
+      }
+    })
+  }
+
+  function addSchoolItem() {
+    setForm((prev) => ({
+      ...prev,
+      schoolsSection: {
+        ...prev.schoolsSection,
+        items: [...(prev.schoolsSection?.items || []), { ...EMPTY_SCHOOL_ROW }],
+      },
+    }))
+  }
+
+  function removeSchoolItem(index) {
+    setForm((prev) => ({
+      ...prev,
+      schoolsSection: {
+        ...prev.schoolsSection,
+        items: (prev.schoolsSection?.items || []).filter((_, i) => i !== index),
+      },
+    }))
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
@@ -301,6 +401,7 @@ export function AdminAreaProfiles() {
       })
       const payload = {
         heroTag: form.heroTag.trim(),
+        mission: form.mission.trim(),
         director: {
           name: form.director.name.trim(),
           role: form.director.role.trim(),
@@ -320,6 +421,7 @@ export function AdminAreaProfiles() {
           mapEmbedUrl: form.location.mapEmbedUrl.trim(),
           mapExternalUrl: form.location.mapExternalUrl.trim(),
         },
+        schoolsSection: buildSchoolsPayload(form.schoolsSection),
       }
       const profileSlug = updatedArea?.slug || selectedSlug
       const saved = await updateAreaProfile(profileSlug, payload)
@@ -817,6 +919,15 @@ export function AdminAreaProfiles() {
                         disabled={saving}
                       />
                     </label>
+                    <label className={labelClass}>
+                      Texto de misión (bajo el título en la portada del área)
+                      <textarea
+                        className={`${textareaClass} min-h-24`}
+                        value={form.mission}
+                        onChange={(e) => setForm((p) => ({ ...p, mission: e.target.value }))}
+                        disabled={saving}
+                      />
+                    </label>
                     <SingleImageUploadField
                       label="Imagen de portada del área"
                       helpText="Se usa en la cabecera pública del detalle del área."
@@ -907,6 +1018,156 @@ export function AdminAreaProfiles() {
                       <Button type="button" variant="danger" className="sm:col-span-1" onClick={() => removeListItem('initiatives', idx)} disabled={saving}>
                         Quitar
                       </Button>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-base font-semibold text-slate-900">
+                      Escuelas y talleres (opcional)
+                    </h2>
+                    <p className="mt-1 max-w-3xl text-xs text-slate-600">
+                      Si cargás al menos una escuela con nombre o descripción, la sección se
+                      publica en el detalle del área y aparece en el menú lateral. Si quitás
+                      todas y guardás, en Cultura se vuelve a mostrar el contenido de respaldo
+                      del sistema hasta que vuelvas a cargar datos.
+                    </p>
+                  </div>
+                  <Button type="button" variant="secondary" onClick={addSchoolItem} disabled={saving}>
+                    + Agregar escuela o taller
+                  </Button>
+                </div>
+                <div className="mt-4 grid gap-4 rounded-xl border border-slate-200/80 bg-slate-50/50 p-4 sm:grid-cols-2">
+                  <label className={labelClass}>
+                    Texto del enlace en el menú
+                    <input
+                      className={inputClass}
+                      value={form.schoolsSection.navLabel}
+                      onChange={(e) => setSchoolsSectionField('navLabel', e.target.value)}
+                      disabled={saving}
+                      placeholder="Escuelas"
+                    />
+                  </label>
+                  <label className={labelClass}>
+                    Etiqueta pequeña (eyebrow)
+                    <input
+                      className={inputClass}
+                      value={form.schoolsSection.eyebrow}
+                      onChange={(e) => setSchoolsSectionField('eyebrow', e.target.value)}
+                      disabled={saving}
+                      placeholder="Escuelas municipales"
+                    />
+                  </label>
+                  <label className={`${labelClass} sm:col-span-2`}>
+                    Título de la sección
+                    <input
+                      className={inputClass}
+                      value={form.schoolsSection.title}
+                      onChange={(e) => setSchoolsSectionField('title', e.target.value)}
+                      disabled={saving}
+                    />
+                  </label>
+                  <label className={`${labelClass} sm:col-span-2`}>
+                    Introducción
+                    <textarea
+                      className={`${textareaClass} min-h-24`}
+                      value={form.schoolsSection.intro}
+                      onChange={(e) => setSchoolsSectionField('intro', e.target.value)}
+                      disabled={saving}
+                    />
+                  </label>
+                </div>
+                <div className="mt-4 space-y-4">
+                  {(form.schoolsSection?.items || []).map((row, idx) => (
+                    <div
+                      key={`school-${idx}-${row.id || row.name || 'row'}`}
+                      className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-4"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-sm font-semibold text-slate-800">
+                          Escuela / taller {idx + 1}
+                        </p>
+                        <Button
+                          type="button"
+                          variant="danger"
+                          className="px-2.5! py-1.5! text-xs!"
+                          onClick={() => removeSchoolItem(idx)}
+                          disabled={saving}
+                        >
+                          Quitar
+                        </Button>
+                      </div>
+                      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                        <label className={labelClass}>
+                          Identificador (opcional, URL)
+                          <input
+                            className={inputClass}
+                            value={row.id}
+                            onChange={(e) => updateSchoolItem(idx, 'id', e.target.value)}
+                            disabled={saving}
+                            placeholder="ej. escuela-musica"
+                          />
+                        </label>
+                        <label className={labelClass}>
+                          Nombre
+                          <input
+                            className={inputClass}
+                            value={row.name}
+                            onChange={(e) => updateSchoolItem(idx, 'name', e.target.value)}
+                            disabled={saving}
+                          />
+                        </label>
+                        <label className={labelClass}>
+                          Disciplina (etiqueta)
+                          <input
+                            className={inputClass}
+                            value={row.discipline}
+                            onChange={(e) => updateSchoolItem(idx, 'discipline', e.target.value)}
+                            disabled={saving}
+                            placeholder="Música, Danza…"
+                          />
+                        </label>
+                        <label className={labelClass}>
+                          Horarios
+                          <input
+                            className={inputClass}
+                            value={row.schedule}
+                            onChange={(e) => updateSchoolItem(idx, 'schedule', e.target.value)}
+                            disabled={saving}
+                          />
+                        </label>
+                        <label className={`${labelClass} sm:col-span-2`}>
+                          Lugar / sede
+                          <input
+                            className={inputClass}
+                            value={row.venue}
+                            onChange={(e) => updateSchoolItem(idx, 'venue', e.target.value)}
+                            disabled={saving}
+                          />
+                        </label>
+                        <label className={`${labelClass} sm:col-span-2`}>
+                          Descripción
+                          <textarea
+                            className={`${textareaClass} min-h-24`}
+                            value={row.description}
+                            onChange={(e) => updateSchoolItem(idx, 'description', e.target.value)}
+                            disabled={saving}
+                          />
+                        </label>
+                        <div className="sm:col-span-2">
+                          <SingleImageUploadField
+                            label="Imagen de la escuela o taller"
+                            helpText="Opcional. Se muestra en la tarjeta pública."
+                            value={row.imageUrl}
+                            onChange={(value) => updateSchoolItem(idx, 'imageUrl', value)}
+                            kind="cover"
+                            disabled={saving}
+                          />
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>

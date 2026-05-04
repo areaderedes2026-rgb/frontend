@@ -96,6 +96,150 @@ const AREA_PROFILES = {
       'Para urgencias, comunicarse con la guardia social municipal.',
     ],
   },
+  cultura: {
+    heroTag: 'Identidad, arte y educación popular',
+    mission:
+      'Promovemos el acceso a la cultura con talleres, festivales y espacios de encuentro para todas las edades, articulando con escuelas y organizaciones locales.',
+    director: {
+      name: 'Lic. Carla Mendoza',
+      role: 'Directora de Cultura',
+      bio: 'Coordina la agenda cultural municipal, las escuelas artísticas y la difusión de proyectos comunitarios con enfoque federal e inclusivo.',
+      photoUrl:
+        'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=900&q=80',
+      email: 'cultura@trancas.gob.ar',
+      phone: '+54 381 400-1310',
+      officeHours: 'Lunes a viernes, 08:00 a 14:00',
+    },
+    highlights: [
+      { label: 'Escuelas activas', value: '4' },
+      { label: 'Talleres anuales', value: '35+' },
+      { label: 'Participación', value: 'Todo público' },
+    ],
+    serviceBlocks: [
+      {
+        title: 'Agenda cultural y eventos',
+        description:
+          'Festivales, muestras, peñas y actividades en espacios públicos con información centralizada y reservas cuando corresponda.',
+        mode: 'Comunicación y producción',
+      },
+      {
+        title: 'Patrimonio y memoria',
+        description:
+          'Rescate de historias locales, archivo audiovisual comunitario y apoyo a iniciativas de valor patrimonial.',
+        mode: 'Territorio',
+      },
+      {
+        title: 'Biblioteca y lectura',
+        description:
+          'Préstamos, clubes de lectura y actividades para infancias y adultos en la red municipal de bibliotecas.',
+        mode: 'Presencial',
+      },
+      {
+        title: 'Apoyo a artistas locales',
+        description:
+          'Convocatorias, microbecas y articulación con instituciones para visibilizar propuestas de creadores y colectivos.',
+        mode: 'Convocatorias',
+      },
+    ],
+    initiatives: [
+      {
+        title: 'Cultura en los barrios',
+        description:
+          'Circuito itinerante de talleres abiertos y espectáculos en plazas y centros vecinales.',
+      },
+      {
+        title: 'Muestra anual de fin de año',
+        description:
+          'Integración de las escuelas municipales en una gala comunitaria con danza, música y artes visuales.',
+      },
+      {
+        title: 'Laboratorio audiovisual',
+        description:
+          'Espacio de formación en guion, cámara y edición para jóvenes con producción de piezas sobre la vida en el departamento.',
+      },
+    ],
+    contactCards: [
+      {
+        label: 'Secretaría de Cultura',
+        value: '+54 381 400-1310',
+        note: 'Consultas y talleres',
+      },
+      {
+        label: 'Correo',
+        value: 'cultura@trancas.gob.ar',
+        note: 'Propuestas y agenda',
+      },
+      {
+        label: 'Redes',
+        value: '@CulturaTrancas',
+        note: 'Novedades y convocatorias',
+      },
+    ],
+    location: {
+      address: 'Casa de la Cultura, Av. principal y Sarmiento, Trancas',
+      references: 'Planta alta: dirección y administración. Planta baja: talleres y sala de ensayo.',
+      mapEmbedUrl: DEFAULT_MAP_EMBED,
+      mapExternalUrl:
+        'https://www.openstreetmap.org/?mlat=-26.2366&mlon=-65.2852#map=15/-26.2366/-65.2852',
+    },
+    notices: [
+      'Las inscripciones a escuelas municipales se publican al inicio de cada cuatrimestre.',
+      'Consultá cupos y requisitos en la secretaría o por correo oficial.',
+    ],
+    schoolsSection: {
+      navLabel: 'Escuelas',
+      eyebrow: 'Escuelas municipales',
+      title: 'Escuelas de formación artística y cultural',
+      intro:
+        'Espacios gratuitos o de bajo costo para aprender música, danza, teatro y artes plásticas con docentes de la región. Las vacantes y cronogramas se confirman cada período en la secretaría del área.',
+      items: [
+        {
+          id: 'escuela-musica',
+          name: 'Escuela Municipal de Música',
+          discipline: 'Música',
+          schedule: 'Lunes y miércoles, 17:00 a 20:00 · Nivel inicial e intermedio',
+          venue: 'Casa de la Cultura — Salas 2 y 3',
+          description:
+            'Lenguaje musical, ensamble y práctica instrumental grupal. Se prioriza repertorio latinoamericano y composición comunitaria.',
+          imageUrl:
+            'https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=1200&q=80',
+        },
+        {
+          id: 'escuela-danza',
+          name: 'Escuela Municipal de Danza',
+          discipline: 'Danza',
+          schedule: 'Martes y jueves, 16:30 a 19:30 · Infancias y juventudes',
+          venue: 'Anexo polideportivo — Sala multiuso',
+          description:
+            'Técnicas contemporáneas y folclore con mirada inclusiva. Cierre de año con muestra abierta a la comunidad.',
+          imageUrl:
+            'https://images.unsplash.com/photo-1508700929628-666bc8bd84ea?auto=format&fit=crop&w=1200&q=80',
+        },
+        {
+          id: 'escuela-teatro',
+          name: 'Escuela Municipal de Teatro',
+          discipline: 'Teatro',
+          schedule: 'Viernes, 18:00 a 21:00 · Adolescentes y adultos',
+          venue: 'Casa de la Cultura — Sala de ensayo',
+          description:
+            'Voz, cuerpo, improvisación y dramaturgia breve. Se articula con la agenda de ferias y encuentros culturales del municipio.',
+          imageUrl:
+            'https://images.unsplash.com/photo-1503095396549-807759245b35?auto=format&fit=crop&w=1200&q=80',
+        },
+        {
+          id: 'taller-artes-visuales',
+          name: 'Taller integral de artes visuales',
+          discipline: 'Artes visuales',
+          schedule: 'Sábados, 10:00 a 13:00',
+          venue: 'Casa de la Cultura — Taller sur',
+          description:
+            'Dibujo, pintura y serigrafía aplicada a cartelería comunitaria y murales participativos en espacios públicos.',
+          imageUrl:
+            'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?auto=format&fit=crop&w=1200&q=80',
+        },
+      ],
+    },
+  },
 }
 
 export function createDefaultProfile(area) {
@@ -177,6 +321,10 @@ export function mergeAreaProfile(baseProfile, custom = {}) {
     initiatives: custom.initiatives || baseProfile.initiatives || [],
     contactCards: custom.contactCards || baseProfile.contactCards || [],
     notices: custom.notices || baseProfile.notices || [],
+    schoolsSection:
+      custom.schoolsSection !== undefined
+        ? custom.schoolsSection
+        : baseProfile.schoolsSection ?? null,
   }
 }
 

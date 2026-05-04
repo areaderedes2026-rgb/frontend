@@ -12,6 +12,8 @@ import {
   HydrationDirectorPhoto,
   HydrationHeroLightTextBlock,
 } from '../../components/skeleton/PageHydrationSkeleton.jsx'
+import { AreaSchoolsSection } from '../../components/areas/AreaSchoolsSection.jsx'
+import { getAreaDetailNavLinks } from '../../utils/areaDetailNav.js'
 
 export function AreaDetail() {
   const { slug } = useParams()
@@ -46,6 +48,7 @@ export function AreaDetail() {
   const showDirectorSkeleton = isApiConfigured() && !profileHydrated
   const directorPhotoUrl =
     !isApiConfigured() || profileHydrated ? profile?.director?.photoUrl || '' : ''
+  const navLinks = useMemo(() => getAreaDetailNavLinks(profile), [profile])
 
   useEffect(() => {
     let cancelled = false
@@ -166,12 +169,7 @@ export function AreaDetail() {
                   Navegación de contenido
                 </p>
                 <ul className="mt-4 space-y-2">
-                  {[
-                    ['#director-area', 'Dirección'],
-                    ['#servicios-area', 'Servicios'],
-                    ['#iniciativas-area', 'Iniciativas'],
-                    ['#ubicacion-area', 'Ubicación y contacto'],
-                  ].map(([href, label]) => (
+                  {navLinks.map(([href, label]) => (
                     <li key={href}>
                       <a
                         href={href}
@@ -293,6 +291,10 @@ export function AreaDetail() {
                 </section>
               </RevealOnScroll>
 
+              {profile.schoolsSection?.items?.length ? (
+                <AreaSchoolsSection schoolsSection={profile.schoolsSection} />
+              ) : null}
+
               <RevealOnScroll variant="newsCardSlow" delayMs={120}>
                 <section id="ubicacion-area" className="rounded-3xl border border-[#ddd7ca] bg-[#fcfcfa] p-5 shadow-sm sm:p-6">
                 <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
@@ -342,9 +344,10 @@ export function AreaDetail() {
           </div>
         </article>
         <div className="mt-6 rounded-2xl border border-sky-100 bg-linear-to-r from-sky-50 via-white to-sky-50/70 p-5 text-sm leading-relaxed text-slate-600 sm:p-6 sm:text-base">
-          Esta estructura se aplica de forma uniforme para todas las áreas. A medida que
-          se incorporen nuevos datos desde administración, cada ficha mantendrá la misma
-          interfaz y actualizará su contenido automáticamente.
+          Todas las áreas comparten la misma base de navegación y secciones principales.
+          Algunas incorporan bloques adicionales según su competencia (por ejemplo, escuelas
+          en Cultura). El contenido remoto desde administración complementa estos datos sin
+          perder la coherencia del diseño.
         </div>
       </Container>
     </section>
