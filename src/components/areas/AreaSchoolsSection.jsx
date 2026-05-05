@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from 'react'
 import { RevealOnScroll } from '../home/RevealOnScroll.jsx'
 
 function IconClock({ className = 'h-4 w-4' }) {
@@ -25,12 +26,51 @@ function IconSpark({ className = 'h-5 w-5' }) {
   )
 }
 
+function IconArrow({ direction = 'right', className = 'h-5 w-5' }) {
+  const rotateClass = direction === 'left' ? 'rotate-180' : ''
+  return (
+    <svg className={`${className} ${rotateClass}`} fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+    </svg>
+  )
+}
+
 /**
  * @param {{ schoolsSection: { title: string, intro: string, eyebrow?: string, items: Array<{ id: string, name: string, discipline: string, schedule: string, venue: string, description: string, imageUrl?: string }> } }} props
  */
 export function AreaSchoolsSection({ schoolsSection }) {
   const { title, intro, eyebrow = 'Formación y comunidad', items = [] } = schoolsSection || {}
   if (!items.length) return null
+  const [isDesktop, setIsDesktop] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(min-width: 1024px)').matches : false,
+  )
+  const itemsPerView = isDesktop ? 2 : 1
+  const pageCount = Math.max(1, Math.ceil(items.length / itemsPerView))
+  const [currentPage, setCurrentPage] = useState(0)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return () => {}
+    const mql = window.matchMedia('(min-width: 1024px)')
+    const onChange = (e) => setIsDesktop(e.matches)
+    setIsDesktop(mql.matches)
+    mql.addEventListener('change', onChange)
+    return () => mql.removeEventListener('change', onChange)
+  }, [])
+
+  useEffect(() => {
+    setCurrentPage((prev) => Math.min(prev, pageCount - 1))
+  }, [pageCount])
+
+  const trackStyle = useMemo(
+    () => ({
+      width: `${pageCount * 100}%`,
+      transform: `translateX(-${(currentPage * 100) / pageCount}%)`,
+    }),
+    [currentPage, pageCount],
+  )
+
+  const canGoPrev = currentPage > 0
+  const canGoNext = currentPage < pageCount - 1
 
   return (
     <RevealOnScroll variant="slow">
@@ -51,64 +91,102 @@ export function AreaSchoolsSection({ schoolsSection }) {
           </div>
         </div>
 
-        <ul className="mt-6 grid gap-5 sm:grid-cols-2">
-          {items.map((school) => (
-            <li key={school.id || school.name}>
-              <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#ddd7ca] bg-white shadow-sm ring-1 ring-[#1a1d24]/5 transition duration-300 hover:-translate-y-0.5 hover:border-sky-200/90 hover:shadow-lg hover:shadow-sky-500/10">
-                <div className="relative aspect-16/10 w-full overflow-hidden bg-linear-to-br from-slate-800 via-slate-700 to-sky-900">
-                  {school.imageUrl ? (
-                    <img
-                      src={school.imageUrl}
-                      alt=""
-                      className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div
-                      className="absolute inset-0 opacity-90"
-                      style={{
-                        backgroundImage:
-                          'radial-gradient(circle at 20% 20%, rgba(56,189,248,0.35), transparent 45%), radial-gradient(circle at 80% 60%, rgba(255,255,255,0.12), transparent 40%)',
-                      }}
-                      aria-hidden
-                    />
-                  )}
-                  <div className="absolute inset-0 bg-linear-to-t from-slate-950/85 via-slate-900/20 to-transparent" />
-                  <div className="absolute bottom-3 left-3 right-3 flex flex-wrap items-center gap-2">
-                    <span className="rounded-full bg-white/95 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-sky-800 shadow-sm ring-1 ring-sky-100">
-                      {school.discipline}
-                    </span>
-                  </div>
-                </div>
+        <div className="mt-6">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+              {`Página ${currentPage + 1} de ${pageCount}`}
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+                disabled={!canGoPrev}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#ddd7ca] bg-white text-slate-700 shadow-sm transition hover:border-sky-200 hover:text-sky-800 disabled:cursor-not-allowed disabled:opacity-45"
+                aria-label="Ver escuelas anteriores"
+              >
+                <IconArrow direction="left" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setCurrentPage((p) => Math.min(pageCount - 1, p + 1))}
+                disabled={!canGoNext}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#ddd7ca] bg-white text-slate-700 shadow-sm transition hover:border-sky-200 hover:text-sky-800 disabled:cursor-not-allowed disabled:opacity-45"
+                aria-label="Ver siguientes escuelas"
+              >
+                <IconArrow direction="right" />
+              </button>
+            </div>
+          </div>
 
-                <div className="flex flex-1 flex-col p-5 sm:p-6">
-                  <h3 className="text-lg font-bold tracking-tight text-[#171b22] sm:text-xl">{school.name}</h3>
-                  <dl className="mt-3 space-y-2 text-sm text-[#4b505a]">
-                    <div className="flex gap-2">
-                      <dt className="sr-only">Horarios</dt>
-                      <dd className="flex items-start gap-2">
-                        <span className="mt-0.5 shrink-0 text-sky-600">
-                          <IconClock />
+          <div className="relative mt-4 overflow-hidden">
+            <ul
+              className="flex transition-transform duration-500 ease-out"
+              style={trackStyle}
+              aria-live="polite"
+            >
+              {items.map((school) => (
+                <li
+                  key={school.id || school.name}
+                  className="px-2"
+                  style={{ width: `${100 / (pageCount * itemsPerView)}%` }}
+                >
+                  <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#ddd7ca] bg-white shadow-sm ring-1 ring-[#1a1d24]/5 transition duration-300 hover:-translate-y-0.5 hover:border-sky-200/90 hover:shadow-lg hover:shadow-sky-500/10">
+                    <div className="relative aspect-16/10 w-full overflow-hidden bg-linear-to-br from-slate-800 via-slate-700 to-sky-900">
+                      {school.imageUrl ? (
+                        <img
+                          src={school.imageUrl}
+                          alt=""
+                          className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div
+                          className="absolute inset-0 opacity-90"
+                          style={{
+                            backgroundImage:
+                              'radial-gradient(circle at 20% 20%, rgba(56,189,248,0.35), transparent 45%), radial-gradient(circle at 80% 60%, rgba(255,255,255,0.12), transparent 40%)',
+                          }}
+                          aria-hidden
+                        />
+                      )}
+                      <div className="absolute inset-0 bg-linear-to-t from-slate-950/85 via-slate-900/20 to-transparent" />
+                      <div className="absolute bottom-3 left-3 right-3 flex flex-wrap items-center gap-2">
+                        <span className="rounded-full bg-white/95 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-sky-800 shadow-sm ring-1 ring-sky-100">
+                          {school.discipline}
                         </span>
-                        <span>{school.schedule}</span>
-                      </dd>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <dt className="sr-only">Lugar</dt>
-                      <dd className="flex items-start gap-2">
-                        <span className="mt-0.5 shrink-0 text-sky-600">
-                          <IconMap />
-                        </span>
-                        <span>{school.venue}</span>
-                      </dd>
+
+                    <div className="flex flex-1 flex-col p-5 sm:p-6">
+                      <h3 className="text-lg font-bold tracking-tight text-[#171b22] sm:text-xl">{school.name}</h3>
+                      <dl className="mt-3 space-y-2 text-sm text-[#4b505a]">
+                        <div className="flex gap-2">
+                          <dt className="sr-only">Horarios</dt>
+                          <dd className="flex items-start gap-2">
+                            <span className="mt-0.5 shrink-0 text-sky-600">
+                              <IconClock />
+                            </span>
+                            <span>{school.schedule}</span>
+                          </dd>
+                        </div>
+                        <div className="flex gap-2">
+                          <dt className="sr-only">Lugar</dt>
+                          <dd className="flex items-start gap-2">
+                            <span className="mt-0.5 shrink-0 text-sky-600">
+                              <IconMap />
+                            </span>
+                            <span>{school.venue}</span>
+                          </dd>
+                        </div>
+                      </dl>
+                      <p className="mt-4 flex-1 text-sm leading-relaxed text-[#4b505a]">{school.description}</p>
                     </div>
-                  </dl>
-                  <p className="mt-4 flex-1 text-sm leading-relaxed text-[#4b505a]">{school.description}</p>
-                </div>
-              </article>
-            </li>
-          ))}
-        </ul>
+                  </article>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
       </section>
     </RevealOnScroll>
   )
