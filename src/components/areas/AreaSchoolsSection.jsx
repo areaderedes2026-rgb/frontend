@@ -47,6 +47,8 @@ export function AreaSchoolsSection({ schoolsSection }) {
   const itemsPerView = isDesktop ? 2 : 1
   const pageCount = Math.max(1, Math.ceil(items.length / itemsPerView))
   const [currentPage, setCurrentPage] = useState(0)
+  const [touchStartX, setTouchStartX] = useState(null)
+  const [touchEndX, setTouchEndX] = useState(null)
 
   useEffect(() => {
     if (typeof window === 'undefined') return () => {}
@@ -71,6 +73,32 @@ export function AreaSchoolsSection({ schoolsSection }) {
 
   const canGoPrev = currentPage > 0
   const canGoNext = currentPage < pageCount - 1
+  const SWIPE_THRESHOLD = 48
+
+  function goPrev() {
+    setCurrentPage((p) => Math.max(0, p - 1))
+  }
+
+  function goNext() {
+    setCurrentPage((p) => Math.min(pageCount - 1, p + 1))
+  }
+
+  function onTouchStart(e) {
+    setTouchEndX(null)
+    setTouchStartX(e.targetTouches?.[0]?.clientX ?? null)
+  }
+
+  function onTouchMove(e) {
+    setTouchEndX(e.targetTouches?.[0]?.clientX ?? null)
+  }
+
+  function onTouchEnd() {
+    if (touchStartX == null || touchEndX == null) return
+    const delta = touchStartX - touchEndX
+    if (Math.abs(delta) < SWIPE_THRESHOLD) return
+    if (delta > 0 && canGoNext) goNext()
+    if (delta < 0 && canGoPrev) goPrev()
+  }
 
   return (
     <RevealOnScroll variant="slow">
@@ -99,7 +127,7 @@ export function AreaSchoolsSection({ schoolsSection }) {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+                onClick={goPrev}
                 disabled={!canGoPrev}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#ddd7ca] bg-white text-slate-700 shadow-sm transition hover:border-sky-200 hover:text-sky-800 disabled:cursor-not-allowed disabled:opacity-45"
                 aria-label="Ver escuelas anteriores"
@@ -108,7 +136,7 @@ export function AreaSchoolsSection({ schoolsSection }) {
               </button>
               <button
                 type="button"
-                onClick={() => setCurrentPage((p) => Math.min(pageCount - 1, p + 1))}
+                onClick={goNext}
                 disabled={!canGoNext}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#ddd7ca] bg-white text-slate-700 shadow-sm transition hover:border-sky-200 hover:text-sky-800 disabled:cursor-not-allowed disabled:opacity-45"
                 aria-label="Ver siguientes escuelas"
@@ -123,6 +151,9 @@ export function AreaSchoolsSection({ schoolsSection }) {
               className="flex transition-transform duration-500 ease-out"
               style={trackStyle}
               aria-live="polite"
+              onTouchStart={onTouchStart}
+              onTouchMove={onTouchMove}
+              onTouchEnd={onTouchEnd}
             >
               {items.map((school) => (
                 <li
@@ -186,6 +217,25 @@ export function AreaSchoolsSection({ schoolsSection }) {
               ))}
             </ul>
           </div>
+          {pageCount > 1 ? (
+            <div className="mt-5 flex items-center justify-center gap-2" aria-label="Paginación de escuelas">
+              {Array.from({ length: pageCount }, (_, i) => {
+                const active = i === currentPage
+                return (
+                  <button
+                    key={`dot-${i}`}
+                    type="button"
+                    onClick={() => setCurrentPage(i)}
+                    className={`h-2.5 rounded-full transition ${
+                      active ? 'w-6 bg-sky-700' : 'w-2.5 bg-slate-300 hover:bg-slate-400'
+                    }`}
+                    aria-label={`Ir a la página ${i + 1}`}
+                    aria-current={active ? 'true' : undefined}
+                  />
+                )
+              })}
+            </div>
+          ) : null}
         </div>
       </section>
     </RevealOnScroll>
