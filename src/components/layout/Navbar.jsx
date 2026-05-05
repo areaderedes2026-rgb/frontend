@@ -29,7 +29,7 @@ const governmentLinks = [
     preload: 'governmentOfertaAcademica',
     end: true,
   },
-  { to: '/areas', label: 'Áreas (ver todas)', preload: 'areasIndex', end: true },
+  { to: '/areas', label: 'Áreas', preload: 'areasIndex', end: true },
 ]
 
 function DesktopNavLink({

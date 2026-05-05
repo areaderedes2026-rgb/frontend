@@ -12,7 +12,7 @@ const ACCEPT = 'image/jpeg,image/png,image/webp,image/gif'
 
 export function SingleImageUploadField({
   label,
-  helpText = 'JPEG, PNG, WebP o GIF (máx. 5 MB).',
+  helpText = 'JPEG, PNG, WebP o GIF (máx. 10 MB).',
   value,
   onChange,
   kind = 'cover',
