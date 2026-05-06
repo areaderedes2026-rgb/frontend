@@ -53,6 +53,7 @@ function normalize(item) {
     flyerUrl: String(item.flyerUrl || item.flyer_url || ''),
     isActive: item.isActive !== false && item.is_active !== 0,
     sortOrder: Number(item.sortOrder ?? item.sort_order ?? 0),
+    updatedAt: item.updatedAt || item.updated_at || null,
   }
 }
 

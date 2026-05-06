@@ -31,6 +31,7 @@ function mapPlace(value, fallbackId = 0) {
     visitingHours: String(value?.visitingHours || ''),
     sortOrder: Number(value?.sortOrder) || 0,
     isActive: value?.isActive !== false,
+    updatedAt: value?.updatedAt || value?.updated_at || null,
   }
 }
 

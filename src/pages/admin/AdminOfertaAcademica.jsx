@@ -20,6 +20,7 @@ import {
   updateOfertaAcademicaContent,
 } from '../../services/ofertaAcademicaService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
+import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
 import { ROUTES } from '../../utils/constants.js'
 
 function cloneContent(c) {
@@ -107,9 +108,11 @@ function draftToOffer(draft) {
 
 export function AdminOfertaAcademica() {
   const [form, setForm] = useState(() => cloneContent(DEFAULT_OFERTA_ACADEMICA_CONTENT))
+  const [contentUpdatedAt, setContentUpdatedAt] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [conflictOpen, setConflictOpen] = useState(false)
   const [toast, setToast] = useState(null)
   const dismissToast = useCallback(() => setToast(null), [])
 
@@ -132,7 +135,10 @@ export function AdminOfertaAcademica() {
       try {
         const remote = await fetchOfertaAcademicaContent()
         const merged = mergeOfertaAcademicaContent(DEFAULT_OFERTA_ACADEMICA_CONTENT, remote || {})
-        if (!cancelled) setForm(cloneContent(merged))
+        if (!cancelled) {
+          setForm(cloneContent(merged))
+          setContentUpdatedAt(remote?.updatedAt || null)
+        }
       } catch (e) {
         if (!cancelled) setError(e.message || 'No se pudo cargar Oferta académica.')
       } finally {
@@ -286,6 +292,7 @@ export function AdminOfertaAcademica() {
         return
       }
       const payload = {
+        expectedUpdatedAt: contentUpdatedAt,
         heroEyebrow: form.heroEyebrow.trim(),
         heroTitle: form.heroTitle.trim(),
         heroSubtitle: form.heroSubtitle,
@@ -306,8 +313,10 @@ export function AdminOfertaAcademica() {
       const saved = await updateOfertaAcademicaContent(payload)
       const merged = mergeOfertaAcademicaContent(DEFAULT_OFERTA_ACADEMICA_CONTENT, saved || {})
       setForm(cloneContent(merged))
+      setContentUpdatedAt(saved?.updatedAt || null)
       setToast({ type: 'success', message: 'Se guardó la Oferta académica.' })
     } catch (e) {
+      if (isConcurrencyConflictError(e)) setConflictOpen(true)
       setError(e.message || 'No se pudo guardar.')
       setToast({ type: 'error', message: e.message || 'No se pudo guardar.' })
     } finally {
@@ -317,6 +326,16 @@ export function AdminOfertaAcademica() {
 
   return (
     <>
+      <ConfirmDialog
+        open={conflictOpen}
+        onClose={() => setConflictOpen(false)}
+        title="Cambios desactualizados"
+        description="Otro usuario guardó cambios antes que vos. Recargá la última versión y reintentá."
+        confirmLabel="Recargar última versión y reintentar"
+        cancelLabel="Cerrar"
+        loading={false}
+        onConfirm={() => window.location.reload()}
+      />
       {toast ? <Toast variant={toast.type} message={toast.message} onDismiss={dismissToast} /> : null}
       <ConfirmDialog
         open={removeOfferIndex !== null}

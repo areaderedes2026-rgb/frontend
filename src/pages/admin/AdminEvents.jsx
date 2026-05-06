@@ -6,6 +6,7 @@ import { Modal } from '../../components/ui/Modal.jsx'
 import { SingleImageUploadField } from '../../components/admin/SingleImageUploadField.jsx'
 import { formErrorClass, inputClass, labelClass, textareaClass } from '../../components/ui/formStyles.js'
 import { createEvent, deleteEvent, fetchAdminEvents, updateEvent } from '../../services/eventsService.js'
+import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
 import { ROUTES } from '../../utils/constants.js'
 
 function emptyDraft() {
@@ -25,6 +26,7 @@ export function AdminEvents() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [conflictOpen, setConflictOpen] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState(null)
   const [draft, setDraft] = useState(emptyDraft())
@@ -89,13 +91,17 @@ export function AdminEvents() {
         isActive: draft.isActive !== false,
       }
       if (editing) {
-        await updateEvent(editing.id, payload)
+        await updateEvent(editing.id, {
+          ...payload,
+          expectedUpdatedAt: editing.updatedAt || null,
+        })
       } else {
         await createEvent(payload)
       }
       setModalOpen(false)
       await load()
     } catch (e) {
+      if (isConcurrencyConflictError(e)) setConflictOpen(true)
       setError(e.message || 'No se pudo guardar el evento.')
     } finally {
       setSaving(false)
@@ -104,6 +110,16 @@ export function AdminEvents() {
 
   return (
     <>
+      <ConfirmDialog
+        open={conflictOpen}
+        onClose={() => setConflictOpen(false)}
+        title="Cambios desactualizados"
+        description="Otro usuario guardó cambios antes que vos. Recargá la última versión y reintentá."
+        confirmLabel="Recargar última versión y reintentar"
+        cancelLabel="Cerrar"
+        loading={false}
+        onConfirm={() => window.location.reload()}
+      />
       <ConfirmDialog
         open={deleteTarget != null}
         onClose={() => setDeleteTarget(null)}

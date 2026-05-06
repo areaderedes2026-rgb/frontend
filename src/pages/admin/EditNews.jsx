@@ -14,6 +14,7 @@ import {
 import { NewsImageFields } from '../../components/admin/NewsImageFields.jsx'
 import { NewsCategoryField } from '../../components/admin/NewsCategoryField.jsx'
 import { isApiConfigured } from '../../utils/apiConfig.js'
+import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
 import { ROUTES } from '../../utils/constants.js'
 
 export function EditNews() {
@@ -33,8 +34,10 @@ function EditNewsForm({ id }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [newsUpdatedAt, setNewsUpdatedAt] = useState(null)
   const [deleting, setDeleting] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [conflictOpen, setConflictOpen] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -53,6 +56,7 @@ function EditNewsForm({ id }) {
         setMockCategoryName(data.category || 'General')
         setImageUrl(data.imageUrl ?? null)
         setGalleryUrls(Array.isArray(data.galleryUrls) ? data.galleryUrls : [])
+        setNewsUpdatedAt(data.updatedAt || null)
       })
       .catch((e) => {
         if (!cancelled) setError(e.message || 'Error al cargar')
@@ -75,6 +79,7 @@ function EditNewsForm({ id }) {
     setSaving(true)
     try {
       const payload = {
+        expectedUpdatedAt: newsUpdatedAt,
         title: title.trim(),
         summary: summary.trim(),
         body: body.trim(),
@@ -92,6 +97,7 @@ function EditNewsForm({ id }) {
         state: { flash: 'Cambios guardados correctamente.' },
       })
     } catch (err) {
+      if (isConcurrencyConflictError(err)) setConflictOpen(true)
       setError(err.message || 'No se pudo guardar.')
     } finally {
       setSaving(false)
@@ -171,6 +177,16 @@ function EditNewsForm({ id }) {
 
   return (
     <>
+      <ConfirmDialog
+        open={conflictOpen}
+        onClose={() => setConflictOpen(false)}
+        title="Cambios desactualizados"
+        description="Otro usuario guardó cambios antes que vos. Recargá la última versión y reintentá."
+        confirmLabel="Recargar última versión y reintentar"
+        cancelLabel="Cerrar"
+        loading={false}
+        onConfirm={() => window.location.reload()}
+      />
       <ConfirmDialog
         open={deleteDialogOpen}
         onClose={() => {

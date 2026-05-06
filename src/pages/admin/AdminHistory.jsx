@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
 import { Button } from '../../components/ui/Button.jsx'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
 import {
   formErrorClass,
@@ -19,6 +20,7 @@ import {
 } from '../../services/historyService.js'
 import { fetchTourismPlacesAdmin } from '../../services/tourismPlacesService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
+import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
 import { ROUTES } from '../../utils/constants.js'
 
 function mapToForm(content) {
@@ -63,10 +65,12 @@ function updateArrayItem(setter, key, index, field, value) {
 
 export function AdminHistory() {
   const [form, setForm] = useState(() => mapToForm(DEFAULT_HISTORY_CONTENT))
+  const [contentUpdatedAt, setContentUpdatedAt] = useState(null)
   const [places, setPlaces] = useState([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [conflictOpen, setConflictOpen] = useState(false)
   const [toast, setToast] = useState(null)
   const dismissToast = useCallback(() => setToast(null), [])
 
@@ -83,7 +87,10 @@ export function AdminHistory() {
       try {
         const remote = await fetchHistoryContent()
         const merged = remote ? mergeHistoryContent(base, remote) : base
-        if (!cancelled) setForm(mapToForm(merged))
+        if (!cancelled) {
+          setForm(mapToForm(merged))
+          setContentUpdatedAt(remote?.updatedAt || null)
+        }
       } catch (e) {
         if (!cancelled) setError(e.message || 'No se pudo cargar la historia.')
       } finally {
@@ -133,6 +140,7 @@ export function AdminHistory() {
     setSaving(true)
     try {
       const payload = {
+        expectedUpdatedAt: contentUpdatedAt,
         heroBadge: form.heroBadge.trim(),
         heroTitle: form.heroTitle.trim(),
         heroSubtitle: form.heroSubtitle.trim(),
@@ -150,9 +158,11 @@ export function AdminHistory() {
       if (saved) {
         const merged = mergeHistoryContent(DEFAULT_HISTORY_CONTENT, saved)
         setForm(mapToForm(merged))
+        setContentUpdatedAt(saved?.updatedAt || null)
       }
       setToast({ type: 'success', message: 'Se guardaron los cambios de Historia.' })
     } catch (e) {
+      if (isConcurrencyConflictError(e)) setConflictOpen(true)
       setError(e.message || 'No se pudo guardar la historia.')
       setToast({ type: 'error', message: e.message || 'No se pudo guardar la historia.' })
     } finally {
@@ -162,6 +172,15 @@ export function AdminHistory() {
 
   return (
     <>
+      <ConfirmDialog
+        open={conflictOpen}
+        onClose={() => setConflictOpen(false)}
+        title="Cambios desactualizados"
+        description="Otro usuario guardó cambios antes que vos. Recargá la última versión y reintentá."
+        confirmLabel="Recargar última versión y reintentar"
+        cancelLabel="Cerrar"
+        onConfirm={() => window.location.reload()}
+      />
       {toast ? <Toast variant={toast.type} message={toast.message} onDismiss={dismissToast} /> : null}
       <AdminPageShell
         showBackLink={false}

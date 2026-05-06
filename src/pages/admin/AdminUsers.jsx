@@ -19,6 +19,7 @@ import {
 } from '../../services/usersService.js'
 import { formatShortDate } from '../../utils/formatDate.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
+import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
 
 export function AdminUsers() {
   const { user: sessionUser } = useAuth()
@@ -28,6 +29,7 @@ export function AdminUsers() {
   const [error, setError] = useState('')
 
   const [toast, setToast] = useState(null)
+  const [conflictOpen, setConflictOpen] = useState(false)
   const dismissToast = useCallback(() => setToast(null), [])
 
   const [modal, setModal] = useState(null)
@@ -180,11 +182,13 @@ export function AdminUsers() {
     }
     setModalBusy(true)
     try {
+      const existing = items.find((x) => Number(x.id) === Number(modal.id))
       const payload = {
         username: u,
         fullName: editFullName.trim(),
         role: editRole,
         isActive: editIsActive,
+        expectedUpdatedAt: existing?.updatedAt || null,
       }
       if (pwd.length > 0) payload.password = pwd
       await updateUser(modal.id, payload)
@@ -193,6 +197,7 @@ export function AdminUsers() {
       await load()
       setToast({ type: 'success', message: 'Usuario actualizado correctamente.' })
     } catch (e) {
+      if (isConcurrencyConflictError(e)) setConflictOpen(true)
       setToast({
         type: 'error',
         message: e.message || 'No se pudo guardar los cambios.',
@@ -240,6 +245,16 @@ export function AdminUsers() {
       {toast ? (
         <Toast variant={toast.type} message={toast.message} onDismiss={dismissToast} />
       ) : null}
+      <ConfirmDialog
+        open={conflictOpen}
+        onClose={() => setConflictOpen(false)}
+        title="Cambios desactualizados"
+        description="Otro usuario guardó cambios antes que vos. Recargá la última versión y reintentá."
+        confirmLabel="Recargar última versión y reintentar"
+        cancelLabel="Cerrar"
+        loading={false}
+        onConfirm={() => window.location.reload()}
+      />
 
       <ConfirmDialog
         open={deleteTarget != null}

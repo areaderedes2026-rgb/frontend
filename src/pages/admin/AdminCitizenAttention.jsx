@@ -17,6 +17,7 @@ import {
   updateCitizenInquiryStatus,
 } from '../../services/citizenAttentionService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
+import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
 
 const STATUS_FILTERS = [
   { value: 'all', label: 'Todas' },
@@ -121,6 +122,7 @@ function InquiryStatusPill({ status }) {
 export function AdminCitizenAttention() {
   const [activeTab, setActiveTab] = useState('content')
   const [contentForm, setContentForm] = useState(() => mapContentToForm(DEFAULT_CITIZEN_ATTENTION_CONTENT))
+  const [contentUpdatedAt, setContentUpdatedAt] = useState(null)
   const [contentLoading, setContentLoading] = useState(true)
   const [contentSaving, setContentSaving] = useState(false)
   const [contentError, setContentError] = useState('')
@@ -136,6 +138,7 @@ export function AdminCitizenAttention() {
   const [selectedInquiry, setSelectedInquiry] = useState(null)
 
   const [toast, setToast] = useState(null)
+  const [conflictOpen, setConflictOpen] = useState(false)
   const dismissToast = useCallback(() => setToast(null), [])
 
   const stats = useMemo(() => {
@@ -153,6 +156,7 @@ export function AdminCitizenAttention() {
       const remote = await fetchCitizenAttentionContent()
       const merged = mergeCitizenAttentionContent(DEFAULT_CITIZEN_ATTENTION_CONTENT, remote || {})
       setContentForm(mapContentToForm(merged))
+      setContentUpdatedAt(remote?.updatedAt || null)
     } catch (e) {
       setContentError(e.message || 'No se pudo cargar el contenido de Atención al ciudadano.')
     } finally {
@@ -200,6 +204,7 @@ export function AdminCitizenAttention() {
     setContentError('')
     try {
       const payload = {
+        expectedUpdatedAt: contentUpdatedAt,
         heroEyebrow: contentForm.heroEyebrow.trim(),
         heroTitle: contentForm.heroTitle.trim(),
         heroSubtitle: contentForm.heroSubtitle,
@@ -243,8 +248,10 @@ export function AdminCitizenAttention() {
       const saved = await updateCitizenAttentionContent(payload)
       const merged = mergeCitizenAttentionContent(DEFAULT_CITIZEN_ATTENTION_CONTENT, saved || {})
       setContentForm(mapContentToForm(merged))
+      setContentUpdatedAt(saved?.updatedAt || null)
       setToast({ type: 'success', message: 'Se guardó Atención al ciudadano.' })
     } catch (e) {
+      if (isConcurrencyConflictError(e)) setConflictOpen(true)
       setContentError(e.message || 'No se pudo guardar Atención al ciudadano.')
       setToast({ type: 'error', message: e.message || 'No se pudo guardar Atención al ciudadano.' })
     } finally {
@@ -270,11 +277,16 @@ export function AdminCitizenAttention() {
     if (!selectedInquiry) return
     setDetailUpdating(true)
     try {
-      const updated = await updateCitizenInquiryStatus(selectedInquiry.id, nextStatus)
+      const updated = await updateCitizenInquiryStatus(
+        selectedInquiry.id,
+        nextStatus,
+        selectedInquiry.updatedAt || null,
+      )
       setSelectedInquiry(updated)
       await loadInquiries()
       setToast({ type: 'success', message: 'Estado actualizado.' })
     } catch (e) {
+      if (isConcurrencyConflictError(e)) setConflictOpen(true)
       setToast({ type: 'error', message: e.message || 'No se pudo actualizar el estado.' })
     } finally {
       setDetailUpdating(false)
@@ -299,6 +311,22 @@ export function AdminCitizenAttention() {
 
   return (
     <>
+      <Modal
+        open={conflictOpen}
+        onClose={() => setConflictOpen(false)}
+        title="Cambios desactualizados"
+        description="Otro usuario guardó cambios antes que vos. Recargá la última versión y reintentá."
+        size="default"
+      >
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="secondary" onClick={() => setConflictOpen(false)}>
+            Cerrar
+          </Button>
+          <Button type="button" onClick={() => window.location.reload()}>
+            Recargar última versión y reintentar
+          </Button>
+        </div>
+      </Modal>
       {toast ? <Toast variant={toast.type} message={toast.message} onDismiss={dismissToast} /> : null}
       <Modal
         open={detailOpen}

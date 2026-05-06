@@ -12,6 +12,7 @@ function mapArea(area) {
     coverImage: String(area.coverImage || ''),
     sortOrder: Number(area.sortOrder) || 0,
     isActive: area.isActive !== false,
+    updatedAt: area.updatedAt || area.updated_at || null,
   }
 }
 

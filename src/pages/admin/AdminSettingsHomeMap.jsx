@@ -8,6 +8,7 @@ import { formErrorClass, inputClass, labelClass } from '../../components/ui/form
 import { DEFAULT_HOME_MAP_CONTENT, mergeHomeMapContent } from '../../data/homeMapContent.js'
 import { fetchHomeMapContent, updateHomeMapContent } from '../../services/homeMapService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
+import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
 
 function cleanText(value) {
   return String(value || '').trim()
@@ -41,10 +42,12 @@ export function AdminSettingsHomeMap() {
   const [form, setForm] = useState(() =>
     withRowIds(mergeHomeMapContent(DEFAULT_HOME_MAP_CONTENT, {})),
   )
+  const [contentUpdatedAt, setContentUpdatedAt] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [toast, setToast] = useState(null)
+  const [conflictOpen, setConflictOpen] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [editingRowId, setEditingRowId] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
@@ -71,6 +74,7 @@ export function AdminSettingsHomeMap() {
     try {
       const remote = await fetchHomeMapContent()
       setForm(withRowIds(mergeHomeMapContent(DEFAULT_HOME_MAP_CONTENT, remote || {})))
+      setContentUpdatedAt(remote?.updatedAt || null)
     } catch (e) {
       setError(e.message || 'No se pudo cargar la configuración del mapa.')
     } finally {
@@ -96,6 +100,7 @@ export function AdminSettingsHomeMap() {
     setError('')
     try {
       const payload = {
+        expectedUpdatedAt: contentUpdatedAt,
         center: {
           lat: Number(form.center.lat) || -26.2312,
           lng: Number(form.center.lng) || -65.2818,
@@ -116,8 +121,10 @@ export function AdminSettingsHomeMap() {
       }
       const saved = await updateHomeMapContent(payload)
       setForm(withRowIds(mergeHomeMapContent(DEFAULT_HOME_MAP_CONTENT, saved || {})))
+      setContentUpdatedAt(saved?.updatedAt || null)
       setToast({ type: 'success', message: 'Mapa de Inicio actualizado.' })
     } catch (e) {
+      if (isConcurrencyConflictError(e)) setConflictOpen(true)
       const message = e.message || 'No se pudo guardar el mapa de Inicio.'
       setError(message)
       setToast({ type: 'error', message })
@@ -243,6 +250,16 @@ export function AdminSettingsHomeMap() {
   return (
     <>
       {toast ? <Toast variant={toast.type} message={toast.message} onDismiss={dismissToast} /> : null}
+      <ConfirmDialog
+        open={conflictOpen}
+        onClose={() => setConflictOpen(false)}
+        title="Cambios desactualizados"
+        description="Otro usuario guardó cambios antes que vos. Recargá la última versión y reintentá."
+        confirmLabel="Recargar última versión y reintentar"
+        cancelLabel="Cerrar"
+        loading={false}
+        onConfirm={() => window.location.reload()}
+      />
       <ConfirmDialog
         open={deleteTarget != null}
         onClose={() => {

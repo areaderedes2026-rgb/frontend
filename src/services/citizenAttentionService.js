@@ -99,13 +99,13 @@ export async function fetchCitizenInquiryAdminById(id) {
   return data.inquiry ? mapInquiry(data.inquiry) : null
 }
 
-export async function updateCitizenInquiryStatus(id, status) {
+export async function updateCitizenInquiryStatus(id, status, expectedUpdatedAt = null) {
   const b = base()
   if (!b) throw new Error('Configurá VITE_API_URL para actualizar consultas.')
   const res = await fetch(`${b}/api/citizen-attention/admin/inquiries/${id}/status`, {
     method: 'PATCH',
     headers: jsonAuthHeaders(),
-    body: JSON.stringify({ status }),
+    body: JSON.stringify({ status, expectedUpdatedAt }),
   })
   notifyUnauthorizedIfNeeded(res)
   if (!res.ok) {

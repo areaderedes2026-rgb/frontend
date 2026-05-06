@@ -14,6 +14,7 @@ import {
   fetchTourismPlacesAdmin,
   updateTourismPlace,
 } from '../../services/tourismPlacesService.js'
+import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
 import { ROUTES } from '../../utils/constants.js'
 
 const EMPTY_FORM = {
@@ -64,6 +65,7 @@ export function AdminTourismPlaces() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [toast, setToast] = useState(null)
+  const [conflictOpen, setConflictOpen] = useState(false)
   const dismissToast = useCallback(() => setToast(null), [])
 
   const [modalOpen, setModalOpen] = useState(false)
@@ -142,7 +144,10 @@ export function AdminTourismPlaces() {
         isActive: Boolean(form.isActive),
       }
       if (editingPlace) {
-        await updateTourismPlace(editingPlace.id, payload)
+        await updateTourismPlace(editingPlace.id, {
+          ...payload,
+          expectedUpdatedAt: editingPlace.updatedAt || null,
+        })
         setToast({ type: 'success', message: 'Lugar turístico actualizado.' })
       } else {
         await createTourismPlace(payload)
@@ -151,6 +156,7 @@ export function AdminTourismPlaces() {
       setModalOpen(false)
       await loadPlaces()
     } catch (e) {
+      if (isConcurrencyConflictError(e)) setConflictOpen(true)
       setToast({ type: 'error', message: e.message || 'No se pudo guardar el lugar turístico.' })
     } finally {
       setSaving(false)
@@ -175,6 +181,16 @@ export function AdminTourismPlaces() {
   return (
     <>
       {toast ? <Toast variant={toast.type} message={toast.message} onDismiss={dismissToast} /> : null}
+      <ConfirmDialog
+        open={conflictOpen}
+        onClose={() => setConflictOpen(false)}
+        title="Cambios desactualizados"
+        description="Otro usuario guardó cambios antes que vos. Recargá la última versión y reintentá."
+        confirmLabel="Recargar última versión y reintentar"
+        cancelLabel="Cerrar"
+        loading={false}
+        onConfirm={() => window.location.reload()}
+      />
       <ConfirmDialog
         open={deleteTarget != null}
         onClose={() => {

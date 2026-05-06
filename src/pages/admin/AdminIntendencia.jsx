@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
 import { SingleImageUploadField } from '../../components/admin/SingleImageUploadField.jsx'
 import { Button } from '../../components/ui/Button.jsx'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
 import {
   formErrorClass,
@@ -18,6 +19,7 @@ import {
   updateIntendenciaContent,
 } from '../../services/intendenciaService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
+import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
 import { ROUTES } from '../../utils/constants.js'
 
 function mapToForm(content) {
@@ -38,9 +40,11 @@ function mapToForm(content) {
 
 export function AdminIntendencia() {
   const [form, setForm] = useState(() => mapToForm(DEFAULT_INTENDENCIA_CONTENT))
+  const [contentUpdatedAt, setContentUpdatedAt] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [conflictOpen, setConflictOpen] = useState(false)
   const [toast, setToast] = useState(null)
   const dismissToast = useCallback(() => setToast(null), [])
 
@@ -56,7 +60,10 @@ export function AdminIntendencia() {
       try {
         const remote = await fetchIntendenciaContent()
         const merged = mergeIntendenciaContent(DEFAULT_INTENDENCIA_CONTENT, remote || {})
-        if (!cancelled) setForm(mapToForm(merged))
+        if (!cancelled) {
+          setForm(mapToForm(merged))
+          setContentUpdatedAt(remote?.updatedAt || null)
+        }
       } catch (e) {
         if (!cancelled) setError(e.message || 'No se pudo cargar Intendencia.')
       } finally {
@@ -82,6 +89,7 @@ export function AdminIntendencia() {
     setSaving(true)
     try {
       const payload = {
+        expectedUpdatedAt: contentUpdatedAt,
         heroEyebrow: form.heroEyebrow.trim(),
         heroTitle: form.heroTitle.trim(),
         heroSubtitle: form.heroSubtitle,
@@ -97,8 +105,10 @@ export function AdminIntendencia() {
       const saved = await updateIntendenciaContent(payload)
       const merged = mergeIntendenciaContent(DEFAULT_INTENDENCIA_CONTENT, saved || {})
       setForm(mapToForm(merged))
+      setContentUpdatedAt(saved?.updatedAt || null)
       setToast({ type: 'success', message: 'Se guardaron los cambios de Intendencia.' })
     } catch (e) {
+      if (isConcurrencyConflictError(e)) setConflictOpen(true)
       setError(e.message || 'No se pudo guardar Intendencia.')
       setToast({ type: 'error', message: e.message || 'No se pudo guardar Intendencia.' })
     } finally {
@@ -108,6 +118,15 @@ export function AdminIntendencia() {
 
   return (
     <>
+      <ConfirmDialog
+        open={conflictOpen}
+        onClose={() => setConflictOpen(false)}
+        title="Cambios desactualizados"
+        description="Otro usuario guardó cambios antes que vos. Recargá la última versión y reintentá."
+        confirmLabel="Recargar última versión y reintentar"
+        cancelLabel="Cerrar"
+        onConfirm={() => window.location.reload()}
+      />
       {toast ? <Toast variant={toast.type} message={toast.message} onDismiss={dismissToast} /> : null}
       <AdminPageShell
         backTo={ROUTES.adminSettings}

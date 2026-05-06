@@ -16,6 +16,7 @@ import {
   updateCategory,
 } from '../../services/categoriesService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
+import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
 
 export function AdminCategories() {
   const [items, setItems] = useState([])
@@ -23,6 +24,7 @@ export function AdminCategories() {
   const [error, setError] = useState('')
 
   const [toast, setToast] = useState(null)
+  const [conflictOpen, setConflictOpen] = useState(false)
   const dismissToast = useCallback(() => setToast(null), [])
 
   const [modal, setModal] = useState(null)
@@ -113,14 +115,17 @@ export function AdminCategories() {
     }
     setModalBusy(true)
     try {
+      const existing = items.find((x) => Number(x.id) === Number(modal.id))
       const payload = { name }
       const slug = cSlug.trim()
       if (slug) payload.slug = slug
+      payload.expectedUpdatedAt = existing?.updatedAt || null
       await updateCategory(modal.id, payload)
       setModal(null)
       await load()
       setToast({ type: 'success', message: 'Categoría actualizada.' })
     } catch (e) {
+      if (isConcurrencyConflictError(e)) setConflictOpen(true)
       setToast({ type: 'error', message: e.message || 'No se pudo guardar.' })
     } finally {
       setModalBusy(false)
@@ -166,6 +171,16 @@ export function AdminCategories() {
       {toast ? (
         <Toast variant={toast.type} message={toast.message} onDismiss={dismissToast} />
       ) : null}
+      <ConfirmDialog
+        open={conflictOpen}
+        onClose={() => setConflictOpen(false)}
+        title="Cambios desactualizados"
+        description="Otro usuario guardó cambios antes que vos. Recargá la última versión y reintentá."
+        confirmLabel="Recargar última versión y reintentar"
+        cancelLabel="Cerrar"
+        loading={false}
+        onConfirm={() => window.location.reload()}
+      />
 
       <ConfirmDialog
         open={deleteTarget != null}

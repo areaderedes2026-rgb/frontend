@@ -23,6 +23,7 @@ import {
   updateArea,
 } from '../../services/areasService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
+import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
 import {
   fetchAreasPageContent,
   updateAreasPageContent,
@@ -163,6 +164,7 @@ export function AdminAreaProfiles() {
   const [error, setError] = useState('')
   const [catalogError, setCatalogError] = useState('')
   const [toast, setToast] = useState(null)
+  const [conflictOpen, setConflictOpen] = useState(false)
   const dismissToast = useCallback(() => setToast(null), [])
 
   const [newArea, setNewArea] = useState({
@@ -185,6 +187,8 @@ export function AdminAreaProfiles() {
   const [page, setPage] = useState(1)
   const [globalCover, setGlobalCover] = useState('')
   const [savingGlobalCover, setSavingGlobalCover] = useState(false)
+  const [profileUpdatedAt, setProfileUpdatedAt] = useState(null)
+  const [areasPageUpdatedAt, setAreasPageUpdatedAt] = useState(null)
 
   const activeTab = useMemo(() => {
     const t = searchParams.get('tab')
@@ -258,7 +262,10 @@ export function AdminAreaProfiles() {
     if (!isApiConfigured()) return () => {}
     fetchAreasPageContent()
       .then((content) => {
-        if (!cancelled) setGlobalCover(String(content?.heroImageUrl || ''))
+        if (!cancelled) {
+          setGlobalCover(String(content?.heroImageUrl || ''))
+          setAreasPageUpdatedAt(content?.updatedAt || null)
+        }
       })
       .catch(() => {})
     return () => {
@@ -285,7 +292,12 @@ export function AdminAreaProfiles() {
       if (isApiConfigured()) {
         try {
           const remote = await fetchAreaProfile(selectedSlug)
-          if (remote) merged = mergeAreaProfile(base, remote)
+          if (remote) {
+            merged = mergeAreaProfile(base, remote)
+            if (!cancelled) setProfileUpdatedAt(remote.updatedAt || null)
+          } else if (!cancelled) {
+            setProfileUpdatedAt(null)
+          }
         } catch (e) {
           if (!cancelled) setError(e.message || 'No se pudo cargar el perfil remoto.')
         }
@@ -393,12 +405,14 @@ export function AdminAreaProfiles() {
         throw new Error('No hay un área seleccionada para editar.')
       }
       const updatedArea = await updateArea(selectedArea.id, {
+        expectedUpdatedAt: selectedArea.updatedAt || null,
         title: areaMeta.title.trim(),
         slug: areaMeta.slug.trim(),
         description: areaMeta.description.trim(),
         coverImage: areaMeta.coverImage.trim(),
       })
       const payload = {
+        expectedUpdatedAt: profileUpdatedAt,
         heroTag: form.heroTag.trim(),
         mission: form.mission.trim(),
         director: {
@@ -424,6 +438,7 @@ export function AdminAreaProfiles() {
       }
       const profileSlug = updatedArea?.slug || selectedSlug
       const saved = await updateAreaProfile(profileSlug, payload)
+      setProfileUpdatedAt(saved?.updatedAt || null)
       await loadAreas()
       setSelectedSlug(profileSlug)
       const base = getAreaProfileBySlug(profileSlug, updatedArea || selectedArea)
@@ -434,6 +449,7 @@ export function AdminAreaProfiles() {
         message: 'Área y perfil actualizados correctamente.',
       })
     } catch (e) {
+      if (isConcurrencyConflictError(e)) setConflictOpen(true)
       setError(e.message || 'No se pudo guardar.')
       setToast({ type: 'error', message: e.message || 'No se pudo guardar.' })
     } finally {
@@ -503,13 +519,18 @@ export function AdminAreaProfiles() {
     }
     setSavingGlobalCover(true)
     try {
-      const saved = await updateAreasPageContent({ heroImageUrl: globalCover.trim() })
+      const saved = await updateAreasPageContent({
+        heroImageUrl: globalCover.trim(),
+        expectedUpdatedAt: areasPageUpdatedAt,
+      })
       setGlobalCover(String(saved?.heroImageUrl || ''))
+      setAreasPageUpdatedAt(saved?.updatedAt || null)
       setToast({
         type: 'success',
         message: 'Portada global de Áreas actualizada.',
       })
     } catch (e) {
+      if (isConcurrencyConflictError(e)) setConflictOpen(true)
       setToast({
         type: 'error',
         message: e.message || 'No se pudo guardar la portada global.',
@@ -524,6 +545,16 @@ export function AdminAreaProfiles() {
       {toast ? (
         <Toast variant={toast.type} message={toast.message} onDismiss={dismissToast} />
       ) : null}
+      <ConfirmDialog
+        open={conflictOpen}
+        onClose={() => setConflictOpen(false)}
+        title="Cambios desactualizados"
+        description="Otro usuario guardó cambios antes que vos. Recargá la última versión y reintentá."
+        confirmLabel="Recargar última versión y reintentar"
+        cancelLabel="Cerrar"
+        loading={false}
+        onConfirm={() => window.location.reload()}
+      />
       <ConfirmDialog
         open={deleteTarget != null}
         onClose={() => {
