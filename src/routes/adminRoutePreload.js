@@ -46,6 +46,10 @@ export const adminRouteLoaders = {
     () => import('../pages/admin/AdminLegisladorEste.jsx'),
     'AdminLegisladorEste',
   ),
+  settingsConcejoDeliberante: namedLazy(
+    () => import('../pages/admin/AdminConcejoDeliberante.jsx'),
+    'AdminConcejoDeliberante',
+  ),
   settingsOfertaAcademica: namedLazy(
     () => import('../pages/admin/AdminOfertaAcademica.jsx'),
     'AdminOfertaAcademica',

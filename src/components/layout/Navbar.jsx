@@ -12,8 +12,14 @@ const newsLink = { to: '/news', label: 'Noticias' }
 
 const afterAreasLinks = [
   { to: '/services', label: 'Servicios' },
-  { to: '/eventos', label: 'Eventos' },
-  { to: '/history', label: 'Historia' },
+  { to: '/eventos', label: 'Eventos', preload: 'events' },
+  {
+    to: '/gobierno/oferta-academica',
+    label: 'Oferta académica',
+    preload: 'governmentOfertaAcademica',
+    end: true,
+  },
+  { to: '/history', label: 'Historia', preload: 'history' },
   {
     to: '/atencion-ciudadano',
     label: 'Atención',
@@ -30,9 +36,9 @@ const governmentLinks = [
     end: true,
   },
   {
-    to: '/gobierno/oferta-academica',
-    label: 'Oferta académica',
-    preload: 'governmentOfertaAcademica',
+    to: '/gobierno/concejo-deliberante',
+    label: 'Concejo Deliberante',
+    preload: 'governmentConcejoDeliberante',
     end: true,
   },
   { to: '/areas', label: 'Áreas', preload: 'areasIndex', end: true },
@@ -103,7 +109,8 @@ export function Navbar() {
   const dropdownRef = useRef(null)
   const location = useLocation()
   const governmentActive =
-    location.pathname.startsWith('/gobierno') || location.pathname.startsWith('/areas')
+    (location.pathname.startsWith('/gobierno') || location.pathname.startsWith('/areas')) &&
+    location.pathname !== '/gobierno/oferta-academica'
 
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : ''
@@ -467,14 +474,8 @@ export function Navbar() {
               label={link.label}
               ariaLabel={link.ariaLabel}
               end={link.end}
-              onMouseEnter={() => {
-                if (link.to === '/history') preloadPublicRoute('history')
-                if (link.to === '/eventos') preloadPublicRoute('events')
-              }}
-              onFocus={() => {
-                if (link.to === '/history') preloadPublicRoute('history')
-                if (link.to === '/eventos') preloadPublicRoute('events')
-              }}
+              onMouseEnter={link.preload ? () => preloadPublicRoute(link.preload) : undefined}
+              onFocus={link.preload ? () => preloadPublicRoute(link.preload) : undefined}
               compact={scrolled}
             />
           ))}

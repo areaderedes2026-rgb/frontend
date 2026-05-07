@@ -10,6 +10,7 @@ export const ROUTES = {
   government: '/gobierno/intendencia',
   governmentIntendencia: '/gobierno/intendencia',
   legisladorEste: '/gobierno/legislador-este',
+  concejoDeliberante: '/gobierno/concejo-deliberante',
   ofertaAcademica: '/gobierno/oferta-academica',
   areas: '/areas',
   area: (slug) => `/areas/${slug}`,
@@ -36,6 +37,7 @@ export const ROUTES = {
   adminSettingsHomeMap: '/admin/settings/home-map',
   adminSettingsIntendencia: '/admin/settings/intendencia',
   adminSettingsLegisladorEste: '/admin/settings/legislador-este',
+  adminSettingsConcejoDeliberante: '/admin/settings/concejo-deliberante',
   adminSettingsOfertaAcademica: '/admin/settings/oferta-academica',
 }
 

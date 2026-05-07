@@ -19,6 +19,10 @@ export const publicRouteLoaders = {
     () => import('../pages/government/LegisladorEste.jsx'),
     'LegisladorEste',
   ),
+  governmentConcejoDeliberante: namedLazy(
+    () => import('../pages/government/ConcejoDeliberante.jsx'),
+    'ConcejoDeliberante',
+  ),
   governmentOfertaAcademica: namedLazy(
     () => import('../pages/government/OfertaAcademica.jsx'),
     'OfertaAcademica',

@@ -28,6 +28,7 @@ const AdminCategories = lazy(adminRouteLoaders.settingsCategories)
 const AdminSettingsHomeMap = lazy(adminRouteLoaders.settingsHomeMap)
 const AdminIntendencia = lazy(adminRouteLoaders.settingsIntendencia)
 const AdminLegisladorEste = lazy(adminRouteLoaders.settingsLegisladorEste)
+const AdminConcejoDeliberante = lazy(adminRouteLoaders.settingsConcejoDeliberante)
 const AdminOfertaAcademica = lazy(adminRouteLoaders.settingsOfertaAcademica)
 const AdminUsers = lazy(adminRouteLoaders.settingsUsers)
 const History = lazy(publicRouteLoaders.history)
@@ -37,6 +38,7 @@ const AreasIndex = lazy(publicRouteLoaders.areasIndex)
 const AreaDetail = lazy(publicRouteLoaders.areaDetail)
 const Intendencia = lazy(publicRouteLoaders.governmentIntendencia)
 const LegisladorEste = lazy(publicRouteLoaders.governmentLegisladorEste)
+const ConcejoDeliberante = lazy(publicRouteLoaders.governmentConcejoDeliberante)
 const OfertaAcademica = lazy(publicRouteLoaders.governmentOfertaAcademica)
 const NewsList = lazy(publicRouteLoaders.newsList)
 const NewsDetail = lazy(publicRouteLoaders.newsDetail)
@@ -194,6 +196,14 @@ export function AppRouter() {
               }
             />
             <Route
+              path="concejo-deliberante"
+              element={
+                <Suspense fallback={<AdminRouteFallback />}>
+                  <AdminConcejoDeliberante />
+                </Suspense>
+              }
+            />
+            <Route
               path="oferta-academica"
               element={
                 <Suspense fallback={<AdminRouteFallback />}>
@@ -257,6 +267,14 @@ export function AppRouter() {
           element={
             <Suspense fallback={<PublicRouteFallback />}>
               <LegisladorEste />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/gobierno/concejo-deliberante"
+          element={
+            <Suspense fallback={<PublicRouteFallback />}>
+              <ConcejoDeliberante />
             </Suspense>
           }
         />

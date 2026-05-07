@@ -25,7 +25,8 @@ export function AdminLayout() {
   const settingsActive =
     (pathname === ROUTES.adminSettings || pathname.startsWith(`${ROUTES.adminSettings}/`)) &&
     pathname !== ROUTES.adminSettingsOfertaAcademica &&
-    pathname !== ROUTES.adminSettingsLegisladorEste
+    pathname !== ROUTES.adminSettingsLegisladorEste &&
+    pathname !== ROUTES.adminSettingsConcejoDeliberante
   const newsActive =
     pathname === ROUTES.adminNews ||
     pathname.startsWith(`${ROUTES.adminNews}/`)
