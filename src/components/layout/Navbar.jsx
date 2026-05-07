@@ -24,6 +24,12 @@ const afterAreasLinks = [
 const governmentLinks = [
   { to: '/gobierno/intendencia', label: 'Intendencia', preload: 'governmentIntendencia', end: true },
   {
+    to: '/gobierno/legislador-este',
+    label: 'Legislador por el Este',
+    preload: 'governmentLegisladorEste',
+    end: true,
+  },
+  {
     to: '/gobierno/oferta-academica',
     label: 'Oferta académica',
     preload: 'governmentOfertaAcademica',

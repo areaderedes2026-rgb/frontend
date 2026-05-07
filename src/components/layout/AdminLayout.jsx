@@ -24,7 +24,8 @@ export function AdminLayout() {
   const sessionLabel = user?.username || user?.name || 'Usuario'
   const settingsActive =
     (pathname === ROUTES.adminSettings || pathname.startsWith(`${ROUTES.adminSettings}/`)) &&
-    pathname !== ROUTES.adminSettingsOfertaAcademica
+    pathname !== ROUTES.adminSettingsOfertaAcademica &&
+    pathname !== ROUTES.adminSettingsLegisladorEste
   const newsActive =
     pathname === ROUTES.adminNews ||
     pathname.startsWith(`${ROUTES.adminNews}/`)

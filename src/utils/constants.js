@@ -9,6 +9,7 @@ export const ROUTES = {
   events: '/eventos',
   government: '/gobierno/intendencia',
   governmentIntendencia: '/gobierno/intendencia',
+  legisladorEste: '/gobierno/legislador-este',
   ofertaAcademica: '/gobierno/oferta-academica',
   areas: '/areas',
   area: (slug) => `/areas/${slug}`,
@@ -34,6 +35,7 @@ export const ROUTES = {
   adminSettingsCategories: '/admin/settings/categories',
   adminSettingsHomeMap: '/admin/settings/home-map',
   adminSettingsIntendencia: '/admin/settings/intendencia',
+  adminSettingsLegisladorEste: '/admin/settings/legislador-este',
   adminSettingsOfertaAcademica: '/admin/settings/oferta-academica',
 }
 
