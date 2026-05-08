@@ -61,19 +61,19 @@ export function Home() {
   const [homeMapContent, setHomeMapContent] = useState(DEFAULT_HOME_MAP_CONTENT)
   const [events, setEvents] = useState([])
   const [eventsLoading, setEventsLoading] = useState(true)
-  const [mobileEventSlide, setMobileEventSlide] = useState(0)
-  const [mobileSliderPaused, setMobileSliderPaused] = useState(() =>
-    typeof window !== 'undefined'
-      ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
-      : false,
-  )
 
   const featuredNews = news[0] ?? null
   const secondaryNews = useMemo(() => news.slice(1, 5), [news])
-  const featuredEvent = events[0] ?? null
-  const secondaryEvents = useMemo(() => events.slice(1, 4), [events])
-  const safeMobileEventSlide =
-    secondaryEvents.length > 0 ? mobileEventSlide % secondaryEvents.length : 0
+
+  const upcomingEvents = useMemo(() => {
+    const now = Date.now()
+    return events
+      .filter((event) => {
+        const ts = new Date(event.eventDate).getTime()
+        return Number.isFinite(ts) ? ts >= now - 12 * 60 * 60 * 1000 : true
+      })
+      .slice(0, 3)
+  }, [events])
 
   useEffect(() => {
     let cancelled = false
@@ -94,15 +94,6 @@ export function Home() {
       cancelled = true
     }
   }, [])
-
-  useEffect(() => {
-    if (secondaryEvents.length <= 1 || mobileSliderPaused) return undefined
-    const id = window.setInterval(() => {
-      if (document.hidden) return
-      setMobileEventSlide((prev) => (prev + 1) % secondaryEvents.length)
-    }, 4800)
-    return () => window.clearInterval(id)
-  }, [secondaryEvents.length, mobileSliderPaused])
 
   useEffect(() => {
     let cancelled = false
@@ -160,206 +151,14 @@ export function Home() {
       </section>
 
       <StorySection
-        eyebrow="Agenda activa"
-        title="Eventos en Trancas"
-        subtitle="Descubrí próximos encuentros culturales, deportivos e institucionales desde la portada."
-        actions={
-          <div className="flex flex-wrap gap-3">
-            <LinkButton to={ROUTES.events}>
-              Ver agenda completa
-            </LinkButton>
-            <LinkButton to={ROUTES.atencionCiudadano} variant="secondary">
-              Consultar un evento
-            </LinkButton>
-          </div>
-        }
-        tone="soft"
-        className="relative"
-      >
-        {featuredEvent ? (
-          <div className="grid gap-5 lg:grid-cols-12">
-            <RevealOnScroll className="lg:col-span-7" variant="slow">
-              <article className="group overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm ring-1 ring-[#1a1d24]/5 transition-all duration-500 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-lg hover:shadow-sky-500/10">
-                <div className="relative flex min-h-72 items-center justify-center bg-slate-900/95 p-3 sm:min-h-80">
-                  <img
-                    src={featuredEvent.flyerUrl}
-                    alt={featuredEvent.title}
-                    className="max-h-120 w-auto max-w-full rounded-md object-contain transition duration-500 group-hover:scale-[1.02]"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                  <span className="absolute left-4 top-4 rounded-full border border-sky-300/50 bg-slate-900/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-sky-100">
-                    Destacado
-                  </span>
-                </div>
-                <div className="p-6">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-sky-800">
-                    {formatShortDate(featuredEvent.eventDate)} · {featuredEvent.place}
-                  </p>
-                  <h3 className="mt-2 font-serif text-2xl font-bold tracking-tight text-[#171b22]">
-                    {featuredEvent.title}
-                  </h3>
-                  <p className="mt-2 text-sm leading-relaxed text-[#4b505a]">
-                    {excerptWords(featuredEvent.summary, 26)}
-                  </p>
-                  <Link
-                    to={ROUTES.events}
-                    className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-sky-800 transition hover:text-[#0f1319]"
-                  >
-                    Ver evento y calendario
-                    <span aria-hidden>→</span>
-                  </Link>
-                </div>
-              </article>
-            </RevealOnScroll>
-            <RevealOnScroll className="lg:col-span-5 lg:h-full" variant="slow" delayMs={120}>
-              <div className="sm:hidden">
-                {secondaryEvents.length > 0 ? (
-                  <div
-                    className="rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-4 shadow-sm ring-1 ring-[#1a1d24]/5"
-                    onMouseEnter={() => setMobileSliderPaused(true)}
-                    onMouseLeave={() => setMobileSliderPaused(false)}
-                  >
-                    <article key={secondaryEvents[safeMobileEventSlide].id}>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-sky-800">
-                        {formatShortDate(secondaryEvents[safeMobileEventSlide].eventDate)}
-                      </p>
-                      <h4 className="mt-1 line-clamp-2 text-base font-semibold text-[#171b22]">
-                        {secondaryEvents[safeMobileEventSlide].title}
-                      </h4>
-                      <p className="mt-1 line-clamp-3 text-sm leading-relaxed text-[#4b505a]">
-                        {excerptWords(secondaryEvents[safeMobileEventSlide].summary, 14)}
-                      </p>
-                      <p className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                        {secondaryEvents[safeMobileEventSlide].place}
-                      </p>
-                    </article>
-                    {secondaryEvents.length > 1 ? (
-                      <div className="mt-4 flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-1.5" role="tablist" aria-label="Eventos secundarios">
-                          {secondaryEvents.map((event, index) => (
-                            <button
-                              key={event.id}
-                              type="button"
-                              role="tab"
-                              aria-selected={safeMobileEventSlide === index}
-                              aria-label={`Ir al evento ${index + 1}`}
-                              className={`h-2.5 w-2.5 rounded-full transition ${
-                                safeMobileEventSlide === index ? 'bg-sky-700' : 'bg-slate-300'
-                              }`}
-                              onClick={() => setMobileEventSlide(index)}
-                            />
-                          ))}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-900"
-                            onClick={() =>
-                              setMobileEventSlide(
-                                (prev) =>
-                                  (prev - 1 + secondaryEvents.length) % secondaryEvents.length,
-                              )
-                            }
-                            aria-label="Evento anterior"
-                          >
-                            ‹
-                          </button>
-                          <button
-                            type="button"
-                            className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-900"
-                            onClick={() =>
-                              setMobileEventSlide((prev) => (prev + 1) % secondaryEvents.length)
-                            }
-                            aria-label="Evento siguiente"
-                          >
-                            ›
-                          </button>
-                          <button
-                            type="button"
-                            className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-900"
-                            onClick={() => setMobileSliderPaused((prev) => !prev)}
-                            aria-label={
-                              mobileSliderPaused ? 'Reanudar reproducción' : 'Pausar reproducción'
-                            }
-                          >
-                            {mobileSliderPaused ? 'Reanudar' : 'Pausar'}
-                          </button>
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
-              </div>
-              <div className="hidden auto-rows-fr gap-4 sm:grid sm:grid-cols-2 lg:h-full lg:grid-cols-1">
-                {secondaryEvents.map((event) => (
-                  <article
-                    key={event.id}
-                    className="rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-4 shadow-sm ring-1 ring-[#1a1d24]/5 transition-all duration-500 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-lg hover:shadow-sky-500/10 sm:p-5"
-                  >
-                    <p className="text-xs font-semibold uppercase tracking-wide text-sky-800">
-                      {formatShortDate(event.eventDate)}
-                    </p>
-                    <h4 className="mt-1 line-clamp-2 text-base font-semibold text-[#171b22]">
-                      {event.title}
-                    </h4>
-                    <p className="mt-1 line-clamp-3 text-sm leading-relaxed text-[#4b505a]">
-                      {excerptWords(event.summary, 14)}
-                    </p>
-                    <p className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                      {event.place}
-                    </p>
-                  </article>
-                ))}
-              </div>
-            </RevealOnScroll>
-          </div>
-        ) : (
-          <div className="rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-6 text-sm text-[#4b505a]">
-            {eventsLoading
-              ? 'Cargando próximos eventos...'
-              : 'Todavía no hay eventos publicados. Pronto se mostrarán aquí.'}
-          </div>
-        )}
-      </StorySection>
-
-      <StorySection
-        id="servicios-rapidos"
-        eyebrow="Servicios"
-        title="Trámites y servicios"
-        subtitle="Consultá requisitos, tiempos de respuesta y canales para iniciar cada gestión."
-        actions={
-          <div className="flex flex-wrap gap-3">
-            <LinkButton to={ROUTES.services}>
-              Ver todos los servicios
-            </LinkButton>
-            <LinkButton to={ROUTES.atencionCiudadano} variant="secondary">
-              Consulta web
-            </LinkButton>
-          </div>
-        }
-        tone="light"
-        className="relative"
-      >
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {SERVICE_PREVIEW.map((item, i) => (
-            <RevealOnScroll key={item.name} variant="slow" delayMs={i * 120} className="h-full">
-              <StoryCard
-                badge={item.category}
-                title={item.name}
-                text={`${item.text} Tiempo orientativo: ${item.eta}.`}
-                to={item.to}
-                cta="Gestionar"
-              />
-            </RevealOnScroll>
-          ))}
-        </div>
-      </StorySection>
-
-      <StorySection
         eyebrow="Actualidad municipal"
         title="Noticias destacadas"
         subtitle="Información oficial sobre obras, servicios y actividades del municipio."
+        actions={
+          <LinkButton to={ROUTES.news}>
+            Ver todas las noticias
+          </LinkButton>
+        }
         tone="soft"
         className="relative"
       >
@@ -422,6 +221,135 @@ export function Home() {
 
             </div>
           </RevealOnScroll>
+        </div>
+      </StorySection>
+
+      <StorySection
+        eyebrow="Agenda activa"
+        title="Próximos eventos"
+        subtitle="Tres eventos para no perderte. Mirá la agenda completa para conocer todos los detalles."
+        actions={
+          <LinkButton to={ROUTES.events}>
+            Ver agenda completa
+          </LinkButton>
+        }
+        tone="light"
+        className="relative"
+      >
+        {eventsLoading ? (
+          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm ring-1 ring-[#1a1d24]/5"
+              >
+                <div className="aspect-4/5 w-full animate-pulse bg-slate-200/70" />
+                <div className="space-y-2 p-4">
+                  <div className="h-3 w-24 animate-pulse rounded bg-slate-200/70" />
+                  <div className="h-4 w-full animate-pulse rounded bg-slate-200/70" />
+                  <div className="h-3 w-32 animate-pulse rounded bg-slate-200/70" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : upcomingEvents.length === 0 ? (
+          <div className="rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-6 text-sm text-[#4b505a]">
+            Todavía no hay eventos publicados. Pronto se mostrarán aquí.
+          </div>
+        ) : (
+          <>
+            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 sm:gap-5">
+              {upcomingEvents.map((event, index) => (
+                <RevealOnScroll
+                  key={event.id}
+                  variant="slow"
+                  delayMs={index * 90}
+                  className="h-full"
+                >
+                  <article className="group h-full overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm ring-1 ring-[#1a1d24]/5 transition-all duration-500 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-lg hover:shadow-sky-500/10">
+                    <Link
+                      to={ROUTES.events}
+                      className="flex h-full flex-col"
+                      aria-label={`${event.title}: ver agenda completa`}
+                    >
+                      <div className="relative flex aspect-4/5 w-full items-center justify-center bg-slate-900/95 p-3">
+                        {event.flyerUrl ? (
+                          <img
+                            src={event.flyerUrl}
+                            alt={event.title}
+                            className="max-h-full max-w-full rounded-md object-contain transition-transform duration-500 group-hover:scale-[1.02]"
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        ) : (
+                          <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                            Sin flyer
+                          </span>
+                        )}
+                        <span className="absolute left-3 top-3 rounded-full border border-sky-300/40 bg-slate-900/80 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-100">
+                          {formatShortDate(event.eventDate)}
+                        </span>
+                      </div>
+                      <div className="flex flex-1 flex-col gap-1 p-4">
+                        <h3 className="line-clamp-2 text-sm font-semibold text-[#171b22] sm:text-base">
+                          {event.title}
+                        </h3>
+                        <p className="line-clamp-1 text-xs text-[#4b505a] sm:text-sm">
+                          {event.place}
+                        </p>
+                        <span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-sky-800 transition-colors group-hover:text-[#0f1319]">
+                          Ver detalle
+                          <span aria-hidden>→</span>
+                        </span>
+                      </div>
+                    </Link>
+                  </article>
+                </RevealOnScroll>
+              ))}
+            </div>
+            <div className="mt-6 flex justify-center sm:mt-8">
+              <Link
+                to={ROUTES.events}
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-sky-800 transition-colors hover:text-[#0f1319]"
+              >
+                Ver todos los eventos
+                <span aria-hidden>→</span>
+              </Link>
+            </div>
+          </>
+        )}
+      </StorySection>
+
+      <StorySection
+        id="servicios-rapidos"
+        eyebrow="Servicios"
+        title="Trámites y servicios"
+        subtitle="Consultá requisitos, tiempos de respuesta y canales para iniciar cada gestión."
+        actions={
+          <div className="flex flex-wrap gap-3">
+            <LinkButton to={ROUTES.services}>
+              Ver todos los servicios
+            </LinkButton>
+            <LinkButton to={ROUTES.atencionCiudadano} variant="secondary">
+              Consulta web
+            </LinkButton>
+          </div>
+        }
+        tone="soft"
+        className="relative"
+      >
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {SERVICE_PREVIEW.map((item, i) => (
+            <RevealOnScroll key={item.name} variant="slow" delayMs={i * 120} className="h-full">
+              <StoryCard
+                badge={item.category}
+                title={item.name}
+                text={`${item.text} Tiempo orientativo: ${item.eta}.`}
+                to={item.to}
+                cta="Gestionar"
+              />
+            </RevealOnScroll>
+          ))}
         </div>
       </StorySection>
 
