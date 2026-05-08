@@ -3,7 +3,6 @@ import { HomeInteractiveMap } from '../components/home/HomeInteractiveMap.jsx'
 import { Link } from 'react-router-dom'
 import { AreasCarousel } from '../components/home/AreasCarousel.jsx'
 import { RevealOnScroll } from '../components/home/RevealOnScroll.jsx'
-import { StoryCard } from '../components/home/StoryCard.jsx'
 import { StorySection } from '../components/home/StorySection.jsx'
 import { NewsCoverMedia } from '../components/news/NewsCoverMedia.jsx'
 import { Container } from '../components/ui/Container.jsx'
@@ -16,37 +15,6 @@ import { formatShortDate } from '../utils/formatDate.js'
 import { ROUTES } from '../utils/constants.js'
 
 const HERO_IMAGE = '/rio.jpeg'
-
-const SERVICE_PREVIEW = [
-  {
-    name: 'Partidas y documentación',
-    eta: '48 hs hábiles',
-    to: ROUTES.services,
-    category: 'Documentación',
-    text: 'Solicitudes administrativas y requisitos obligatorios.',
-  },
-  {
-    name: 'Reclamos urbanos',
-    eta: '72 hs iniciales',
-    to: ROUTES.services,
-    category: 'Obras',
-    text: 'Reportes de alumbrado, limpieza y mantenimiento.',
-  },
-  {
-    name: 'Asistencia social',
-    eta: 'Entrevista previa',
-    to: ROUTES.services,
-    category: 'Comunidad',
-    text: 'Programas de acompañamiento y orientación social.',
-  },
-  {
-    name: 'Turnos de salud',
-    eta: 'Asignación diaria',
-    to: ROUTES.services,
-    category: 'Salud',
-    text: 'Gestión de turnos y prestaciones municipales.',
-  },
-]
 
 function excerptWords(text, maxWords = 14) {
   const value = String(text || '').trim()
@@ -224,134 +192,95 @@ export function Home() {
         </div>
       </StorySection>
 
-      <StorySection
-        eyebrow="Agenda activa"
-        title="Próximos eventos"
-        subtitle="Tres eventos para no perderte. Mirá la agenda completa para conocer todos los detalles."
-        actions={
-          <LinkButton to={ROUTES.events}>
-            Ver agenda completa
-          </LinkButton>
-        }
-        tone="light"
-        className="relative"
-      >
-        {eventsLoading ? (
-          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-            {[0, 1, 2].map((i) => (
-              <div
-                key={i}
-                className="overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm ring-1 ring-[#1a1d24]/5"
-              >
-                <div className="aspect-4/5 w-full animate-pulse bg-slate-200/70" />
-                <div className="space-y-2 p-4">
-                  <div className="h-3 w-24 animate-pulse rounded bg-slate-200/70" />
-                  <div className="h-4 w-full animate-pulse rounded bg-slate-200/70" />
-                  <div className="h-3 w-32 animate-pulse rounded bg-slate-200/70" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : upcomingEvents.length === 0 ? (
-          <div className="rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-6 text-sm text-[#4b505a]">
-            Todavía no hay eventos publicados. Pronto se mostrarán aquí.
-          </div>
-        ) : (
-          <>
-            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 sm:gap-5">
-              {upcomingEvents.map((event, index) => (
-                <RevealOnScroll
-                  key={event.id}
-                  variant="slow"
-                  delayMs={index * 90}
-                  className="h-full"
-                >
-                  <article className="group h-full overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm ring-1 ring-[#1a1d24]/5 transition-all duration-500 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-lg hover:shadow-sky-500/10">
-                    <Link
-                      to={ROUTES.events}
-                      className="flex h-full flex-col"
-                      aria-label={`${event.title}: ver agenda completa`}
-                    >
-                      <div className="relative flex aspect-4/5 w-full items-center justify-center bg-slate-900/95 p-3">
-                        {event.flyerUrl ? (
-                          <img
-                            src={event.flyerUrl}
-                            alt={event.title}
-                            className="max-h-full max-w-full rounded-md object-contain transition-transform duration-500 group-hover:scale-[1.02]"
-                            loading="lazy"
-                            decoding="async"
-                          />
-                        ) : (
-                          <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                            Sin flyer
-                          </span>
-                        )}
-                        <span className="absolute left-3 top-3 rounded-full border border-sky-300/40 bg-slate-900/80 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-100">
-                          {formatShortDate(event.eventDate)}
-                        </span>
-                      </div>
-                      <div className="flex flex-1 flex-col gap-1 p-4">
-                        <h3 className="line-clamp-2 text-sm font-semibold text-[#171b22] sm:text-base">
-                          {event.title}
-                        </h3>
-                        <p className="line-clamp-1 text-xs text-[#4b505a] sm:text-sm">
-                          {event.place}
-                        </p>
-                        <span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-sky-800 transition-colors group-hover:text-[#0f1319]">
-                          Ver detalle
-                          <span aria-hidden>→</span>
-                        </span>
-                      </div>
-                    </Link>
-                  </article>
-                </RevealOnScroll>
-              ))}
-            </div>
-            <div className="mt-6 flex justify-center sm:mt-8">
-              <Link
-                to={ROUTES.events}
-                className="inline-flex items-center gap-1.5 text-sm font-semibold text-sky-800 transition-colors hover:text-[#0f1319]"
-              >
-                Ver todos los eventos
-                <span aria-hidden>→</span>
-              </Link>
-            </div>
-          </>
-        )}
-      </StorySection>
+      <section className="relative border-y border-[#e8e5dd] bg-[#f7f7f5] py-10 sm:py-12">
+        <Container>
+          <RevealOnScroll variant="slow">
+            <h2 className="text-center font-serif text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
+              Próximos eventos
+            </h2>
+          </RevealOnScroll>
 
-      <StorySection
-        id="servicios-rapidos"
-        eyebrow="Servicios"
-        title="Trámites y servicios"
-        subtitle="Consultá requisitos, tiempos de respuesta y canales para iniciar cada gestión."
-        actions={
-          <div className="flex flex-wrap gap-3">
-            <LinkButton to={ROUTES.services}>
-              Ver todos los servicios
-            </LinkButton>
-            <LinkButton to={ROUTES.atencionCiudadano} variant="secondary">
-              Consulta web
-            </LinkButton>
+          <div className="mt-6 sm:mt-8">
+            {eventsLoading ? (
+              <div className="mx-auto grid max-w-3xl justify-items-center gap-3 sm:grid-cols-3 sm:gap-4">
+                {[0, 1, 2].map((i) => (
+                  <div
+                    key={i}
+                    className="w-full max-w-56 overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm ring-1 ring-[#1a1d24]/5"
+                  >
+                    <div className="aspect-3/4 w-full animate-pulse bg-slate-200/70" />
+                    <div className="space-y-2 p-3">
+                      <div className="h-3 w-20 animate-pulse rounded bg-slate-200/70" />
+                      <div className="h-4 w-full animate-pulse rounded bg-slate-200/70" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : upcomingEvents.length === 0 ? (
+              <div className="mx-auto max-w-2xl rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-5 text-center text-sm text-[#4b505a]">
+                Todavía no hay eventos publicados. Pronto se mostrarán aquí.
+              </div>
+            ) : (
+              <>
+                <div className="mx-auto grid max-w-3xl justify-items-center gap-3 sm:grid-cols-3 sm:gap-4">
+                  {upcomingEvents.map((event, index) => (
+                    <RevealOnScroll
+                      key={event.id}
+                      variant="slow"
+                      delayMs={index * 90}
+                      className="h-full w-full max-w-56"
+                    >
+                      <article className="group h-full overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm ring-1 ring-[#1a1d24]/5 transition-all duration-500 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-lg hover:shadow-sky-500/10">
+                        <Link
+                          to={ROUTES.events}
+                          className="flex h-full flex-col"
+                          aria-label={`${event.title}: ver agenda completa`}
+                        >
+                          <div className="relative flex aspect-3/4 w-full items-center justify-center bg-slate-900/95 p-2.5">
+                            {event.flyerUrl ? (
+                              <img
+                                src={event.flyerUrl}
+                                alt={event.title}
+                                className="max-h-full max-w-full rounded-md object-contain transition-transform duration-500 group-hover:scale-[1.02]"
+                                loading="lazy"
+                                decoding="async"
+                              />
+                            ) : (
+                              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                                Sin flyer
+                              </span>
+                            )}
+                            <span className="absolute left-2.5 top-2.5 rounded-full border border-sky-300/40 bg-slate-900/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-sky-100">
+                              {formatShortDate(event.eventDate)}
+                            </span>
+                          </div>
+                          <div className="flex flex-1 flex-col gap-1 p-3">
+                            <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-[#171b22]">
+                              {event.title}
+                            </h3>
+                            <p className="line-clamp-1 text-xs text-[#4b505a]">
+                              {event.place}
+                            </p>
+                          </div>
+                        </Link>
+                      </article>
+                    </RevealOnScroll>
+                  ))}
+                </div>
+                <div className="mt-5 flex justify-center sm:mt-6">
+                  <Link
+                    to={ROUTES.events}
+                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-sky-800 transition-colors hover:text-[#0f1319]"
+                  >
+                    Ver todos los eventos
+                    <span aria-hidden>→</span>
+                  </Link>
+                </div>
+              </>
+            )}
           </div>
-        }
-        tone="soft"
-        className="relative"
-      >
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {SERVICE_PREVIEW.map((item, i) => (
-            <RevealOnScroll key={item.name} variant="slow" delayMs={i * 120} className="h-full">
-              <StoryCard
-                badge={item.category}
-                title={item.name}
-                text={`${item.text} Tiempo orientativo: ${item.eta}.`}
-                to={item.to}
-                cta="Gestionar"
-              />
-            </RevealOnScroll>
-          ))}
-        </div>
-      </StorySection>
+        </Container>
+      </section>
 
       <StorySection
         eyebrow="Áreas municipales"
