@@ -1,15 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { AdminAreaSchoolsEditor } from '../../components/admin/AdminAreaSchoolsEditor.jsx'
+import { AdminAreaEditorPreview } from '../../components/admin/AdminAreaEditorPreview.jsx'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
 import { HeroImageModal } from '../../components/admin/HeroImageModal.jsx'
 import { SingleImageUploadField } from '../../components/admin/SingleImageUploadField.jsx'
-import { Button } from '../../components/ui/Button.jsx'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
 import { Modal } from '../../components/ui/Modal.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
 import {
-  formErrorClass,
   inputClass,
   labelClass,
   textareaClass,
@@ -36,16 +34,6 @@ const ACTION_BTN_BASE =
   'inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto'
 const ACTION_BTN_NEUTRAL = `${ACTION_BTN_BASE} border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50`
 const ACTION_BTN_PRIMARY = `${ACTION_BTN_BASE} bg-sky-700 text-white hover:bg-sky-800`
-
-const EMPTY_SCHOOL_ROW = {
-  id: '',
-  name: '',
-  discipline: '',
-  schedule: '',
-  venue: '',
-  description: '',
-  imageUrl: '',
-}
 
 function mapSchoolsToForm(profile) {
   const ss = profile.schoolsSection
@@ -388,75 +376,8 @@ export function AdminAreaProfiles() {
     })
   }, [selectedArea])
 
-  function setDirectorField(field, value) {
-    setForm((prev) => ({ ...prev, director: { ...prev.director, [field]: value } }))
-  }
-  function setLocationField(field, value) {
-    setForm((prev) => ({ ...prev, location: { ...prev.location, [field]: value } }))
-  }
-
-  function updateListItem(key, index, field, value) {
-    setForm((prev) => {
-      const copy = [...prev[key]]
-      copy[index] = { ...copy[index], [field]: value }
-      return { ...prev, [key]: copy }
-    })
-  }
-  function addListItem(key, row) {
-    setForm((prev) => ({ ...prev, [key]: [...prev[key], row] }))
-  }
-  function removeListItem(key, index) {
-    setForm((prev) => ({
-      ...prev,
-      [key]: prev[key].filter((_, i) => i !== index),
-    }))
-  }
-  function updateNotice(index, value) {
-    setForm((prev) => {
-      const copy = [...prev.notices]
-      copy[index] = value
-      return { ...prev, notices: copy }
-    })
-  }
-
-  function setSchoolsSectionField(field, value) {
-    setForm((prev) => ({
-      ...prev,
-      schoolsSection: { ...prev.schoolsSection, [field]: value },
-    }))
-  }
-
-  function appendSchoolItem(draft = {}) {
-    setForm((prev) => ({
-      ...prev,
-      schoolsSection: {
-        ...prev.schoolsSection,
-        items: [...(prev.schoolsSection?.items || []), { ...EMPTY_SCHOOL_ROW, ...draft }],
-      },
-    }))
-  }
-
-  function replaceSchoolItem(index, draft) {
-    setForm((prev) => {
-      const items = [...(prev.schoolsSection?.items || [])]
-      if (index < 0 || index >= items.length) return prev
-      items[index] = { ...items[index], ...draft }
-      return { ...prev, schoolsSection: { ...prev.schoolsSection, items } }
-    })
-  }
-
-  function removeSchoolItem(index) {
-    setForm((prev) => ({
-      ...prev,
-      schoolsSection: {
-        ...prev.schoolsSection,
-        items: (prev.schoolsSection?.items || []).filter((_, i) => i !== index),
-      },
-    }))
-  }
-
   async function handleSubmit(e) {
-    e.preventDefault()
+    e?.preventDefault?.()
     setError('')
     if (!isApiConfigured()) {
       setToast({
@@ -712,18 +633,22 @@ export function AdminAreaProfiles() {
               disabled={creatingArea || areasLoading}
             />
           </div>
-          <div className="sm:col-span-2 flex justify-end gap-2 border-t border-slate-200/80 pt-4">
-            <Button
+          <div className="sm:col-span-2 flex flex-col-reverse gap-2 border-t border-slate-200/80 pt-4 sm:flex-row sm:justify-end">
+            <button
               type="button"
-              variant="secondary"
               onClick={() => setCreateModalOpen(false)}
               disabled={creatingArea}
+              className={ACTION_BTN_NEUTRAL}
             >
               Cancelar
-            </Button>
-            <Button type="submit" disabled={creatingArea || areasLoading}>
+            </button>
+            <button
+              type="submit"
+              disabled={creatingArea || areasLoading}
+              className={ACTION_BTN_PRIMARY}
+            >
               {creatingArea ? 'Creando…' : 'Crear área'}
-            </Button>
+            </button>
           </div>
         </form>
       </Modal>
@@ -1130,283 +1055,23 @@ export function AdminAreaProfiles() {
         ) : null}
 
         {activeTab === 'edit' ? (
-          <form className="space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
-            <label className={labelClass}>
-              Área a editar
-              <select
-                value={selectedSlug}
-                onChange={(e) => setSelectedSlug(e.target.value)}
-                className="news-select-minimal"
-                disabled={loading || saving}
-              >
-                {areas.map((area) => (
-                  <option key={area.slug} value={area.slug}>
-                    {area.title}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <p className="mt-2 text-xs text-slate-500">
-              Área seleccionada: <span className="font-semibold">{selectedArea?.title}</span>
-            </p>
-          </div>
-
-          {!selectedSlug ? (
-            <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-5 py-10 text-center text-sm text-slate-600">
-              No hay áreas disponibles. Creá una nueva para comenzar.
-            </div>
-          ) : loading ? (
-            <div className="animate-pulse rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-              <div className="h-4 w-44 rounded bg-slate-100" />
-              <div className="mt-3 h-3 w-full rounded bg-slate-100" />
-              <div className="mt-2 h-3 w-5/6 rounded bg-slate-100" />
-            </div>
-          ) : (
-            <>
-              {error ? (
-                <p className={formErrorClass} role="alert">
-                  {error}
-                </p>
-              ) : null}
-
-              <div className="grid gap-5 lg:grid-cols-12">
-                <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm lg:col-span-7">
-                  <h2 className="text-base font-semibold text-slate-900">Identidad del área</h2>
-                  <div className="mt-4 space-y-4">
-                    <label className={labelClass}>
-                      Nombre del área
-                      <input
-                        className={inputClass}
-                        value={areaMeta.title}
-                        onChange={(e) =>
-                          setAreaMeta((prev) => ({ ...prev, title: e.target.value }))
-                        }
-                        disabled={saving}
-                      />
-                    </label>
-                    <label className={labelClass}>
-                      Slug del área
-                      <input
-                        className={inputClass}
-                        value={areaMeta.slug}
-                        onChange={(e) =>
-                          setAreaMeta((prev) => ({
-                            ...prev,
-                            slug: e.target.value,
-                          }))
-                        }
-                        disabled={saving}
-                      />
-                    </label>
-                    <label className={labelClass}>
-                      Descripción del área
-                      <textarea
-                        className={`${textareaClass} min-h-28`}
-                        value={areaMeta.description}
-                        onChange={(e) =>
-                          setAreaMeta((prev) => ({
-                            ...prev,
-                            description: e.target.value,
-                          }))
-                        }
-                        disabled={saving}
-                      />
-                    </label>
-                    <label className={labelClass}>
-                      Etiqueta superior
-                      <input
-                        className={inputClass}
-                        value={form.heroTag}
-                        onChange={(e) => setForm((p) => ({ ...p, heroTag: e.target.value }))}
-                        disabled={saving}
-                      />
-                    </label>
-                    <label className={labelClass}>
-                      Texto de misión (bajo el título en la portada del área)
-                      <textarea
-                        className={`${textareaClass} min-h-24`}
-                        value={form.mission}
-                        onChange={(e) => setForm((p) => ({ ...p, mission: e.target.value }))}
-                        disabled={saving}
-                      />
-                    </label>
-                    <SingleImageUploadField
-                      label="Imagen de portada del área"
-                      helpText="Se usa en la cabecera pública del detalle del área."
-                      value={areaMeta.coverImage}
-                      onChange={(value) =>
-                        setAreaMeta((prev) => ({ ...prev, coverImage: value }))
-                      }
-                      kind="cover"
-                      disabled={saving}
-                    />
-                  </div>
-                </section>
-
-                <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm lg:col-span-5">
-                  <h2 className="text-base font-semibold text-slate-900">Dirección del área</h2>
-                  <div className="mt-4 space-y-3">
-                    <label className={labelClass}>
-                      Nombre
-                      <input className={inputClass} value={form.director.name} onChange={(e) => setDirectorField('name', e.target.value)} disabled={saving} />
-                    </label>
-                    <label className={labelClass}>
-                      Cargo
-                      <input className={inputClass} value={form.director.role} onChange={(e) => setDirectorField('role', e.target.value)} disabled={saving} />
-                    </label>
-                    <div>
-                      <SingleImageUploadField
-                        label="Foto del director/a"
-                        helpText="Subí la imagen principal del responsable del área."
-                        value={form.director.photoUrl}
-                        onChange={(value) => setDirectorField('photoUrl', value)}
-                        kind="cover"
-                        disabled={saving}
-                      />
-                    </div>
-                    <label className={labelClass}>
-                      Correo
-                      <input className={inputClass} value={form.director.email} onChange={(e) => setDirectorField('email', e.target.value)} disabled={saving} />
-                    </label>
-                    <label className={labelClass}>
-                      Teléfono
-                      <input className={inputClass} value={form.director.phone} onChange={(e) => setDirectorField('phone', e.target.value)} disabled={saving} />
-                    </label>
-                    <label className={labelClass}>
-                      Horario
-                      <input className={inputClass} value={form.director.officeHours} onChange={(e) => setDirectorField('officeHours', e.target.value)} disabled={saving} />
-                    </label>
-                    <label className={labelClass}>
-                      Bio
-                      <textarea className={`${textareaClass} min-h-28`} value={form.director.bio} onChange={(e) => setDirectorField('bio', e.target.value)} disabled={saving} />
-                    </label>
-                  </div>
-                </section>
-              </div>
-
-              <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <h2 className="text-base font-semibold text-slate-900">Servicios</h2>
-                  <Button type="button" variant="secondary" onClick={() => addListItem('serviceBlocks', { title: '', description: '', mode: '' })} disabled={saving}>
-                    + Agregar servicio
-                  </Button>
-                </div>
-                <div className="mt-4 space-y-3">
-                  {form.serviceBlocks.map((row, idx) => (
-                    <div key={`srv-${idx}`} className="grid gap-3 rounded-xl border border-slate-200/80 bg-slate-50/60 p-3 sm:grid-cols-12">
-                      <input className={`${inputClass} sm:col-span-3`} placeholder="Título" value={row.title} onChange={(e) => updateListItem('serviceBlocks', idx, 'title', e.target.value)} disabled={saving} />
-                      <input className={`${inputClass} sm:col-span-3`} placeholder="Modalidad" value={row.mode} onChange={(e) => updateListItem('serviceBlocks', idx, 'mode', e.target.value)} disabled={saving} />
-                      <input className={`${inputClass} sm:col-span-5`} placeholder="Descripción" value={row.description} onChange={(e) => updateListItem('serviceBlocks', idx, 'description', e.target.value)} disabled={saving} />
-                      <Button type="button" variant="danger" className="sm:col-span-1" onClick={() => removeListItem('serviceBlocks', idx)} disabled={saving}>
-                        Quitar
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-              <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <h2 className="text-base font-semibold text-slate-900">Iniciativas</h2>
-                  <Button type="button" variant="secondary" onClick={() => addListItem('initiatives', { title: '', description: '' })} disabled={saving}>
-                    + Agregar iniciativa
-                  </Button>
-                </div>
-                <div className="mt-4 space-y-3">
-                  {form.initiatives.map((row, idx) => (
-                    <div key={`ini-${idx}`} className="grid gap-3 rounded-xl border border-slate-200/80 bg-slate-50/60 p-3 sm:grid-cols-12">
-                      <input className={`${inputClass} sm:col-span-4`} placeholder="Título" value={row.title} onChange={(e) => updateListItem('initiatives', idx, 'title', e.target.value)} disabled={saving} />
-                      <input className={`${inputClass} sm:col-span-7`} placeholder="Descripción" value={row.description} onChange={(e) => updateListItem('initiatives', idx, 'description', e.target.value)} disabled={saving} />
-                      <Button type="button" variant="danger" className="sm:col-span-1" onClick={() => removeListItem('initiatives', idx)} disabled={saving}>
-                        Quitar
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-              <AdminAreaSchoolsEditor
-                saving={saving}
-                schoolsSection={form.schoolsSection}
-                onSetSectionField={setSchoolsSectionField}
-                onAppendSchool={appendSchoolItem}
-                onReplaceSchool={replaceSchoolItem}
-                onRemoveSchool={removeSchoolItem}
-              />
-
-              <div className="grid gap-5 lg:grid-cols-12">
-                <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm lg:col-span-6">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h2 className="text-base font-semibold text-slate-900">Contactos</h2>
-                    <Button type="button" variant="secondary" onClick={() => addListItem('contactCards', { label: '', value: '', note: '' })} disabled={saving}>
-                      + Agregar contacto
-                    </Button>
-                  </div>
-                  <div className="mt-4 space-y-3">
-                    {form.contactCards.map((row, idx) => (
-                      <div key={`con-${idx}`} className="grid gap-3 rounded-xl border border-slate-200/80 bg-slate-50/60 p-3">
-                        <input className={inputClass} placeholder="Etiqueta" value={row.label} onChange={(e) => updateListItem('contactCards', idx, 'label', e.target.value)} disabled={saving} />
-                        <input className={inputClass} placeholder="Valor" value={row.value} onChange={(e) => updateListItem('contactCards', idx, 'value', e.target.value)} disabled={saving} />
-                        <input className={inputClass} placeholder="Nota" value={row.note} onChange={(e) => updateListItem('contactCards', idx, 'note', e.target.value)} disabled={saving} />
-                        <Button type="button" variant="danger" onClick={() => removeListItem('contactCards', idx)} disabled={saving}>
-                          Quitar
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-
-                <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm lg:col-span-6">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h2 className="text-base font-semibold text-slate-900">Avisos</h2>
-                    <Button type="button" variant="secondary" onClick={() => setForm((p) => ({ ...p, notices: [...p.notices, ''] }))} disabled={saving}>
-                      + Agregar aviso
-                    </Button>
-                  </div>
-                  <div className="mt-4 space-y-3">
-                    {form.notices.map((notice, idx) => (
-                      <div key={`note-${idx}`} className="flex gap-2">
-                        <input className={inputClass} value={notice} onChange={(e) => updateNotice(idx, e.target.value)} disabled={saving} />
-                        <Button type="button" variant="danger" onClick={() => setForm((p) => ({ ...p, notices: p.notices.filter((_, i) => i !== idx) }))} disabled={saving}>
-                          Quitar
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              </div>
-
-              <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-                <h2 className="text-base font-semibold text-slate-900">Ubicación y mapa</h2>
-                <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                  <label className={labelClass}>
-                    Dirección
-                    <input className={inputClass} value={form.location.address} onChange={(e) => setLocationField('address', e.target.value)} disabled={saving} />
-                  </label>
-                  <label className={labelClass}>
-                    Referencias
-                    <input className={inputClass} value={form.location.references} onChange={(e) => setLocationField('references', e.target.value)} disabled={saving} />
-                  </label>
-                  <label className={labelClass}>
-                    URL mapa embebido
-                    <input className={inputClass} value={form.location.mapEmbedUrl} onChange={(e) => setLocationField('mapEmbedUrl', e.target.value)} disabled={saving} />
-                  </label>
-                  <label className={labelClass}>
-                    URL mapa externo
-                    <input className={inputClass} value={form.location.mapExternalUrl} onChange={(e) => setLocationField('mapExternalUrl', e.target.value)} disabled={saving} />
-                  </label>
-                </div>
-              </section>
-            </>
-          )}
-
-          <div className="flex justify-end border-t border-slate-200/80 pt-4">
-            <Button type="submit" disabled={loading || saving || !selectedSlug}>
-              {saving ? 'Guardando…' : 'Guardar cambios del área'}
-            </Button>
-          </div>
-          </form>
+          <AdminAreaEditorPreview
+            selectedArea={selectedArea}
+            selectedSlug={selectedSlug}
+            setSelectedSlug={setSelectedSlug}
+            areas={areas}
+            areasLoading={areasLoading}
+            loading={loading}
+            saving={saving}
+            error={error}
+            form={form}
+            setForm={setForm}
+            areaMeta={areaMeta}
+            setAreaMeta={setAreaMeta}
+            onSubmit={() => void handleSubmit()}
+            onBackToCatalog={() => setTab('catalog')}
+            apiAvailable={isApiConfigured()}
+          />
         ) : null}
       </AdminPageShell>
     </>
