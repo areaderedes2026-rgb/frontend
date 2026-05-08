@@ -28,6 +28,11 @@ export function AdminPageShell({
       <div className={`admin-fade-up space-y-6 ${contentClassName}`.trim()}>{children}</div>
     )
 
+  const hasHeader = Boolean(title || eyebrow || subtitle)
+  const showHeader = hasHeader
+  const actionsTopMargin = showBackLink || showHeader ? 'mt-6' : ''
+  const bodyTopMargin = showBackLink || showHeader || actions ? 'mt-8 sm:mt-10' : ''
+
   return (
     <div className={`mx-auto w-full ${maxWidthClass}`}>
       {showBackLink ? (
@@ -42,29 +47,35 @@ export function AdminPageShell({
         </Link>
       ) : null}
 
-      <header className={showBackLink ? 'mt-5 sm:mt-6' : ''}>
-        {eyebrow ? (
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-700">
-            {eyebrow}
-          </p>
-        ) : null}
-        <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-          {title}
-        </h1>
-        {subtitle ? (
-          <p className="mt-3 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
-            {subtitle}
-          </p>
-        ) : null}
-      </header>
+      {showHeader ? (
+        <header className={showBackLink ? 'mt-5 sm:mt-6' : ''}>
+          {eyebrow ? (
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-700">
+              {eyebrow}
+            </p>
+          ) : null}
+          {title ? (
+            <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+              {title}
+            </h1>
+          ) : null}
+          {subtitle ? (
+            <p className="mt-3 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
+              {subtitle}
+            </p>
+          ) : null}
+        </header>
+      ) : null}
 
       {actions ? (
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
+        <div
+          className={`${actionsTopMargin} flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4`.trim()}
+        >
           {actions}
         </div>
       ) : null}
 
-      <div className="mt-8 sm:mt-10">{body}</div>
+      <div className={bodyTopMargin}>{body}</div>
     </div>
   )
 }
