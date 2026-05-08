@@ -405,8 +405,8 @@ export function AdminCitizenAttentionEditorPreview({
                 Sin imagen de portada
               </div>
             )}
-            <div className="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/88 to-slate-900/25" />
-            <div className="absolute right-4 top-4 sm:right-6 sm:top-6">
+            <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/88 to-slate-900/25" />
+            <div className="absolute right-4 top-4 z-20 sm:right-6 sm:top-6">
               <EditChip
                 tone="overlay"
                 label="Editar portada"
@@ -421,7 +421,7 @@ export function AdminCitizenAttentionEditorPreview({
                 disabled={saving}
               />
             </div>
-            <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8 lg:p-10">
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 p-6 sm:p-8 lg:p-10">
               {form.heroEyebrow ? (
                 <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-sky-200 sm:text-xs">
                   {form.heroEyebrow}
