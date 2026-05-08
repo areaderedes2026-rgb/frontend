@@ -121,15 +121,6 @@ function AreaCard({ area, index, compact = false }) {
           >
             {area.title}
           </h3>
-          <p
-            className={`mt-2 text-white/95 ${
-              compact
-                ? 'line-clamp-3 text-sm leading-relaxed'
-                : 'line-clamp-3 text-sm leading-relaxed sm:line-clamp-4 sm:text-base'
-            }`}
-          >
-            {area.description}
-          </p>
           <span
             className={`mt-3 inline-flex items-center gap-2 font-semibold text-white transition-all duration-300 group-hover:gap-3 ${
               compact ? 'text-sm' : 'text-sm'
