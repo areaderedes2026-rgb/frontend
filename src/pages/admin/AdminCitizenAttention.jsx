@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { AdminCitizenAttentionEditorPreview } from '../../components/admin/AdminCitizenAttentionEditorPreview.jsx'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
 import { HeroImageModal } from '../../components/admin/HeroImageModal.jsx'
-import { Button } from '../../components/ui/Button.jsx'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
 import { Modal } from '../../components/ui/Modal.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
-import { formErrorClass, inputClass, labelClass, textareaClass } from '../../components/ui/formStyles.js'
+import { inputClass, labelClass } from '../../components/ui/formStyles.js'
 import {
   DEFAULT_CITIZEN_ATTENTION_CONTENT,
   mergeCitizenAttentionContent,
@@ -19,6 +20,14 @@ import {
 } from '../../services/citizenAttentionService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
 import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
+
+const PAGE_SIZE = 12
+
+const ACTION_BTN_BASE =
+  'inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto'
+const ACTION_BTN_NEUTRAL = `${ACTION_BTN_BASE} border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50`
+const ACTION_BTN_PRIMARY = `${ACTION_BTN_BASE} bg-sky-700 text-white hover:bg-sky-800`
+const ACTION_BTN_DANGER = `${ACTION_BTN_BASE} bg-red-600 text-white hover:bg-red-700`
 
 const STATUS_FILTERS = [
   { value: 'all', label: 'Todas' },
@@ -79,25 +88,15 @@ function mapContentToForm(content) {
   }
 }
 
-function updateArrayItem(setter, key, index, field, value) {
-  setter((prev) => {
-    const list = [...prev[key]]
-    const current = list[index]
-    list[index] = field == null ? value : { ...current, [field]: value }
-    return { ...prev, [key]: list }
-  })
-}
-
-function addRow(setter, key, row) {
-  setter((prev) => ({ ...prev, [key]: [...prev[key], row] }))
-}
-
-function removeRow(setter, key, index) {
-  setter((prev) => ({ ...prev, [key]: prev[key].filter((_, i) => i !== index) }))
-}
-
 function cleanList(rows, mapper) {
   return rows.map(mapper).filter(Boolean)
+}
+
+function normalize(text) {
+  return String(text || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
 }
 
 function formatDateTime(value) {
@@ -118,6 +117,64 @@ function InquiryStatusPill({ status }) {
       {meta.label}
     </span>
   )
+}
+
+function Spinner({ tone = 'sky', size = 'sm' }) {
+  const dim = size === 'sm' ? 'h-4 w-4 border-2' : 'h-5 w-5 border-2'
+  const color =
+    tone === 'white'
+      ? 'border-white/40 border-t-white'
+      : 'border-slate-300 border-t-sky-700'
+  return (
+    <span
+      className={`inline-block animate-spin rounded-full ${color} ${dim}`}
+      aria-hidden
+    />
+  )
+}
+
+function StatCard({ label, value, tone = 'slate' }) {
+  const styles = {
+    slate: 'border-slate-200 bg-white text-slate-900',
+    amber: 'border-amber-200 bg-amber-50 text-amber-900',
+    sky: 'border-sky-200 bg-sky-50 text-sky-900',
+    emerald: 'border-emerald-200 bg-emerald-50 text-emerald-900',
+  }
+  const labelStyles = {
+    slate: 'text-slate-500',
+    amber: 'text-amber-700',
+    sky: 'text-sky-700',
+    emerald: 'text-emerald-700',
+  }
+  return (
+    <article className={`rounded-2xl border p-4 shadow-sm ${styles[tone] || styles.slate}`}>
+      <p className={`text-xs font-bold uppercase tracking-wide ${labelStyles[tone] || labelStyles.slate}`}>
+        {label}
+      </p>
+      <p className="mt-2 text-2xl font-black tabular-nums tracking-tight">{value}</p>
+    </article>
+  )
+}
+
+function paginationModel(page, totalPages) {
+  if (totalPages <= 1) return { items: [{ type: 'page', n: 1 }], totalPages: 1 }
+  if (totalPages <= 7) {
+    return {
+      totalPages,
+      items: Array.from({ length: totalPages }, (_, i) => ({ type: 'page', n: i + 1 })),
+    }
+  }
+  const set = new Set(
+    [1, totalPages, page, page - 1, page + 1].filter((n) => n >= 1 && n <= totalPages),
+  )
+  const sorted = Array.from(set).sort((a, b) => a - b)
+  const items = []
+  for (let i = 0; i < sorted.length; i += 1) {
+    items.push({ type: 'page', n: sorted[i] })
+    const next = sorted[i + 1]
+    if (next != null && next - sorted[i] > 1) items.push({ type: 'gap', key: `gap-${sorted[i]}` })
+  }
+  return { totalPages, items }
 }
 
 export function AdminCitizenAttention() {
@@ -141,6 +198,8 @@ export function AdminCitizenAttention() {
   const [toast, setToast] = useState(null)
   const [conflictOpen, setConflictOpen] = useState(false)
   const [heroImageOpen, setHeroImageOpen] = useState(false)
+  const [inquirySearch, setInquirySearch] = useState('')
+  const [page, setPage] = useState(1)
   const dismissToast = useCallback(() => setToast(null), [])
 
   const stats = useMemo(() => {
@@ -150,6 +209,33 @@ export function AdminCitizenAttention() {
     const resueltas = inquiries.filter((i) => i.status === 'resuelta').length
     return { total, sinResolver, leidas, resueltas }
   }, [inquiries])
+
+  const filteredInquiries = useMemo(() => {
+    const term = normalize(inquirySearch)
+    if (!term) return inquiries
+    return inquiries.filter((inquiry) => {
+      const haystack = [
+        inquiry.id,
+        inquiry.firstName,
+        inquiry.lastName,
+        inquiry.dni,
+        inquiry.phone,
+        inquiry.topic,
+        inquiry.message,
+      ]
+      return haystack.some((value) => normalize(value).includes(term))
+    })
+  }, [inquiries, inquirySearch])
+
+  const totalPages = Math.max(1, Math.ceil(filteredInquiries.length / PAGE_SIZE))
+  const safePage = Math.min(Math.max(page, 1), totalPages)
+  const rangeStart = (safePage - 1) * PAGE_SIZE
+  const rangeEnd = Math.min(rangeStart + PAGE_SIZE, filteredInquiries.length)
+  const paginatedInquiries = useMemo(
+    () => filteredInquiries.slice(rangeStart, rangeEnd),
+    [filteredInquiries, rangeStart, rangeEnd],
+  )
+  const pagModel = paginationModel(safePage, totalPages)
 
   const loadContent = useCallback(async () => {
     setContentLoading(true)
@@ -196,8 +282,12 @@ export function AdminCitizenAttention() {
     void loadInquiries()
   }, [loadInquiries])
 
+  useEffect(() => {
+    setPage(1)
+  }, [statusFilter, inquirySearch])
+
   async function handleSaveContent(event) {
-    event.preventDefault()
+    event?.preventDefault?.()
     if (!isApiConfigured()) {
       setToast({ type: 'error', message: 'No hay conexión disponible con el backend.' })
       return
@@ -295,6 +385,12 @@ export function AdminCitizenAttention() {
     }
   }
 
+  function clearInquiryFilters() {
+    setStatusFilter('all')
+    setInquirySearch('')
+    setPage(1)
+  }
+
   async function handleDeleteInquiry() {
     if (!selectedInquiry) return
     setDetailUpdating(true)
@@ -313,22 +409,16 @@ export function AdminCitizenAttention() {
 
   return (
     <>
-      <Modal
+      <ConfirmDialog
         open={conflictOpen}
         onClose={() => setConflictOpen(false)}
         title="Cambios desactualizados"
         description="Otro usuario guardó cambios antes que vos. Recargá la última versión y reintentá."
-        size="default"
-      >
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="secondary" onClick={() => setConflictOpen(false)}>
-            Cerrar
-          </Button>
-          <Button type="button" onClick={() => window.location.reload()}>
-            Recargar última versión y reintentar
-          </Button>
-        </div>
-      </Modal>
+        confirmLabel="Recargar última versión y reintentar"
+        cancelLabel="Cerrar"
+        loading={false}
+        onConfirm={() => window.location.reload()}
+      />
       {toast ? <Toast variant={toast.type} message={toast.message} onDismiss={dismissToast} /> : null}
       <Modal
         open={detailOpen}
@@ -390,18 +480,38 @@ export function AdminCitizenAttention() {
             </div>
 
             <div className="flex flex-wrap gap-2 border-t border-slate-200/80 pt-4">
-              <Button type="button" variant="secondary" disabled={detailUpdating} onClick={() => void handleChangeInquiryStatus('sin_resolver')}>
+              <button
+                type="button"
+                disabled={detailUpdating}
+                onClick={() => void handleChangeInquiryStatus('sin_resolver')}
+                className={ACTION_BTN_NEUTRAL}
+              >
                 Marcar sin resolver
-              </Button>
-              <Button type="button" variant="secondary" disabled={detailUpdating} onClick={() => void handleChangeInquiryStatus('leida')}>
+              </button>
+              <button
+                type="button"
+                disabled={detailUpdating}
+                onClick={() => void handleChangeInquiryStatus('leida')}
+                className={ACTION_BTN_NEUTRAL}
+              >
                 Marcar leída
-              </Button>
-              <Button type="button" disabled={detailUpdating} onClick={() => void handleChangeInquiryStatus('resuelta')}>
+              </button>
+              <button
+                type="button"
+                disabled={detailUpdating}
+                onClick={() => void handleChangeInquiryStatus('resuelta')}
+                className={ACTION_BTN_PRIMARY}
+              >
                 Marcar resuelta
-              </Button>
-              <Button type="button" variant="danger" disabled={detailUpdating} onClick={() => void handleDeleteInquiry()}>
+              </button>
+              <button
+                type="button"
+                disabled={detailUpdating}
+                onClick={() => void handleDeleteInquiry()}
+                className={ACTION_BTN_DANGER}
+              >
                 Eliminar consulta
-              </Button>
+              </button>
             </div>
           </div>
         ) : (
@@ -429,198 +539,322 @@ export function AdminCitizenAttention() {
 
       <AdminPageShell
         showBackLink={false}
-        eyebrow="Atención al ciudadano"
-        title="Administrar atención"
-        subtitle="Gestioná el contenido público y seguí las consultas de vecinos como un tablero de tareas."
-        maxWidthClass="max-w-6xl"
+        eyebrow=""
+        maxWidthClass="max-w-none"
         variant="plain"
         actions={
-          activeTab === 'content' ? (
-            <Button type="button" variant="secondary" onClick={() => setHeroImageOpen(true)}>
-              Cambiar portada
-            </Button>
-          ) : null
+          <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end sm:gap-3">
+            {activeTab === 'content' ? (
+              <button
+                type="button"
+                onClick={() => setHeroImageOpen(true)}
+                className={ACTION_BTN_NEUTRAL}
+              >
+                Cambiar portada
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => void loadInquiries()}
+                disabled={inquiriesLoading}
+                className={ACTION_BTN_NEUTRAL}
+              >
+                <span aria-hidden>↻</span>
+                Actualizar
+              </button>
+            )}
+          </div>
         }
       >
+        <h1 className="sr-only">Administrar atención al ciudadano</h1>
         {!isApiConfigured() ? (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
             Esta sección requiere conexión activa con el backend para operar.
           </div>
         ) : null}
 
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" variant={activeTab === 'content' ? 'primary' : 'secondary'} onClick={() => setActiveTab('content')}>
-            Contenido público
-          </Button>
-          <Button type="button" variant={activeTab === 'inquiries' ? 'primary' : 'secondary'} onClick={() => setActiveTab('inquiries')}>
-            Consultas ciudadanas
-          </Button>
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-2 shadow-sm">
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setActiveTab('content')}
+              className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                activeTab === 'content'
+                  ? 'bg-sky-700 text-white shadow-sm'
+                  : 'text-slate-700 hover:bg-slate-100'
+              }`}
+            >
+              Contenido público
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('inquiries')}
+              className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                activeTab === 'inquiries'
+                  ? 'bg-sky-700 text-white shadow-sm'
+                  : 'text-slate-700 hover:bg-slate-100'
+              }`}
+            >
+              Consultas ciudadanas
+            </button>
+          </div>
         </div>
 
         {activeTab === 'content' ? (
-          <form className="space-y-6" onSubmit={handleSaveContent}>
-            {contentError ? (
-              <p className={formErrorClass} role="alert">
-                {contentError}
-              </p>
-            ) : null}
-            <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-              <h2 className="text-base font-semibold text-slate-900">Hero</h2>
-              <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                <label className={labelClass}>
-                  Etiqueta superior
-                  <input className={inputClass} value={contentForm.heroEyebrow} disabled={contentLoading || contentSaving} onChange={(e) => setContentForm((p) => ({ ...p, heroEyebrow: e.target.value }))} />
-                </label>
-                <label className={labelClass}>
-                  Título principal
-                  <input className={inputClass} value={contentForm.heroTitle} disabled={contentLoading || contentSaving} onChange={(e) => setContentForm((p) => ({ ...p, heroTitle: e.target.value }))} />
-                </label>
-                <label className={`${labelClass} sm:col-span-2`}>
-                  Subtítulo
-                  <textarea className={`${textareaClass} min-h-24`} value={contentForm.heroSubtitle} disabled={contentLoading || contentSaving} onChange={(e) => setContentForm((p) => ({ ...p, heroSubtitle: e.target.value }))} />
-                </label>
-              </div>
-            </section>
-
-            <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="text-base font-semibold text-slate-900">Canales de atención</h2>
-                <Button type="button" variant="secondary" disabled={contentLoading || contentSaving} onClick={() => addRow(setContentForm, 'channels', { id: '', title: '', subtitle: '', description: '', accent: 'from-sky-600 to-cyan-600', icon: 'mail' })}>
-                  + Agregar canal
-                </Button>
-              </div>
-              <div className="mt-4 space-y-3">
-                {contentForm.channels.map((row, idx) => (
-                  <div key={`channel-${idx}`} className="grid gap-3 rounded-xl border border-slate-200/80 bg-slate-50/60 p-3 sm:grid-cols-12">
-                    <input className={`${inputClass} sm:col-span-2`} placeholder="ID" value={row.id} disabled={contentLoading || contentSaving} onChange={(e) => updateArrayItem(setContentForm, 'channels', idx, 'id', e.target.value)} />
-                    <input className={`${inputClass} sm:col-span-3`} placeholder="Título" value={row.title} disabled={contentLoading || contentSaving} onChange={(e) => updateArrayItem(setContentForm, 'channels', idx, 'title', e.target.value)} />
-                    <input className={`${inputClass} sm:col-span-3`} placeholder="Subtítulo" value={row.subtitle} disabled={contentLoading || contentSaving} onChange={(e) => updateArrayItem(setContentForm, 'channels', idx, 'subtitle', e.target.value)} />
-                    <input className={`${inputClass} sm:col-span-2`} placeholder="Icono" value={row.icon} disabled={contentLoading || contentSaving} onChange={(e) => updateArrayItem(setContentForm, 'channels', idx, 'icon', e.target.value)} />
-                    <Button type="button" variant="danger" className="sm:col-span-2" disabled={contentLoading || contentSaving} onClick={() => removeRow(setContentForm, 'channels', idx)}>
-                      Quitar
-                    </Button>
-                    <input className={`${inputClass} sm:col-span-4`} placeholder="Gradiente (Tailwind)" value={row.accent} disabled={contentLoading || contentSaving} onChange={(e) => updateArrayItem(setContentForm, 'channels', idx, 'accent', e.target.value)} />
-                    <textarea className={`${textareaClass} sm:col-span-8 min-h-20`} placeholder="Descripción" value={row.description} disabled={contentLoading || contentSaving} onChange={(e) => updateArrayItem(setContentForm, 'channels', idx, 'description', e.target.value)} />
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="text-base font-semibold text-slate-900">FAQ</h2>
-                <Button type="button" variant="secondary" disabled={contentLoading || contentSaving} onClick={() => addRow(setContentForm, 'faq', { id: '', q: '', a: '' })}>
-                  + Agregar FAQ
-                </Button>
-              </div>
-              <div className="mt-4 space-y-3">
-                {contentForm.faq.map((row, idx) => (
-                  <div key={`faq-${idx}`} className="grid gap-3 rounded-xl border border-slate-200/80 bg-slate-50/60 p-3 sm:grid-cols-12">
-                    <input className={`${inputClass} sm:col-span-3`} placeholder="ID" value={row.id} disabled={contentLoading || contentSaving} onChange={(e) => updateArrayItem(setContentForm, 'faq', idx, 'id', e.target.value)} />
-                    <input className={`${inputClass} sm:col-span-7`} placeholder="Pregunta" value={row.q} disabled={contentLoading || contentSaving} onChange={(e) => updateArrayItem(setContentForm, 'faq', idx, 'q', e.target.value)} />
-                    <Button type="button" variant="danger" className="sm:col-span-2" disabled={contentLoading || contentSaving} onClick={() => removeRow(setContentForm, 'faq', idx)}>
-                      Quitar
-                    </Button>
-                    <textarea className={`${textareaClass} sm:col-span-12 min-h-20`} placeholder="Respuesta" value={row.a} disabled={contentLoading || contentSaving} onChange={(e) => updateArrayItem(setContentForm, 'faq', idx, 'a', e.target.value)} />
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-              <h2 className="text-base font-semibold text-slate-900">Formulario de consulta</h2>
-              <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                <label className={`${labelClass} sm:col-span-2`}>
-                  Texto introductorio del formulario
-                  <textarea className={`${textareaClass} min-h-20`} value={contentForm.formIntroText} disabled={contentLoading || contentSaving} onChange={(e) => setContentForm((p) => ({ ...p, formIntroText: e.target.value }))} />
-                </label>
-              </div>
-            </section>
-
-            <div className="flex justify-end border-t border-slate-200/80 pt-4">
-              <Button type="submit" disabled={contentLoading || contentSaving}>
-                {contentSaving ? 'Guardando…' : 'Guardar cambios'}
-              </Button>
-            </div>
-          </form>
+          <AdminCitizenAttentionEditorPreview
+            form={contentForm}
+            setForm={setContentForm}
+            loading={contentLoading}
+            saving={contentSaving}
+            error={contentError}
+            onChangeCover={() => setHeroImageOpen(true)}
+            onSubmit={() => void handleSaveContent()}
+            apiAvailable={isApiConfigured()}
+          />
         ) : (
           <div className="space-y-6">
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <article className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
-                <p className="text-xs uppercase tracking-wide text-slate-500">Total</p>
-                <p className="mt-2 text-2xl font-bold text-slate-900">{stats.total}</p>
-              </article>
-              <article className="rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
-                <p className="text-xs uppercase tracking-wide text-amber-700">Sin resolver</p>
-                <p className="mt-2 text-2xl font-bold text-amber-900">{stats.sinResolver}</p>
-              </article>
-              <article className="rounded-2xl border border-sky-200 bg-sky-50 p-4 shadow-sm">
-                <p className="text-xs uppercase tracking-wide text-sky-700">Leídas</p>
-                <p className="mt-2 text-2xl font-bold text-sky-900">{stats.leidas}</p>
-              </article>
-              <article className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm">
-                <p className="text-xs uppercase tracking-wide text-emerald-700">Resueltas</p>
-                <p className="mt-2 text-2xl font-bold text-emerald-900">{stats.resueltas}</p>
-              </article>
+              <StatCard label="Total" value={stats.total} />
+              <StatCard label="Sin resolver" value={stats.sinResolver} tone="amber" />
+              <StatCard label="Leídas" value={stats.leidas} tone="sky" />
+              <StatCard label="Resueltas" value={stats.resueltas} tone="emerald" />
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              {STATUS_FILTERS.map((item) => (
-                <Button
-                  key={item.value}
-                  type="button"
-                  variant={statusFilter === item.value ? 'primary' : 'secondary'}
-                  onClick={() => setStatusFilter(item.value)}
-                >
-                  {item.label}
-                </Button>
-              ))}
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
+              <div className="grid gap-3 sm:grid-cols-12 sm:items-end">
+                <label className={`${labelClass} sm:col-span-7`}>
+                  Buscar
+                  <input
+                    type="search"
+                    className={inputClass}
+                    placeholder="Número, nombre, DNI, tema o mensaje..."
+                    value={inquirySearch}
+                    onChange={(e) => setInquirySearch(e.target.value)}
+                    disabled={inquiriesLoading}
+                    autoComplete="off"
+                  />
+                </label>
+                <label className={`${labelClass} sm:col-span-3`}>
+                  Estado
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="news-select-minimal"
+                    disabled={inquiriesLoading}
+                  >
+                    {STATUS_FILTERS.map((item) => (
+                      <option key={item.value} value={item.value}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <div className="sm:col-span-2">
+                  <button
+                    type="button"
+                    onClick={clearInquiryFilters}
+                    disabled={statusFilter === 'all' && !inquirySearch.trim()}
+                    className={`${ACTION_BTN_NEUTRAL} w-full`}
+                  >
+                    Limpiar
+                  </button>
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-slate-600">
+                <span className="font-semibold text-slate-900">{filteredInquiries.length}</span>{' '}
+                consultas visibles de <span className="font-semibold text-slate-900">{inquiries.length}</span>.
+              </p>
             </div>
 
             {inquiriesError ? (
-              <p className={formErrorClass} role="alert">
-                {inquiriesError}
-              </p>
+              <div
+                className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-800 shadow-sm"
+                role="alert"
+              >
+                <p className="font-semibold">No se pudieron cargar las consultas.</p>
+                <p className="mt-1 text-red-700/90">{inquiriesError}</p>
+                <button
+                  type="button"
+                  onClick={() => void loadInquiries()}
+                  className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-700 shadow-sm transition hover:border-red-300 hover:bg-red-50"
+                >
+                  <span aria-hidden>↻</span>
+                  Reintentar
+                </button>
+              </div>
             ) : null}
 
             {inquiriesLoading ? (
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <div key={i} className="animate-pulse rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
-                    <div className="h-3 w-28 rounded bg-slate-100" />
-                    <div className="mt-3 h-4 w-40 rounded bg-slate-100" />
-                    <div className="mt-2 h-3 w-full rounded bg-slate-100" />
-                  </div>
-                ))}
+              <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+                <div className="space-y-2">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className="h-14 animate-pulse rounded-xl bg-slate-100" />
+                  ))}
+                </div>
               </div>
             ) : inquiries.length === 0 ? (
-              <div className="rounded-2xl border border-slate-200/80 bg-white p-6 text-sm text-slate-600 shadow-sm">
-                No hay consultas para este filtro.
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-6 py-14 text-center">
+                <p className="text-base font-medium text-slate-800">
+                  Todavía no hay consultas ciudadanas.
+                </p>
+                <p className="mx-auto mt-2 max-w-md text-sm text-slate-600">
+                  Cuando los vecinos completen el formulario público, aparecerán en esta bandeja.
+                </p>
+              </div>
+            ) : filteredInquiries.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-amber-200/90 bg-amber-50/50 px-6 py-12 text-center">
+                <p className="text-base font-medium text-slate-800">
+                  No hay consultas que coincidan con los filtros.
+                </p>
+                <button
+                  type="button"
+                  onClick={clearInquiryFilters}
+                  className="mt-5 inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-sky-200 hover:bg-sky-50"
+                >
+                  Limpiar filtros
+                </button>
               </div>
             ) : (
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                {inquiries.map((inquiry) => (
-                  <button
-                    key={inquiry.id}
-                    type="button"
-                    onClick={() => void openInquiryDetail(inquiry.id)}
-                    className="group rounded-2xl border border-slate-200/80 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-md"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="text-sm font-semibold text-slate-900">
-                        #{inquiry.id} · {inquiry.firstName} {inquiry.lastName}
-                      </p>
-                      <InquiryStatusPill status={inquiry.status} />
-                    </div>
-                    <p className="mt-2 text-xs text-slate-500">DNI: {inquiry.dni}</p>
-                    <p className="mt-1 text-xs text-slate-500">{formatDateTime(inquiry.createdAt)}</p>
-                    <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-slate-600">{inquiry.message}</p>
-                    <span className="mt-3 inline-flex text-xs font-semibold text-sky-800 group-hover:text-sky-950">
-                      Ver detalle →
+              <>
+                <div className="hidden overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm lg:block">
+                  <table className="w-full text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-200 bg-slate-50/90 text-xs font-bold uppercase tracking-wide text-slate-500">
+                        <th className="w-24 px-4 py-3.5">Nro.</th>
+                        <th className="min-w-0 px-4 py-3.5">Vecino</th>
+                        <th className="w-44 px-4 py-3.5">Tema</th>
+                        <th className="w-36 px-4 py-3.5">Estado</th>
+                        <th className="w-44 px-4 py-3.5">Fecha</th>
+                        <th className="w-32 px-4 py-3.5 text-right">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedInquiries.map((inquiry) => (
+                        <tr
+                          key={inquiry.id}
+                          className="border-b border-slate-100 transition-colors last:border-0 hover:bg-slate-50/90"
+                        >
+                          <td className="px-4 py-3 align-middle font-mono text-xs font-semibold text-slate-600">
+                            #{inquiry.id}
+                          </td>
+                          <td className="min-w-0 px-4 py-3 align-middle">
+                            <button
+                              type="button"
+                              onClick={() => void openInquiryDetail(inquiry.id)}
+                              className="text-left font-semibold text-slate-900 transition hover:text-sky-800"
+                            >
+                              {inquiry.firstName} {inquiry.lastName}
+                            </button>
+                            <p className="mt-0.5 text-xs text-slate-500">DNI: {inquiry.dni}</p>
+                            <p className="mt-1 line-clamp-1 text-xs text-slate-500">{inquiry.message}</p>
+                          </td>
+                          <td className="px-4 py-3 align-middle text-slate-700">{inquiry.topic || '—'}</td>
+                          <td className="px-4 py-3 align-middle">
+                            <InquiryStatusPill status={inquiry.status} />
+                          </td>
+                          <td className="px-4 py-3 align-middle text-xs text-slate-600">
+                            {formatDateTime(inquiry.createdAt)}
+                          </td>
+                          <td className="px-4 py-3 text-right align-middle">
+                            <button
+                              type="button"
+                              onClick={() => void openInquiryDetail(inquiry.id)}
+                              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-900"
+                            >
+                              Ver detalle
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <ul className="space-y-3 lg:hidden">
+                  {paginatedInquiries.map((inquiry) => (
+                    <li key={inquiry.id}>
+                      <button
+                        type="button"
+                        onClick={() => void openInquiryDetail(inquiry.id)}
+                        className="group w-full rounded-2xl border border-slate-200/80 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-md"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-sm font-semibold text-slate-900">
+                            #{inquiry.id} · {inquiry.firstName} {inquiry.lastName}
+                          </p>
+                          <InquiryStatusPill status={inquiry.status} />
+                        </div>
+                        <p className="mt-2 text-xs text-slate-500">DNI: {inquiry.dni}</p>
+                        <p className="mt-1 text-xs text-slate-500">{formatDateTime(inquiry.createdAt)}</p>
+                        <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-slate-600">
+                          {inquiry.message}
+                        </p>
+                        <span className="mt-3 inline-flex text-xs font-semibold text-sky-800 group-hover:text-sky-950">
+                          Ver detalle →
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+
+                <nav
+                  className="flex flex-col gap-4 rounded-2xl border border-slate-200/80 bg-slate-50/80 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5"
+                  aria-label="Paginación de consultas"
+                >
+                  <p className="text-center text-sm leading-relaxed text-slate-600 sm:text-left">
+                    Mostrando{' '}
+                    <span className="font-semibold tabular-nums text-slate-900">{rangeStart + 1}</span>
+                    –
+                    <span className="font-semibold tabular-nums text-slate-900">{rangeEnd}</span>{' '}
+                    de{' '}
+                    <span className="font-semibold tabular-nums text-slate-900">
+                      {filteredInquiries.length}
                     </span>
-                  </button>
-                ))}
-              </div>
+                  </p>
+                  {totalPages > 1 ? (
+                    <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
+                      <button
+                        type="button"
+                        disabled={safePage <= 1}
+                        onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                        className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Anterior
+                      </button>
+                      <div className="hidden items-center gap-1 sm:flex">
+                        {pagModel.items.map((entry, idx) =>
+                          entry.type === 'gap' ? (
+                            <span key={`gap-${idx}`} className="px-1 text-slate-400" aria-hidden>
+                              …
+                            </span>
+                          ) : (
+                            <button
+                              key={entry.n}
+                              type="button"
+                              onClick={() => setPage(entry.n)}
+                              className={`min-h-10 min-w-10 rounded-lg text-sm font-semibold transition ${
+                                entry.n === safePage
+                                  ? 'bg-sky-700 text-white shadow-sm'
+                                  : 'text-slate-700 hover:bg-white hover:ring-1 hover:ring-slate-200'
+                              }`}
+                            >
+                              {entry.n}
+                            </button>
+                          ),
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        disabled={safePage >= totalPages}
+                        onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+                        className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Siguiente
+                      </button>
+                    </div>
+                  ) : null}
+                </nav>
+              </>
             )}
           </div>
         )}
