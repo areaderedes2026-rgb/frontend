@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { AdminAreaSchoolsEditor } from '../../components/admin/AdminAreaSchoolsEditor.jsx'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
+import { HeroImageModal } from '../../components/admin/HeroImageModal.jsx'
 import { SingleImageUploadField } from '../../components/admin/SingleImageUploadField.jsx'
 import { Button } from '../../components/ui/Button.jsx'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
@@ -24,10 +25,17 @@ import {
 } from '../../services/areasService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
 import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
+import { resolveMediaUrl } from '../../utils/imageUrl.js'
 import {
   fetchAreasPageContent,
   updateAreasPageContent,
 } from '../../services/areasPageService.js'
+
+const PAGE_SIZE = 8
+const ACTION_BTN_BASE =
+  'inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto'
+const ACTION_BTN_NEUTRAL = `${ACTION_BTN_BASE} border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50`
+const ACTION_BTN_PRIMARY = `${ACTION_BTN_BASE} bg-sky-700 text-white hover:bg-sky-800`
 
 const EMPTY_SCHOOL_ROW = {
   id: '',
@@ -150,6 +158,55 @@ function cleanNotices(list) {
   return list.map((x) => String(x || '').trim()).filter(Boolean)
 }
 
+function normalize(text) {
+  return String(text || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+}
+
+function AreaThumb({ src, size = 'md' }) {
+  const resolved = src ? resolveMediaUrl(src) : ''
+  const dim = size === 'sm' ? 'h-11 w-14' : 'h-12 w-16'
+  if (!resolved) {
+    return (
+      <div
+        className={`${dim} shrink-0 rounded-lg bg-slate-50 ring-1 ring-inset ring-slate-200/80`}
+        aria-hidden
+      />
+    )
+  }
+  return (
+    <img
+      src={resolved}
+      alt=""
+      className={`${dim} shrink-0 rounded-lg object-cover ring-1 ring-inset ring-slate-200/80`}
+      loading="lazy"
+      decoding="async"
+    />
+  )
+}
+
+function paginationModel(page, totalPages) {
+  if (totalPages <= 1) return { items: [{ type: 'page', n: 1 }], totalPages: 1 }
+  if (totalPages <= 7) {
+    return {
+      totalPages,
+      items: Array.from({ length: totalPages }, (_, i) => ({ type: 'page', n: i + 1 })),
+    }
+  }
+  const set = new Set(
+    [1, totalPages, page, page - 1, page + 1].filter((n) => n >= 1 && n <= totalPages),
+  )
+  const sorted = [...set].sort((a, b) => a - b)
+  const out = []
+  for (let i = 0; i < sorted.length; i += 1) {
+    if (i > 0 && sorted[i] - sorted[i - 1] > 1) out.push({ type: 'gap' })
+    out.push({ type: 'page', n: sorted[i] })
+  }
+  return { items: out, totalPages }
+}
+
 export function AdminAreaProfiles() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [areas, setAreas] = useState(MUNICIPAL_AREAS.map((a, i) => ({ ...a, id: i + 1 })))
@@ -186,6 +243,7 @@ export function AdminAreaProfiles() {
   const [searchQuery, setSearchQuery] = useState('')
   const [page, setPage] = useState(1)
   const [globalCover, setGlobalCover] = useState('')
+  const [globalCoverOpen, setGlobalCoverOpen] = useState(false)
   const [savingGlobalCover, setSavingGlobalCover] = useState(false)
   const [profileUpdatedAt, setProfileUpdatedAt] = useState(null)
   const [areasPageUpdatedAt, setAreasPageUpdatedAt] = useState(null)
@@ -216,11 +274,12 @@ export function AdminAreaProfiles() {
     () => areas.find((a) => a.slug === selectedSlug) || null,
     [areas, selectedSlug],
   )
-  const PAGE_SIZE = 8
   const filteredAreas = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase()
+    const q = normalize(searchQuery.trim())
     if (!q) return areas
-    return areas.filter((area) => String(area.title || '').toLowerCase().includes(q))
+    return areas.filter((area) =>
+      normalize(`${area.title || ''} ${area.slug || ''} ${area.description || ''}`).includes(q),
+    )
   }, [areas, searchQuery])
   const totalPages = Math.max(1, Math.ceil(filteredAreas.length / PAGE_SIZE))
   const safePage = Math.min(Math.max(1, page), totalPages)
@@ -228,6 +287,13 @@ export function AdminAreaProfiles() {
     const start = (safePage - 1) * PAGE_SIZE
     return filteredAreas.slice(start, start + PAGE_SIZE)
   }, [filteredAreas, safePage])
+  const rangeStart = (safePage - 1) * PAGE_SIZE
+  const rangeEnd =
+    filteredAreas.length === 0
+      ? 0
+      : Math.min(rangeStart + paginatedAreas.length, filteredAreas.length)
+  const pagModel = paginationModel(safePage, totalPages)
+  const catalogFiltersActive = searchQuery.trim() !== ''
 
   const loadAreas = useCallback(async () => {
     setCatalogError('')
@@ -525,6 +591,7 @@ export function AdminAreaProfiles() {
       })
       setGlobalCover(String(saved?.heroImageUrl || ''))
       setAreasPageUpdatedAt(saved?.updatedAt || null)
+      setGlobalCoverOpen(false)
       setToast({
         type: 'success',
         message: 'Portada global de Áreas actualizada.',
@@ -575,6 +642,17 @@ export function AdminAreaProfiles() {
         loading={Boolean(deletingAreaId)}
         onConfirm={handleConfirmDeleteArea}
         variant="danger"
+      />
+      <HeroImageModal
+        open={globalCoverOpen}
+        title="Portada de Áreas"
+        description="Esta imagen se muestra en el header público de “Todas las áreas” y no depende de ninguna tarjeta individual."
+        value={globalCover}
+        onChange={setGlobalCover}
+        onClose={() => setGlobalCoverOpen(false)}
+        onSave={handleSaveGlobalCover}
+        saving={savingGlobalCover}
+        disabled={!isApiConfigured()}
       />
       <Modal
         open={createModalOpen}
@@ -652,12 +730,30 @@ export function AdminAreaProfiles() {
 
       <AdminPageShell
         showBackLink={false}
-        eyebrow="Configuración"
-        title="Perfiles de áreas"
-        subtitle="Editá el contenido público que se muestra en cada área: identidad, dirección, servicios, ubicación y contacto."
-        maxWidthClass="max-w-6xl"
+        eyebrow=""
+        maxWidthClass="max-w-none"
         variant="plain"
+        actions={
+          <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end sm:gap-3">
+            <button
+              type="button"
+              onClick={() => setGlobalCoverOpen(true)}
+              className={ACTION_BTN_NEUTRAL}
+            >
+              Cambiar portada
+            </button>
+            <button
+              type="button"
+              onClick={() => setCreateModalOpen(true)}
+              disabled={!isApiConfigured()}
+              className={ACTION_BTN_PRIMARY}
+            >
+              + Crear área
+            </button>
+          </div>
+        }
       >
+        <h1 className="sr-only">Perfiles de áreas</h1>
         {!isApiConfigured() ? (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
             Esta sección requiere conexión activa con el backend para guardar cambios.
@@ -692,116 +788,249 @@ export function AdminAreaProfiles() {
         </div>
 
         {activeTab === 'catalog' ? (
-          <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-base font-semibold text-slate-900">Catálogo de áreas</h2>
-              <Button
-                type="button"
-                onClick={() => setCreateModalOpen(true)}
-                disabled={!isApiConfigured()}
-              >
-                + Crear área
-              </Button>
+          <section className="admin-fade-up space-y-5">
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
+              <div className="grid gap-3 sm:grid-cols-12 sm:items-end">
+                <label className={`${labelClass} sm:col-span-8`}>
+                  Buscar
+                  <input
+                    type="search"
+                    className={inputClass}
+                    placeholder="Nombre, slug o descripción..."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value)
+                      setPage(1)
+                    }}
+                    disabled={areasLoading}
+                    autoComplete="off"
+                  />
+                </label>
+                <div className="sm:col-span-4">
+                  <button
+                    type="button"
+                    onClick={() => setGlobalCoverOpen(true)}
+                    className={`${ACTION_BTN_NEUTRAL} w-full`}
+                  >
+                    Cambiar portada
+                  </button>
+                </div>
+              </div>
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600">
+                <p className="tabular-nums">
+                  {catalogFiltersActive ? (
+                    <>
+                      <span className="font-semibold text-slate-900">
+                        {filteredAreas.length}
+                      </span>{' '}
+                      de{' '}
+                      <span className="font-semibold text-slate-900">
+                        {areas.length}
+                      </span>{' '}
+                      áreas coinciden con la búsqueda.
+                    </>
+                  ) : (
+                    <>
+                      <span className="font-semibold text-slate-900">
+                        {areas.length}
+                      </span>{' '}
+                      áreas cargadas en total.
+                    </>
+                  )}
+                </p>
+                {catalogFiltersActive ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery('')
+                      setPage(1)
+                    }}
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                  >
+                    Limpiar búsqueda
+                  </button>
+                ) : null}
+              </div>
             </div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 sm:items-end">
-              <label className={labelClass}>
-                Búsqueda rápida por nombre
-                <input
-                  className={inputClass}
-                  placeholder="Ej: Deportes, Cultura, Obras..."
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value)
+
+            {catalogError ? (
+              <div
+                className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-800 shadow-sm"
+                role="alert"
+              >
+                <p className="font-semibold">No se pudo cargar el catálogo de áreas.</p>
+                <p className="mt-1 text-red-700/90">{catalogError}</p>
+                <button
+                  type="button"
+                  onClick={() => void loadAreas()}
+                  className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-700 shadow-sm transition hover:border-red-300 hover:bg-red-50"
+                >
+                  <span aria-hidden>↻</span>
+                  Reintentar
+                </button>
+              </div>
+            ) : null}
+
+            {areasLoading ? (
+              <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+                <div className="space-y-2">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="h-14 animate-pulse rounded-xl bg-slate-100" />
+                  ))}
+                </div>
+              </div>
+            ) : areas.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-6 py-14 text-center">
+                <p className="text-base font-medium text-slate-800">
+                  Todavía no hay áreas cargadas.
+                </p>
+                <p className="mx-auto mt-2 max-w-md text-sm text-slate-600">
+                  Creá la primera para que aparezca en el portal público.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setCreateModalOpen(true)}
+                  disabled={!isApiConfigured()}
+                  className="mt-6 inline-flex items-center justify-center rounded-xl bg-sky-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-800 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Crear área
+                </button>
+              </div>
+            ) : filteredAreas.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-amber-200/90 bg-amber-50/50 px-6 py-12 text-center">
+                <p className="text-base font-medium text-slate-800">
+                  No hay áreas que coincidan con la búsqueda.
+                </p>
+                <p className="mx-auto mt-2 max-w-md text-sm text-slate-600">
+                  Probá otro término o limpiá la búsqueda para ver todo el catálogo.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery('')
                     setPage(1)
                   }}
-                  disabled={areasLoading}
-                />
-              </label>
-              <p className="text-xs text-slate-500 sm:text-right">
-                {filteredAreas.length} área(s) encontrada(s)
-              </p>
-            </div>
-            {catalogError ? (
-              <p className={`mt-3 ${formErrorClass}`} role="alert">
-                {catalogError}
-              </p>
-            ) : null}
-            <div className="mt-4 rounded-xl border border-slate-200/80 bg-slate-50/60 p-4">
-              <h3 className="text-sm font-semibold text-slate-900">
-                Portada global de la sección Áreas
-              </h3>
-              <p className="mt-1 text-xs text-slate-600">
-                Esta imagen se muestra en el header de “Todas las áreas” (inicio del módulo).
-              </p>
-              <div className="mt-3">
-                <SingleImageUploadField
-                  label="Imagen de portada global"
-                  helpText="No depende de ninguna área individual."
-                  value={globalCover}
-                  onChange={setGlobalCover}
-                  kind="cover"
-                  disabled={savingGlobalCover}
-                />
-              </div>
-              <div className="mt-3 flex justify-end">
-                <Button
-                  type="button"
-                  onClick={() => void handleSaveGlobalCover()}
-                  disabled={savingGlobalCover}
+                  className="mt-5 inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-sky-200 hover:bg-sky-50"
                 >
-                  {savingGlobalCover ? 'Guardando…' : 'Guardar portada global'}
-                </Button>
+                  Limpiar búsqueda
+                </button>
               </div>
-            </div>
-            <div className="mt-4 overflow-hidden rounded-xl border border-slate-200/80">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500">
-                  <tr>
-                    <th className="px-3 py-3">Portada</th>
-                    <th className="px-3 py-3">Área</th>
-                    <th className="px-3 py-3">Slug</th>
-                    <th className="px-3 py-3">Descripción</th>
-                    <th className="px-3 py-3 text-right">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
+            ) : (
+              <>
+                <div className="hidden overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm lg:block">
+                  <table className="w-full text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-200 bg-slate-50/90 text-xs font-bold uppercase tracking-wide text-slate-500">
+                        <th className="w-20 px-4 py-3.5" scope="col">
+                          <span className="sr-only">Portada</span>
+                        </th>
+                        <th className="min-w-0 px-3 py-3.5">Área</th>
+                        <th className="w-56 px-4 py-3.5">Slug</th>
+                        <th className="min-w-0 px-4 py-3.5">Descripción</th>
+                        <th className="w-44 px-4 py-3.5 text-right">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedAreas.map((area) => (
+                        <tr
+                          key={area.slug}
+                          className="border-b border-slate-100 transition-colors last:border-0 hover:bg-slate-50/90"
+                        >
+                          <td className="px-4 py-3 align-middle">
+                            <AreaThumb src={area.coverImage} />
+                          </td>
+                          <td className="min-w-0 px-3 py-3 align-middle">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedSlug(area.slug)
+                                setTab('edit')
+                              }}
+                              className="line-clamp-2 text-left font-semibold text-slate-900 transition hover:text-sky-800"
+                            >
+                              {area.title || 'Sin título'}
+                            </button>
+                          </td>
+                          <td className="px-4 py-3 align-middle">
+                            <span className="rounded-lg bg-slate-50 px-2 py-1 font-mono text-xs text-slate-600 ring-1 ring-slate-200">
+                              {area.slug || 'sin-slug'}
+                            </span>
+                          </td>
+                          <td className="max-w-lg px-4 py-3 align-middle text-slate-600">
+                            <p className="line-clamp-2">{area.description || 'Sin descripción.'}</p>
+                          </td>
+                          <td className="px-4 py-3 text-right align-middle">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedSlug(area.slug)
+                                  setTab('edit')
+                                }}
+                                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-900"
+                              >
+                                Editar
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setDeleteTarget(area)}
+                                disabled={
+                                  creatingArea ||
+                                  Boolean(deletingAreaId) ||
+                                  areasLoading ||
+                                  !isApiConfigured()
+                                }
+                                className="inline-flex items-center justify-center rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                {deletingAreaId === area.id ? 'Eliminando…' : 'Eliminar'}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <ul className="space-y-3 lg:hidden">
                   {paginatedAreas.map((area) => (
-                    <tr key={area.slug} className="border-t border-slate-100">
-                      <td className="px-3 py-2.5">
-                        {area.coverImage ? (
-                          <img
-                            src={area.coverImage}
-                            alt=""
-                            className="h-14 w-20 rounded-md object-cover ring-1 ring-slate-200"
-                          />
-                        ) : (
-                          <div className="flex h-14 w-20 items-center justify-center rounded-md bg-slate-100 text-[11px] font-semibold text-slate-500 ring-1 ring-slate-200">
-                            Sin imagen
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-3 py-2.5 font-semibold text-slate-900">{area.title}</td>
-                      <td className="px-3 py-2.5 text-slate-600">{area.slug}</td>
-                      <td className="max-w-xs truncate px-3 py-2.5 text-slate-600">
-                        {area.description}
-                      </td>
-                      <td className="px-3 py-2.5 text-right">
-                        <div className="inline-flex gap-2">
-                          <Button
+                    <li
+                      key={area.slug}
+                      className="flex gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm"
+                    >
+                      <div className="shrink-0 pt-0.5">
+                        <AreaThumb src={area.coverImage} size="sm" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedSlug(area.slug)
+                            setTab('edit')
+                          }}
+                          className="line-clamp-2 text-left text-base font-semibold text-slate-900 hover:text-sky-800"
+                        >
+                          {area.title || 'Sin título'}
+                        </button>
+                        <p className="mt-1 font-mono text-xs text-slate-500">
+                          {area.slug || 'sin-slug'}
+                        </p>
+                        <p className="mt-2 line-clamp-2 text-sm text-slate-600">
+                          {area.description || 'Sin descripción.'}
+                        </p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <button
                             type="button"
-                            variant="secondary"
-                            className="px-2.5! py-1.5! text-xs!"
                             onClick={() => {
                               setSelectedSlug(area.slug)
                               setTab('edit')
                             }}
+                            className="inline-flex flex-1 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 transition hover:border-sky-200 hover:bg-sky-50/50 hover:text-sky-900 sm:flex-none"
                           >
                             Editar
-                          </Button>
-                          <Button
+                          </button>
+                          <button
                             type="button"
-                            variant="danger"
-                            className="px-2.5! py-1.5! text-xs!"
                             onClick={() => setDeleteTarget(area)}
                             disabled={
                               creatingArea ||
@@ -809,50 +1038,94 @@ export function AdminAreaProfiles() {
                               areasLoading ||
                               !isApiConfigured()
                             }
+                            className="inline-flex flex-1 items-center justify-center rounded-xl bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none"
                           >
-                            Eliminar
-                          </Button>
+                            {deletingAreaId === area.id ? 'Eliminando…' : 'Eliminar'}
+                          </button>
                         </div>
-                      </td>
-                    </tr>
+                      </div>
+                    </li>
                   ))}
-                  {paginatedAreas.length === 0 ? (
-                    <tr>
-                      <td className="px-3 py-6 text-center text-sm text-slate-500" colSpan={5}>
-                        No hay áreas que coincidan con la búsqueda.
-                      </td>
-                    </tr>
+                </ul>
+
+                <nav
+                  className="flex flex-col gap-4 rounded-2xl border border-slate-200/80 bg-slate-50/80 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5"
+                  aria-label="Paginación del catálogo de áreas"
+                >
+                  <p className="text-center text-sm leading-relaxed text-slate-600 sm:text-left">
+                    Mostrando{' '}
+                    <span className="font-semibold tabular-nums text-slate-900">
+                      {rangeStart + 1}
+                    </span>
+                    –
+                    <span className="font-semibold tabular-nums text-slate-900">
+                      {rangeEnd}
+                    </span>{' '}
+                    de{' '}
+                    <span className="font-semibold tabular-nums text-slate-900">
+                      {filteredAreas.length}
+                    </span>
+                    {totalPages > 1 ? (
+                      <>
+                        <span className="text-slate-400" aria-hidden>
+                          {' '}
+                          ·{' '}
+                        </span>
+                        <span className="tabular-nums text-slate-600">
+                          página {safePage} de {totalPages}
+                        </span>
+                      </>
+                    ) : null}
+                  </p>
+                  {totalPages > 1 ? (
+                    <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
+                      <button
+                        type="button"
+                        disabled={safePage <= 1}
+                        onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                        className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Anterior
+                      </button>
+                      <div className="hidden items-center gap-1 sm:flex">
+                        {pagModel.items.map((entry, idx) =>
+                          entry.type === 'gap' ? (
+                            <span
+                              key={`gap-${idx}`}
+                              className="px-1 text-slate-400"
+                              aria-hidden
+                            >
+                              …
+                            </span>
+                          ) : (
+                            <button
+                              key={entry.n}
+                              type="button"
+                              onClick={() => setPage(entry.n)}
+                              className={`min-h-10 min-w-10 rounded-lg text-sm font-semibold transition ${
+                                entry.n === safePage
+                                  ? 'bg-sky-700 text-white shadow-sm'
+                                  : 'text-slate-700 hover:bg-white hover:ring-1 hover:ring-slate-200'
+                              }`}
+                            >
+                              {entry.n}
+                            </button>
+                          ),
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        disabled={safePage >= totalPages}
+                        onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+                        className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Siguiente
+                      </button>
+                    </div>
                   ) : null}
-                </tbody>
-              </table>
-            </div>
-            {filteredAreas.length > PAGE_SIZE ? (
-              <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                <p className="text-xs text-slate-500">
-                  Página {safePage} de {totalPages}
-                </p>
-                <div className="inline-flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className="px-2.5! py-1.5! text-xs!"
-                    disabled={safePage <= 1}
-                    onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-                  >
-                    Anterior
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className="px-2.5! py-1.5! text-xs!"
-                    disabled={safePage >= totalPages}
-                    onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
-                  >
-                    Siguiente
-                  </Button>
-                </div>
-              </div>
-            ) : null}
+                </nav>
+              </>
+            )}
           </section>
         ) : null}
 
