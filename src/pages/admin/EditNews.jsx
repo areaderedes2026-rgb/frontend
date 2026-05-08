@@ -1,12 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { AdminFormSection } from '../../components/admin/AdminFormSection.jsx'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
-import { Button } from '../../components/ui/Button.jsx'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
-import { deleteNews, fetchNewsById, updateNews } from '../../services/newsService.js'
+import { Toast } from '../../components/ui/Toast.jsx'
 import {
-  formErrorClass,
+  deleteNews,
+  fetchNewsById,
+  updateNews,
+} from '../../services/newsService.js'
+import {
   inputClass,
   labelClass,
   textareaClass,
@@ -16,6 +19,27 @@ import { NewsCategoryField } from '../../components/admin/NewsCategoryField.jsx'
 import { isApiConfigured } from '../../utils/apiConfig.js'
 import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
 import { ROUTES } from '../../utils/constants.js'
+
+const ACTION_BTN_BASE =
+  'inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto'
+const ACTION_BTN_BACK = `${ACTION_BTN_BASE} border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50`
+const ACTION_BTN_NEUTRAL = `${ACTION_BTN_BASE} border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50`
+const ACTION_BTN_PRIMARY = `${ACTION_BTN_BASE} bg-sky-700 text-white hover:bg-sky-800`
+const ACTION_BTN_DANGER = `${ACTION_BTN_BASE} bg-red-600 text-white hover:bg-red-700`
+
+function Spinner({ tone = 'white', size = 'sm' }) {
+  const dim = size === 'sm' ? 'h-4 w-4 border-2' : 'h-5 w-5 border-2'
+  const color =
+    tone === 'white'
+      ? 'border-white/40 border-t-white'
+      : 'border-slate-300 border-t-sky-700'
+  return (
+    <span
+      className={`inline-block animate-spin rounded-full ${color} ${dim}`}
+      aria-hidden
+    />
+  )
+}
 
 export function EditNews() {
   const { id } = useParams()
@@ -38,6 +62,8 @@ function EditNewsForm({ id }) {
   const [deleting, setDeleting] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [conflictOpen, setConflictOpen] = useState(false)
+  const [toast, setToast] = useState(null)
+  const dismissToast = useCallback(() => setToast(null), [])
 
   useEffect(() => {
     let cancelled = false
@@ -73,10 +99,15 @@ function EditNewsForm({ id }) {
     e.preventDefault()
     setError('')
     if (!title.trim() || !summary.trim() || !body.trim()) {
+      setToast({
+        type: 'error',
+        message: 'Completá título, resumen y cuerpo antes de guardar.',
+      })
       setError('Completá título, resumen y cuerpo.')
       return
     }
     setSaving(true)
+    setToast({ type: 'success', message: 'Guardando cambios…' })
     try {
       const payload = {
         expectedUpdatedAt: newsUpdatedAt,
@@ -98,8 +129,9 @@ function EditNewsForm({ id }) {
       })
     } catch (err) {
       if (isConcurrencyConflictError(err)) setConflictOpen(true)
-      setError(err.message || 'No se pudo guardar.')
-    } finally {
+      const msg = err.message || 'No se pudo guardar.'
+      setError(msg)
+      setToast({ type: 'error', message: msg })
       setSaving(false)
     }
   }
@@ -115,26 +147,37 @@ function EditNewsForm({ id }) {
         state: { flash: 'Noticia eliminada.' },
       })
     } catch (err) {
-      setError(err.message || 'No se pudo eliminar la noticia.')
-    } finally {
+      const msg = err.message || 'No se pudo eliminar la noticia.'
+      setError(msg)
+      setToast({ type: 'error', message: msg })
       setDeleting(false)
     }
   }
 
   const displayTitle = title.trim() || 'Sin título'
+  const busy = saving || deleting
 
   if (loading) {
     return (
-      <div className="mx-auto w-full max-w-[min(100%,90rem)]">
-        <div className="admin-fade-up grid gap-6 lg:grid-cols-12 lg:gap-8">
-          <div className="animate-pulse rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm lg:col-span-5">
-            <div className="h-3 w-24 rounded bg-slate-100" />
-            <div className="mt-6 aspect-video rounded-xl bg-slate-50" />
+      <div className="mx-auto w-full">
+        <div className="admin-fade-up">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="h-10 w-44 animate-pulse rounded-xl bg-slate-100" />
+            <div className="flex gap-2">
+              <div className="h-10 w-28 animate-pulse rounded-xl bg-slate-100" />
+              <div className="h-10 w-36 animate-pulse rounded-xl bg-slate-100" />
+            </div>
           </div>
-          <div className="animate-pulse space-y-4 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm lg:col-span-7">
-            <div className="h-4 w-40 rounded bg-slate-100" />
-            <div className="h-10 w-full rounded bg-slate-100" />
-            <div className="h-40 w-full rounded-xl bg-slate-50" />
+          <div className="mt-8 grid gap-6 lg:grid-cols-12 lg:gap-8">
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm lg:col-span-5">
+              <div className="h-3 w-24 animate-pulse rounded bg-slate-100" />
+              <div className="mt-6 aspect-video animate-pulse rounded-xl bg-slate-50" />
+            </div>
+            <div className="space-y-4 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm lg:col-span-7">
+              <div className="h-4 w-40 animate-pulse rounded bg-slate-100" />
+              <div className="h-10 w-full animate-pulse rounded bg-slate-100" />
+              <div className="h-40 w-full animate-pulse rounded-xl bg-slate-50" />
+            </div>
           </div>
         </div>
       </div>
@@ -145,7 +188,9 @@ function EditNewsForm({ id }) {
     return (
       <div className="mx-auto w-full max-w-lg">
         <div className="admin-fade-up rounded-3xl border border-slate-200/80 bg-white p-8 text-center shadow-sm sm:p-10">
-          <p className="text-base font-medium text-slate-800">La noticia no existe o fue eliminada.</p>
+          <p className="text-base font-medium text-slate-800">
+            La noticia no existe o fue eliminada.
+          </p>
           <Link
             to={ROUTES.adminNews}
             className="mt-6 inline-flex items-center justify-center rounded-xl bg-sky-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-800"
@@ -161,7 +206,10 @@ function EditNewsForm({ id }) {
     return (
       <div className="mx-auto w-full max-w-lg">
         <div className="admin-fade-up rounded-3xl border border-slate-200/80 bg-white p-8 shadow-sm sm:p-10">
-          <p className={formErrorClass} role="alert">
+          <p
+            className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+            role="alert"
+          >
             {error}
           </p>
           <Link
@@ -177,6 +225,23 @@ function EditNewsForm({ id }) {
 
   return (
     <>
+      {toast ? (
+        <Toast variant={toast.type} message={toast.message} onDismiss={dismissToast} />
+      ) : null}
+
+      {saving ? (
+        <div
+          className="fixed inset-0 z-100 flex items-center justify-center bg-slate-900/30 px-4 backdrop-blur-[1px]"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="flex items-center gap-3 rounded-2xl bg-white px-5 py-4 text-sm font-medium text-slate-800 shadow-xl">
+            <Spinner tone="sky" size="md" />
+            <span>Guardando cambios…</span>
+          </div>
+        </div>
+      ) : null}
+
       <ConfirmDialog
         open={conflictOpen}
         onClose={() => setConflictOpen(false)}
@@ -210,21 +275,63 @@ function EditNewsForm({ id }) {
       />
 
       <AdminPageShell
-        backTo={ROUTES.adminNews}
-        backLabel="Volver a noticias"
-        eyebrow="Noticias"
-        title="Editar noticia"
-        subtitle="Actualizá el contenido y las imágenes. Los cambios se reflejan en el portal al guardar."
+        showBackLink={false}
+        eyebrow=""
         variant="plain"
-        maxWidthClass="max-w-[min(100%,90rem)]"
+        maxWidthClass="max-w-none"
+        actions={
+          <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <Link to={ROUTES.adminNews} className={ACTION_BTN_BACK}>
+              <span aria-hidden className="text-base leading-none">
+                ←
+              </span>
+              Volver a noticias
+            </Link>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => navigate(ROUTES.adminNews)}
+                className={ACTION_BTN_NEUTRAL}
+              >
+                Volver sin guardar
+              </button>
+              <button
+                type="submit"
+                form="edit-news-form"
+                disabled={busy}
+                className={ACTION_BTN_PRIMARY}
+              >
+                {saving ? (
+                  <>
+                    <Spinner />
+                    Guardando…
+                  </>
+                ) : (
+                  'Guardar cambios'
+                )}
+              </button>
+            </div>
+          </div>
+        }
       >
-        <form className="space-y-6" onSubmit={handleSubmit} noValidate>
-          {error ? (
-            <p className={formErrorClass} role="alert">
-              {error}
-            </p>
-          ) : null}
+        <h1 className="sr-only">Editar noticia</h1>
 
+        {error ? (
+          <p
+            className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+            role="alert"
+          >
+            {error}
+          </p>
+        ) : null}
+
+        <form
+          id="edit-news-form"
+          className="admin-fade-up space-y-6"
+          onSubmit={handleSubmit}
+          noValidate
+        >
           <div className="flex flex-col gap-6 lg:grid lg:grid-cols-12 lg:items-start lg:gap-8">
             <AdminFormSection
               title="Medios"
@@ -253,12 +360,13 @@ function EditNewsForm({ id }) {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   required
+                  disabled={busy}
                 />
               </label>
               <NewsCategoryField
                 value={categoryId}
                 onChange={setCategoryId}
-                disabled={saving || deleting}
+                disabled={busy}
                 onMockCategoryName={setMockCategoryName}
               />
               <label className={labelClass}>
@@ -269,6 +377,7 @@ function EditNewsForm({ id }) {
                   value={summary}
                   onChange={(e) => setSummary(e.target.value)}
                   required
+                  disabled={busy}
                 />
               </label>
               <label className={labelClass}>
@@ -279,23 +388,31 @@ function EditNewsForm({ id }) {
                   value={body}
                   onChange={(e) => setBody(e.target.value)}
                   required
+                  disabled={busy}
                 />
               </label>
             </AdminFormSection>
           </div>
 
-          <div className="flex flex-col-reverse gap-3 border-t border-slate-200/80 pt-6 sm:flex-row sm:justify-end">
-            <Button
+          <div className="flex flex-col-reverse gap-3 border-t border-slate-200/80 pt-6 sm:flex-row sm:items-center sm:justify-end">
+            <button
               type="button"
-              variant="secondary"
-              disabled={saving || deleting}
+              disabled={busy}
               onClick={() => navigate(ROUTES.adminNews)}
+              className={ACTION_BTN_NEUTRAL}
             >
               Volver sin guardar
-            </Button>
-            <Button type="submit" disabled={saving || deleting}>
-              {saving ? 'Guardando…' : 'Guardar cambios'}
-            </Button>
+            </button>
+            <button type="submit" disabled={busy} className={ACTION_BTN_PRIMARY}>
+              {saving ? (
+                <>
+                  <Spinner />
+                  Guardando…
+                </>
+              ) : (
+                'Guardar cambios'
+              )}
+            </button>
           </div>
         </form>
 
@@ -304,14 +421,21 @@ function EditNewsForm({ id }) {
           description="Eliminá la noticia del servidor y del almacenamiento de imágenes cuando corresponda. No se puede deshacer."
           className="mt-8 border-red-200/60 bg-linear-to-b from-white to-red-50/40"
         >
-          <Button
+          <button
             type="button"
-            variant="danger"
-            disabled={saving || deleting}
+            disabled={busy}
             onClick={() => setDeleteDialogOpen(true)}
+            className={ACTION_BTN_DANGER}
           >
-            Eliminar noticia
-          </Button>
+            {deleting ? (
+              <>
+                <Spinner />
+                Eliminando…
+              </>
+            ) : (
+              'Eliminar noticia'
+            )}
+          </button>
         </AdminFormSection>
       </AdminPageShell>
     </>
