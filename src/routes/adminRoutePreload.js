@@ -50,7 +50,7 @@ export const adminRouteLoaders = {
     () => import('../pages/admin/AdminConcejoDeliberante.jsx'),
     'AdminConcejoDeliberante',
   ),
-  settingsOfertaAcademica: namedLazy(
+  ofertaAcademica: namedLazy(
     () => import('../pages/admin/AdminOfertaAcademica.jsx'),
     'AdminOfertaAcademica',
   ),

@@ -105,24 +105,6 @@ export function AdminSettingsHome() {
             Abrir módulo <span aria-hidden>→</span>
           </span>
         </Link>
-        <Link
-          to={ROUTES.adminSettingsOfertaAcademica}
-          onMouseEnter={() => preloadAdminRoute('settingsOfertaAcademica')}
-          onFocus={() => preloadAdminRoute('settingsOfertaAcademica')}
-          className="group admin-fade-up rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-md"
-        >
-          <p className="text-xs font-bold uppercase tracking-wide text-sky-700">
-            Gobierno
-          </p>
-          <p className="mt-2 text-lg font-semibold text-slate-900">Oferta académica</p>
-          <p className="mt-2 text-sm leading-relaxed text-slate-600">
-            Gestioná portada, textos, categorías, fichas de cursos y llamados a la acción de la
-            página pública.
-          </p>
-          <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-sky-800 group-hover:text-sky-950">
-            Abrir módulo <span aria-hidden>→</span>
-          </span>
-        </Link>
         {isAdmin ? (
           <Link
             to={ROUTES.adminUsers}

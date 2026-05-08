@@ -29,6 +29,7 @@ export const ROUTES = {
   adminHistory: '/admin/history',
   adminCitizenAttention: '/admin/citizen-attention',
   adminTourismPlaces: '/admin/tourism-places',
+  adminOfertaAcademica: '/admin/oferta-academica',
   adminNewsCreate: '/admin/news/create',
   adminNewsEdit: (id) => `/admin/news/edit/${id}`,
   adminUsers: '/admin/settings/users',
@@ -38,7 +39,6 @@ export const ROUTES = {
   adminSettingsIntendencia: '/admin/settings/intendencia',
   adminSettingsLegisladorEste: '/admin/settings/legislador-este',
   adminSettingsConcejoDeliberante: '/admin/settings/concejo-deliberante',
-  adminSettingsOfertaAcademica: '/admin/settings/oferta-academica',
 }
 
 export const SOCIAL_LINKS = {

@@ -25,7 +25,6 @@ export function AdminLayout() {
   const sessionLabel = user?.username || user?.name || 'Usuario'
   const settingsActive =
     (pathname === ROUTES.adminSettings || pathname.startsWith(`${ROUTES.adminSettings}/`)) &&
-    pathname !== ROUTES.adminSettingsOfertaAcademica &&
     pathname !== ROUTES.adminSettingsLegisladorEste &&
     pathname !== ROUTES.adminSettingsConcejoDeliberante
   const newsActive =
@@ -43,7 +42,9 @@ export function AdminLayout() {
   const citizenAttentionActive =
     pathname === ROUTES.adminCitizenAttention ||
     pathname.startsWith(`${ROUTES.adminCitizenAttention}/`)
-  const ofertaAcademicaActive = pathname === ROUTES.adminSettingsOfertaAcademica
+  const ofertaAcademicaActive =
+    pathname === ROUTES.adminOfertaAcademica ||
+    pathname.startsWith(`${ROUTES.adminOfertaAcademica}/`)
 
   useEffect(() => {
     const run = () => {
@@ -171,9 +172,9 @@ export function AdminLayout() {
               Atención
             </NavLink>
             <NavLink
-              to={ROUTES.adminSettingsOfertaAcademica}
-              onMouseEnter={() => preloadAdminRoute('settingsOfertaAcademica')}
-              onFocus={() => preloadAdminRoute('settingsOfertaAcademica')}
+              to={ROUTES.adminOfertaAcademica}
+              onMouseEnter={() => preloadAdminRoute('ofertaAcademica')}
+              onFocus={() => preloadAdminRoute('ofertaAcademica')}
               className={({ isActive }) =>
                 navClass({ isActive: isActive || ofertaAcademicaActive })
               }
