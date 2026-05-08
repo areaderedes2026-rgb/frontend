@@ -1,7 +1,7 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet'
+import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet'
 
 function buildMarkerIcon(active = false) {
   const color = active ? '#0369a1' : '#1f2937'
@@ -14,8 +14,36 @@ function buildMarkerIcon(active = false) {
   })
 }
 
+const TOGGLEABLE_HANDLERS = [
+  'dragging',
+  'scrollWheelZoom',
+  'doubleClickZoom',
+  'touchZoom',
+  'boxZoom',
+  'keyboard',
+]
+
+function MapInteractivityController({ interactive }) {
+  const map = useMap()
+  useEffect(() => {
+    if (!map) return
+    TOGGLEABLE_HANDLERS.forEach((name) => {
+      const handler = map[name]
+      if (!handler) return
+      if (interactive) handler.enable?.()
+      else handler.disable?.()
+    })
+    if (map.tap) {
+      if (interactive) map.tap.enable?.()
+      else map.tap.disable?.()
+    }
+  }, [map, interactive])
+  return null
+}
+
 export function HomeInteractiveMap({ content }) {
   const [activePointId, setActivePointId] = useState('')
+  const [interactive, setInteractive] = useState(false)
   const tabsRef = useRef(null)
 
   const center = useMemo(
@@ -96,8 +124,22 @@ export function HomeInteractiveMap({ content }) {
           </button>
         </div>
       </div>
-      <div className="relative h-88 w-full sm:h-104 lg:h-120">
-        <MapContainer center={center} zoom={zoom} scrollWheelZoom className="h-full w-full">
+      <div
+        className="relative h-88 w-full sm:h-104 lg:h-120"
+        onMouseLeave={() => setInteractive(false)}
+      >
+        <MapContainer
+          center={center}
+          zoom={zoom}
+          dragging={false}
+          scrollWheelZoom={false}
+          doubleClickZoom={false}
+          touchZoom={false}
+          boxZoom={false}
+          keyboard={false}
+          tap={false}
+          className="h-full w-full"
+        >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -117,7 +159,30 @@ export function HomeInteractiveMap({ content }) {
               </Popup>
             </Marker>
           ))}
+          <MapInteractivityController interactive={interactive} />
         </MapContainer>
+
+        {!interactive ? (
+          <button
+            type="button"
+            onClick={() => setInteractive(true)}
+            className="absolute inset-0 z-1000 flex cursor-pointer items-center justify-center bg-slate-900/25 backdrop-blur-[1px] transition hover:bg-slate-900/35 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
+            aria-label="Activar mapa interactivo"
+          >
+            <span className="pointer-events-none inline-flex items-center gap-2 rounded-full bg-white/95 px-4 py-2 text-sm font-semibold text-[#171b22] shadow-lg ring-1 ring-slate-900/10 sm:px-5 sm:text-base">
+              <span aria-hidden>🗺️</span> Tocá para activar el mapa
+            </span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setInteractive(false)}
+            className="absolute right-3 top-3 z-1000 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-xs font-semibold text-[#171b22] shadow ring-1 ring-slate-900/10 transition hover:text-sky-800"
+            aria-label="Bloquear mapa"
+          >
+            <span aria-hidden>🔒</span> Bloquear mapa
+          </button>
+        )}
       </div>
     </article>
   )
