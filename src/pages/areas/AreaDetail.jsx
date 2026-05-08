@@ -196,7 +196,7 @@ export function AreaDetail() {
                     <img
                       src={directorPhotoUrl}
                       alt={profile.director.name}
-                      className="h-56 w-full rounded-2xl object-cover ring-1 ring-slate-200/80 sm:h-full"
+                      className="aspect-4/5 w-full max-w-72 self-start rounded-2xl object-cover object-top ring-1 ring-slate-200/80 sm:aspect-auto sm:h-full sm:max-w-none sm:object-center"
                     />
                   ) : (
                     <HydrationDirectorPhoto />

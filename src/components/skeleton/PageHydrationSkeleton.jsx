@@ -42,7 +42,7 @@ export function HydrationAreaCoverBand({ className = '' }) {
 export function HydrationDirectorPhoto({ className = '' }) {
   return (
     <div
-      className={`h-56 w-full animate-pulse rounded-2xl bg-slate-100 ring-1 ring-slate-200/80 sm:h-full ${className}`.trim()}
+      className={`aspect-4/5 w-full max-w-72 animate-pulse self-start rounded-2xl bg-slate-100 ring-1 ring-slate-200/80 sm:aspect-auto sm:h-full sm:max-w-none ${className}`.trim()}
       aria-hidden
     />
   )
