@@ -6,13 +6,16 @@ import { LinkButton } from '../../components/ui/LinkButton.jsx'
 import { useAreas } from '../../hooks/useAreas.js'
 import { fetchAreasPageContent } from '../../services/areasPageService.js'
 
+const DEFAULT_AREAS_HERO_IMAGE =
+  'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1600&q=80'
+
 export function AreasIndex() {
   const { areas, loading, error } = useAreas()
   const [globalCover, setGlobalCover] = useState('')
   const featured = areas[0] ?? null
   const heroImage = useMemo(
-    () => globalCover || featured?.coverImage || '',
-    [globalCover, featured?.coverImage],
+    () => globalCover || DEFAULT_AREAS_HERO_IMAGE,
+    [globalCover],
   )
 
   useEffect(() => {

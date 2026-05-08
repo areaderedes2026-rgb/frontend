@@ -5,6 +5,7 @@ import { APP_NAME, ROUTES } from '../../utils/constants.js'
 import { Container } from '../ui/Container.jsx'
 import { Button } from '../ui/Button.jsx'
 import { PageTransitionOutlet } from './PageTransitionOutlet.jsx'
+import { ScrollToTop } from './ScrollToTop.jsx'
 import {
   preloadAdminRoute,
   preloadCommonAdminRoutes,
@@ -60,6 +61,7 @@ export function AdminLayout() {
 
   return (
     <div className="flex min-h-dvh flex-col bg-slate-50">
+      <ScrollToTop />
       <header className="sticky top-0 z-40 border-b border-slate-200/90 bg-white/90 shadow-sm backdrop-blur-md">
         <Container className="flex flex-col gap-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:py-5">
           <div className="flex min-w-0 flex-wrap items-center gap-3 sm:gap-4">

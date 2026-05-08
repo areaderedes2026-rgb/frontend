@@ -4,6 +4,7 @@ import { Navbar } from './Navbar.jsx'
 import { Footer } from './Footer.jsx'
 import { FloatingSocialButtons } from './FloatingSocialButtons.jsx'
 import { PageTransitionOutlet } from './PageTransitionOutlet.jsx'
+import { ScrollToTop } from './ScrollToTop.jsx'
 import { preloadCommonPublicRoutes } from '../../routes/publicRoutePreload.js'
 import { SeoManager } from '../seo/SeoManager.jsx'
 
@@ -27,6 +28,7 @@ export function MainLayout() {
 
   return (
     <div className="flex min-h-dvh flex-col bg-slate-50">
+      <ScrollToTop />
       <SeoManager />
       <Navbar />
       <main
