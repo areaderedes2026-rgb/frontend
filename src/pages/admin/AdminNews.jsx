@@ -289,6 +289,7 @@ export function AdminNews() {
 
       <AdminPageShell
         showBackLink={false}
+        eyebrow=""
         maxWidthClass="max-w-none"
         variant="plain"
         actions={
