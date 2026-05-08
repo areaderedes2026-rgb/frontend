@@ -143,23 +143,25 @@ export function Navbar() {
     const el = headerRef.current
     if (!el) return
     const sync = () => {
-      const currentRaw = getComputedStyle(document.documentElement)
-        .getPropertyValue('--navbar-h')
-        .trim()
-      const current = Number.parseFloat(currentRaw) || 0
-      const next = Math.max(current, el.offsetHeight)
+      // Reflejamos siempre el alto real del header. Evitamos `Math.max` con un
+      // valor previo: en mobile la transición scrolled/no-scrolled cambia el
+      // alto, y mantener el máximo histórico generaba un padding-top excesivo
+      // en `<main>` (espacio en blanco al ingresar a una sección hasta hacer
+      // refresh).
       document.documentElement.style.setProperty(
         '--navbar-h',
-        `${next}px`,
+        `${el.offsetHeight}px`,
       )
     }
     sync()
     const ro = new ResizeObserver(sync)
     ro.observe(el)
     window.addEventListener('resize', sync)
+    window.addEventListener('orientationchange', sync)
     return () => {
       ro.disconnect()
       window.removeEventListener('resize', sync)
+      window.removeEventListener('orientationchange', sync)
       document.documentElement.style.removeProperty('--navbar-h')
     }
   }, [])

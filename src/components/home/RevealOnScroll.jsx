@@ -72,6 +72,23 @@ export function RevealOnScroll({
     if (disabled || reduceMotion) return
     const el = ref.current
     if (!el) return
+
+    // Si al montar el observer el elemento ya está dentro del viewport
+    // (caso típico tras navegar entre rutas con scroll-to-top en mobile),
+    // mostramos el contenido inmediatamente. Evita el "espacio en blanco"
+    // por callbacks de IntersectionObserver que no se disparan de forma
+    // fiable en iOS Safari / Chrome mobile en el primer frame.
+    const isInViewport = () => {
+      const rect = el.getBoundingClientRect()
+      const vh = window.innerHeight || document.documentElement.clientHeight
+      const vw = window.innerWidth || document.documentElement.clientWidth
+      return rect.bottom > 0 && rect.right > 0 && rect.top < vh && rect.left < vw
+    }
+    if (isInViewport()) {
+      setVisible(true)
+      return undefined
+    }
+
     const obs = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -82,7 +99,20 @@ export function RevealOnScroll({
       { threshold: variant === 'newsCard' || variant === 'newsCardSlow' ? 0.06 : 0.08, rootMargin: v.rootMargin },
     )
     obs.observe(el)
-    return () => obs.disconnect()
+
+    // Fallback defensivo: si en ~120ms el observer no disparó pero el
+    // elemento ya está visible, lo mostramos igual.
+    const fallbackId = window.setTimeout(() => {
+      if (isInViewport()) {
+        setVisible(true)
+        obs.disconnect()
+      }
+    }, 120)
+
+    return () => {
+      obs.disconnect()
+      window.clearTimeout(fallbackId)
+    }
   }, [disabled, reduceMotion, variant, v.rootMargin])
 
   const show = visible || reduceMotion || disabled

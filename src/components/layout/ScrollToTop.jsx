@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useLayoutEffect, useRef } from 'react'
 import { useLocation, useNavigationType } from 'react-router-dom'
 
 /**
@@ -6,14 +6,16 @@ import { useLocation, useNavigationType } from 'react-router-dom'
  * - Respeta anclas (#hash) para no romper navegación interna a secciones.
  * - En navegaciones POP (botón atrás/adelante del navegador) no fuerza scroll
  *   para permitir la restauración nativa de posición previa.
- * - Usa `instant`/`auto` para evitar parpadeos visuales.
+ * - Usa `useLayoutEffect` + `behavior: 'auto'` para mover el scroll antes del
+ *   primer paint de la nueva página (evita flicker y que IntersectionObserver
+ *   se inicialice con la posición vieja en mobile).
  */
 export function ScrollToTop() {
   const { pathname, hash } = useLocation()
   const navigationType = useNavigationType()
   const lastPathRef = useRef(pathname)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (lastPathRef.current === pathname) {
       return
     }
