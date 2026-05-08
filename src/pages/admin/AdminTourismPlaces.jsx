@@ -2,20 +2,31 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
 import { NewsImageFields } from '../../components/admin/NewsImageFields.jsx'
-import { NewsCoverMedia } from '../../components/news/NewsCoverMedia.jsx'
-import { Button } from '../../components/ui/Button.jsx'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
 import { Modal } from '../../components/ui/Modal.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
-import { formErrorClass, inputClass, labelClass, textareaClass } from '../../components/ui/formStyles.js'
+import {
+  inputClass,
+  labelClass,
+  textareaClass,
+} from '../../components/ui/formStyles.js'
 import {
   createTourismPlace,
   deleteTourismPlace,
   fetchTourismPlacesAdmin,
   updateTourismPlace,
 } from '../../services/tourismPlacesService.js'
+import { isApiConfigured } from '../../utils/apiConfig.js'
 import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
+import { resolveMediaUrl } from '../../utils/imageUrl.js'
 import { ROUTES } from '../../utils/constants.js'
+
+const PAGE_SIZE = 20
+
+const ACTION_BTN_BASE =
+  'inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto'
+const ACTION_BTN_NEUTRAL = `${ACTION_BTN_BASE} border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50`
+const ACTION_BTN_PRIMARY = `${ACTION_BTN_BASE} bg-sky-700 text-white hover:bg-sky-800`
 
 const EMPTY_FORM = {
   name: '',
@@ -60,6 +71,70 @@ function toForm(place) {
   }
 }
 
+function Spinner({ tone = 'sky', size = 'sm' }) {
+  const dim = size === 'sm' ? 'h-4 w-4 border-2' : 'h-5 w-5 border-2'
+  const color =
+    tone === 'white'
+      ? 'border-white/40 border-t-white'
+      : 'border-slate-300 border-t-sky-700'
+  return (
+    <span
+      className={`inline-block animate-spin rounded-full ${color} ${dim}`}
+      aria-hidden
+    />
+  )
+}
+
+function PlaceThumb({ src, size = 'md' }) {
+  const resolved = src ? resolveMediaUrl(src) : ''
+  const dim = size === 'sm' ? 'h-11 w-14' : 'h-12 w-16'
+  if (!resolved) {
+    return (
+      <div
+        className={`${dim} shrink-0 rounded-lg bg-slate-50 ring-1 ring-inset ring-slate-200/80`}
+        aria-hidden
+      />
+    )
+  }
+  return (
+    <img
+      src={resolved}
+      alt=""
+      className={`${dim} shrink-0 rounded-lg object-cover ring-1 ring-inset ring-slate-200/80`}
+      loading="lazy"
+      decoding="async"
+    />
+  )
+}
+
+function normalize(text) {
+  return String(text || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+}
+
+function paginationModel(page, totalPages) {
+  if (totalPages <= 1) return { items: [{ type: 'page', n: 1 }], totalPages: 1 }
+  if (totalPages <= 7) {
+    return {
+      totalPages,
+      items: Array.from({ length: totalPages }, (_, i) => ({ type: 'page', n: i + 1 })),
+    }
+  }
+  const set = new Set(
+    [1, totalPages, page, page - 1, page + 1].filter((n) => n >= 1 && n <= totalPages),
+  )
+  const sorted = Array.from(set).sort((a, b) => a - b)
+  const items = []
+  for (let i = 0; i < sorted.length; i += 1) {
+    items.push({ type: 'page', n: sorted[i] })
+    const next = sorted[i + 1]
+    if (next != null && next - sorted[i] > 1) items.push({ type: 'gap', key: `gap-${sorted[i]}` })
+  }
+  return { totalPages, items }
+}
+
 export function AdminTourismPlaces() {
   const [places, setPlaces] = useState([])
   const [loading, setLoading] = useState(true)
@@ -72,9 +147,42 @@ export function AdminTourismPlaces() {
   const [editingPlace, setEditingPlace] = useState(null)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
+  const [formError, setFormError] = useState('')
 
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleting, setDeleting] = useState(false)
+
+  const [searchQuery, setSearchQuery] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [page, setPage] = useState(1)
+
+  const loadPlaces = useCallback(
+    async (showToast = false) => {
+      if (!isApiConfigured()) {
+        setLoading(false)
+        return
+      }
+      setLoading(true)
+      setError('')
+      try {
+        const list = await fetchTourismPlacesAdmin()
+        setPlaces(Array.isArray(list) ? list : [])
+        if (showToast) {
+          setToast({ type: 'success', message: 'Listado actualizado.' })
+        }
+      } catch (e) {
+        setError(e.message || 'No se pudieron cargar los lugares turísticos.')
+      } finally {
+        setLoading(false)
+      }
+    },
+    [],
+  )
+
+  useEffect(() => {
+    loadPlaces()
+  }, [loadPlaces])
 
   const sortedPlaces = useMemo(
     () =>
@@ -87,32 +195,74 @@ export function AdminTourismPlaces() {
     [places],
   )
 
-  const loadPlaces = useCallback(async () => {
-    setLoading(true)
-    setError('')
-    try {
-      const list = await fetchTourismPlacesAdmin()
-      setPlaces(Array.isArray(list) ? list : [])
-    } catch (e) {
-      setError(e.message || 'No se pudieron cargar los lugares turísticos.')
-    } finally {
-      setLoading(false)
+  const categoriesAvailable = useMemo(() => {
+    const set = new Set()
+    for (const place of places) {
+      const cat = String(place.category || '').trim()
+      if (cat) set.add(cat)
     }
-  }, [])
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'es'))
+  }, [places])
+
+  const filteredPlaces = useMemo(() => {
+    const term = normalize(searchQuery)
+    return sortedPlaces.filter((place) => {
+      if (statusFilter === 'active' && place.isActive === false) return false
+      if (statusFilter === 'hidden' && place.isActive !== false) return false
+      if (categoryFilter !== 'all') {
+        const cat = String(place.category || '').trim()
+        if (cat !== categoryFilter) return false
+      }
+      if (!term) return true
+      const haystack = [
+        place.name,
+        place.slug,
+        place.category,
+        place.shortDescription,
+        place.fullDescription,
+        place.address,
+      ]
+      return haystack.some((value) => normalize(value).includes(term))
+    })
+  }, [sortedPlaces, searchQuery, statusFilter, categoryFilter])
+
+  const filtersActive =
+    searchQuery.trim().length > 0 ||
+    statusFilter !== 'all' ||
+    categoryFilter !== 'all'
+
+  const totalPages = Math.max(1, Math.ceil(filteredPlaces.length / PAGE_SIZE))
+  const safePage = Math.min(Math.max(page, 1), totalPages)
+  const rangeStart = (safePage - 1) * PAGE_SIZE
+  const rangeEnd = Math.min(rangeStart + PAGE_SIZE, filteredPlaces.length)
+  const paginated = useMemo(
+    () => filteredPlaces.slice(rangeStart, rangeEnd),
+    [filteredPlaces, rangeStart, rangeEnd],
+  )
+  const pagModel = paginationModel(safePage, totalPages)
 
   useEffect(() => {
-    loadPlaces()
-  }, [loadPlaces])
+    setPage(1)
+  }, [searchQuery, statusFilter, categoryFilter])
+
+  function clearFilters() {
+    setSearchQuery('')
+    setStatusFilter('all')
+    setCategoryFilter('all')
+    setPage(1)
+  }
 
   function openCreateModal() {
     setEditingPlace(null)
     setForm(EMPTY_FORM)
+    setFormError('')
     setModalOpen(true)
   }
 
   function openEditModal(place) {
     setEditingPlace(place)
     setForm(toForm(place))
+    setFormError('')
     setModalOpen(true)
   }
 
@@ -121,7 +271,16 @@ export function AdminTourismPlaces() {
   }
 
   async function handleSave(event) {
-    event.preventDefault()
+    event?.preventDefault?.()
+    setFormError('')
+    if (!form.name.trim()) {
+      setFormError('Completá el nombre del lugar.')
+      return
+    }
+    if (!form.fullDescription.trim()) {
+      setFormError('Completá la descripción completa del lugar.')
+      return
+    }
     setSaving(true)
     try {
       const payload = {
@@ -157,7 +316,9 @@ export function AdminTourismPlaces() {
       await loadPlaces()
     } catch (e) {
       if (isConcurrencyConflictError(e)) setConflictOpen(true)
-      setToast({ type: 'error', message: e.message || 'No se pudo guardar el lugar turístico.' })
+      const msg = e.message || 'No se pudo guardar el lugar turístico.'
+      setFormError(msg)
+      setToast({ type: 'error', message: msg })
     } finally {
       setSaving(false)
     }
@@ -172,7 +333,10 @@ export function AdminTourismPlaces() {
       setToast({ type: 'success', message: 'Lugar turístico eliminado.' })
       await loadPlaces()
     } catch (e) {
-      setToast({ type: 'error', message: e.message || 'No se pudo eliminar el lugar turístico.' })
+      setToast({
+        type: 'error',
+        message: e.message || 'No se pudo eliminar el lugar turístico.',
+      })
     } finally {
       setDeleting(false)
     }
@@ -180,7 +344,9 @@ export function AdminTourismPlaces() {
 
   return (
     <>
-      {toast ? <Toast variant={toast.type} message={toast.message} onDismiss={dismissToast} /> : null}
+      {toast ? (
+        <Toast variant={toast.type} message={toast.message} onDismiss={dismissToast} />
+      ) : null}
       <ConfirmDialog
         open={conflictOpen}
         onClose={() => setConflictOpen(false)}
@@ -200,7 +366,9 @@ export function AdminTourismPlaces() {
         description={
           deleteTarget ? (
             <>
-              Esta acción eliminará <span className="font-semibold">«{deleteTarget.name}»</span>.
+              Esta acción eliminará{' '}
+              <span className="font-semibold">«{deleteTarget.name}»</span> y no se puede
+              deshacer.
             </>
           ) : null
         }
@@ -222,6 +390,14 @@ export function AdminTourismPlaces() {
         description="Completá la información que se mostrará en el detalle público. Las imágenes se suben igual que en noticias."
       >
         <form className="flex flex-col gap-6" onSubmit={handleSave}>
+          {formError ? (
+            <p
+              className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+              role="alert"
+            >
+              {formError}
+            </p>
+          ) : null}
           <div className="grid gap-6 lg:grid-cols-12 lg:gap-8">
             <aside className="space-y-1 lg:col-span-4 lg:sticky lg:top-0 lg:self-start">
               <p className="text-sm font-semibold text-slate-900">Medios</p>
@@ -254,6 +430,7 @@ export function AdminTourismPlaces() {
                     onChange={(e) => updateField('name', e.target.value)}
                     disabled={saving}
                     required
+                    placeholder="Ej. Dique El Potrero"
                   />
                 </label>
                 <label className={labelClass}>
@@ -263,6 +440,7 @@ export function AdminTourismPlaces() {
                     value={form.slug}
                     onChange={(e) => updateField('slug', e.target.value)}
                     disabled={saving}
+                    placeholder="dique-el-potrero"
                   />
                 </label>
                 <label className={labelClass}>
@@ -272,6 +450,7 @@ export function AdminTourismPlaces() {
                     value={form.category}
                     onChange={(e) => updateField('category', e.target.value)}
                     disabled={saving}
+                    placeholder="Naturaleza, Patrimonio…"
                   />
                 </label>
                 <label className={labelClass}>
@@ -325,7 +504,7 @@ export function AdminTourismPlaces() {
                   />
                 </label>
                 <label className={`${labelClass} sm:col-span-2 xl:col-span-3`}>
-                  Como llegar
+                  Cómo llegar
                   <textarea
                     className={`${textareaClass} min-h-20`}
                     value={form.howToGet}
@@ -391,87 +570,430 @@ export function AdminTourismPlaces() {
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 border-t border-slate-200/80 pt-4">
-            <Button type="button" variant="secondary" onClick={() => setModalOpen(false)} disabled={saving}>
+          <div className="flex flex-col-reverse gap-2 border-t border-slate-200/80 pt-4 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={() => setModalOpen(false)}
+              disabled={saving}
+              className={ACTION_BTN_NEUTRAL}
+            >
               Cancelar
-            </Button>
-            <Button type="submit" disabled={saving}>
-              {saving ? 'Guardando…' : editingPlace ? 'Guardar cambios' : 'Crear lugar'}
-            </Button>
+            </button>
+            <button type="submit" disabled={saving} className={ACTION_BTN_PRIMARY}>
+              {saving ? (
+                <>
+                  <Spinner tone="white" size="sm" />
+                  Guardando…
+                </>
+              ) : editingPlace ? (
+                'Guardar cambios'
+              ) : (
+                'Crear lugar'
+              )}
+            </button>
           </div>
         </form>
       </Modal>
 
       <AdminPageShell
         showBackLink={false}
-        eyebrow="Historia"
-        title="Administrar lugares turísticos"
-        subtitle="Gestioná los destinos que se muestran en la sección pública de Historia y en sus páginas de detalle."
-        maxWidthClass="max-w-6xl"
+        eyebrow=""
+        maxWidthClass="max-w-none"
         variant="plain"
+        actions={
+          <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end sm:gap-3">
+            <button
+              type="button"
+              onClick={() => loadPlaces(true)}
+              disabled={loading}
+              className={ACTION_BTN_NEUTRAL}
+              aria-label="Actualizar listado"
+            >
+              <span aria-hidden>↻</span>
+              Actualizar
+            </button>
+            <button
+              type="button"
+              onClick={openCreateModal}
+              disabled={!isApiConfigured()}
+              className={ACTION_BTN_PRIMARY}
+            >
+              + Nuevo lugar turístico
+            </button>
+          </div>
+        }
       >
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
-          <Link to={ROUTES.adminHistory} className="text-sm font-semibold text-slate-700 hover:text-sky-800">
-            ← Volver a Historia
-          </Link>
-          <Button type="button" onClick={openCreateModal}>
-            Nuevo lugar turístico
-          </Button>
+        <h1 className="sr-only">Administrar lugares turísticos</h1>
+
+        {!isApiConfigured() ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
+            Esta sección requiere conexión activa con el backend para funcionar.
+          </div>
+        ) : null}
+
+        {/* Toolbar de filtros */}
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              to={ROUTES.adminHistory}
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-900"
+            >
+              <span aria-hidden>←</span>
+              Volver a Historia
+            </Link>
+            <span className="hidden text-slate-300 sm:inline" aria-hidden>
+              ·
+            </span>
+            <p className="text-xs text-slate-500">
+              {places.length} lugares cargados
+              {filtersActive ? ` · ${filteredPlaces.length} coinciden con los filtros` : ''}
+            </p>
+          </div>
+          <div className="mt-3 grid gap-3 sm:grid-cols-12 sm:items-end">
+            <label className={`${labelClass} sm:col-span-6`}>
+              Buscar
+              <input
+                type="search"
+                className={inputClass}
+                placeholder="Nombre, slug, categoría o descripción..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                disabled={loading}
+                autoComplete="off"
+              />
+            </label>
+            <label className={`${labelClass} sm:col-span-3`}>
+              Categoría
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="news-select-minimal"
+                disabled={loading}
+              >
+                <option value="all">Todas</option>
+                {categoriesAvailable.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className={`${labelClass} sm:col-span-3`}>
+              Estado
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="news-select-minimal"
+                disabled={loading}
+              >
+                <option value="all">Todos</option>
+                <option value="active">Activos</option>
+                <option value="hidden">Ocultos</option>
+              </select>
+            </label>
+          </div>
+          {filtersActive ? (
+            <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+              >
+                Limpiar filtros
+              </button>
+            </div>
+          ) : null}
         </div>
 
         {error ? (
-          <p className={formErrorClass} role="alert">
-            {error}
-          </p>
+          <div
+            className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-800 shadow-sm"
+            role="alert"
+          >
+            <p className="font-semibold">No se pudieron cargar los lugares turísticos.</p>
+            <p className="mt-1 text-red-700/90">{error}</p>
+            <button
+              type="button"
+              onClick={() => void loadPlaces()}
+              className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-700 shadow-sm transition hover:border-red-300 hover:bg-red-50"
+            >
+              <span aria-hidden>↻</span>
+              Reintentar
+            </button>
+          </div>
         ) : null}
 
         {loading ? (
-          <div className="animate-pulse rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-            <div className="h-4 w-44 rounded bg-slate-100" />
-            <div className="mt-3 h-3 w-full rounded bg-slate-100" />
-            <div className="mt-2 h-3 w-5/6 rounded bg-slate-100" />
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+            <div className="space-y-2">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="h-14 animate-pulse rounded-xl bg-slate-100" />
+              ))}
+            </div>
+          </div>
+        ) : places.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-6 py-14 text-center">
+            <p className="text-base font-medium text-slate-800">
+              Todavía no hay lugares turísticos cargados.
+            </p>
+            <p className="mx-auto mt-2 max-w-md text-sm text-slate-600">
+              Creá el primero para que aparezca en el portal público.
+            </p>
+            <button
+              type="button"
+              onClick={openCreateModal}
+              disabled={!isApiConfigured()}
+              className="mt-6 inline-flex items-center justify-center rounded-xl bg-sky-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-800 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              + Nuevo lugar turístico
+            </button>
+          </div>
+        ) : filteredPlaces.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-amber-200/90 bg-amber-50/50 px-6 py-12 text-center">
+            <p className="text-base font-medium text-slate-800">
+              No hay lugares que coincidan con los filtros.
+            </p>
+            <p className="mx-auto mt-2 max-w-md text-sm text-slate-600">
+              Probá otra búsqueda o limpiá los filtros para ver todos los lugares.
+            </p>
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="mt-5 inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-sky-200 hover:bg-sky-50"
+            >
+              Limpiar filtros
+            </button>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {sortedPlaces.map((place) => (
-              <article
-                key={place.id}
-                className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm"
-              >
-                <NewsCoverMedia
-                  imageUrl={place.imageUrl}
-                  className="aspect-16/10 w-full shrink-0"
-                  loading="lazy"
-                  iconScale="md"
-                />
-                <div className="space-y-3 p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <h2 className="text-lg font-bold tracking-tight text-slate-900">{place.name}</h2>
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                        place.isActive
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-slate-200 text-slate-700'
-                      }`}
+          <>
+            {/* Tabla en desktop */}
+            <div className="hidden overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm lg:block">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-slate-200 bg-slate-50/90 text-xs font-bold uppercase tracking-wide text-slate-500">
+                    <th className="w-20 px-4 py-3.5" scope="col">
+                      <span className="sr-only">Portada</span>
+                    </th>
+                    <th className="min-w-0 px-3 py-3.5">Lugar</th>
+                    <th className="w-44 px-4 py-3.5">Categoría</th>
+                    <th className="w-28 px-4 py-3.5">Estado</th>
+                    <th className="w-20 px-4 py-3.5 text-right tabular-nums">Orden</th>
+                    <th className="w-44 px-4 py-3.5 text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginated.map((place) => (
+                    <tr
+                      key={place.id}
+                      className="border-b border-slate-100 transition-colors last:border-0 hover:bg-slate-50/90"
                     >
-                      {place.isActive ? 'Activo' : 'Oculto'}
+                      <td className="px-4 py-3 align-middle">
+                        <PlaceThumb src={place.imageUrl} />
+                      </td>
+                      <td className="min-w-0 px-3 py-3 align-middle">
+                        <button
+                          type="button"
+                          onClick={() => openEditModal(place)}
+                          className="line-clamp-2 text-left font-semibold text-slate-900 transition hover:text-sky-800"
+                        >
+                          {place.name || 'Sin nombre'}
+                        </button>
+                        <p className="mt-0.5 line-clamp-1 text-xs text-slate-500">
+                          {place.shortDescription || place.fullDescription || ''}
+                        </p>
+                        {place.slug ? (
+                          <span className="mt-1 inline-block rounded-md bg-slate-50 px-1.5 py-0.5 font-mono text-[11px] text-slate-500 ring-1 ring-slate-200">
+                            {place.slug}
+                          </span>
+                        ) : null}
+                      </td>
+                      <td className="px-4 py-3 align-middle text-slate-600">
+                        {place.category ? (
+                          <span className="rounded-full bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-800 ring-1 ring-sky-100">
+                            {place.category}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-slate-400">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 align-middle">
+                        <span
+                          className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                            place.isActive !== false
+                              ? 'bg-emerald-100 text-emerald-800 ring-1 ring-emerald-100'
+                              : 'bg-slate-200 text-slate-700 ring-1 ring-slate-200'
+                          }`}
+                        >
+                          {place.isActive !== false ? 'Activo' : 'Oculto'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right align-middle font-mono text-sm tabular-nums text-slate-700">
+                        {Number(place.sortOrder) || 0}
+                      </td>
+                      <td className="px-4 py-3 text-right align-middle">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => openEditModal(place)}
+                            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-900"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeleteTarget(place)}
+                            disabled={Boolean(deleting)}
+                            className="inline-flex items-center justify-center rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Cards en mobile */}
+            <ul className="space-y-3 lg:hidden">
+              {paginated.map((place) => (
+                <li
+                  key={place.id}
+                  className="flex gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm"
+                >
+                  <div className="shrink-0 pt-0.5">
+                    <PlaceThumb src={place.imageUrl} size="sm" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <button
+                        type="button"
+                        onClick={() => openEditModal(place)}
+                        className="line-clamp-2 text-left text-base font-semibold text-slate-900 hover:text-sky-800"
+                      >
+                        {place.name || 'Sin nombre'}
+                      </button>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                          place.isActive !== false
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : 'bg-slate-200 text-slate-700'
+                        }`}
+                      >
+                        {place.isActive !== false ? 'Activo' : 'Oculto'}
+                      </span>
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      {place.category ? (
+                        <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[11px] font-semibold text-sky-800 ring-1 ring-sky-100">
+                          {place.category}
+                        </span>
+                      ) : null}
+                      <span className="text-xs text-slate-500 tabular-nums">
+                        Orden {Number(place.sortOrder) || 0}
+                      </span>
+                    </div>
+                    <p className="mt-2 line-clamp-2 text-sm text-slate-600">
+                      {place.shortDescription || place.fullDescription || 'Sin descripción.'}
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => openEditModal(place)}
+                        className="inline-flex flex-1 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 transition hover:border-sky-200 hover:bg-sky-50/50 hover:text-sky-900 sm:flex-none"
+                      >
+                        Editar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeleteTarget(place)}
+                        disabled={Boolean(deleting)}
+                        className="inline-flex flex-1 items-center justify-center rounded-xl bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            <nav
+              className="flex flex-col gap-4 rounded-2xl border border-slate-200/80 bg-slate-50/80 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5"
+              aria-label="Paginación de lugares turísticos"
+            >
+              <p className="text-center text-sm leading-relaxed text-slate-600 sm:text-left">
+                Mostrando{' '}
+                <span className="font-semibold tabular-nums text-slate-900">
+                  {rangeStart + 1}
+                </span>
+                –
+                <span className="font-semibold tabular-nums text-slate-900">{rangeEnd}</span>{' '}
+                de{' '}
+                <span className="font-semibold tabular-nums text-slate-900">
+                  {filteredPlaces.length}
+                </span>
+                {totalPages > 1 ? (
+                  <>
+                    <span className="text-slate-400" aria-hidden>
+                      {' '}
+                      ·{' '}
                     </span>
+                    <span className="tabular-nums text-slate-600">
+                      página {safePage} de {totalPages}
+                    </span>
+                  </>
+                ) : null}
+              </p>
+              {totalPages > 1 ? (
+                <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
+                  <button
+                    type="button"
+                    disabled={safePage <= 1}
+                    onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                    className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Anterior
+                  </button>
+                  <div className="hidden items-center gap-1 sm:flex">
+                    {pagModel.items.map((entry, idx) =>
+                      entry.type === 'gap' ? (
+                        <span
+                          key={`gap-${idx}`}
+                          className="px-1 text-slate-400"
+                          aria-hidden
+                        >
+                          …
+                        </span>
+                      ) : (
+                        <button
+                          key={entry.n}
+                          type="button"
+                          onClick={() => setPage(entry.n)}
+                          className={`min-h-10 min-w-10 rounded-lg text-sm font-semibold transition ${
+                            entry.n === safePage
+                              ? 'bg-sky-700 text-white shadow-sm'
+                              : 'text-slate-700 hover:bg-white hover:ring-1 hover:ring-slate-200'
+                          }`}
+                        >
+                          {entry.n}
+                        </button>
+                      ),
+                    )}
                   </div>
-                  <p className="line-clamp-3 text-sm leading-relaxed text-slate-600">
-                    {place.shortDescription || place.fullDescription}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    <Button type="button" variant="secondary" onClick={() => openEditModal(place)}>
-                      Editar
-                    </Button>
-                    <Button type="button" variant="danger" onClick={() => setDeleteTarget(place)}>
-                      Eliminar
-                    </Button>
-                  </div>
+                  <button
+                    type="button"
+                    disabled={safePage >= totalPages}
+                    onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+                    className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Siguiente
+                  </button>
                 </div>
-              </article>
-            ))}
-          </div>
+              ) : null}
+            </nav>
+          </>
         )}
       </AdminPageShell>
     </>
