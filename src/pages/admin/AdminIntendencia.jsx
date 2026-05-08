@@ -35,7 +35,34 @@ function mapToForm(content) {
     contactEmail: content.contactEmail || '',
     contactPhone: content.contactPhone || '',
     officeHours: content.officeHours || '',
+    showMayorPhoto: content.showMayorPhoto !== false,
+    showMayorRole: content.showMayorRole !== false,
+    showMayorBio: content.showMayorBio !== false,
+    showContactPanel: content.showContactPanel !== false,
+    showContactEmail: content.showContactEmail !== false,
+    showContactPhone: content.showContactPhone !== false,
+    showOfficeHours: content.showOfficeHours !== false,
+    showContactNote: content.showContactNote !== false,
+    showManagementAxes: content.showManagementAxes !== false,
   }
+}
+
+function VisibilityToggle({ label, hint, checked, onChange, disabled }) {
+  return (
+    <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3 transition hover:border-slate-300 hover:bg-white">
+      <input
+        type="checkbox"
+        className="mt-1 h-4 w-4 cursor-pointer rounded border-slate-300 text-sky-600 focus:ring-sky-500 disabled:cursor-not-allowed"
+        checked={Boolean(checked)}
+        onChange={(e) => onChange(e.target.checked)}
+        disabled={disabled}
+      />
+      <span className="flex flex-col">
+        <span className="text-sm font-semibold text-slate-800">{label}</span>
+        {hint ? <span className="mt-0.5 text-xs text-slate-500">{hint}</span> : null}
+      </span>
+    </label>
+  )
 }
 
 export function AdminIntendencia() {
@@ -76,6 +103,10 @@ export function AdminIntendencia() {
     }
   }, [])
 
+  function setFlag(key, value) {
+    setForm((prev) => ({ ...prev, [key]: value }))
+  }
+
   async function handleSubmit(event) {
     event.preventDefault()
     setError('')
@@ -101,6 +132,15 @@ export function AdminIntendencia() {
         contactEmail: form.contactEmail.trim(),
         contactPhone: form.contactPhone.trim(),
         officeHours: form.officeHours.trim(),
+        showMayorPhoto: Boolean(form.showMayorPhoto),
+        showMayorRole: Boolean(form.showMayorRole),
+        showMayorBio: Boolean(form.showMayorBio),
+        showContactPanel: Boolean(form.showContactPanel),
+        showContactEmail: Boolean(form.showContactEmail),
+        showContactPhone: Boolean(form.showContactPhone),
+        showOfficeHours: Boolean(form.showOfficeHours),
+        showContactNote: Boolean(form.showContactNote),
+        showManagementAxes: Boolean(form.showManagementAxes),
       }
       const saved = await updateIntendenciaContent(payload)
       const merged = mergeIntendenciaContent(DEFAULT_INTENDENCIA_CONTENT, saved || {})
@@ -259,6 +299,81 @@ export function AdminIntendencia() {
                   disabled={loading || saving}
                 />
               </label>
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+            <div className="flex flex-col gap-1">
+              <h2 className="text-base font-semibold text-slate-900">Visibilidad pública</h2>
+              <p className="text-sm text-slate-500">
+                Controlá qué elementos se muestran en la página pública. Los datos no se borran:
+                podés volver a habilitarlos cuando quieras.
+              </p>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <VisibilityToggle
+                label="Foto del intendente"
+                hint="Muestra la imagen retrato junto a la ficha."
+                checked={form.showMayorPhoto}
+                onChange={(v) => setFlag('showMayorPhoto', v)}
+                disabled={loading || saving}
+              />
+              <VisibilityToggle
+                label="Cargo del intendente"
+                hint="Texto debajo del nombre (ej. Intendente Municipal)."
+                checked={form.showMayorRole}
+                onChange={(v) => setFlag('showMayorRole', v)}
+                disabled={loading || saving}
+              />
+              <VisibilityToggle
+                label="Biografía / descripción"
+                hint="Párrafo de presentación del intendente."
+                checked={form.showMayorBio}
+                onChange={(v) => setFlag('showMayorBio', v)}
+                disabled={loading || saving}
+              />
+              <VisibilityToggle
+                label="Panel lateral de contacto"
+                hint="Si lo desactivás, no se muestra el bloque oscuro de la derecha."
+                checked={form.showContactPanel}
+                onChange={(v) => setFlag('showContactPanel', v)}
+                disabled={loading || saving}
+              />
+              <VisibilityToggle
+                label="Correo dentro del panel"
+                hint="Línea “Correo” en el panel de contacto."
+                checked={form.showContactEmail}
+                onChange={(v) => setFlag('showContactEmail', v)}
+                disabled={loading || saving || !form.showContactPanel}
+              />
+              <VisibilityToggle
+                label="Teléfono dentro del panel"
+                hint="Línea “Teléfono” en el panel de contacto."
+                checked={form.showContactPhone}
+                onChange={(v) => setFlag('showContactPhone', v)}
+                disabled={loading || saving || !form.showContactPanel}
+              />
+              <VisibilityToggle
+                label="Horario de atención"
+                hint="Línea “Horario” en el panel de contacto."
+                checked={form.showOfficeHours}
+                onChange={(v) => setFlag('showOfficeHours', v)}
+                disabled={loading || saving || !form.showContactPanel}
+              />
+              <VisibilityToggle
+                label="Nota institucional"
+                hint='Recuadro azul: "La intendencia articula con todas las áreas…".'
+                checked={form.showContactNote}
+                onChange={(v) => setFlag('showContactNote', v)}
+                disabled={loading || saving || !form.showContactPanel}
+              />
+              <VisibilityToggle
+                label="Sección Ejes de gestión"
+                hint="Tarjeta inferior con los seis ejes."
+                checked={form.showManagementAxes}
+                onChange={(v) => setFlag('showManagementAxes', v)}
+                disabled={loading || saving}
+              />
             </div>
           </section>
 

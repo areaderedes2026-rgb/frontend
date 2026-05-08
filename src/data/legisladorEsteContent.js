@@ -1,3 +1,15 @@
+function toBoolFlag(value, fallback = true) {
+  if (value === undefined || value === null) return fallback
+  if (typeof value === 'boolean') return value
+  if (typeof value === 'number') return value !== 0
+  if (typeof value === 'string') {
+    const v = value.trim().toLowerCase()
+    if (v === '0' || v === 'false' || v === 'no') return false
+    if (v === '1' || v === 'true' || v === 'yes') return true
+  }
+  return Boolean(value)
+}
+
 export const DEFAULT_LEGISLADOR_ESTE_CONTENT = {
   heroEyebrow: 'Gobierno municipal',
   heroTitle: 'Legislador por el Este',
@@ -14,6 +26,15 @@ export const DEFAULT_LEGISLADOR_ESTE_CONTENT = {
   contactEmail: 'legisladoreste@trancas.gob.ar',
   contactPhone: '+54 381 4XX-XXXX',
   officeHours: 'Lunes a viernes, 09:00 a 13:00',
+  showLegislatorPhoto: true,
+  showLegislatorRole: true,
+  showLegislatorBio: true,
+  showContactPanel: true,
+  showContactEmail: true,
+  showContactPhone: true,
+  showOfficeHours: true,
+  showContactNote: true,
+  showManagementAxes: true,
 }
 
 export function mergeLegisladorEsteContent(base, remote) {
@@ -33,5 +54,20 @@ export function mergeLegisladorEsteContent(base, remote) {
     contactEmail: String(remote.contactEmail || base.contactEmail || ''),
     contactPhone: String(remote.contactPhone || base.contactPhone || ''),
     officeHours: String(remote.officeHours || base.officeHours || ''),
+    showLegislatorPhoto: toBoolFlag(
+      remote.showLegislatorPhoto,
+      base.showLegislatorPhoto,
+    ),
+    showLegislatorRole: toBoolFlag(
+      remote.showLegislatorRole,
+      base.showLegislatorRole,
+    ),
+    showLegislatorBio: toBoolFlag(remote.showLegislatorBio, base.showLegislatorBio),
+    showContactPanel: toBoolFlag(remote.showContactPanel, base.showContactPanel),
+    showContactEmail: toBoolFlag(remote.showContactEmail, base.showContactEmail),
+    showContactPhone: toBoolFlag(remote.showContactPhone, base.showContactPhone),
+    showOfficeHours: toBoolFlag(remote.showOfficeHours, base.showOfficeHours),
+    showContactNote: toBoolFlag(remote.showContactNote, base.showContactNote),
+    showManagementAxes: toBoolFlag(remote.showManagementAxes, base.showManagementAxes),
   }
 }
