@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
+import { HeroImageModal } from '../../components/admin/HeroImageModal.jsx'
 import { Button } from '../../components/ui/Button.jsx'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
@@ -71,6 +72,7 @@ export function AdminHistory() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [conflictOpen, setConflictOpen] = useState(false)
+  const [heroImageOpen, setHeroImageOpen] = useState(false)
   const [toast, setToast] = useState(null)
   const dismissToast = useCallback(() => setToast(null), [])
 
@@ -181,6 +183,23 @@ export function AdminHistory() {
         cancelLabel="Cerrar"
         onConfirm={() => window.location.reload()}
       />
+      <HeroImageModal
+        open={heroImageOpen}
+        title="Portada de Historia"
+        value={form.heroImageUrl}
+        onChange={(value) => setForm((prev) => ({ ...prev, heroImageUrl: value }))}
+        onClose={() => setHeroImageOpen(false)}
+        onSave={() => {
+          setHeroImageOpen(false)
+          setToast({
+            type: 'success',
+            message: 'Portada actualizada en el formulario. Guardá los cambios para publicarla.',
+          })
+        }}
+        saving={saving}
+        disabled={loading || saving}
+        saveLabel="Aplicar al formulario"
+      />
       {toast ? <Toast variant={toast.type} message={toast.message} onDismiss={dismissToast} /> : null}
       <AdminPageShell
         showBackLink={false}
@@ -189,6 +208,11 @@ export function AdminHistory() {
         subtitle="Administrá el contenido de la página de Historia: hero, resumen principal, categorías turísticas y tarjetas."
         maxWidthClass="max-w-6xl"
         variant="plain"
+        actions={
+          <Button type="button" variant="secondary" onClick={() => setHeroImageOpen(true)}>
+            Cambiar portada
+          </Button>
+        }
       >
         {!isApiConfigured() ? (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
@@ -230,17 +254,6 @@ export function AdminHistory() {
                   value={form.heroSubtitle}
                   onChange={(e) =>
                     setForm((prev) => ({ ...prev, heroSubtitle: e.target.value }))
-                  }
-                  disabled={loading || saving}
-                />
-              </label>
-              <label className={`${labelClass} sm:col-span-2`}>
-                Imagen principal (URL)
-                <input
-                  className={inputClass}
-                  value={form.heroImageUrl}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, heroImageUrl: e.target.value }))
                   }
                   disabled={loading || saving}
                 />

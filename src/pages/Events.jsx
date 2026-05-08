@@ -5,9 +5,12 @@ import { RevealOnScroll } from '../components/home/RevealOnScroll.jsx'
 import { LinkButton } from '../components/ui/LinkButton.jsx'
 import { EventsInteractiveCalendar } from '../components/events/EventsInteractiveCalendar.jsx'
 import { fetchPublicEvents } from '../services/eventsService.js'
+import { fetchSitePageBanner } from '../services/sitePageBannerService.js'
+import { isApiConfigured } from '../utils/apiConfig.js'
 import { ROUTES } from '../utils/constants.js'
+import { HydrationHeroDarkBackdrop } from '../components/skeleton/PageHydrationSkeleton.jsx'
 
-const HERO_IMAGE =
+const DEFAULT_HERO_IMAGE =
   'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1900&q=80'
 
 function EventTag({ children }) {
@@ -19,10 +22,31 @@ function EventTag({ children }) {
 }
 
 export function Events() {
+  const apiEnabled = isApiConfigured()
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [calendarFocusDate, setCalendarFocusDate] = useState('')
+  const [heroImageUrl, setHeroImageUrl] = useState('')
+  const [heroHydrated, setHeroHydrated] = useState(!apiEnabled)
   const featured = events[0] || null
+
+  useEffect(() => {
+    let cancelled = false
+    if (!apiEnabled) return () => {}
+    fetchSitePageBanner('events')
+      .then((content) => {
+        if (!cancelled) setHeroImageUrl(String(content?.heroImageUrl || ''))
+      })
+      .catch(() => {
+        if (!cancelled) setHeroImageUrl('')
+      })
+      .finally(() => {
+        if (!cancelled) setHeroHydrated(true)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [apiEnabled])
 
   useEffect(() => {
     let cancelled = false
@@ -54,7 +78,15 @@ export function Events() {
 
       <div className="relative min-h-[52dvh] overflow-hidden border-b border-white/10 bg-[#171b22] sm:min-h-[56dvh] lg:min-h-[58dvh]">
         <header className="relative overflow-hidden">
-          <img src={HERO_IMAGE} alt="" className="absolute inset-0 h-full w-full object-cover object-center" />
+          {heroHydrated ? (
+            <img
+              src={heroImageUrl || DEFAULT_HERO_IMAGE}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover object-center"
+            />
+          ) : (
+            <HydrationHeroDarkBackdrop />
+          )}
           <div className="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/85 to-slate-900/35" />
           <Container className="relative z-10 flex min-h-[52dvh] flex-col justify-center pt-[calc(var(--navbar-h,5rem)+1rem)] pb-8 sm:min-h-[56dvh] sm:pt-[calc(var(--navbar-h,5rem)+1.5rem)] sm:pb-10 lg:min-h-[58dvh] lg:pb-12">
             <p className="hero-enter-eyebrow text-xs font-bold uppercase tracking-[0.22em] text-sky-200">

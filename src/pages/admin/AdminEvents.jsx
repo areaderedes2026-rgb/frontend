@@ -1,11 +1,17 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
+import { HeroImageModal } from '../../components/admin/HeroImageModal.jsx'
 import { Button } from '../../components/ui/Button.jsx'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
 import { Modal } from '../../components/ui/Modal.jsx'
 import { SingleImageUploadField } from '../../components/admin/SingleImageUploadField.jsx'
 import { formErrorClass, inputClass, labelClass, textareaClass } from '../../components/ui/formStyles.js'
 import { createEvent, deleteEvent, fetchAdminEvents, updateEvent } from '../../services/eventsService.js'
+import {
+  fetchSitePageBanner,
+  updateSitePageBanner,
+} from '../../services/sitePageBannerService.js'
+import { isApiConfigured } from '../../utils/apiConfig.js'
 import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
 import { ROUTES } from '../../utils/constants.js'
 
@@ -32,6 +38,11 @@ export function AdminEvents() {
   const [draft, setDraft] = useState(emptyDraft())
   const [saving, setSaving] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
+  const [bannerOpen, setBannerOpen] = useState(false)
+  const [bannerSaving, setBannerSaving] = useState(false)
+  const [bannerImageUrl, setBannerImageUrl] = useState('')
+  const [bannerUpdatedAt, setBannerUpdatedAt] = useState(null)
+  const [bannerConflictOpen, setBannerConflictOpen] = useState(false)
 
   async function load() {
     setLoading(true)
@@ -48,6 +59,26 @@ export function AdminEvents() {
 
   useEffect(() => {
     void load()
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    if (!isApiConfigured()) return () => {}
+    fetchSitePageBanner('events')
+      .then((content) => {
+        if (cancelled) return
+        setBannerImageUrl(String(content?.heroImageUrl || ''))
+        setBannerUpdatedAt(content?.updatedAt || null)
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setBannerImageUrl('')
+          setBannerUpdatedAt(null)
+        }
+      })
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const sorted = useMemo(
@@ -108,6 +139,29 @@ export function AdminEvents() {
     }
   }
 
+  async function handleSaveBanner() {
+    if (!isApiConfigured()) {
+      setError('No hay conexión disponible con el backend.')
+      return
+    }
+    setBannerSaving(true)
+    setError('')
+    try {
+      const saved = await updateSitePageBanner('events', {
+        heroImageUrl: bannerImageUrl.trim(),
+        expectedUpdatedAt: bannerUpdatedAt,
+      })
+      setBannerImageUrl(String(saved?.heroImageUrl || ''))
+      setBannerUpdatedAt(saved?.updatedAt || null)
+      setBannerOpen(false)
+    } catch (e) {
+      if (isConcurrencyConflictError(e)) setBannerConflictOpen(true)
+      setError(e.message || 'No se pudo guardar la portada de Eventos.')
+    } finally {
+      setBannerSaving(false)
+    }
+  }
+
   return (
     <>
       <ConfirmDialog
@@ -119,6 +173,26 @@ export function AdminEvents() {
         cancelLabel="Cerrar"
         loading={false}
         onConfirm={() => window.location.reload()}
+      />
+      <ConfirmDialog
+        open={bannerConflictOpen}
+        onClose={() => setBannerConflictOpen(false)}
+        title="Cambios desactualizados"
+        description="Otro usuario guardó cambios antes que vos. Recargá la última versión y reintentá."
+        confirmLabel="Recargar última versión y reintentar"
+        cancelLabel="Cerrar"
+        loading={false}
+        onConfirm={() => window.location.reload()}
+      />
+      <HeroImageModal
+        open={bannerOpen}
+        title="Portada de Eventos"
+        value={bannerImageUrl}
+        onChange={setBannerImageUrl}
+        onClose={() => setBannerOpen(false)}
+        onSave={handleSaveBanner}
+        saving={bannerSaving}
+        disabled={!isApiConfigured()}
       />
       <ConfirmDialog
         open={deleteTarget != null}
@@ -191,9 +265,14 @@ export function AdminEvents() {
         maxWidthClass="max-w-6xl"
         variant="plain"
         actions={
-          <Button type="button" onClick={openCreate}>
-            + Nuevo evento
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="secondary" onClick={() => setBannerOpen(true)}>
+              Cambiar portada
+            </Button>
+            <Button type="button" onClick={openCreate}>
+              + Nuevo evento
+            </Button>
+          </div>
         }
       >
         {error ? <p className={formErrorClass}>{error}</p> : null}

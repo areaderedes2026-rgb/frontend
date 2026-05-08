@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
-import { SingleImageUploadField } from '../../components/admin/SingleImageUploadField.jsx'
+import { HeroImageModal } from '../../components/admin/HeroImageModal.jsx'
 import { Button } from '../../components/ui/Button.jsx'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
 import { Modal } from '../../components/ui/Modal.jsx'
@@ -113,6 +113,7 @@ export function AdminOfertaAcademica() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [conflictOpen, setConflictOpen] = useState(false)
+  const [heroImageOpen, setHeroImageOpen] = useState(false)
   const [toast, setToast] = useState(null)
   const dismissToast = useCallback(() => setToast(null), [])
 
@@ -359,6 +360,24 @@ export function AdminOfertaAcademica() {
         variant="danger"
       />
 
+      <HeroImageModal
+        open={heroImageOpen}
+        title="Portada de Oferta académica"
+        value={form.heroImageUrl}
+        onChange={(value) => setForm((prev) => ({ ...prev, heroImageUrl: value }))}
+        onClose={() => setHeroImageOpen(false)}
+        onSave={() => {
+          setHeroImageOpen(false)
+          setToast({
+            type: 'success',
+            message: 'Portada actualizada en el formulario. Guardá todo para publicarla.',
+          })
+        }}
+        saving={saving}
+        disabled={loading || saving}
+        saveLabel="Aplicar al formulario"
+      />
+
       <Modal
         open={offerDialog !== null}
         onClose={() => !saving && closeOfferModal()}
@@ -531,6 +550,11 @@ export function AdminOfertaAcademica() {
         subtitle="Editá textos, categorías, métricas destacadas y fichas de propuestas que ve el ciudadano en el portal."
         maxWidthClass="max-w-5xl"
         variant="plain"
+        actions={
+          <Button type="button" variant="secondary" onClick={() => setHeroImageOpen(true)}>
+            Cambiar portada
+          </Button>
+        }
       >
         {!isApiConfigured() ? (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
@@ -574,16 +598,6 @@ export function AdminOfertaAcademica() {
                   disabled={loading || saving}
                 />
               </label>
-              <div className="sm:col-span-2">
-                <SingleImageUploadField
-                  label="Imagen de portada"
-                  helpText="Imagen principal del encabezado o URL."
-                  value={form.heroImageUrl}
-                  onChange={(value) => setForm((p) => ({ ...p, heroImageUrl: value }))}
-                  kind="cover"
-                  disabled={loading || saving}
-                />
-              </div>
             </div>
           </section>
 

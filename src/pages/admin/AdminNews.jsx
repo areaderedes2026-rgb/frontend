@@ -1,13 +1,19 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
+import { HeroImageModal } from '../../components/admin/HeroImageModal.jsx'
 import { Button } from '../../components/ui/Button.jsx'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
 import { useNewsList } from '../../hooks/useNewsList.js'
 import { deleteNews } from '../../services/newsService.js'
+import {
+  fetchSitePageBanner,
+  updateSitePageBanner,
+} from '../../services/sitePageBannerService.js'
 import { formatDate } from '../../utils/formatDate.js'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
+import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
 import { ROUTES } from '../../utils/constants.js'
 import { inputClass, labelClass } from '../../components/ui/formStyles.js'
 
@@ -83,6 +89,11 @@ export function AdminNews() {
   const [deletingId, setDeletingId] = useState(null)
   const [deleteError, setDeleteError] = useState('')
   const [deleteTarget, setDeleteTarget] = useState(null)
+  const [bannerOpen, setBannerOpen] = useState(false)
+  const [bannerSaving, setBannerSaving] = useState(false)
+  const [bannerImageUrl, setBannerImageUrl] = useState('')
+  const [bannerUpdatedAt, setBannerUpdatedAt] = useState(null)
+  const [bannerConflictOpen, setBannerConflictOpen] = useState(false)
 
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('Todas')
@@ -97,6 +108,26 @@ export function AdminNews() {
       navigate(location.pathname, { replace: true, state: {} })
     }
   }, [location.pathname, location.state?.flash, navigate])
+
+  useEffect(() => {
+    let cancelled = false
+    if (!isApiConfigured()) return () => {}
+    fetchSitePageBanner('news')
+      .then((content) => {
+        if (cancelled) return
+        setBannerImageUrl(String(content?.heroImageUrl || ''))
+        setBannerUpdatedAt(content?.updatedAt || null)
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setBannerImageUrl('')
+          setBannerUpdatedAt(null)
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     setPage(1)
@@ -177,6 +208,29 @@ export function AdminNews() {
     }
   }
 
+  async function handleSaveBanner() {
+    if (!isApiConfigured()) {
+      setFlash('No hay conexión disponible con el backend.')
+      return
+    }
+    setBannerSaving(true)
+    try {
+      const saved = await updateSitePageBanner('news', {
+        heroImageUrl: bannerImageUrl.trim(),
+        expectedUpdatedAt: bannerUpdatedAt,
+      })
+      setBannerImageUrl(String(saved?.heroImageUrl || ''))
+      setBannerUpdatedAt(saved?.updatedAt || null)
+      setBannerOpen(false)
+      setFlash('Se actualizó la portada de Noticias.')
+    } catch (e) {
+      if (isConcurrencyConflictError(e)) setBannerConflictOpen(true)
+      setFlash(e.message || 'No se pudo guardar la portada de Noticias.')
+    } finally {
+      setBannerSaving(false)
+    }
+  }
+
   const deleteLoading =
     deleteTarget != null && deletingId != null && deletingId === deleteTarget.id
 
@@ -200,6 +254,25 @@ export function AdminNews() {
 
   return (
     <>
+      <ConfirmDialog
+        open={bannerConflictOpen}
+        onClose={() => setBannerConflictOpen(false)}
+        title="Cambios desactualizados"
+        description="Otro usuario guardó cambios antes que vos. Recargá la última versión y reintentá."
+        confirmLabel="Recargar última versión y reintentar"
+        cancelLabel="Cerrar"
+        onConfirm={() => window.location.reload()}
+      />
+      <HeroImageModal
+        open={bannerOpen}
+        title="Portada de Noticias"
+        value={bannerImageUrl}
+        onChange={setBannerImageUrl}
+        onClose={() => setBannerOpen(false)}
+        onSave={handleSaveBanner}
+        saving={bannerSaving}
+        disabled={!isApiConfigured()}
+      />
       <ConfirmDialog
         open={deleteTarget != null}
         onClose={() => {
@@ -239,6 +312,13 @@ export function AdminNews() {
         variant="plain"
         actions={
           <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setBannerOpen(true)}
+            >
+              Cambiar portada
+            </Button>
             <Link
               to={ROUTES.adminNewsStats}
               className="inline-flex min-h-11 items-center justify-center rounded-xl border border-violet-200 bg-violet-50 px-5 py-2.5 text-sm font-semibold text-violet-800 shadow-sm transition hover:border-violet-300 hover:bg-violet-100"

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
+import { HeroImageModal } from '../../components/admin/HeroImageModal.jsx'
 import { Button } from '../../components/ui/Button.jsx'
 import { Modal } from '../../components/ui/Modal.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
@@ -139,6 +140,7 @@ export function AdminCitizenAttention() {
 
   const [toast, setToast] = useState(null)
   const [conflictOpen, setConflictOpen] = useState(false)
+  const [heroImageOpen, setHeroImageOpen] = useState(false)
   const dismissToast = useCallback(() => setToast(null), [])
 
   const stats = useMemo(() => {
@@ -407,6 +409,24 @@ export function AdminCitizenAttention() {
         )}
       </Modal>
 
+      <HeroImageModal
+        open={heroImageOpen}
+        title="Portada de Atención al ciudadano"
+        value={contentForm.heroImageUrl}
+        onChange={(value) => setContentForm((prev) => ({ ...prev, heroImageUrl: value }))}
+        onClose={() => setHeroImageOpen(false)}
+        onSave={() => {
+          setHeroImageOpen(false)
+          setToast({
+            type: 'success',
+            message: 'Portada actualizada en el formulario. Guardá el contenido para publicarla.',
+          })
+        }}
+        saving={contentSaving}
+        disabled={contentLoading || contentSaving}
+        saveLabel="Aplicar al formulario"
+      />
+
       <AdminPageShell
         showBackLink={false}
         eyebrow="Atención al ciudadano"
@@ -414,6 +434,13 @@ export function AdminCitizenAttention() {
         subtitle="Gestioná el contenido público y seguí las consultas de vecinos como un tablero de tareas."
         maxWidthClass="max-w-6xl"
         variant="plain"
+        actions={
+          activeTab === 'content' ? (
+            <Button type="button" variant="secondary" onClick={() => setHeroImageOpen(true)}>
+              Cambiar portada
+            </Button>
+          ) : null
+        }
       >
         {!isApiConfigured() ? (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
@@ -451,10 +478,6 @@ export function AdminCitizenAttention() {
                 <label className={`${labelClass} sm:col-span-2`}>
                   Subtítulo
                   <textarea className={`${textareaClass} min-h-24`} value={contentForm.heroSubtitle} disabled={contentLoading || contentSaving} onChange={(e) => setContentForm((p) => ({ ...p, heroSubtitle: e.target.value }))} />
-                </label>
-                <label className={`${labelClass} sm:col-span-2`}>
-                  Imagen de fondo (URL)
-                  <input className={inputClass} value={contentForm.heroImageUrl} disabled={contentLoading || contentSaving} onChange={(e) => setContentForm((p) => ({ ...p, heroImageUrl: e.target.value }))} />
                 </label>
               </div>
             </section>

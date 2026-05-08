@@ -11,27 +11,39 @@ import {
 import { fetchOfertaAcademicaContent } from '../../services/ofertaAcademicaService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
 import { ROUTES } from '../../utils/constants.js'
+import {
+  HydrationHeroDarkBackdrop,
+  HydrationHeroLightTextBlock,
+} from '../../components/skeleton/PageHydrationSkeleton.jsx'
 
 export function OfertaAcademica() {
-  const [page, setPage] = useState(() => ({ ...DEFAULT_OFERTA_ACADEMICA_CONTENT }))
+  const apiEnabled = isApiConfigured()
+  const [page, setPage] = useState(() =>
+    apiEnabled
+      ? { ...DEFAULT_OFERTA_ACADEMICA_CONTENT, heroImageUrl: '' }
+      : { ...DEFAULT_OFERTA_ACADEMICA_CONTENT },
+  )
+  const [loadingContent, setLoadingContent] = useState(apiEnabled)
 
   useEffect(() => {
     let cancelled = false
     async function load() {
-      if (!isApiConfigured()) return
+      if (!apiEnabled) return
       try {
         const remote = await fetchOfertaAcademicaContent()
         const merged = mergeOfertaAcademicaContent(DEFAULT_OFERTA_ACADEMICA_CONTENT, remote || {})
         if (!cancelled) setPage(merged)
       } catch {
         if (!cancelled) setPage({ ...DEFAULT_OFERTA_ACADEMICA_CONTENT })
+      } finally {
+        if (!cancelled) setLoadingContent(false)
       }
     }
     load()
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [apiEnabled])
 
   const categories =
     page.categories?.length > 0 ? page.categories : DEFAULT_OFERTA_ACADEMICA_CONTENT.categories
@@ -48,23 +60,33 @@ export function OfertaAcademica() {
       />
 
       <div className="relative min-h-[48dvh] overflow-hidden border-b border-white/10 bg-[#171b22] sm:min-h-[52dvh] lg:min-h-[54dvh]">
-        <img
-          src={page.heroImageUrl}
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover object-[center_35%]"
-        />
+        {loadingContent ? (
+          <HydrationHeroDarkBackdrop />
+        ) : (
+          <img
+            src={page.heroImageUrl}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover object-[center_35%]"
+          />
+        )}
         <div className="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-900/75 to-slate-900/35" />
         <Container className="relative z-10 flex min-h-[48dvh] flex-col justify-center pt-[calc(var(--navbar-h,5rem)+1rem)] pb-8 sm:min-h-[52dvh] sm:pt-[calc(var(--navbar-h,5rem)+1.5rem)] sm:pb-10 lg:min-h-[54dvh] lg:pb-12">
           <div className="max-w-4xl">
-            <p className="hero-enter-eyebrow text-[11px] font-bold uppercase tracking-[0.28em] text-sky-200 sm:text-xs">
-              {page.heroEyebrow}
-            </p>
-            <h1 className="hero-enter-title mt-2 max-w-3xl font-serif text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl lg:text-[2.75rem]">
-              {page.heroTitle}
-            </h1>
-            <p className="hero-enter-subtitle mt-3 max-w-2xl text-sm leading-relaxed text-slate-100 sm:text-base">
-              {page.heroSubtitle}
-            </p>
+            {loadingContent ? (
+              <HydrationHeroLightTextBlock />
+            ) : (
+              <>
+                <p className="hero-enter-eyebrow text-[11px] font-bold uppercase tracking-[0.28em] text-sky-200 sm:text-xs">
+                  {page.heroEyebrow}
+                </p>
+                <h1 className="hero-enter-title mt-2 max-w-3xl font-serif text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl lg:text-[2.75rem]">
+                  {page.heroTitle}
+                </h1>
+                <p className="hero-enter-subtitle mt-3 max-w-2xl text-sm leading-relaxed text-slate-100 sm:text-base">
+                  {page.heroSubtitle}
+                </p>
+              </>
+            )}
             <div className="hero-enter-actions mt-6 flex flex-wrap gap-3">
               <a
                 href="#ofertas-lista"

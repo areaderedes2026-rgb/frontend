@@ -5,6 +5,9 @@ import { useNewsList } from '../../hooks/useNewsList.js'
 import { formatShortDate } from '../../utils/formatDate.js'
 import { NewsCoverMedia } from '../../components/news/NewsCoverMedia.jsx'
 import { RevealOnScroll } from '../../components/home/RevealOnScroll.jsx'
+import { HydrationHeroDarkBackdrop } from '../../components/skeleton/PageHydrationSkeleton.jsx'
+import { fetchSitePageBanner } from '../../services/sitePageBannerService.js'
+import { isApiConfigured } from '../../utils/apiConfig.js'
 
 function NewsCategorySelect({ id, value, options, onChange }) {
   const [open, setOpen] = useState(false)
@@ -146,8 +149,8 @@ function excerptWords(text, maxWords = 18) {
 
 const COVERAGE_PAGE_SIZE = 5
 
-/** Portada del listado de noticias (reemplazá el archivo en `public/images/` si querés otra foto). */
-const NEWS_LIST_HERO_IMAGE = '/images/news-hero-bg.jpg'
+/** Portada por defecto del listado de noticias si no hay una personalizada en admin. */
+const NEWS_LIST_DEFAULT_HERO_IMAGE = '/images/news-hero-bg.jpg'
 
 /**
  * Tarjeta compacta para secciones por categoría (más pequeña que “Más cobertura”).
@@ -283,10 +286,31 @@ function CategoryNewsBand({ categoryName, items, sort }) {
 }
 
 export function NewsList() {
+  const apiEnabled = isApiConfigured()
   const { items, loading, error } = useNewsList()
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('Todas')
   const [sort, setSort] = useState('newest')
+  const [heroImageUrl, setHeroImageUrl] = useState('')
+  const [heroHydrated, setHeroHydrated] = useState(!apiEnabled)
+
+  useEffect(() => {
+    let cancelled = false
+    if (!apiEnabled) return () => {}
+    fetchSitePageBanner('news')
+      .then((content) => {
+        if (!cancelled) setHeroImageUrl(String(content?.heroImageUrl || ''))
+      })
+      .catch(() => {
+        if (!cancelled) setHeroImageUrl('')
+      })
+      .finally(() => {
+        if (!cancelled) setHeroHydrated(true)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [apiEnabled])
 
   const categories = useMemo(() => {
     const set = new Set(items.map((n) => n.category || 'General'))
@@ -343,15 +367,19 @@ export function NewsList() {
       />
 
       <div className="relative min-h-[52dvh] overflow-hidden border-b border-white/10 bg-[#171b22] sm:min-h-[56dvh] lg:min-h-[58dvh]">
-        <img
-          src={NEWS_LIST_HERO_IMAGE}
-          alt=""
-          width={1920}
-          height={1080}
-          fetchPriority="high"
-          className="absolute inset-0 h-full w-full object-cover object-center"
-          decoding="async"
-        />
+        {heroHydrated ? (
+          <img
+            src={heroImageUrl || NEWS_LIST_DEFAULT_HERO_IMAGE}
+            alt=""
+            width={1920}
+            height={1080}
+            fetchPriority="high"
+            className="absolute inset-0 h-full w-full object-cover object-center"
+            decoding="async"
+          />
+        ) : (
+          <HydrationHeroDarkBackdrop />
+        )}
         <div
           className="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/88 to-slate-900/35"
           aria-hidden

@@ -5,13 +5,17 @@ import { Container } from '../../components/ui/Container.jsx'
 import { LinkButton } from '../../components/ui/LinkButton.jsx'
 import { useAreas } from '../../hooks/useAreas.js'
 import { fetchAreasPageContent } from '../../services/areasPageService.js'
+import { isApiConfigured } from '../../utils/apiConfig.js'
+import { HydrationHeroDarkBackdrop } from '../../components/skeleton/PageHydrationSkeleton.jsx'
 
 const DEFAULT_AREAS_HERO_IMAGE =
   'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1600&q=80'
 
 export function AreasIndex() {
+  const apiEnabled = isApiConfigured()
   const { areas, loading, error } = useAreas()
   const [globalCover, setGlobalCover] = useState('')
+  const [globalCoverHydrated, setGlobalCoverHydrated] = useState(!apiEnabled)
   const featured = areas[0] ?? null
   const heroImage = useMemo(
     () => globalCover || DEFAULT_AREAS_HERO_IMAGE,
@@ -20,6 +24,7 @@ export function AreasIndex() {
 
   useEffect(() => {
     let cancelled = false
+    if (!apiEnabled) return () => {}
     fetchAreasPageContent()
       .then((content) => {
         if (!cancelled) setGlobalCover(String(content?.heroImageUrl || ''))
@@ -27,10 +32,13 @@ export function AreasIndex() {
       .catch(() => {
         if (!cancelled) setGlobalCover('')
       })
+      .finally(() => {
+        if (!cancelled) setGlobalCoverHydrated(true)
+      })
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [apiEnabled])
 
   if (loading) {
     return (
@@ -72,11 +80,15 @@ export function AreasIndex() {
       />
 
       <div className="relative min-h-[52dvh] overflow-hidden border-b border-white/10 bg-[#171b22] sm:min-h-[56dvh] lg:min-h-[58dvh]">
-        <img
-          src={heroImage}
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover object-center"
-        />
+        {globalCoverHydrated ? (
+          <img
+            src={heroImage}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover object-center"
+          />
+        ) : (
+          <HydrationHeroDarkBackdrop />
+        )}
         <div className="absolute inset-0 bg-linear-to-t from-black/76 via-black/62 to-black/36" />
         <Container className="relative z-10 flex min-h-[52dvh] flex-col justify-center pt-[calc(var(--navbar-h,5rem)+1rem)] pb-8 sm:min-h-[56dvh] sm:pt-[calc(var(--navbar-h,5rem)+1.5rem)] sm:pb-10 lg:min-h-[58dvh] lg:pb-12">
           <div className="max-w-4xl">
