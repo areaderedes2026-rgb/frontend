@@ -164,6 +164,46 @@ body {
   line-height: 1.28;
 }
 
+/* Resultados del buscador: scroll fino (Firefox + WebKit) y sin barra horizontal fea */
+.site-search-scrollbar {
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / 0.22) rgb(255 255 255 / 0.06);
+}
+
+.site-search-scrollbar::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+.site-search-scrollbar::-webkit-scrollbar-track {
+  margin-block: 4px;
+  background: rgb(255 255 255 / 0.06);
+  border-radius: 9999px;
+}
+
+.site-search-scrollbar::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  background-color: rgb(255 255 255 / 0.22);
+}
+
+.site-search-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(255 255 255 / 0.36);
+}
+
+.site-search-scrollbar::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Evita decoraciones nativas de `type="search"` si en el futuro se reutiliza */
+.site-search-input::-webkit-search-cancel-button,
+.site-search-input::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   @keyframes site-search-panel-in {
     from {

@@ -46,9 +46,6 @@ const governmentLinks = [
   { to: '/areas', label: 'Áreas', preload: 'areasIndex', end: true },
 ]
 
-/** Debe ser ≥ duración CSS de `site-search-panel-out` + margen (ms). */
-const DESKTOP_SEARCH_EXIT_MS = 560
-
 function DesktopNavLink({
   to,
   label,
@@ -111,12 +108,10 @@ export function Navbar() {
   const [mobileGovernmentOpen, setMobileGovernmentOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [desktopSearchOpen, setDesktopSearchOpen] = useState(false)
-  const [desktopSearchExitPhase, setDesktopSearchExitPhase] = useState(false)
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
   const headerRef = useRef(null)
   const dropdownRef = useRef(null)
   const desktopSearchRef = useRef(null)
-  const desktopSearchExitTimerRef = useRef(null)
   const navigate = useNavigate()
   const location = useLocation()
   const {
@@ -131,53 +126,18 @@ export function Navbar() {
     location.pathname !== '/gobierno/oferta-academica'
 
   const forceCloseSearch = useCallback(() => {
-    if (desktopSearchExitTimerRef.current) {
-      window.clearTimeout(desktopSearchExitTimerRef.current)
-      desktopSearchExitTimerRef.current = null
-    }
-    setDesktopSearchExitPhase(false)
     setDesktopSearchOpen(false)
     setMobileSearchOpen(false)
     resetSearch()
   }, [resetSearch])
 
   const closeAllSearch = useCallback(() => {
-    setMobileSearchOpen(false)
-    const isMd = typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches
-    if (isMd && desktopSearchOpen && !desktopSearchExitPhase) {
-      setDesktopSearchExitPhase(true)
-      return
-    }
     forceCloseSearch()
-  }, [desktopSearchOpen, desktopSearchExitPhase, forceCloseSearch])
-
-  useEffect(() => {
-    if (!desktopSearchExitPhase) return
-    const prefersReduce =
-      typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const delay = prefersReduce ? 180 : DESKTOP_SEARCH_EXIT_MS
-    desktopSearchExitTimerRef.current = window.setTimeout(() => {
-      desktopSearchExitTimerRef.current = null
-      setDesktopSearchOpen(false)
-      setDesktopSearchExitPhase(false)
-      resetSearch()
-    }, delay)
-    return () => {
-      if (desktopSearchExitTimerRef.current) {
-        window.clearTimeout(desktopSearchExitTimerRef.current)
-        desktopSearchExitTimerRef.current = null
-      }
-    }
-  }, [desktopSearchExitPhase, resetSearch])
+  }, [forceCloseSearch])
 
   const openSearchPalette = useCallback(() => {
     setGovernmentOpen(false)
     if (typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches) {
-      if (desktopSearchExitTimerRef.current) {
-        window.clearTimeout(desktopSearchExitTimerRef.current)
-        desktopSearchExitTimerRef.current = null
-      }
-      setDesktopSearchExitPhase(false)
       setDesktopSearchOpen(true)
     } else {
       setOpen(false)
@@ -475,7 +435,7 @@ export function Navbar() {
           onClick={closeAllSearch}
         />
         <div className="relative z-10 mx-3 mt-[max(0.75rem,env(safe-area-inset-top,0px))] flex max-h-[min(92dvh,40rem)] min-h-0 flex-1 flex-col overflow-hidden rounded-[1.35rem] border border-white/[0.11] bg-linear-to-b from-[#1c2029] to-[#14171d] shadow-[0_32px_88px_-32px_rgba(0,0,0,0.92),inset_0_1px_0_rgba(255,255,255,0.05)] motion-safe:[animation:site-search-mobile-sheet_0.92s_cubic-bezier(0.16,1,0.3,1)_both]">
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain p-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))]">
+          <div className="site-search-scrollbar min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain p-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))]">
             <SiteSearchPanel
               variant="mobile"
               query={searchQuery}
@@ -655,24 +615,13 @@ export function Navbar() {
                 scrolled={scrolled}
                 onClick={() => {
                   setGovernmentOpen(false)
-                  if (desktopSearchExitTimerRef.current) {
-                    window.clearTimeout(desktopSearchExitTimerRef.current)
-                    desktopSearchExitTimerRef.current = null
-                  }
-                  setDesktopSearchExitPhase(false)
                   setDesktopSearchOpen(true)
                 }}
               />
             </div>
           ) : (
-            <div
-              className={`relative z-10 ml-auto flex min-w-0 shrink-0 items-center justify-end ${
-                desktopSearchExitPhase
-                  ? 'motion-safe:[animation:site-search-panel-out_0.42s_cubic-bezier(0.32,0.72,0,1)_forwards]'
-                  : 'motion-safe:[animation:site-search-panel-in_0.48s_cubic-bezier(0.32,0.72,0,1)_both]'
-              }`}
-            >
-              <div className="w-[min(24rem,calc(100vw-8.5rem))] max-w-full sm:w-[min(27rem,calc(100vw-9rem))]">
+            <div className="relative z-10 ml-auto flex min-w-0 shrink-0 items-center justify-end motion-safe:[animation:site-search-panel-in_0.48s_cubic-bezier(0.32,0.72,0,1)_both]">
+              <div className="w-[min(24rem,calc(100vw-8.5rem))] max-w-full min-w-0 sm:w-[min(27rem,calc(100vw-9rem))]">
                 <SiteSearchPanel
                   variant="desktop"
                   query={searchQuery}

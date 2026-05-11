@@ -29,6 +29,31 @@ function Spinner({ className }) {
   )
 }
 
+function ClearQueryButton({ visible, compact, onClear }) {
+  if (!visible) return null
+  return (
+    <button
+      type="button"
+      onMouseDown={(e) => {
+        e.preventDefault()
+        e.stopPropagation()
+      }}
+      onClick={(e) => {
+        e.stopPropagation()
+        onClear()
+      }}
+      className={`inline-flex shrink-0 items-center justify-center rounded-full text-white/48 transition-[color,background-color,transform] duration-200 ease-out hover:bg-white/10 hover:text-white/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25 active:scale-95 ${
+        compact ? 'h-7 w-7' : 'h-8 w-8'
+      }`}
+      aria-label="Borrar búsqueda"
+    >
+      <svg className={compact ? 'h-3.5 w-3.5' : 'h-4 w-4'} fill="none" viewBox="0 0 24 24" strokeWidth={2.1} stroke="currentColor" aria-hidden>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+      </svg>
+    </button>
+  )
+}
+
 function EmptyStateIcon({ className, minimal }) {
   if (minimal) {
     return (
@@ -59,8 +84,8 @@ function SearchResultsBody({
   const showResultsChrome = trimmed.length >= 2
   const isMobile = variant === 'mobile'
   const panelTone = isMobile
-    ? 'max-h-[min(58dvh,26rem)] overflow-y-auto overscroll-y-contain rounded-2xl bg-[#141922]/95 py-1 shadow-[0_20px_50px_-24px_rgba(0,0,0,0.75)] backdrop-blur-2xl'
-    : 'max-h-[min(70dvh,21rem)] overflow-y-auto overscroll-y-contain rounded-2xl bg-[#141922]/94 py-1 shadow-[0_20px_56px_-22px_rgba(0,0,0,0.72)] backdrop-blur-2xl'
+    ? 'site-search-scrollbar max-h-[min(58dvh,26rem)] min-w-0 max-w-full overflow-x-hidden overflow-y-auto overscroll-y-contain rounded-2xl bg-[#141922]/95 py-1 shadow-[0_20px_50px_-24px_rgba(0,0,0,0.75)] backdrop-blur-2xl'
+    : 'site-search-scrollbar max-h-[min(calc(100dvh-6rem),22rem)] min-w-0 max-w-full overflow-x-hidden overflow-y-auto overscroll-y-contain rounded-2xl bg-[#141922]/94 py-1 shadow-[0_20px_56px_-22px_rgba(0,0,0,0.72)] backdrop-blur-2xl sm:max-h-[min(70dvh,21rem)]'
 
   return (
     <div
@@ -69,7 +94,7 @@ function SearchResultsBody({
       aria-label="Resultados de búsqueda"
       ref={listRef}
       className={`${panelTone} motion-safe:transition-[opacity,transform] motion-safe:duration-[720ms] motion-safe:ease-out ${
-        isMobile ? '' : 'absolute right-0 left-auto top-full z-70 mt-2 w-full min-w-0'
+        isMobile ? '' : 'absolute right-0 left-auto top-full z-70 mt-2 w-full min-w-0 max-w-[min(100vw-0.75rem,28rem)]'
       }`}
     >
       {!showResultsChrome ? (
@@ -92,7 +117,7 @@ function SearchResultsBody({
       ) : (
         <div key={resultsKey} className="motion-safe:[animation:site-search-results-shell_0.78s_cubic-bezier(0.16,1,0.3,1)_both]">
           <div className="mx-3 mb-1.5 mt-2 h-px bg-linear-to-r from-transparent via-white/12 to-transparent" aria-hidden />
-          <ul className="site-search-results-list px-1 pb-2 pt-0.5">
+          <ul className="site-search-results-list min-w-0 max-w-full px-1 pb-2 pt-0.5">
             {items.map((item, idx) => {
               const label = KIND_LABEL[item.kind] || 'Resultado'
               const active = idx === activeIdx
@@ -105,18 +130,20 @@ function SearchResultsBody({
                     data-idx={idx}
                     onMouseEnter={() => setActiveIdx(idx)}
                     onClick={() => onSelect(item)}
-                    className={`group relative flex w-full flex-col gap-0.5 rounded-lg px-3 py-3 text-left transition-[background-color,box-shadow,transform] duration-[560ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-safe:duration-[640ms] ${
+                    className={`group relative flex min-w-0 w-full flex-col gap-0.5 rounded-lg px-3 py-3 text-left transition-[background-color,box-shadow,transform] duration-[560ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-safe:duration-[640ms] ${
                       active
                         ? 'bg-white/[0.09] shadow-[inset_2px_0_0_0_rgba(255,255,255,0.45)]'
                         : 'hover:bg-white/[0.05] motion-safe:hover:translate-x-[0.04rem]'
                     }`}
                   >
-                    <span className="text-[0.6rem] font-semibold uppercase tracking-[0.2em] text-white/40 transition-colors duration-500 group-hover:text-white/55">
+                    <span className="min-w-0 text-[0.6rem] font-semibold uppercase tracking-[0.2em] text-white/40 transition-colors duration-500 group-hover:text-white/55">
                       {label}
                     </span>
-                    <span className="site-search-result-title text-[0.95rem] text-white/94 sm:text-[1rem]">{item.title}</span>
+                    <span className="site-search-result-title min-w-0 break-words text-[0.95rem] text-white/94 sm:text-[1rem]">
+                      {item.title}
+                    </span>
                     {item.subtitle ? (
-                      <span className="line-clamp-2 text-[0.8rem] leading-relaxed text-white/45 transition-colors duration-500 group-hover:text-white/52">
+                      <span className="line-clamp-2 min-w-0 wrap-anywhere text-[0.8rem] leading-relaxed text-white/45 transition-colors duration-500 group-hover:text-white/52">
                         {item.subtitle}
                       </span>
                     ) : null}
@@ -194,17 +221,25 @@ export function SiteSearchPanel({ variant, query, setQuery, items, loading, onSe
   const isMobile = variant === 'mobile'
   const trimmed = query.trim()
 
+  function clearQuery() {
+    setQuery('')
+    requestAnimationFrame(() => {
+      inputRef.current?.focus()
+    })
+  }
+
   if (isMobile) {
     return (
-      <div className="flex w-full flex-col gap-4">
-        <div className="relative rounded-[1.2rem] bg-linear-to-br from-white/[0.1] via-white/[0.04] to-transparent p-px shadow-[0_10px_36px_-16px_rgba(0,0,0,0.55)]">
+      <div className="flex w-full min-w-0 max-w-full flex-col gap-4">
+        <div className="relative min-w-0 max-w-full rounded-[1.2rem] bg-linear-to-br from-white/[0.1] via-white/[0.04] to-transparent p-px shadow-[0_10px_36px_-16px_rgba(0,0,0,0.55)]">
           <div
-            className={`flex w-full min-w-0 items-center gap-2 rounded-[1.14rem] bg-linear-to-b from-[#181c26]/98 to-[#0f1116]/98 px-2 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-xl ${
+            className={`flex w-full min-w-0 max-w-full items-center gap-2 rounded-[1.14rem] bg-linear-to-b from-[#181c26]/98 to-[#0f1116]/98 px-2 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-xl ${
               compact ? 'py-1.5' : ''
             }`}
           >
             <button
               type="button"
+              onMouseDown={(e) => e.preventDefault()}
               onClick={onClose}
               className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white/72 transition-colors duration-500 hover:bg-white/[0.08] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
               aria-label="Cerrar búsqueda"
@@ -217,7 +252,11 @@ export function SiteSearchPanel({ variant, query, setQuery, items, loading, onSe
             <SearchIcon className="pointer-events-none h-[1.05rem] w-[1.05rem] shrink-0 text-white/45" />
             <input
               ref={inputRef}
-              type="search"
+              type="text"
+              inputMode="search"
+              enterKeyHint="search"
+              autoCapitalize="none"
+              role="searchbox"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -228,8 +267,9 @@ export function SiteSearchPanel({ variant, query, setQuery, items, loading, onSe
               aria-autocomplete="list"
               aria-controls={listboxId}
               aria-expanded={trimmed.length >= 2}
-              className="min-w-0 flex-1 border-0 bg-transparent py-1.5 text-[0.9375rem] font-medium text-white outline-none placeholder:text-white/35 sm:text-base"
+              className="site-search-input min-w-0 flex-1 border-0 bg-transparent py-1.5 text-[0.9375rem] font-medium text-white outline-none placeholder:text-white/35 sm:text-base"
             />
+            <ClearQueryButton visible={query.length > 0} compact={compact} onClear={clearQuery} />
             {loading ? <Spinner /> : null}
           </div>
         </div>
@@ -251,16 +291,17 @@ export function SiteSearchPanel({ variant, query, setQuery, items, loading, onSe
 
   /* Escritorio: sin marcos, integrado a la barra (derecha), solo volumen suave */
   return (
-    <div className="relative w-full">
+    <div className="relative w-full min-w-0 max-w-full">
       <div
-        className={`flex w-full min-w-0 items-center gap-1.5 rounded-full bg-white/[0.07] px-1.5 transition-[background-color] duration-[800ms] ease-out focus-within:bg-white/[0.11] ${
+        className={`flex w-full min-w-0 max-w-full items-center gap-1.5 rounded-full bg-white/[0.07] px-1.5 transition-[background-color] duration-[800ms] ease-out focus-within:bg-white/[0.11] ${
           compact ? 'py-1' : 'py-1.5 sm:py-2'
         }`}
       >
         <button
           type="button"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={onClose}
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/65 transition-all duration-[700ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-white/[0.1] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/65 transition-[color,background-color,transform] duration-200 ease-out hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
           aria-label="Cerrar búsqueda"
         >
           <svg className="h-[1.1rem] w-[1.1rem]" fill="none" viewBox="0 0 24 24" strokeWidth={1.85} stroke="currentColor" aria-hidden>
@@ -270,7 +311,11 @@ export function SiteSearchPanel({ variant, query, setQuery, items, loading, onSe
         <SearchIcon className="pointer-events-none h-[1rem] w-[1rem] shrink-0 text-white/40" />
         <input
           ref={inputRef}
-          type="search"
+          type="text"
+          inputMode="search"
+          enterKeyHint="search"
+          autoCapitalize="none"
+          role="searchbox"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -281,8 +326,9 @@ export function SiteSearchPanel({ variant, query, setQuery, items, loading, onSe
           aria-autocomplete="list"
           aria-controls={listboxId}
           aria-expanded={trimmed.length >= 2}
-          className="min-w-0 flex-1 border-0 bg-transparent py-1 text-[0.9rem] font-medium tracking-wide text-white/95 outline-none placeholder:text-white/35 sm:text-[0.9375rem]"
+          className="site-search-input min-w-0 flex-1 border-0 bg-transparent py-1 text-[0.9rem] font-medium tracking-wide text-white/95 outline-none placeholder:text-white/35 sm:text-[0.9375rem]"
         />
+        <ClearQueryButton visible={query.length > 0} compact={compact} onClear={clearQuery} />
         {loading ? <Spinner /> : null}
       </div>
       <SearchResultsBody
