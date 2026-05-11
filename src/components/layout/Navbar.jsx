@@ -488,10 +488,10 @@ export function Navbar() {
           className="relative hidden min-w-0 flex-1 items-center justify-end gap-2 md:flex"
         >
           <div
-            className={`min-w-0 overflow-hidden transition-[max-width,opacity,transform] duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:duration-200 ${
+            className={`min-w-0 transition-[max-width,opacity,transform] duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:duration-200 ${
               desktopSearchOpen
-                ? 'pointer-events-none max-w-0 translate-x-2 opacity-0'
-                : 'max-w-[min(100%,56rem)] flex-1 translate-x-0 opacity-100'
+                ? 'pointer-events-none max-w-0 translate-x-2 overflow-hidden opacity-0'
+                : 'max-w-[min(100%,56rem)] flex-1 translate-x-0 overflow-visible opacity-100'
             }`}
           >
             <nav className="flex items-center justify-end gap-0.5" aria-label="Principal">
@@ -556,7 +556,7 @@ export function Navbar() {
                   id="menu-gobierno-escritorio"
                   role="menu"
                   aria-labelledby="boton-menu-gobierno"
-                  className={`absolute left-0 top-full z-50 mt-1.5 w-[min(15rem,calc(100vw-1.25rem))] origin-top overflow-hidden rounded-lg border border-white/8 bg-[#1a1d24]/98 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.6)] backdrop-blur-xl transition-all duration-300 ease-out ${
+                  className={`absolute left-0 top-full z-[60] mt-1.5 w-[min(15rem,calc(100vw-1.25rem))] origin-top overflow-hidden rounded-lg border border-white/8 bg-[#1a1d24]/98 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.6)] backdrop-blur-xl transition-all duration-300 ease-out ${
                     governmentOpen
                       ? 'pointer-events-auto translate-y-0 opacity-100'
                       : 'pointer-events-none -translate-y-1 opacity-0'
