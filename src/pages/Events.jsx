@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Container } from '../components/ui/Container.jsx'
 import { RevealOnScroll } from '../components/home/RevealOnScroll.jsx'
 import { LinkButton } from '../components/ui/LinkButton.jsx'
@@ -24,13 +24,16 @@ function EventTag({ children }) {
 
 export function Events() {
   const apiEnabled = isApiConfigured()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [calendarFocusDate, setCalendarFocusDate] = useState('')
   const [heroImageUrl, setHeroImageUrl] = useState('')
   const [heroHydrated, setHeroHydrated] = useState(!apiEnabled)
+  const [highlightEventId, setHighlightEventId] = useState('')
   const visibleEvents = useMemo(() => sortPublicEventsForDisplay(events), [events])
   const featured = useMemo(() => pickNextFeaturedEvent(events), [events])
+  const eventIdParam = searchParams.get('eventId')
 
   useEffect(() => {
     let cancelled = false
@@ -67,6 +70,33 @@ export function Events() {
       cancelled = true
     }
   }, [])
+
+  useEffect(() => {
+    if (!eventIdParam || loading) return
+    const id = String(eventIdParam)
+    const t = window.setTimeout(() => {
+      const el = document.getElementById(`evento-publico-${id}`)
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        setHighlightEventId(id)
+      }
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev)
+          next.delete('eventId')
+          return next
+        },
+        { replace: true },
+      )
+    }, 100)
+    return () => window.clearTimeout(t)
+  }, [eventIdParam, loading, setSearchParams])
+
+  useEffect(() => {
+    if (!highlightEventId) return
+    const t = window.setTimeout(() => setHighlightEventId(''), 3200)
+    return () => window.clearTimeout(t)
+  }, [highlightEventId])
 
   return (
     <section className="relative -mt-[calc(var(--navbar-h,5rem)+1.5rem)] overflow-hidden bg-linear-to-b from-[#f1eee8] via-[#f7f7f5] to-[#fcfcfa] pb-12 sm:-mt-[calc(var(--navbar-h,5rem)+2rem)] sm:pb-16">
@@ -181,8 +211,15 @@ export function Events() {
           <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-12">
             {visibleEvents.map((event, idx) => (
               <li
+                id={`evento-publico-${event.id}`}
                 key={event.id}
-                className={idx === 0 ? 'sm:col-span-2 xl:col-span-7' : 'xl:col-span-5'}
+                className={`scroll-mt-[calc(var(--navbar-h,5rem)+0.75rem)] transition-shadow duration-500 sm:scroll-mt-[calc(var(--navbar-h,5rem)+1rem)] ${
+                  idx === 0 ? 'sm:col-span-2 xl:col-span-7' : 'xl:col-span-5'
+                } ${
+                  highlightEventId === String(event.id)
+                    ? 'rounded-2xl shadow-[0_0_0_2px_rgba(56,189,248,0.65),0_12px_40px_-16px_rgba(56,189,248,0.35)]'
+                    : ''
+                }`}
               >
                 <RevealOnScroll variant="newsCardSlow" delayMs={idx * 80}>
                   <button

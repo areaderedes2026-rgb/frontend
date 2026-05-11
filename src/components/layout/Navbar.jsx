@@ -1,8 +1,10 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { Container } from '../ui/Container.jsx'
 import { preloadPublicRoute } from '../../routes/publicRoutePreload.js'
+import { useSiteSearch } from '../../hooks/useSiteSearch.js'
+import { SearchOpenButton, SiteSearchPanel } from './SiteSearchPanel.jsx'
 
 const startLinks = [
   { to: '/', label: 'Inicio', end: true },
@@ -105,31 +107,104 @@ export function Navbar() {
   const [governmentOpen, setGovernmentOpen] = useState(false)
   const [mobileGovernmentOpen, setMobileGovernmentOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [desktopSearchOpen, setDesktopSearchOpen] = useState(false)
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
   const headerRef = useRef(null)
   const dropdownRef = useRef(null)
+  const desktopSearchRef = useRef(null)
+  const navigate = useNavigate()
   const location = useLocation()
+  const {
+    query: searchQuery,
+    setQuery: setSearchQuery,
+    items: searchItems,
+    loading: searchLoading,
+    reset: resetSearch,
+  } = useSiteSearch()
   const governmentActive =
     (location.pathname.startsWith('/gobierno') || location.pathname.startsWith('/areas')) &&
     location.pathname !== '/gobierno/oferta-academica'
 
+  const closeAllSearch = useCallback(() => {
+    setDesktopSearchOpen(false)
+    setMobileSearchOpen(false)
+    resetSearch()
+  }, [resetSearch])
+
+  const openSearchPalette = useCallback(() => {
+    setGovernmentOpen(false)
+    if (typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches) {
+      setDesktopSearchOpen(true)
+    } else {
+      setOpen(false)
+      setMobileGovernmentOpen(false)
+      setMobileSearchOpen(true)
+    }
+  }, [])
+
+  const handleSelectSearchResult = useCallback(
+    (item) => {
+      navigate(item.path)
+      closeAllSearch()
+    },
+    [navigate, closeAllSearch],
+  )
+
   useEffect(() => {
-    document.body.style.overflow = open ? 'hidden' : ''
+    document.body.style.overflow = open || mobileSearchOpen ? 'hidden' : ''
     return () => {
       document.body.style.overflow = ''
     }
-  }, [open])
+  }, [open, mobileSearchOpen])
 
   useEffect(() => {
-    if (!open) return
+    const id = window.setTimeout(() => {
+      closeAllSearch()
+    }, 0)
+    return () => window.clearTimeout(id)
+  }, [location.pathname, closeAllSearch])
+
+  useEffect(() => {
     function onKey(e) {
-      if (e.key === 'Escape') {
-        setOpen(false)
-        setMobileGovernmentOpen(false)
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault()
+        openSearchPalette()
       }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [openSearchPalette])
+
+  useEffect(() => {
+    if (!desktopSearchOpen) return
+    function handlePointerDown(e) {
+      if (desktopSearchRef.current && !desktopSearchRef.current.contains(e.target)) {
+        closeAllSearch()
+      }
+    }
+    document.addEventListener('mousedown', handlePointerDown)
+    document.addEventListener('touchstart', handlePointerDown)
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown)
+      document.removeEventListener('touchstart', handlePointerDown)
+    }
+  }, [desktopSearchOpen, closeAllSearch])
+
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key !== 'Escape') return
+      if (desktopSearchOpen || mobileSearchOpen) {
+        e.preventDefault()
+        closeAllSearch()
+        return
+      }
+      if (!open) return
+      setOpen(false)
+      setMobileGovernmentOpen(false)
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
-  }, [open])
+  }, [open, desktopSearchOpen, mobileSearchOpen, closeAllSearch])
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
@@ -339,6 +414,41 @@ export function Navbar() {
       document.body,
     )
 
+  const mobileSearchLayer =
+    typeof document !== 'undefined' &&
+    mobileSearchOpen &&
+    createPortal(
+      <div
+        className="fixed inset-0 z-[60] flex flex-col md:hidden"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Buscar en el sitio"
+      >
+        <button
+          type="button"
+          className="absolute inset-0 bg-[#05060a]/75 backdrop-blur-[3px] transition-opacity duration-300 ease-out"
+          aria-label="Cerrar búsqueda"
+          onClick={closeAllSearch}
+        />
+        <div className="relative z-10 mx-3 mt-[max(0.75rem,env(safe-area-inset-top,0px))] flex max-h-[min(92dvh,40rem)] min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-white/12 bg-[#1a1d24] shadow-[0_28px_80px_-28px_rgba(0,0,0,0.9)] [animation:site-search-panel-in_0.42s_cubic-bezier(0.22,1,0.36,1)_both]">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain p-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))]">
+            <SiteSearchPanel
+              variant="mobile"
+              query={searchQuery}
+              setQuery={setSearchQuery}
+              items={searchItems}
+              loading={searchLoading}
+              onSelect={handleSelectSearchResult}
+              onClose={closeAllSearch}
+              autoFocus
+              compact={scrolled}
+            />
+          </div>
+        </div>
+      </div>,
+      document.body,
+    )
+
   return (
     <>
     <header
@@ -373,163 +483,210 @@ export function Navbar() {
           />
         </NavLink>
 
-        <nav
-          className="hidden items-center gap-0.5 md:flex"
-          aria-label="Principal"
+        <div
+          ref={desktopSearchRef}
+          className="relative hidden min-w-0 flex-1 items-center justify-end gap-2 md:flex"
         >
-          {startLinks.map((link) => (
-            <DesktopNavLink
-              key={link.to}
-              to={link.to}
-              label={link.label}
-              end={link.end}
-              compact={scrolled}
+          <div
+            className={`min-w-0 overflow-hidden transition-[max-width,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+              desktopSearchOpen
+                ? 'pointer-events-none max-w-0 opacity-0'
+                : 'max-w-[min(100%,56rem)] flex-1 opacity-100'
+            }`}
+          >
+            <nav className="flex items-center justify-end gap-0.5" aria-label="Principal">
+              {startLinks.map((link) => (
+                <DesktopNavLink
+                  key={link.to}
+                  to={link.to}
+                  label={link.label}
+                  end={link.end}
+                  compact={scrolled}
+                />
+              ))}
+
+              <DesktopNavLink
+                to={newsLink.to}
+                label={newsLink.label}
+                end={newsLink.end}
+                onMouseEnter={() => preloadPublicRoute('newsList')}
+                onFocus={() => preloadPublicRoute('newsList')}
+                compact={scrolled}
+              />
+
+              <div className="relative px-0.5" ref={dropdownRef}>
+                <button
+                  type="button"
+                  className={`group relative inline-flex items-center gap-1.5 rounded-lg px-3 font-semibold tracking-wide text-white transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                    scrolled ? 'py-1.5 text-[0.8125rem]' : 'py-2 text-sm'
+                  }`}
+                  aria-expanded={governmentOpen}
+                  aria-haspopup="true"
+                  aria-controls="menu-gobierno-escritorio"
+                  id="boton-menu-gobierno"
+                  onClick={() => setGovernmentOpen((v) => !v)}
+                >
+                  <span className="relative">Gobierno</span>
+                  <svg
+                    className={`relative h-4 w-4 transition-transform duration-300 ease-out ${
+                      governmentOpen ? 'rotate-180' : ''
+                    }`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2}
+                    stroke="currentColor"
+                    aria-hidden
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="m19.5 8.25-7.5 7.5-7.5-7.5"
+                    />
+                  </svg>
+                  <span
+                    className={`absolute left-3 right-3 h-[2px] origin-center rounded-full bg-sky-200 transition-transform duration-300 ease-out ${
+                      scrolled ? 'bottom-0.5' : 'bottom-1'
+                    } ${
+                      governmentActive || governmentOpen ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'
+                    }`}
+                  />
+                </button>
+
+                <div
+                  id="menu-gobierno-escritorio"
+                  role="menu"
+                  aria-labelledby="boton-menu-gobierno"
+                  className={`absolute left-0 top-full z-50 mt-1.5 w-[min(15rem,calc(100vw-1.25rem))] origin-top overflow-hidden rounded-lg border border-white/8 bg-[#1a1d24]/98 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.6)] backdrop-blur-xl transition-all duration-300 ease-out ${
+                    governmentOpen
+                      ? 'pointer-events-auto translate-y-0 opacity-100'
+                      : 'pointer-events-none -translate-y-1 opacity-0'
+                  }`}
+                >
+                  <ul className="py-1">
+                    {governmentLinks.map((item) => (
+                      <li key={item.to}>
+                        <NavLink
+                          to={item.to}
+                          role="menuitem"
+                          className={({ isActive }) =>
+                            `block px-3 py-1.5 text-sm font-semibold tracking-wide transition-colors duration-200 ${
+                              isActive
+                                ? 'bg-white/10 text-white'
+                                : 'text-white/90 hover:bg-white/5 hover:text-white'
+                            }`
+                          }
+                          end={Boolean(item.end)}
+                          onMouseEnter={() => preloadPublicRoute(item.preload)}
+                          onFocus={() => preloadPublicRoute(item.preload)}
+                          onClick={() => setGovernmentOpen(false)}
+                        >
+                          {item.label}
+                        </NavLink>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              {afterAreasLinks.map((link) => (
+                <DesktopNavLink
+                  key={link.to}
+                  to={link.to}
+                  label={link.label}
+                  ariaLabel={link.ariaLabel}
+                  end={link.end}
+                  onMouseEnter={link.preload ? () => preloadPublicRoute(link.preload) : undefined}
+                  onFocus={link.preload ? () => preloadPublicRoute(link.preload) : undefined}
+                  compact={scrolled}
+                />
+              ))}
+            </nav>
+          </div>
+
+          {!desktopSearchOpen ? (
+            <SearchOpenButton
+              scrolled={scrolled}
+              onClick={() => {
+                setGovernmentOpen(false)
+                setDesktopSearchOpen(true)
+              }}
             />
-          ))}
+          ) : (
+            <div className="relative min-w-0 flex-1 [animation:site-search-panel-in_0.45s_cubic-bezier(0.22,1,0.36,1)_both]">
+              <SiteSearchPanel
+                variant="desktop"
+                query={searchQuery}
+                setQuery={setSearchQuery}
+                items={searchItems}
+                loading={searchLoading}
+                onSelect={handleSelectSearchResult}
+                onClose={closeAllSearch}
+                autoFocus
+                compact={scrolled}
+              />
+            </div>
+          )}
+        </div>
 
-          <DesktopNavLink
-            to={newsLink.to}
-            label={newsLink.label}
-            end={newsLink.end}
-            onMouseEnter={() => preloadPublicRoute('newsList')}
-            onFocus={() => preloadPublicRoute('newsList')}
-            compact={scrolled}
+        <div className="flex shrink-0 items-center gap-0.5 md:hidden">
+          <SearchOpenButton
+            className="md:hidden"
+            scrolled={scrolled}
+            onClick={() => {
+              setOpen(false)
+              setMobileGovernmentOpen(false)
+              setMobileSearchOpen(true)
+            }}
           />
-
-          <div className="relative px-0.5" ref={dropdownRef}>
-            <button
-              type="button"
-              className={`group relative inline-flex items-center gap-1.5 rounded-lg px-3 font-semibold tracking-wide text-white transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                scrolled ? 'py-1.5 text-[0.8125rem]' : 'py-2 text-sm'
-              }`}
-              aria-expanded={governmentOpen}
-              aria-haspopup="true"
-              aria-controls="menu-gobierno-escritorio"
-              id="boton-menu-gobierno"
-              onClick={() => setGovernmentOpen((v) => !v)}
-            >
-              <span className="relative">Gobierno</span>
+          <button
+            type="button"
+            className={`group inline-flex items-center justify-center rounded-xl border-0 bg-transparent text-white transition-[transform,background-color] duration-300 ease-out hover:scale-[1.06] hover:bg-white/[0.07] active:scale-[0.94] active:bg-white/4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[#161a21] md:hidden ${
+              scrolled ? 'h-10 w-10' : 'h-11 w-11'
+            }`}
+            aria-expanded={open}
+            aria-controls="menu-movil"
+            aria-label={open ? 'Cerrar menú' : 'Abrir menú'}
+            onClick={() => setOpen((v) => !v)}
+          >
+            <span className="sr-only">{open ? 'Cerrar' : 'Menú'}</span>
+            {open ? (
               <svg
-                className={`relative h-4 w-4 transition-transform duration-300 ease-out ${
-                  governmentOpen ? 'rotate-180' : ''}`}
+                className="h-6 w-6 rotate-90 transition-transform duration-300 ease-out group-hover:scale-110"
                 fill="none"
                 viewBox="0 0 24 24"
-                strokeWidth={2}
+                strokeWidth={1.8}
                 stroke="currentColor"
                 aria-hidden
               >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  d="m19.5 8.25-7.5 7.5-7.5-7.5"
+                  d="M6 18 18 6M6 6l12 12"
                 />
               </svg>
-              <span
-                className={`absolute left-3 right-3 h-[2px] origin-center rounded-full bg-sky-200 transition-transform duration-300 ease-out ${
-                  scrolled ? 'bottom-0.5' : 'bottom-1'
-                } ${
-                  governmentActive || governmentOpen ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'
-                }`}
-              />
-            </button>
-
-            <div
-              id="menu-gobierno-escritorio"
-              role="menu"
-              aria-labelledby="boton-menu-gobierno"
-              className={`absolute left-0 top-full z-50 mt-1.5 w-[min(15rem,calc(100vw-1.25rem))] origin-top overflow-hidden rounded-lg border border-white/8 bg-[#1a1d24]/98 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.6)] backdrop-blur-xl transition-all duration-300 ease-out ${
-                governmentOpen
-                  ? 'pointer-events-auto translate-y-0 opacity-100'
-                  : 'pointer-events-none -translate-y-1 opacity-0'
-              }`}
-            >
-              <ul className="py-1">
-                {governmentLinks.map((item) => (
-                  <li key={item.to}>
-                    <NavLink
-                      to={item.to}
-                      role="menuitem"
-                      className={({ isActive }) =>
-                        `block px-3 py-1.5 text-sm font-semibold tracking-wide transition-colors duration-200 ${
-                          isActive
-                            ? 'bg-white/10 text-white'
-                            : 'text-white/90 hover:bg-white/5 hover:text-white'
-                        }`
-                      }
-                      end={Boolean(item.end)}
-                      onMouseEnter={() => preloadPublicRoute(item.preload)}
-                      onFocus={() => preloadPublicRoute(item.preload)}
-                      onClick={() => setGovernmentOpen(false)}
-                    >
-                      {item.label}
-                    </NavLink>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
-          {afterAreasLinks.map((link) => (
-            <DesktopNavLink
-              key={link.to}
-              to={link.to}
-              label={link.label}
-              ariaLabel={link.ariaLabel}
-              end={link.end}
-              onMouseEnter={link.preload ? () => preloadPublicRoute(link.preload) : undefined}
-              onFocus={link.preload ? () => preloadPublicRoute(link.preload) : undefined}
-              compact={scrolled}
-            />
-          ))}
-        </nav>
-
-        <button
-          type="button"
-          className={`group inline-flex items-center justify-center rounded-xl border-0 bg-transparent text-white transition-[transform,background-color] duration-300 ease-out hover:scale-[1.06] hover:bg-white/[0.07] active:scale-[0.94] active:bg-white/4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[#161a21] md:hidden ${
-            scrolled ? 'h-10 w-10' : 'h-11 w-11'
-          }`}
-          aria-expanded={open}
-          aria-controls="menu-movil"
-          aria-label={open ? 'Cerrar menú' : 'Abrir menú'}
-          onClick={() => setOpen((v) => !v)}
-        >
-          <span className="sr-only">{open ? 'Cerrar' : 'Menú'}</span>
-          {open ? (
-            <svg
-              className="h-6 w-6 rotate-90 transition-transform duration-300 ease-out group-hover:scale-110"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.8}
-              stroke="currentColor"
-              aria-hidden
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M6 18 18 6M6 6l12 12"
-              />
-            </svg>
-          ) : (
-            <svg
-              className="h-6 w-6 transition-transform duration-300 ease-out group-hover:scale-110"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.8}
-              stroke="currentColor"
-              aria-hidden
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
-              />
-            </svg>
-          )}
-        </button>
+            ) : (
+              <svg
+                className="h-6 w-6 transition-transform duration-300 ease-out group-hover:scale-110"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.8}
+                stroke="currentColor"
+                aria-hidden
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+                />
+              </svg>
+            )}
+          </button>
+        </div>
       </div>
       </Container>
     </header>
     {mobileMenuLayer}
+    {mobileSearchLayer}
     </>
   )
 }
