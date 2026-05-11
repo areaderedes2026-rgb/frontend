@@ -47,7 +47,7 @@ const governmentLinks = [
 ]
 
 /** Debe ser ≥ duración CSS de `site-search-panel-out` + margen (ms). */
-const DESKTOP_SEARCH_EXIT_MS = 1620
+const DESKTOP_SEARCH_EXIT_MS = 560
 
 function DesktopNavLink({
   to,
@@ -505,7 +505,7 @@ export function Navbar() {
     >
       <Container className="relative z-2">
         <div
-          className={`mx-auto flex w-full items-center justify-between gap-3 border transition-[min-height,border-color,background-color,box-shadow,backdrop-filter,border-radius,max-width,padding] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          className={`mx-auto flex w-full items-center justify-between gap-3 border transition-[min-height,border-color,background-color,box-shadow,backdrop-filter,border-radius,max-width,padding] duration-[880ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:duration-300 ${
             scrolled
               ? 'min-h-12.5 max-w-[min(100%,74rem)] rounded-full border-white/14 bg-[#141922]/78 px-3 shadow-[0_14px_44px_-20px_rgba(0,0,0,0.5),inset_0_1px_0_0_rgba(255,255,255,0.08)] backdrop-blur-2xl backdrop-saturate-150 sm:px-4 md:px-5'
               : 'min-h-13 max-w-full rounded-none border-transparent bg-transparent px-0 shadow-none backdrop-blur-0 sm:px-0 md:px-0'
@@ -529,16 +529,18 @@ export function Navbar() {
 
         <div
           ref={desktopSearchRef}
-          className="relative hidden min-w-0 flex-1 md:flex md:items-center md:justify-end md:gap-2"
+          className="relative hidden min-h-0 min-w-0 flex-1 overflow-visible md:flex md:items-stretch md:justify-end"
         >
+          {/* Enlaces: capa absoluta + solo opacidad/transform (sin max-width) para que el texto largo no se comprima */}
           <div
-            className={`min-w-0 transition-[max-width,opacity,transform] duration-[1750ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:duration-200 ${
+            className={`absolute inset-y-0 left-0 right-12 z-0 flex items-center justify-end gap-0.5 overflow-visible transition-[opacity,transform] duration-[720ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:duration-150 ${
               desktopSearchOpen
-                ? 'pointer-events-none max-w-0 translate-x-1 overflow-hidden opacity-0'
-                : 'max-w-[min(100%,56rem)] flex-1 translate-x-0 overflow-visible opacity-100'
+                ? 'pointer-events-none translate-x-2 opacity-0'
+                : 'translate-x-0 opacity-100'
             }`}
+            aria-hidden={desktopSearchOpen || undefined}
           >
-            <nav className="flex items-center justify-end gap-0.5" aria-label="Principal">
+            <nav className="flex min-w-0 items-center justify-end gap-0.5" aria-label="Principal">
               {startLinks.map((link) => (
                 <DesktopNavLink
                   key={link.to}
@@ -648,24 +650,26 @@ export function Navbar() {
           </div>
 
           {!desktopSearchOpen ? (
-            <SearchOpenButton
-              scrolled={scrolled}
-              onClick={() => {
-                setGovernmentOpen(false)
-                if (desktopSearchExitTimerRef.current) {
-                  window.clearTimeout(desktopSearchExitTimerRef.current)
-                  desktopSearchExitTimerRef.current = null
-                }
-                setDesktopSearchExitPhase(false)
-                setDesktopSearchOpen(true)
-              }}
-            />
+            <div className="relative z-10 ml-auto flex shrink-0 items-center">
+              <SearchOpenButton
+                scrolled={scrolled}
+                onClick={() => {
+                  setGovernmentOpen(false)
+                  if (desktopSearchExitTimerRef.current) {
+                    window.clearTimeout(desktopSearchExitTimerRef.current)
+                    desktopSearchExitTimerRef.current = null
+                  }
+                  setDesktopSearchExitPhase(false)
+                  setDesktopSearchOpen(true)
+                }}
+              />
+            </div>
           ) : (
             <div
-              className={`relative flex min-w-0 shrink-0 items-center justify-end ${
+              className={`relative z-10 ml-auto flex min-w-0 shrink-0 items-center justify-end ${
                 desktopSearchExitPhase
-                  ? 'motion-safe:[animation:site-search-panel-out_1.45s_cubic-bezier(0.16,1,0.3,1)_forwards]'
-                  : 'motion-safe:[animation:site-search-panel-in_1.55s_cubic-bezier(0.16,1,0.3,1)_both]'
+                  ? 'motion-safe:[animation:site-search-panel-out_0.42s_cubic-bezier(0.32,0.72,0,1)_forwards]'
+                  : 'motion-safe:[animation:site-search-panel-in_0.48s_cubic-bezier(0.32,0.72,0,1)_both]'
               }`}
             >
               <div className="w-[min(24rem,calc(100vw-8.5rem))] max-w-full sm:w-[min(27rem,calc(100vw-9rem))]">

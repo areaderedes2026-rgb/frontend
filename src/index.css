@@ -43,15 +43,15 @@ body {
   }
 }
 
-/* Buscador global (navbar): entradas lentas y suaves */
+/* Buscador global (navbar): entrada/salida fluidas (duración en Navbar ~0.48s / 0.42s) */
 @keyframes site-search-panel-in {
   0% {
     opacity: 0;
-    transform: translate3d(0.55rem, 0, 0) scale(0.996);
+    transform: translate3d(0.4rem, 0, 0) scale(0.992);
   }
-  78% {
+  70% {
     opacity: 1;
-    transform: translate3d(-0.02rem, 0, 0) scale(1.001);
+    transform: translate3d(-0.02rem, 0, 0) scale(1.002);
   }
   100% {
     opacity: 1;
@@ -66,7 +66,7 @@ body {
   }
   100% {
     opacity: 0;
-    transform: translate3d(0.35rem, 0, 0) scale(0.992);
+    transform: translate3d(0.28rem, 0, 0) scale(0.988);
   }
 }
 
