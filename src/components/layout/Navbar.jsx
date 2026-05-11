@@ -533,10 +533,10 @@ export function Navbar() {
         >
           {/* Enlaces: capa absoluta + solo opacidad/transform (sin max-width) para que el texto largo no se comprima */}
           <div
-            className={`absolute inset-y-0 left-0 right-12 z-0 flex items-center justify-end gap-0.5 overflow-visible transition-[opacity,transform] duration-[720ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:duration-150 ${
+            className={`absolute inset-y-0 left-0 right-12 z-0 flex items-center justify-end gap-0.5 overflow-visible transition-[opacity,transform] motion-reduce:!duration-150 ${
               desktopSearchOpen
-                ? 'pointer-events-none translate-x-2 opacity-0'
-                : 'translate-x-0 opacity-100'
+                ? 'pointer-events-none translate-x-2 opacity-0 duration-[620ms] ease-[cubic-bezier(0.22,1,0.36,1)]'
+                : 'translate-x-0 opacity-100 duration-[240ms] ease-out'
             }`}
             aria-hidden={desktopSearchOpen || undefined}
           >
