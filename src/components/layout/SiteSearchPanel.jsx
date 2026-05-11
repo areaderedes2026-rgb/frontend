@@ -23,7 +23,7 @@ function SearchIcon({ className }) {
 function Spinner({ className }) {
   return (
     <span
-      className={`inline-block h-[1.05rem] w-[1.05rem] shrink-0 rounded-full border-2 border-sky-200/20 border-t-sky-300/90 motion-safe:animate-[spin_1.15s_linear_infinite] ${className}`}
+      className={`inline-block h-[1.05rem] w-[1.05rem] shrink-0 rounded-full border-2 border-white/15 border-t-white/70 motion-safe:animate-[spin_1.15s_linear_infinite] ${className}`}
       aria-hidden
     />
   )
@@ -105,19 +105,19 @@ export function SiteSearchPanel({ variant, query, setQuery, items, loading, onSe
     <div className={`flex w-full flex-col ${isMobile ? 'gap-4' : 'relative gap-3'}`}>
       {/* Marco exterior suave (gradiente) */}
       <div
-        className={`relative rounded-[1.35rem] bg-linear-to-br from-white/[0.14] via-white/[0.05] to-white/[0.02] p-[1px] shadow-[0_12px_40px_-18px_rgba(0,0,0,0.65)] transition-[box-shadow,transform] duration-[620ms] ease-out motion-safe:hover:shadow-[0_18px_48px_-16px_rgba(56,189,248,0.12)] ${
+        className={`relative rounded-[1.35rem] bg-linear-to-br from-white/[0.14] via-white/[0.05] to-white/[0.02] p-[1px] shadow-[0_12px_40px_-18px_rgba(0,0,0,0.65)] transition-[box-shadow,transform] duration-[620ms] ease-out motion-safe:hover:shadow-[0_18px_48px_-18px_rgba(0,0,0,0.55)] ${
           compact ? '' : ''
         }`}
       >
         <div
-          className={`flex w-full min-w-0 items-center gap-2 rounded-[1.32rem] bg-linear-to-b from-[#181c26]/98 via-[#12151c]/98 to-[#0a0c10]/98 px-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl transition-[box-shadow] duration-[520ms] ease-out focus-within:shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_0_1px_rgba(56,189,248,0.18),0_0_28px_-8px_rgba(56,189,248,0.15)] ${
+          className={`flex w-full min-w-0 items-center gap-2 rounded-[1.32rem] bg-linear-to-b from-[#181c26]/98 via-[#12151c]/98 to-[#0a0c10]/98 px-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl transition-[box-shadow] duration-[520ms] ease-out focus-within:shadow-[inset_0_1px_0_rgba(255,255,255,0.09),0_0_0_1px_rgba(255,255,255,0.12),0_12px_40px_-20px_rgba(0,0,0,0.45)] ${
             compact ? 'py-1.5 sm:py-2' : 'py-2 sm:py-2.5'
           }`}
         >
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white/75 transition-all duration-[480ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.04] hover:bg-white/[0.08] hover:text-white active:scale-[0.96] focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/45"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white/75 transition-all duration-[480ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.04] hover:bg-white/[0.08] hover:text-white active:scale-[0.96] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25"
             aria-label="Cerrar búsqueda"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor" aria-hidden>
@@ -125,7 +125,7 @@ export function SiteSearchPanel({ variant, query, setQuery, items, loading, onSe
             </svg>
           </button>
           <div className="flex h-8 w-px shrink-0 bg-linear-to-b from-transparent via-white/15 to-transparent" aria-hidden />
-          <SearchIcon className="pointer-events-none h-[1.05rem] w-[1.05rem] shrink-0 text-sky-300/85" />
+          <SearchIcon className="pointer-events-none h-[1.05rem] w-[1.05rem] shrink-0 text-white/55" />
           <input
             ref={inputRef}
             type="search"
@@ -177,7 +177,7 @@ export function SiteSearchPanel({ variant, query, setQuery, items, loading, onSe
         ) : (
           <div key={resultsKey} className="motion-safe:[animation:site-search-results-shell_0.78s_cubic-bezier(0.16,1,0.3,1)_both]">
             <div
-              className="mx-3 mb-2 mt-2 h-px bg-linear-to-r from-transparent via-sky-400/35 to-transparent opacity-90"
+              className="mx-3 mb-2 mt-2 h-px bg-linear-to-r from-transparent via-white/20 to-transparent opacity-90"
               aria-hidden
             />
             <ul className="site-search-results-list px-1.5 pb-2 pt-1">
@@ -195,11 +195,11 @@ export function SiteSearchPanel({ variant, query, setQuery, items, loading, onSe
                       onClick={() => onSelect(item)}
                       className={`group relative flex w-full flex-col gap-1 rounded-xl border border-transparent px-3.5 py-3.5 text-left transition-[background-color,border-color,box-shadow,transform] duration-[520ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-safe:duration-[580ms] ${
                         active
-                          ? 'border-sky-400/25 bg-linear-to-r from-sky-500/[0.14] via-sky-500/[0.08] to-transparent shadow-[inset_3px_0_0_0_rgba(56,189,248,0.75)]'
+                          ? 'border-white/12 bg-white/[0.08] shadow-[inset_3px_0_0_0_rgba(255,255,255,0.5)]'
                           : 'hover:border-white/[0.07] hover:bg-white/[0.05] motion-safe:hover:translate-x-[0.06rem]'
                       }`}
                     >
-                      <span className="text-[0.625rem] font-bold uppercase tracking-[0.22em] text-sky-200/75 transition-colors duration-[480ms] group-hover:text-sky-100/90">
+                      <span className="text-[0.625rem] font-bold uppercase tracking-[0.22em] text-white/45 transition-colors duration-[480ms] group-hover:text-white/60">
                         {label}
                       </span>
                       <span className="site-search-result-title text-[0.98rem] text-white/95 sm:text-[1.02rem]">{item.title}</span>
@@ -227,7 +227,7 @@ export function SearchOpenButton({ onClick, scrolled, className = '' }) {
       onClick={onClick}
       aria-label="Abrir búsqueda"
       title="Buscar (Ctrl+K)"
-      className={`group inline-flex items-center justify-center rounded-xl border-0 bg-transparent text-white transition-[transform,background-color,opacity] duration-[520ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.05] hover:bg-white/[0.07] active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#161a21] motion-reduce:duration-200 ${scrolled ? 'h-9 w-9' : 'h-10 w-10'} ${className}`}
+      className={`group inline-flex items-center justify-center rounded-xl border-0 bg-transparent text-white transition-[transform,background-color,opacity] duration-[520ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.05] hover:bg-white/[0.07] active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/25 focus-visible:ring-offset-2 focus-visible:ring-offset-[#161a21] motion-reduce:duration-200 ${scrolled ? 'h-9 w-9' : 'h-10 w-10'} ${className}`}
     >
       <svg
         className="h-[1.15rem] w-[1.15rem] transition-transform duration-[520ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-110 motion-reduce:transition-none"

@@ -485,7 +485,9 @@ export function Navbar() {
 
         <div
           ref={desktopSearchRef}
-          className="relative hidden min-w-0 flex-1 items-center justify-end gap-2 md:flex"
+          className={`relative hidden min-w-0 flex-1 md:flex md:items-center md:gap-2 ${
+            desktopSearchOpen ? 'md:justify-center' : 'md:justify-end'
+          }`}
         >
           <div
             className={`min-w-0 transition-[max-width,opacity,transform] duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:duration-200 ${
@@ -612,18 +614,20 @@ export function Navbar() {
               }}
             />
           ) : (
-            <div className="relative min-w-0 flex-1 motion-safe:[animation:site-search-panel-in_0.92s_cubic-bezier(0.16,1,0.3,1)_both]">
-              <SiteSearchPanel
-                variant="desktop"
-                query={searchQuery}
-                setQuery={setSearchQuery}
-                items={searchItems}
-                loading={searchLoading}
-                onSelect={handleSelectSearchResult}
-                onClose={closeAllSearch}
-                autoFocus
-                compact={scrolled}
-              />
+            <div className="relative flex min-w-0 flex-1 items-center justify-center px-2 motion-safe:[animation:site-search-panel-in_0.92s_cubic-bezier(0.16,1,0.3,1)_both]">
+              <div className="w-[min(20.5rem,calc(100vw-7.5rem))] max-w-full sm:w-[min(23rem,calc(100vw-8rem))]">
+                <SiteSearchPanel
+                  variant="desktop"
+                  query={searchQuery}
+                  setQuery={setSearchQuery}
+                  items={searchItems}
+                  loading={searchLoading}
+                  onSelect={handleSelectSearchResult}
+                  onClose={closeAllSearch}
+                  autoFocus
+                  compact={scrolled}
+                />
+              </div>
             </div>
           )}
         </div>
