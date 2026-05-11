@@ -9,6 +9,7 @@ import { fetchSitePageBanner } from '../services/sitePageBannerService.js'
 import { isApiConfigured } from '../utils/apiConfig.js'
 import { ROUTES } from '../utils/constants.js'
 import { HydrationHeroDarkBackdrop } from '../components/skeleton/PageHydrationSkeleton.jsx'
+import { pickNextFeaturedEvent, sortPublicEventsForDisplay } from '../utils/publicEvents.js'
 
 const DEFAULT_HERO_IMAGE =
   'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1900&q=80'
@@ -28,7 +29,8 @@ export function Events() {
   const [calendarFocusDate, setCalendarFocusDate] = useState('')
   const [heroImageUrl, setHeroImageUrl] = useState('')
   const [heroHydrated, setHeroHydrated] = useState(!apiEnabled)
-  const featured = events[0] || null
+  const visibleEvents = useMemo(() => sortPublicEventsForDisplay(events), [events])
+  const featured = useMemo(() => pickNextFeaturedEvent(events), [events])
 
   useEffect(() => {
     let cancelled = false
@@ -53,10 +55,7 @@ export function Events() {
     fetchPublicEvents()
       .then((list) => {
         if (cancelled) return
-        const sorted = (Array.isArray(list) ? list : []).sort(
-          (a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime(),
-        )
-        setEvents(sorted)
+        setEvents(Array.isArray(list) ? list : [])
       })
       .catch(() => {
         if (!cancelled) setEvents([])
@@ -68,8 +67,6 @@ export function Events() {
       cancelled = true
     }
   }, [])
-
-  const visibleEvents = useMemo(() => events, [events])
 
   return (
     <section className="relative -mt-[calc(var(--navbar-h,5rem)+1.5rem)] overflow-hidden bg-linear-to-b from-[#f1eee8] via-[#f7f7f5] to-[#fcfcfa] pb-12 sm:-mt-[calc(var(--navbar-h,5rem)+2rem)] sm:pb-16">
@@ -132,7 +129,11 @@ export function Events() {
                   </>
                 ) : (
                   <p className="mt-3 text-sm leading-relaxed text-[#4b505a]">
-                    {loading ? 'Cargando eventos destacados…' : 'Todavía no hay eventos publicados.'}
+                    {loading
+                      ? 'Cargando eventos destacados…'
+                      : visibleEvents.length > 0
+                        ? 'No hay eventos próximos para destacar en este momento. Revisá la agenda más abajo.'
+                        : 'Todavía no hay eventos publicados.'}
                   </p>
                 )}
               </div>
@@ -187,7 +188,7 @@ export function Events() {
                   <button
                     type="button"
                     onClick={() => {
-                      setCalendarFocusDate(event.datetime)
+                      setCalendarFocusDate(event.eventDate)
                       const node = document.getElementById('calendario-eventos')
                       if (node) node.scrollIntoView({ behavior: 'smooth', block: 'start' })
                     }}

@@ -12,6 +12,7 @@ import { useNewsList } from '../hooks/useNewsList.js'
 import { fetchPublicEvents } from '../services/eventsService.js'
 import { fetchHomeMapContent } from '../services/homeMapService.js'
 import { formatShortDate } from '../utils/formatDate.js'
+import { pickUpcomingPublicEvents } from '../utils/publicEvents.js'
 import { ROUTES } from '../utils/constants.js'
 
 const HERO_IMAGE = '/rio.jpeg'
@@ -33,15 +34,7 @@ export function Home() {
   const featuredNews = news[0] ?? null
   const secondaryNews = useMemo(() => news.slice(1, 5), [news])
 
-  const upcomingEvents = useMemo(() => {
-    const now = Date.now()
-    return events
-      .filter((event) => {
-        const ts = new Date(event.eventDate).getTime()
-        return Number.isFinite(ts) ? ts >= now - 12 * 60 * 60 * 1000 : true
-      })
-      .slice(0, 3)
-  }, [events])
+  const upcomingEvents = useMemo(() => pickUpcomingPublicEvents(events, 3), [events])
 
   useEffect(() => {
     let cancelled = false
@@ -68,10 +61,7 @@ export function Home() {
     fetchPublicEvents()
       .then((list) => {
         if (cancelled) return
-        const sorted = (Array.isArray(list) ? list : []).sort(
-          (a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime(),
-        )
-        setEvents(sorted)
+        setEvents(Array.isArray(list) ? list : [])
       })
       .catch(() => {
         if (!cancelled) setEvents([])

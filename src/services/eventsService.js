@@ -1,4 +1,5 @@
 import { getApiBase } from '../utils/apiConfig.js'
+import { filterPublicVisibleEvents } from '../utils/publicEvents.js'
 import {
   getAuthHeaders,
   jsonAuthHeaders,
@@ -63,9 +64,11 @@ export async function fetchPublicEvents() {
     if (!res.ok) throw new Error((await apiErrorMessage(res)) || 'No se pudieron cargar los eventos.')
     const data = await res.json().catch(() => ({}))
     const list = Array.isArray(data.items) ? data.items : []
-    return list.map(normalize).filter(Boolean)
+    return filterPublicVisibleEvents(list.map(normalize).filter(Boolean))
   }
-  return [...mockStore].filter((event) => event.isActive)
+  return filterPublicVisibleEvents(
+    [...mockStore].filter((event) => event.isActive).map(normalize).filter(Boolean),
+  )
 }
 
 export async function fetchAdminEvents() {
