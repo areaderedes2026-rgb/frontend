@@ -47,15 +47,26 @@ body {
 @keyframes site-search-panel-in {
   0% {
     opacity: 0;
-    transform: translate3d(0.85rem, 0.2rem, 0) scale(0.993);
+    transform: translate3d(0.55rem, 0, 0) scale(0.996);
   }
-  72% {
+  78% {
     opacity: 1;
-    transform: translate3d(-0.04rem, -0.02rem, 0) scale(1.001);
+    transform: translate3d(-0.02rem, 0, 0) scale(1.001);
   }
   100% {
     opacity: 1;
     transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes site-search-panel-out {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(0.35rem, 0, 0) scale(0.992);
   }
 }
 
@@ -160,6 +171,15 @@ body {
     }
     to {
       opacity: 1;
+    }
+  }
+
+  @keyframes site-search-panel-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
     }
   }
 

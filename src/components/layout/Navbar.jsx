@@ -46,6 +46,9 @@ const governmentLinks = [
   { to: '/areas', label: 'Áreas', preload: 'areasIndex', end: true },
 ]
 
+/** Debe ser ≥ duración CSS de `site-search-panel-out` + margen (ms). */
+const DESKTOP_SEARCH_EXIT_MS = 1620
+
 function DesktopNavLink({
   to,
   label,
@@ -108,10 +111,12 @@ export function Navbar() {
   const [mobileGovernmentOpen, setMobileGovernmentOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [desktopSearchOpen, setDesktopSearchOpen] = useState(false)
+  const [desktopSearchExitPhase, setDesktopSearchExitPhase] = useState(false)
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
   const headerRef = useRef(null)
   const dropdownRef = useRef(null)
   const desktopSearchRef = useRef(null)
+  const desktopSearchExitTimerRef = useRef(null)
   const navigate = useNavigate()
   const location = useLocation()
   const {
@@ -125,15 +130,54 @@ export function Navbar() {
     (location.pathname.startsWith('/gobierno') || location.pathname.startsWith('/areas')) &&
     location.pathname !== '/gobierno/oferta-academica'
 
-  const closeAllSearch = useCallback(() => {
+  const forceCloseSearch = useCallback(() => {
+    if (desktopSearchExitTimerRef.current) {
+      window.clearTimeout(desktopSearchExitTimerRef.current)
+      desktopSearchExitTimerRef.current = null
+    }
+    setDesktopSearchExitPhase(false)
     setDesktopSearchOpen(false)
     setMobileSearchOpen(false)
     resetSearch()
   }, [resetSearch])
 
+  const closeAllSearch = useCallback(() => {
+    setMobileSearchOpen(false)
+    const isMd = typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches
+    if (isMd && desktopSearchOpen && !desktopSearchExitPhase) {
+      setDesktopSearchExitPhase(true)
+      return
+    }
+    forceCloseSearch()
+  }, [desktopSearchOpen, desktopSearchExitPhase, forceCloseSearch])
+
+  useEffect(() => {
+    if (!desktopSearchExitPhase) return
+    const prefersReduce =
+      typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const delay = prefersReduce ? 180 : DESKTOP_SEARCH_EXIT_MS
+    desktopSearchExitTimerRef.current = window.setTimeout(() => {
+      desktopSearchExitTimerRef.current = null
+      setDesktopSearchOpen(false)
+      setDesktopSearchExitPhase(false)
+      resetSearch()
+    }, delay)
+    return () => {
+      if (desktopSearchExitTimerRef.current) {
+        window.clearTimeout(desktopSearchExitTimerRef.current)
+        desktopSearchExitTimerRef.current = null
+      }
+    }
+  }, [desktopSearchExitPhase, resetSearch])
+
   const openSearchPalette = useCallback(() => {
     setGovernmentOpen(false)
     if (typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches) {
+      if (desktopSearchExitTimerRef.current) {
+        window.clearTimeout(desktopSearchExitTimerRef.current)
+        desktopSearchExitTimerRef.current = null
+      }
+      setDesktopSearchExitPhase(false)
       setDesktopSearchOpen(true)
     } else {
       setOpen(false)
@@ -159,10 +203,10 @@ export function Navbar() {
 
   useEffect(() => {
     const id = window.setTimeout(() => {
-      closeAllSearch()
+      forceCloseSearch()
     }, 0)
     return () => window.clearTimeout(id)
-  }, [location.pathname, closeAllSearch])
+  }, [location.pathname, forceCloseSearch])
 
   useEffect(() => {
     function onKey(e) {
@@ -485,14 +529,12 @@ export function Navbar() {
 
         <div
           ref={desktopSearchRef}
-          className={`relative hidden min-w-0 flex-1 md:flex md:items-center md:gap-2 ${
-            desktopSearchOpen ? 'md:justify-center' : 'md:justify-end'
-          }`}
+          className="relative hidden min-w-0 flex-1 md:flex md:items-center md:justify-end md:gap-2"
         >
           <div
-            className={`min-w-0 transition-[max-width,opacity,transform] duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:duration-200 ${
+            className={`min-w-0 transition-[max-width,opacity,transform] duration-[1750ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:duration-200 ${
               desktopSearchOpen
-                ? 'pointer-events-none max-w-0 translate-x-2 overflow-hidden opacity-0'
+                ? 'pointer-events-none max-w-0 translate-x-1 overflow-hidden opacity-0'
                 : 'max-w-[min(100%,56rem)] flex-1 translate-x-0 overflow-visible opacity-100'
             }`}
           >
@@ -610,12 +652,23 @@ export function Navbar() {
               scrolled={scrolled}
               onClick={() => {
                 setGovernmentOpen(false)
+                if (desktopSearchExitTimerRef.current) {
+                  window.clearTimeout(desktopSearchExitTimerRef.current)
+                  desktopSearchExitTimerRef.current = null
+                }
+                setDesktopSearchExitPhase(false)
                 setDesktopSearchOpen(true)
               }}
             />
           ) : (
-            <div className="relative flex min-w-0 flex-1 items-center justify-center px-2 motion-safe:[animation:site-search-panel-in_0.92s_cubic-bezier(0.16,1,0.3,1)_both]">
-              <div className="w-[min(20.5rem,calc(100vw-7.5rem))] max-w-full sm:w-[min(23rem,calc(100vw-8rem))]">
+            <div
+              className={`relative flex min-w-0 shrink-0 items-center justify-end ${
+                desktopSearchExitPhase
+                  ? 'motion-safe:[animation:site-search-panel-out_1.45s_cubic-bezier(0.16,1,0.3,1)_forwards]'
+                  : 'motion-safe:[animation:site-search-panel-in_1.55s_cubic-bezier(0.16,1,0.3,1)_both]'
+              }`}
+            >
+              <div className="w-[min(24rem,calc(100vw-8.5rem))] max-w-full sm:w-[min(27rem,calc(100vw-9rem))]">
                 <SiteSearchPanel
                   variant="desktop"
                   query={searchQuery}
