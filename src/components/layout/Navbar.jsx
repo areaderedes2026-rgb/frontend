@@ -426,11 +426,11 @@ export function Navbar() {
       >
         <button
           type="button"
-          className="absolute inset-0 bg-[#05060a]/75 backdrop-blur-[3px] transition-opacity duration-300 ease-out"
+          className="absolute inset-0 bg-[#05060a]/78 backdrop-blur-[5px] motion-safe:[animation:site-search-backdrop-fade_0.65s_ease-out_both]"
           aria-label="Cerrar búsqueda"
           onClick={closeAllSearch}
         />
-        <div className="relative z-10 mx-3 mt-[max(0.75rem,env(safe-area-inset-top,0px))] flex max-h-[min(92dvh,40rem)] min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-white/12 bg-[#1a1d24] shadow-[0_28px_80px_-28px_rgba(0,0,0,0.9)] [animation:site-search-panel-in_0.42s_cubic-bezier(0.22,1,0.36,1)_both]">
+        <div className="relative z-10 mx-3 mt-[max(0.75rem,env(safe-area-inset-top,0px))] flex max-h-[min(92dvh,40rem)] min-h-0 flex-1 flex-col overflow-hidden rounded-[1.35rem] border border-white/[0.11] bg-linear-to-b from-[#1c2029] to-[#14171d] shadow-[0_32px_88px_-32px_rgba(0,0,0,0.92),inset_0_1px_0_rgba(255,255,255,0.05)] motion-safe:[animation:site-search-mobile-sheet_0.92s_cubic-bezier(0.16,1,0.3,1)_both]">
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain p-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))]">
             <SiteSearchPanel
               variant="mobile"
@@ -488,10 +488,10 @@ export function Navbar() {
           className="relative hidden min-w-0 flex-1 items-center justify-end gap-2 md:flex"
         >
           <div
-            className={`min-w-0 overflow-hidden transition-[max-width,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+            className={`min-w-0 overflow-hidden transition-[max-width,opacity,transform] duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:duration-200 ${
               desktopSearchOpen
-                ? 'pointer-events-none max-w-0 opacity-0'
-                : 'max-w-[min(100%,56rem)] flex-1 opacity-100'
+                ? 'pointer-events-none max-w-0 translate-x-2 opacity-0'
+                : 'max-w-[min(100%,56rem)] flex-1 translate-x-0 opacity-100'
             }`}
           >
             <nav className="flex items-center justify-end gap-0.5" aria-label="Principal">
@@ -612,7 +612,7 @@ export function Navbar() {
               }}
             />
           ) : (
-            <div className="relative min-w-0 flex-1 [animation:site-search-panel-in_0.45s_cubic-bezier(0.22,1,0.36,1)_both]">
+            <div className="relative min-w-0 flex-1 motion-safe:[animation:site-search-panel-in_0.92s_cubic-bezier(0.16,1,0.3,1)_both]">
               <SiteSearchPanel
                 variant="desktop"
                 query={searchQuery}
