@@ -95,12 +95,6 @@ export function AreaDetail() {
   useEffect(() => {
     let cancelled = false
     if (!isApiConfigured()) return () => {}
-    setOfficesState((prev) => ({
-      slug,
-      items: prev.slug === slug ? prev.items : [],
-      hydrated: false,
-      error: '',
-    }))
     fetchAreaOfficesPublic(slug)
       .then((items) => {
         if (!cancelled) {

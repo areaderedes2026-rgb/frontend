@@ -82,8 +82,11 @@ export function AreaOfficeDetail() {
   useEffect(() => {
     let cancelled = false
     if (!isApiConfigured()) return () => {}
-    setOfficeError('')
-    setOfficeLoading(true)
+    queueMicrotask(() => {
+      if (cancelled) return
+      setOfficeError('')
+      setOfficeLoading(true)
+    })
     fetchAreaOfficePublic(slug, officeSlug)
       .then((data) => {
         if (!cancelled) setOffice(data)
