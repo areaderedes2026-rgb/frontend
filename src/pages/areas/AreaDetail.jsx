@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import { Container } from '../../components/ui/Container.jsx'
 import { RevealOnScroll } from '../../components/home/RevealOnScroll.jsx'
 import { AreaOfficeIcon } from '../../components/areas/areaOfficeIcons.jsx'
@@ -19,6 +19,7 @@ import { getAreaDetailNavLinks } from '../../utils/areaDetailNav.js'
 
 export function AreaDetail() {
   const { slug } = useParams()
+  const location = useLocation()
   const [remoteAreaState, setRemoteAreaState] = useState({
     slug: '',
     data: null,
@@ -62,10 +63,48 @@ export function AreaDetail() {
       ? officesState.items
       : []
   const showOffices = offices.length > 0
+  const officesHydratedForSlug =
+    isApiConfigured() && officesState.slug === slug && officesState.hydrated
+  const officesLoading = isApiConfigured() && !officesHydratedForSlug
+  const showOfficesSection =
+    officesLoading || showOffices || (officesHydratedForSlug && Boolean(officesState.error))
   const navLinks = useMemo(
     () => getAreaDetailNavLinks(profile, { showOffices }),
     [profile, showOffices],
   )
+
+  useEffect(() => {
+    if (location.hash !== '#oficinas-area') return
+    if (location.pathname !== `/areas/${slug}`) return
+    if (!showOfficesSection) return
+
+    const prefersReduce =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    function scrollToOffices() {
+      const el = document.getElementById('oficinas-area')
+      if (!el) return
+      el.scrollIntoView({
+        behavior: prefersReduce ? 'auto' : 'smooth',
+        block: 'start',
+      })
+    }
+
+    const t1 = window.setTimeout(scrollToOffices, 40)
+    const t2 = window.setTimeout(scrollToOffices, 280)
+    return () => {
+      window.clearTimeout(t1)
+      window.clearTimeout(t2)
+    }
+  }, [
+    location.hash,
+    location.pathname,
+    slug,
+    showOfficesSection,
+    officesLoading,
+    showOffices,
+  ])
 
   useEffect(() => {
     let cancelled = false
@@ -95,6 +134,12 @@ export function AreaDetail() {
   useEffect(() => {
     let cancelled = false
     if (!isApiConfigured()) return () => {}
+    setOfficesState({
+      slug,
+      items: [],
+      hydrated: false,
+      error: '',
+    })
     fetchAreaOfficesPublic(slug)
       .then((items) => {
         if (!cancelled) {
@@ -285,35 +330,51 @@ export function AreaDetail() {
                 </section>
               </RevealOnScroll>
 
-              {showOffices ? (
+              {showOfficesSection ? (
                 <RevealOnScroll variant="slow">
                   <section id="oficinas-area" className="scroll-mt-32">
                     <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
                       Oficinas
                     </h2>
-                    <p className="mt-2 max-w-2xl text-sm text-[#4b505a]">
-                      Unidades internas del área. Elegí una para ver descripción y actividades.
-                    </p>
-                    {officesState.error ? (
+                    {officesLoading ? (
+                      <>
+                        <p className="mt-2 max-w-2xl text-sm text-[#4b505a]">
+                          Cargando unidades publicadas…
+                        </p>
+                        <ul className="mt-5 flex flex-wrap gap-2 sm:gap-3" aria-hidden>
+                          {[1, 2, 3, 4, 5].map((i) => (
+                            <li key={i}>
+                              <div className="h-10 w-36 animate-pulse rounded-2xl bg-slate-100 sm:h-11 sm:w-40" />
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    ) : officesState.error ? (
                       <p className="mt-3 text-sm text-amber-800" role="alert">
                         {officesState.error}
                       </p>
-                    ) : null}
-                    <ul className="mt-5 flex flex-wrap gap-2 sm:gap-3">
-                      {offices.map((o) => (
-                        <li key={o.slug}>
-                          <Link
-                            to={`/areas/${encodeURIComponent(slug)}/oficinas/${encodeURIComponent(o.slug)}`}
-                            className="group flex min-h-10 max-w-56 items-center gap-2.5 rounded-2xl border border-[#ddd7ca] bg-white px-3 py-2 text-left text-sm font-semibold text-[#171b22] shadow-sm transition hover:border-sky-200 hover:bg-sky-50/50 hover:text-sky-900 sm:max-w-64"
-                          >
-                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-sky-100 bg-sky-50 text-sky-800 transition group-hover:border-sky-200">
-                              <AreaOfficeIcon iconKey={o.iconKey} className="h-4 w-4" title="" />
-                            </span>
-                            <span className="min-w-0 truncate">{o.name}</span>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
+                    ) : (
+                      <>
+                        <p className="mt-2 max-w-2xl text-sm text-[#4b505a]">
+                          Unidades internas del área. Elegí una para ver descripción y actividades.
+                        </p>
+                        <ul className="mt-5 flex flex-wrap gap-2 sm:gap-3">
+                          {offices.map((o) => (
+                            <li key={o.slug}>
+                              <Link
+                                to={`/areas/${encodeURIComponent(slug)}/oficinas/${encodeURIComponent(o.slug)}`}
+                                className="group flex min-h-10 max-w-56 items-center gap-2.5 rounded-2xl border border-[#ddd7ca] bg-white px-3 py-2 text-left text-sm font-semibold text-[#171b22] shadow-sm transition hover:border-sky-200 hover:bg-sky-50/50 hover:text-sky-900 sm:max-w-64"
+                              >
+                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-sky-100 bg-sky-50 text-sky-800 transition group-hover:border-sky-200">
+                                  <AreaOfficeIcon iconKey={o.iconKey} className="h-4 w-4" title="" />
+                                </span>
+                                <span className="min-w-0 truncate">{o.name}</span>
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
                   </section>
                 </RevealOnScroll>
               ) : null}

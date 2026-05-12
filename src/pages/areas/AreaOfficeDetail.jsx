@@ -13,7 +13,7 @@ import { AreaOfficeIcon } from '../../components/areas/areaOfficeIcons.jsx'
 function OfficeDetailSkeleton() {
   return (
     <section className="relative pb-14 sm:pb-20">
-      <Container className="max-w-3xl!">
+      <Container className="max-w-[min(100%,96rem)]!">
         <div className="h-4 w-52 animate-pulse rounded bg-slate-200/80" />
         <div className="relative mt-5 overflow-hidden rounded-2xl border border-white/10 bg-[#171b22] shadow-[0_12px_40px_-20px_rgba(0,0,0,0.45)]">
           <div className="relative px-5 py-6 text-center sm:px-7 sm:py-7">
@@ -28,7 +28,7 @@ function OfficeDetailSkeleton() {
           <div className="mx-auto h-4 w-full animate-pulse rounded bg-slate-200/70" />
           <div className="mx-auto h-4 w-5/6 animate-pulse rounded bg-slate-200/60" />
         </div>
-        <div className="mx-auto mt-14 grid max-w-4xl gap-3 sm:grid-cols-2">
+        <div className="mx-auto mt-14 grid max-w-none gap-3 sm:grid-cols-2 lg:grid-cols-3 lg:gap-4">
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
@@ -224,7 +224,7 @@ export function AreaOfficeDetail() {
         aria-hidden
       />
 
-      <Container className="max-w-4xl!">
+      <Container className="max-w-[min(100%,96rem)]!">
         <RevealOnScroll variant="newsCard" delayMs={0}>
           <nav
             className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center text-sm font-medium text-sky-700"
@@ -280,7 +280,7 @@ export function AreaOfficeDetail() {
         </RevealOnScroll>
 
         <RevealOnScroll variant="slow" delayMs={90}>
-          <div className="relative mx-auto mt-12 max-w-2xl px-1 sm:px-4">
+          <div className="relative mx-auto mt-12 max-w-4xl px-1 sm:mt-14 sm:px-4 lg:max-w-5xl">
             <span
               className="pointer-events-none absolute -left-1 top-0 font-serif text-5xl leading-none text-sky-200/50 sm:-left-2 sm:text-6xl"
               aria-hidden
@@ -308,7 +308,7 @@ export function AreaOfficeDetail() {
         </RevealOnScroll>
 
         {activities.length > 0 ? (
-          <div className="mx-auto mt-14 max-w-3xl">
+          <div className="mx-auto mt-14 max-w-none sm:mt-16">
             <RevealOnScroll variant="newsCard" delayMs={30}>
               <div className="flex flex-col items-center gap-2 text-center">
                 <span className="h-px w-12 bg-linear-to-r from-transparent via-sky-300 to-transparent" />
@@ -317,7 +317,7 @@ export function AreaOfficeDetail() {
                 </p>
               </div>
             </RevealOnScroll>
-            <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+            <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 lg:gap-4">
               {activities.map((line, idx) => (
                 <li key={`${idx}-${line.slice(0, 32)}`}>
                   <RevealOnScroll variant="newsCard" delayMs={100 + idx * 75}>
