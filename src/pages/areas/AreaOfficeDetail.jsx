@@ -10,6 +10,38 @@ import { fetchAreaOfficePublic } from '../../services/areaOfficesService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
 import { AreaOfficeIcon } from '../../components/areas/areaOfficeIcons.jsx'
 
+function OfficeDetailSkeleton() {
+  return (
+    <section className="relative pb-14 sm:pb-20">
+      <Container className="max-w-3xl!">
+        <div className="h-4 w-52 animate-pulse rounded bg-slate-200/80" />
+        <div className="relative mt-8 overflow-hidden rounded-3xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm">
+          <div className="absolute inset-0 bg-linear-to-br from-sky-100/40 via-transparent to-amber-50/30" />
+          <div className="relative px-6 py-12 text-center sm:py-16">
+            <div className="mx-auto h-16 w-16 animate-pulse rounded-2xl bg-slate-200/90" />
+            <div className="mx-auto mt-6 h-3 w-24 animate-pulse rounded bg-slate-200/80" />
+            <div className="mx-auto mt-4 h-9 w-3/4 max-w-md animate-pulse rounded-lg bg-slate-200/90" />
+            <div className="mx-auto mt-3 h-4 w-40 animate-pulse rounded bg-slate-200/70" />
+          </div>
+        </div>
+        <div className="mx-auto mt-12 max-w-2xl space-y-3 px-4 text-center">
+          <div className="mx-auto h-4 w-full animate-pulse rounded bg-slate-200/70" />
+          <div className="mx-auto h-4 w-full animate-pulse rounded bg-slate-200/70" />
+          <div className="mx-auto h-4 w-5/6 animate-pulse rounded bg-slate-200/60" />
+        </div>
+        <div className="mx-auto mt-14 grid max-w-4xl gap-3 sm:grid-cols-2">
+          {[1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="h-24 animate-pulse rounded-2xl border border-[#ddd7ca]/80 bg-[#f8f7f3]/90"
+            />
+          ))}
+        </div>
+      </Container>
+    </section>
+  )
+}
+
 export function AreaOfficeDetail() {
   const { slug, officeSlug } = useParams()
   const [remoteArea, setRemoteArea] = useState(null)
@@ -106,14 +138,7 @@ export function AreaOfficeDetail() {
   }, [slug, officeSlug])
 
   if (!baseArea && !areaHydrated) {
-    return (
-      <section className="pb-12">
-        <Container className="max-w-3xl!">
-          <div className="h-8 w-40 animate-pulse rounded-lg bg-slate-100" />
-          <div className="mt-6 h-48 animate-pulse rounded-3xl bg-slate-100" />
-        </Container>
-      </section>
-    )
+    return <OfficeDetailSkeleton />
   }
 
   if (!area) {
@@ -155,136 +180,186 @@ export function AreaOfficeDetail() {
   }
 
   if (officeLoading) {
-    return (
-      <section className="pb-12">
-        <Container className="max-w-3xl!">
-          <div className="h-4 w-56 animate-pulse rounded bg-slate-100" />
-          <div className="mt-6 h-10 w-2/3 animate-pulse rounded-lg bg-slate-100" />
-          <div className="mt-8 h-40 animate-pulse rounded-2xl bg-slate-100" />
-        </Container>
-      </section>
-    )
+    return <OfficeDetailSkeleton />
   }
 
   if (officeError || !office) {
     return (
       <section className="pb-12">
         <Container className="max-w-2xl!">
-          <p className="text-sm font-medium text-sky-700">
-            <Link
-              to={`/areas/${encodeURIComponent(slug)}`}
-              className="transition-colors hover:text-sky-900"
-            >
-              ← {area.title}
-            </Link>
-          </p>
-          <h1 className="mt-4 text-2xl font-bold text-slate-900">Oficina no encontrada</h1>
-          <p className="mt-2 text-slate-600">
-            {officeError || 'La oficina solicitada no existe o fue dada de baja.'}
-          </p>
-          <Link
-            to={`/areas/${encodeURIComponent(slug)}#oficinas-area`}
-            className="mt-6 inline-flex min-h-11 items-center rounded-xl bg-sky-700 px-4 text-sm font-semibold text-white hover:bg-sky-800"
-          >
-            Ver oficinas del área
-          </Link>
+          <RevealOnScroll variant="newsCardSlow" disabled>
+            <div className="rounded-3xl border border-red-200/90 bg-linear-to-br from-red-50/90 to-white px-6 py-10 text-center shadow-sm">
+              <p className="text-sm font-medium text-sky-700">
+                <Link
+                  to={`/areas/${encodeURIComponent(slug)}`}
+                  className="transition-colors hover:text-sky-900"
+                >
+                  ← {area.title}
+                </Link>
+              </p>
+              <h1 className="mt-4 text-2xl font-bold text-red-950">Oficina no encontrada</h1>
+              <p className="mt-2 text-red-800/90">
+                {officeError || 'La oficina solicitada no existe o fue dada de baja.'}
+              </p>
+              <Link
+                to={`/areas/${encodeURIComponent(slug)}#oficinas-area`}
+                className="mt-6 inline-flex min-h-11 items-center justify-center rounded-xl bg-sky-700 px-5 text-sm font-semibold text-white transition hover:bg-sky-800"
+              >
+                Ver oficinas del área
+              </Link>
+            </div>
+          </RevealOnScroll>
         </Container>
       </section>
     )
   }
 
   const heroTag = profileHydrated ? profile?.heroTag || 'Área municipal' : 'Área municipal'
+  const activities = Array.isArray(office.activities) ? office.activities.filter(Boolean) : []
 
   return (
-    <section className="relative pb-12 sm:pb-16">
-      <Container className="max-w-3xl!">
-        <nav className="text-sm font-medium text-sky-700">
-          <Link to="/areas" className="transition-colors hover:text-sky-900">
-            Áreas
-          </Link>
-          <span className="mx-2 text-slate-400" aria-hidden>
-            /
-          </span>
-          <Link
-            to={`/areas/${encodeURIComponent(slug)}`}
-            className="transition-colors hover:text-sky-900"
-          >
-            {area.title}
-          </Link>
-          <span className="mx-2 text-slate-400" aria-hidden>
-            /
-          </span>
-          <Link
-            to={`/areas/${encodeURIComponent(slug)}#oficinas-area`}
-            className="transition-colors hover:text-sky-900"
-          >
-            Oficinas
-          </Link>
-        </nav>
+    <section className="relative pb-14 sm:pb-20">
+      {/* Fondo suave fijo al viewport para profundidad (no interfiere con el scroll) */}
+      <div
+        className="pointer-events-none fixed inset-0 -z-10 bg-linear-to-b from-sky-50/35 via-transparent to-transparent"
+        aria-hidden
+      />
 
-        <RevealOnScroll variant="slow">
-          <header className="mt-6 rounded-3xl border border-[#ddd7ca] bg-[#fcfcfa] p-6 shadow-sm sm:p-8">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-sky-700">{heroTag}</p>
-            <div className="mt-4 flex flex-wrap items-start gap-4">
-              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-sky-100 bg-sky-50 text-sky-800 ring-1 ring-sky-100/80">
-                <AreaOfficeIcon iconKey={office.iconKey} className="h-7 w-7" title="" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <h1 className="font-serif text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-                  {office.name}
-                </h1>
-                <p className="mt-2 text-sm text-slate-500">Oficina · {area.title}</p>
+      <Container className="max-w-4xl!">
+        <RevealOnScroll variant="newsCard" delayMs={0}>
+          <nav
+            className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center text-sm font-medium text-sky-700"
+            aria-label="Migas de pan"
+          >
+            <Link to="/areas" className="transition-colors hover:text-sky-900">
+              Áreas
+            </Link>
+            <span className="text-slate-300" aria-hidden>
+              ·
+            </span>
+            <Link
+              to={`/areas/${encodeURIComponent(slug)}`}
+              className="transition-colors hover:text-sky-900"
+            >
+              {area.title}
+            </Link>
+            <span className="text-slate-300" aria-hidden>
+              ·
+            </span>
+            <Link
+              to={`/areas/${encodeURIComponent(slug)}#oficinas-area`}
+              className="transition-colors hover:text-sky-900"
+            >
+              Oficinas
+            </Link>
+          </nav>
+        </RevealOnScroll>
+
+        <RevealOnScroll variant="newsCardSlow" delayMs={40}>
+          <header className="relative mt-8 overflow-hidden rounded-3xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-[0_20px_50px_-24px_rgba(15,23,42,0.12)]">
+            <div
+              className="pointer-events-none absolute -right-24 -top-28 h-72 w-72 rounded-full bg-sky-300/25 blur-3xl"
+              aria-hidden
+            />
+            <div
+              className="pointer-events-none absolute -bottom-32 -left-20 h-72 w-72 rounded-full bg-amber-200/20 blur-3xl"
+              aria-hidden
+            />
+            <div
+              className="pointer-events-none absolute left-1/2 top-8 h-px w-[min(90%,28rem)] -translate-x-1/2 bg-linear-to-r from-transparent via-sky-200/60 to-transparent"
+              aria-hidden
+            />
+            <div className="relative px-6 pb-12 pt-10 text-center sm:px-10 sm:pb-14 sm:pt-12">
+              <div className="mx-auto flex h-17 w-17 items-center justify-center rounded-2xl border border-sky-100/90 bg-linear-to-br from-white to-sky-50/90 text-sky-800 shadow-[0_8px_30px_-12px_rgba(14,165,233,0.35)] ring-1 ring-sky-100/80 sm:h-18 sm:w-18">
+                <AreaOfficeIcon iconKey={office.iconKey} className="h-9 w-9 sm:h-10 sm:w-10" title="" />
               </div>
+              <p className="mt-8 text-[0.7rem] font-bold uppercase tracking-[0.22em] text-sky-700 sm:text-xs">
+                {heroTag}
+              </p>
+              <h1 className="mx-auto mt-3 max-w-[20ch] font-serif text-[1.75rem] font-bold leading-[1.15] tracking-tight text-slate-900 sm:max-w-none sm:text-4xl sm:leading-tight lg:text-[2.65rem]">
+                {office.name}
+              </h1>
+              <p className="mt-3 text-sm font-medium text-slate-500">{area.title}</p>
             </div>
           </header>
         </RevealOnScroll>
 
-        <RevealOnScroll variant="newsCardSlow" delayMs={80}>
-          <article className="mt-6 rounded-3xl border border-[#ddd7ca] bg-[#fcfcfa] p-6 shadow-sm sm:p-8">
-            <h2 className="text-lg font-bold text-slate-900 sm:text-xl">Descripción</h2>
-            <div className="prose prose-slate mt-4 max-w-none text-sm leading-relaxed text-[#4b505a] sm:text-base">
-              {office.description ? (
-                <p className="whitespace-pre-wrap">{office.description}</p>
+        <RevealOnScroll variant="slow" delayMs={90}>
+          <div className="relative mx-auto mt-12 max-w-2xl px-1 sm:px-4">
+            <span
+              className="pointer-events-none absolute -left-1 top-0 font-serif text-5xl leading-none text-sky-200/50 sm:-left-2 sm:text-6xl"
+              aria-hidden
+            >
+              “
+            </span>
+            <div className="relative text-center">
+              {office.description?.trim() ? (
+                <p className="whitespace-pre-wrap text-[1.0625rem] leading-[1.75] text-[#3a3f48] sm:text-lg sm:leading-[1.72]">
+                  {office.description.trim()}
+                </p>
               ) : (
-                <p className="text-slate-400 italic">Sin descripción cargada.</p>
+                <p className="text-base italic text-slate-400">
+                  Pronto sumaremos más información sobre esta oficina.
+                </p>
               )}
             </div>
-          </article>
+            <span
+              className="pointer-events-none absolute -right-1 bottom-0 font-serif text-5xl leading-none text-sky-200/50 sm:-right-2 sm:text-6xl"
+              aria-hidden
+            >
+              ”
+            </span>
+          </div>
         </RevealOnScroll>
 
-        <RevealOnScroll variant="slow" delayMs={120}>
-          <section className="mt-6 rounded-3xl border border-[#ddd7ca] bg-linear-to-br from-[#f8f7f3] to-white p-6 shadow-sm sm:p-8">
-            <h2 className="text-lg font-bold text-slate-900 sm:text-xl">Actividades</h2>
-            {office.activities?.length ? (
-              <ul className="mt-5 space-y-3">
-                {office.activities.map((line, idx) => (
-                  <li
-                    key={`${idx}-${line.slice(0, 24)}`}
-                    className="flex gap-3 rounded-2xl border border-[#ddd7ca] bg-white/90 px-4 py-3 text-sm leading-relaxed text-[#3e434d] shadow-sm sm:text-base"
-                  >
-                    <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sky-600 text-xs font-bold text-white">
-                      {idx + 1}
-                    </span>
-                    <span className="min-w-0 flex-1 pt-0.5">{line}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-4 text-sm text-slate-500 italic">
-                Todavía no hay actividades publicadas para esta oficina.
-              </p>
-            )}
-          </section>
-        </RevealOnScroll>
+        {activities.length > 0 ? (
+          <div className="mx-auto mt-14 max-w-3xl">
+            <RevealOnScroll variant="newsCard" delayMs={30}>
+              <div className="flex flex-col items-center gap-2 text-center">
+                <span className="h-px w-12 bg-linear-to-r from-transparent via-sky-300 to-transparent" />
+                <p className="text-[0.65rem] font-bold uppercase tracking-[0.28em] text-sky-700/85">
+                  Qué hacemos
+                </p>
+              </div>
+            </RevealOnScroll>
+            <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+              {activities.map((line, idx) => (
+                <li key={`${idx}-${line.slice(0, 32)}`}>
+                  <RevealOnScroll variant="newsCard" delayMs={100 + idx * 75}>
+                    <article className="group relative flex h-full min-h-22 flex-col overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-4 shadow-sm transition duration-300 ease-out before:pointer-events-none before:absolute before:inset-x-0 before:bottom-0 before:h-px before:bg-linear-to-r before:from-transparent before:via-sky-300/0 before:to-transparent before:transition-colors hover:-translate-y-0.5 hover:border-sky-200/90 hover:shadow-md hover:shadow-sky-500/10 hover:before:via-sky-400/35">
+                      <span className="absolute right-3 top-3 flex h-6 min-w-6 items-center justify-center rounded-full bg-sky-600/95 px-1.5 text-[0.65rem] font-bold text-white tabular-nums ring-2 ring-white">
+                        {idx + 1}
+                      </span>
+                      <p className="pr-8 text-left text-sm font-medium leading-snug text-[#2f343c] sm:text-[0.9375rem] sm:leading-relaxed">
+                        {line}
+                      </p>
+                    </article>
+                  </RevealOnScroll>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : (
+          <RevealOnScroll variant="slow" delayMs={120}>
+            <p className="mx-auto mt-14 max-w-md text-center text-sm text-slate-500">
+              Las actividades de esta oficina se publicarán aquí cuando estén disponibles.
+            </p>
+          </RevealOnScroll>
+        )}
 
-        <div className="mt-8 text-center">
-          <Link
-            to={`/areas/${encodeURIComponent(slug)}#oficinas-area`}
-            className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#2a313b] bg-[#171b22] px-5 text-sm font-semibold text-white transition hover:bg-[#222831]"
-          >
-            ← Volver a oficinas
-          </Link>
-        </div>
+        <RevealOnScroll variant="newsCardSlow" delayMs={60}>
+          <div className="mt-14 flex justify-center border-t border-[#ddd7ca]/70 pt-10">
+            <Link
+              to={`/areas/${encodeURIComponent(slug)}#oficinas-area`}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[#2a313b] bg-[#171b22] px-8 text-sm font-semibold text-white shadow-[0_12px_32px_-16px_rgba(0,0,0,0.45)] transition hover:bg-[#222831] hover:shadow-lg"
+            >
+              <span aria-hidden className="text-base leading-none">
+                ←
+              </span>
+              Oficinas del área
+            </Link>
+          </div>
+        </RevealOnScroll>
       </Container>
     </section>
   )
