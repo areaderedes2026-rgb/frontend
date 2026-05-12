@@ -15,13 +15,12 @@ function OfficeDetailSkeleton() {
     <section className="relative pb-14 sm:pb-20">
       <Container className="max-w-3xl!">
         <div className="h-4 w-52 animate-pulse rounded bg-slate-200/80" />
-        <div className="relative mt-8 overflow-hidden rounded-3xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm">
-          <div className="absolute inset-0 bg-linear-to-br from-sky-100/40 via-transparent to-amber-50/30" />
-          <div className="relative px-6 py-12 text-center sm:py-16">
-            <div className="mx-auto h-16 w-16 animate-pulse rounded-2xl bg-slate-200/90" />
-            <div className="mx-auto mt-6 h-3 w-24 animate-pulse rounded bg-slate-200/80" />
-            <div className="mx-auto mt-4 h-9 w-3/4 max-w-md animate-pulse rounded-lg bg-slate-200/90" />
-            <div className="mx-auto mt-3 h-4 w-40 animate-pulse rounded bg-slate-200/70" />
+        <div className="relative mt-5 overflow-hidden rounded-2xl border border-white/10 bg-[#171b22] shadow-[0_12px_40px_-20px_rgba(0,0,0,0.45)]">
+          <div className="relative px-5 py-6 text-center sm:px-7 sm:py-7">
+            <div className="mx-auto h-12 w-12 animate-pulse rounded-xl bg-white/10" />
+            <div className="mx-auto mt-4 h-2.5 w-20 animate-pulse rounded bg-white/15" />
+            <div className="mx-auto mt-3 h-7 w-2/3 max-w-sm animate-pulse rounded-lg bg-white/12" />
+            <div className="mx-auto mt-2.5 h-3.5 w-36 animate-pulse rounded bg-white/10" />
           </div>
         </div>
         <div className="mx-auto mt-12 max-w-2xl space-y-3 px-4 text-center">
@@ -256,30 +255,26 @@ export function AreaOfficeDetail() {
         </RevealOnScroll>
 
         <RevealOnScroll variant="newsCardSlow" delayMs={40}>
-          <header className="relative mt-8 overflow-hidden rounded-3xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-[0_20px_50px_-24px_rgba(15,23,42,0.12)]">
+          <header className="relative mt-5 overflow-hidden rounded-2xl border border-white/10 bg-[#171b22] text-center shadow-[0_14px_44px_-22px_rgba(0,0,0,0.55),inset_0_1px_0_0_rgba(255,255,255,0.05)] backdrop-blur-md">
             <div
-              className="pointer-events-none absolute -right-24 -top-28 h-72 w-72 rounded-full bg-sky-300/25 blur-3xl"
+              className="pointer-events-none absolute inset-0 bg-linear-to-b from-white/[0.07] via-transparent to-black/25"
               aria-hidden
             />
-            <div
-              className="pointer-events-none absolute -bottom-32 -left-20 h-72 w-72 rounded-full bg-amber-200/20 blur-3xl"
-              aria-hidden
-            />
-            <div
-              className="pointer-events-none absolute left-1/2 top-8 h-px w-[min(90%,28rem)] -translate-x-1/2 bg-linear-to-r from-transparent via-sky-200/60 to-transparent"
-              aria-hidden
-            />
-            <div className="relative px-6 pb-12 pt-10 text-center sm:px-10 sm:pb-14 sm:pt-12">
-              <div className="mx-auto flex h-17 w-17 items-center justify-center rounded-2xl border border-sky-100/90 bg-linear-to-br from-white to-sky-50/90 text-sky-800 shadow-[0_8px_30px_-12px_rgba(14,165,233,0.35)] ring-1 ring-sky-100/80 sm:h-18 sm:w-18">
-                <AreaOfficeIcon iconKey={office.iconKey} className="h-9 w-9 sm:h-10 sm:w-10" title="" />
+            <div className="relative px-5 py-6 sm:px-7 sm:py-7">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl border border-white/12 bg-white/8 text-sky-300 shadow-[0_6px_20px_-8px_rgba(0,0,0,0.4)] sm:h-14 sm:w-14">
+                <AreaOfficeIcon
+                  iconKey={office.iconKey}
+                  className="h-6 w-6 text-sky-300 sm:h-7 sm:w-7"
+                  title=""
+                />
               </div>
-              <p className="mt-8 text-[0.7rem] font-bold uppercase tracking-[0.22em] text-sky-700 sm:text-xs">
+              <p className="mt-4 text-[0.65rem] font-bold uppercase tracking-[0.22em] text-sky-200/95 sm:text-[0.7rem]">
                 {heroTag}
               </p>
-              <h1 className="mx-auto mt-3 max-w-[20ch] font-serif text-[1.75rem] font-bold leading-[1.15] tracking-tight text-slate-900 sm:max-w-none sm:text-4xl sm:leading-tight lg:text-[2.65rem]">
+              <h1 className="mx-auto mt-2 max-w-[22ch] font-serif text-2xl font-bold leading-snug tracking-tight text-white sm:max-w-none sm:text-3xl sm:leading-tight">
                 {office.name}
               </h1>
-              <p className="mt-3 text-sm font-medium text-slate-500">{area.title}</p>
+              <p className="mt-2 text-sm font-medium text-white/65">{area.title}</p>
             </div>
           </header>
         </RevealOnScroll>
