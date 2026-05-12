@@ -2,8 +2,10 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Container } from '../../components/ui/Container.jsx'
 import { RevealOnScroll } from '../../components/home/RevealOnScroll.jsx'
+import { AreaOfficeIcon } from '../../components/areas/areaOfficeIcons.jsx'
 import { getAreaProfileBySlug, mergeAreaProfile } from '../../data/areaProfiles.js'
 import { fetchAreaProfile } from '../../services/areaProfilesService.js'
+import { fetchAreaOfficesPublic } from '../../services/areaOfficesService.js'
 import { fetchAreaPublicBySlug } from '../../services/areasService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
 import {
@@ -27,6 +29,12 @@ export function AreaDetail() {
     data: null,
     hydrated: false,
   })
+  const [officesState, setOfficesState] = useState({
+    slug: '',
+    items: [],
+    hydrated: false,
+    error: '',
+  })
   const remoteArea = remoteAreaState.slug === slug ? remoteAreaState.data : null
   const areaHydrated =
     !isApiConfigured() || (remoteAreaState.slug === slug && remoteAreaState.hydrated)
@@ -48,7 +56,16 @@ export function AreaDetail() {
   const showDirectorSkeleton = isApiConfigured() && !profileHydrated
   const directorPhotoUrl =
     !isApiConfigured() || profileHydrated ? profile?.director?.photoUrl || '' : ''
-  const navLinks = useMemo(() => getAreaDetailNavLinks(profile), [profile])
+  const offices = !isApiConfigured()
+    ? []
+    : officesState.slug === slug && officesState.hydrated
+      ? officesState.items
+      : []
+  const showOffices = offices.length > 0
+  const navLinks = useMemo(
+    () => getAreaDetailNavLinks(profile, { showOffices }),
+    [profile, showOffices],
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -69,6 +86,41 @@ export function AreaDetail() {
           data: null,
           hydrated: true,
         })
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [slug])
+
+  useEffect(() => {
+    let cancelled = false
+    if (!isApiConfigured()) return () => {}
+    setOfficesState((prev) => ({
+      slug,
+      items: prev.slug === slug ? prev.items : [],
+      hydrated: false,
+      error: '',
+    }))
+    fetchAreaOfficesPublic(slug)
+      .then((items) => {
+        if (!cancelled) {
+          setOfficesState({
+            slug,
+            items: Array.isArray(items) ? items : [],
+            hydrated: true,
+            error: '',
+          })
+        }
+      })
+      .catch((e) => {
+        if (!cancelled) {
+          setOfficesState({
+            slug,
+            items: [],
+            hydrated: true,
+            error: e.message || '',
+          })
+        }
       })
     return () => {
       cancelled = true
@@ -238,6 +290,39 @@ export function AreaDetail() {
                 </div>
                 </section>
               </RevealOnScroll>
+
+              {showOffices ? (
+                <RevealOnScroll variant="slow">
+                  <section id="oficinas-area" className="scroll-mt-32">
+                    <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+                      Oficinas
+                    </h2>
+                    <p className="mt-2 max-w-2xl text-sm text-[#4b505a]">
+                      Unidades internas del área. Elegí una para ver descripción y actividades.
+                    </p>
+                    {officesState.error ? (
+                      <p className="mt-3 text-sm text-amber-800" role="alert">
+                        {officesState.error}
+                      </p>
+                    ) : null}
+                    <ul className="mt-5 flex flex-wrap gap-2 sm:gap-3">
+                      {offices.map((o) => (
+                        <li key={o.slug}>
+                          <Link
+                            to={`/areas/${encodeURIComponent(slug)}/oficinas/${encodeURIComponent(o.slug)}`}
+                            className="group flex min-h-10 max-w-56 items-center gap-2.5 rounded-2xl border border-[#ddd7ca] bg-white px-3 py-2 text-left text-sm font-semibold text-[#171b22] shadow-sm transition hover:border-sky-200 hover:bg-sky-50/50 hover:text-sky-900 sm:max-w-64"
+                          >
+                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-sky-100 bg-sky-50 text-sky-800 transition group-hover:border-sky-200">
+                              <AreaOfficeIcon iconKey={o.iconKey} className="h-4 w-4" title="" />
+                            </span>
+                            <span className="min-w-0 truncate">{o.name}</span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                </RevealOnScroll>
+              ) : null}
 
               <RevealOnScroll variant="slow">
                 <section id="servicios-area">

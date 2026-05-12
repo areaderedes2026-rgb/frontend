@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Modal } from '../ui/Modal.jsx'
 import { ConfirmDialog } from '../ui/ConfirmDialog.jsx'
+import { AdminAreaOfficesPanel } from './AdminAreaOfficesPanel.jsx'
 import { SingleImageUploadField } from './SingleImageUploadField.jsx'
 import { inputClass, labelClass, textareaClass } from '../ui/formStyles.js'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
@@ -402,6 +403,7 @@ export function AdminAreaEditorPreview({
   const navLinks = useMemo(() => {
     const arr = [
       ['#director-area', 'Dirección'],
+      ['#oficinas-admin-area', 'Oficinas'],
       ['#servicios-area', 'Servicios'],
       ['#iniciativas-area', 'Iniciativas'],
     ]
@@ -714,6 +716,19 @@ export function AdminAreaEditorPreview({
                     </div>
                   </div>
                 </div>
+              </SectionCard>
+
+              <SectionCard
+                id="oficinas-admin-area"
+                title="Oficinas"
+                description="Publicación independiente del perfil: se guarda al crear o editar cada oficina."
+                variant="plain"
+              >
+                <AdminAreaOfficesPanel
+                  areaSlug={selectedSlug}
+                  areaTitle={selectedArea?.title || ''}
+                  disabled={!apiAvailable}
+                />
               </SectionCard>
 
               {/* Servicios */}
