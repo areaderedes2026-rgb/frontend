@@ -95,9 +95,6 @@ function mapProfileToForm(profile) {
       role: profile.director?.role || '',
       bio: profile.director?.bio || '',
       photoUrl: profile.director?.photoUrl || '',
-      email: profile.director?.email || '',
-      phone: profile.director?.phone || '',
-      officeHours: profile.director?.officeHours || '',
     },
     serviceBlocks: Array.isArray(profile.serviceBlocks)
       ? profile.serviceBlocks.map((x) => ({
@@ -105,13 +102,7 @@ function mapProfileToForm(profile) {
           description: x?.description || '',
           mode: x?.mode || '',
         }))
-      : [],
-    initiatives: Array.isArray(profile.initiatives)
-      ? profile.initiatives.map((x) => ({
-          title: x?.title || '',
-          description: x?.description || '',
-        }))
-      : [],
+        : [],
     contactCards: Array.isArray(profile.contactCards)
       ? profile.contactCards.map((x) => ({
           label: x?.label || '',
@@ -435,12 +426,12 @@ export function AdminAreaProfiles() {
           role: form.director.role.trim(),
           bio: form.director.bio.trim(),
           photoUrl: form.director.photoUrl.trim(),
-          email: form.director.email.trim(),
-          phone: form.director.phone.trim(),
-          officeHours: form.director.officeHours.trim(),
+          email: '',
+          phone: '',
+          officeHours: '',
         },
         serviceBlocks: cleanRows(form.serviceBlocks, ['title', 'description', 'mode']),
-        initiatives: cleanRows(form.initiatives, ['title', 'description']),
+        initiatives: [],
         contactCards: cleanRows(form.contactCards, ['label', 'value', 'note']),
         notices: cleanNotices(form.notices),
         location: {

@@ -124,7 +124,6 @@ function DeleteChip({ label = 'Eliminar', onClick, disabled = false }) {
 }
 
 const EMPTY_SERVICE = { title: '', mode: '', description: '' }
-const EMPTY_INITIATIVE = { title: '', description: '' }
 const EMPTY_CONTACT = { label: '', value: '', note: '' }
 const EMPTY_SCHOOL = {
   id: '',
@@ -236,9 +235,9 @@ export function AdminAreaEditorPreview({
         role: String(draft.role || '').trim(),
         bio: String(draft.bio || '').trim(),
         photoUrl: String(draft.photoUrl || '').trim(),
-        email: String(draft.email || '').trim(),
-        phone: String(draft.phone || '').trim(),
-        officeHours: String(draft.officeHours || '').trim(),
+        email: '',
+        phone: '',
+        officeHours: '',
       },
     }))
   }
@@ -351,12 +350,6 @@ export function AdminAreaEditorPreview({
           description: String(draft.description || '').trim(),
         })
         break
-      case 'initiative':
-        upsertListItem('initiatives', editor.index, {
-          title: String(draft.title || '').trim(),
-          description: String(draft.description || '').trim(),
-        })
-        break
       case 'contact':
         upsertListItem('contactCards', editor.index, {
           label: String(draft.label || '').trim(),
@@ -394,7 +387,6 @@ export function AdminAreaEditorPreview({
     if (!confirmRemove) return
     const { kind, index } = confirmRemove
     if (kind === 'service') removeListItem('serviceBlocks', index)
-    else if (kind === 'initiative') removeListItem('initiatives', index)
     else if (kind === 'contact') removeListItem('contactCards', index)
     else if (kind === 'notice') removeListItem('notices', index)
     else if (kind === 'school') removeSchoolItem(index)
@@ -406,7 +398,6 @@ export function AdminAreaEditorPreview({
       ['#director-area', 'Dirección'],
       ['#oficinas-admin-area', 'Oficinas'],
       ['#servicios-area', 'Servicios'],
-      ['#iniciativas-area', 'Iniciativas'],
     ]
     if ((form.schoolsSection?.items || []).length > 0)
       arr.push(['#escuelas-area', form.schoolsSection?.navLabel || 'Escuelas'])
@@ -422,7 +413,6 @@ export function AdminAreaEditorPreview({
       identity: 'Editar identidad del área',
       director: 'Editar dirección del área',
       service: editor.index === null ? 'Nuevo servicio' : 'Editar servicio',
-      initiative: editor.index === null ? 'Nueva iniciativa' : 'Editar iniciativa',
       contact: editor.index === null ? 'Nuevo contacto' : 'Editar contacto',
       notice: editor.index === null ? 'Nuevo aviso' : 'Editar aviso',
       location: 'Editar ubicación',
@@ -702,20 +692,6 @@ export function AdminAreaEditorPreview({
                         </span>
                       )}
                     </p>
-                    <div className="mt-5 grid gap-2 text-sm text-[#3e434d] sm:grid-cols-2">
-                      <p className="rounded-xl border border-[#ddd7ca] bg-[#f8f7f3] px-3 py-2">
-                        <span className="font-semibold">Correo:</span>{' '}
-                        {form.director?.email || '—'}
-                      </p>
-                      <p className="rounded-xl border border-[#ddd7ca] bg-[#f8f7f3] px-3 py-2">
-                        <span className="font-semibold">Teléfono:</span>{' '}
-                        {form.director?.phone || '—'}
-                      </p>
-                      <p className="rounded-xl border border-[#ddd7ca] bg-[#f8f7f3] px-3 py-2 sm:col-span-2">
-                        <span className="font-semibold">Horario:</span>{' '}
-                        {form.director?.officeHours || '—'}
-                      </p>
-                    </div>
                   </div>
                 </div>
               </SectionCard>
@@ -804,83 +780,6 @@ export function AdminAreaEditorPreview({
                       </li>
                     ))}
                   </ul>
-                )}
-              </SectionCard>
-
-              {/* Iniciativas */}
-              <SectionCard
-                id="iniciativas-area"
-                title="Iniciativas destacadas"
-                variant="plain"
-                rightSlot={
-                  <AddChip
-                    label="Agregar iniciativa"
-                    onClick={() => openEditor('initiative', null, { ...EMPTY_INITIATIVE })}
-                    disabled={saving}
-                  />
-                }
-              >
-                {(form.initiatives || []).length === 0 ? (
-                  <EmptyHint
-                    onAdd={() => openEditor('initiative', null, { ...EMPTY_INITIATIVE })}
-                    addLabel="Agregar iniciativa"
-                  >
-                    Aún no hay iniciativas cargadas para esta área.
-                  </EmptyHint>
-                ) : (
-                  <div className="space-y-3">
-                    {form.initiatives.map((initiative, idx) => (
-                      <article
-                        key={`ini-${idx}`}
-                        className="relative flex gap-3 rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-4 shadow-sm transition hover:border-sky-200/80 sm:p-5"
-                      >
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-50 text-sm font-bold text-sky-800 ring-1 ring-sky-100">
-                          {idx + 1}
-                        </span>
-                        <div className="min-w-0 flex-1 pr-24">
-                          <h3 className="text-base font-bold text-slate-900">
-                            {initiative.title || 'Sin título'}
-                          </h3>
-                          <p className="mt-1 text-sm leading-relaxed text-[#4b505a]">
-                            {initiative.description || (
-                              <span className="italic text-slate-400">
-                                (Sin descripción)
-                              </span>
-                            )}
-                          </p>
-                        </div>
-                        <div className="absolute right-3 top-3 flex gap-1.5">
-                          <EditChip
-                            label="Editar"
-                            onClick={() =>
-                              openEditor('initiative', idx, { ...initiative })
-                            }
-                            disabled={saving}
-                          />
-                          <DeleteChip
-                            label="Quitar"
-                            onClick={() =>
-                              setConfirmRemove({
-                                kind: 'initiative',
-                                index: idx,
-                                title: '¿Quitar esta iniciativa?',
-                                description: (
-                                  <>
-                                    Vas a quitar{' '}
-                                    <span className="font-semibold">
-                                      «{initiative.title || 'sin título'}»
-                                    </span>{' '}
-                                    del borrador.
-                                  </>
-                                ),
-                              })
-                            }
-                            disabled={saving}
-                          />
-                        </div>
-                      </article>
-                    ))}
-                  </div>
                 )}
               </SectionCard>
 
@@ -1227,8 +1126,6 @@ function EditorBody({ editor, draft, setDraftField, saving }) {
       return <DirectorForm draft={draft} setDraftField={setDraftField} saving={saving} />
     case 'service':
       return <ServiceForm draft={draft} setDraftField={setDraftField} saving={saving} />
-    case 'initiative':
-      return <InitiativeForm draft={draft} setDraftField={setDraftField} saving={saving} />
     case 'contact':
       return <ContactForm draft={draft} setDraftField={setDraftField} saving={saving} />
     case 'notice':
@@ -1361,33 +1258,6 @@ function DirectorForm({ draft, setDraftField, saving }) {
           disabled={saving}
         />
       </div>
-      <label className={labelClass}>
-        Correo
-        <input
-          className={inputClass}
-          value={draft.email || ''}
-          onChange={(e) => setDraftField('email', e.target.value)}
-          disabled={saving}
-        />
-      </label>
-      <label className={labelClass}>
-        Teléfono
-        <input
-          className={inputClass}
-          value={draft.phone || ''}
-          onChange={(e) => setDraftField('phone', e.target.value)}
-          disabled={saving}
-        />
-      </label>
-      <label className={`${labelClass} sm:col-span-2`}>
-        Horario de atención
-        <input
-          className={inputClass}
-          value={draft.officeHours || ''}
-          onChange={(e) => setDraftField('officeHours', e.target.value)}
-          disabled={saving}
-        />
-      </label>
       <label className={`${labelClass} sm:col-span-2`}>
         Bio / presentación
         <textarea
@@ -1425,31 +1295,6 @@ function ServiceForm({ draft, setDraftField, saving }) {
         />
       </label>
       <label className={`${labelClass} sm:col-span-2`}>
-        Descripción
-        <textarea
-          className={`${textareaClass} min-h-28`}
-          value={draft.description || ''}
-          onChange={(e) => setDraftField('description', e.target.value)}
-          disabled={saving}
-        />
-      </label>
-    </div>
-  )
-}
-
-function InitiativeForm({ draft, setDraftField, saving }) {
-  return (
-    <div className="grid gap-4">
-      <label className={labelClass}>
-        Título
-        <input
-          className={inputClass}
-          value={draft.title || ''}
-          onChange={(e) => setDraftField('title', e.target.value)}
-          disabled={saving}
-        />
-      </label>
-      <label className={labelClass}>
         Descripción
         <textarea
           className={`${textareaClass} min-h-28`}

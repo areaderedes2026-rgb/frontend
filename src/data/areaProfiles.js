@@ -14,9 +14,6 @@ const AREA_PROFILES = {
       bio: 'Coordina los equipos territoriales y articula acciones con salud, educación y organizaciones comunitarias para fortalecer la red de acompañamiento local.',
       photoUrl:
         'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=900&q=80',
-      email: 'asuntossociales@trancas.gob.ar',
-      phone: '+54 381 400-1201',
-      officeHours: 'Lunes a viernes, 07:30 a 13:30',
     },
     highlights: [
       { label: 'Programas activos', value: '12' },
@@ -47,23 +44,6 @@ const AREA_PROFILES = {
         description:
           'Respuesta social ante contingencias con derivación, contención y articulación con otras áreas municipales.',
         mode: 'Atención prioritaria',
-      },
-    ],
-    initiatives: [
-      {
-        title: 'Red de Primera Escucha',
-        description:
-          'Puntos de atención distribuidos por zonas para detectar necesidades sociales y orientar de forma temprana.',
-      },
-      {
-        title: 'Comunidad Acompaña',
-        description:
-          'Trabajo conjunto con centros vecinales y organizaciones para reforzar talleres, apoyo escolar y actividades comunitarias.',
-      },
-      {
-        title: 'Agenda de cuidados',
-        description:
-          'Acciones para promover el autocuidado, hábitos saludables y prevención de situaciones de riesgo social.',
       },
     ],
     contactCards: [
@@ -106,9 +86,6 @@ const AREA_PROFILES = {
       bio: 'Coordina la agenda cultural municipal, las escuelas artísticas y la difusión de proyectos comunitarios con enfoque federal e inclusivo.',
       photoUrl:
         'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=900&q=80',
-      email: 'cultura@trancas.gob.ar',
-      phone: '+54 381 400-1310',
-      officeHours: 'Lunes a viernes, 08:00 a 14:00',
     },
     highlights: [
       { label: 'Escuelas activas', value: '4' },
@@ -139,23 +116,6 @@ const AREA_PROFILES = {
         description:
           'Convocatorias, microbecas y articulación con instituciones para visibilizar propuestas de creadores y colectivos.',
         mode: 'Convocatorias',
-      },
-    ],
-    initiatives: [
-      {
-        title: 'Cultura en los barrios',
-        description:
-          'Circuito itinerante de talleres abiertos y espectáculos en plazas y centros vecinales.',
-      },
-      {
-        title: 'Muestra anual de fin de año',
-        description:
-          'Integración de las escuelas municipales en una gala comunitaria con danza, música y artes visuales.',
-      },
-      {
-        title: 'Laboratorio audiovisual',
-        description:
-          'Espacio de formación en guion, cámara y edición para jóvenes con producción de piezas sobre la vida en el departamento.',
       },
     ],
     contactCards: [
@@ -252,9 +212,6 @@ export function createDefaultProfile(area) {
       bio: 'Estamos consolidando el perfil completo de esta área para incluir programas, trámites y novedades.',
       photoUrl:
         'https://images.unsplash.com/photo-1552058544-f2b08422138a?auto=format&fit=crop&w=900&q=80',
-      email: `${area.slug.replace(/-/g, '')}@trancas.gob.ar`,
-      phone: '+54 381 400-1200',
-      officeHours: 'Lunes a viernes, 08:00 a 13:00',
     },
     highlights: [
       { label: 'Estado de carga', value: 'En expansión' },
@@ -273,13 +230,6 @@ export function createDefaultProfile(area) {
         description:
           'Canal inicial para consultas, derivaciones y seguimiento de solicitudes vinculadas al área.',
         mode: 'Atención al vecino',
-      },
-    ],
-    initiatives: [
-      {
-        title: 'Hoja de ruta del área',
-        description:
-          'Estamos organizando objetivos, proyectos y cronograma para que toda la información esté disponible en esta sección.',
       },
     ],
     contactCards: [
@@ -310,15 +260,27 @@ export function createDefaultProfile(area) {
 
 export function mergeAreaProfile(baseProfile, custom = {}) {
   if (!baseProfile) return null
+  const mergedDirector = {
+    ...(baseProfile.director || {}),
+    ...(custom.director || {}),
+  }
   return {
     ...baseProfile,
     ...custom,
     area: baseProfile.area,
-    director: { ...(baseProfile.director || {}), ...(custom.director || {}) },
+    director: {
+      name: String(mergedDirector.name || '').trim(),
+      role: String(mergedDirector.role || '').trim(),
+      bio: String(mergedDirector.bio || '').trim(),
+      photoUrl: String(mergedDirector.photoUrl || '').trim(),
+      email: '',
+      phone: '',
+      officeHours: '',
+    },
     location: { ...(baseProfile.location || {}), ...(custom.location || {}) },
     highlights: custom.highlights || baseProfile.highlights || [],
     serviceBlocks: custom.serviceBlocks || baseProfile.serviceBlocks || [],
-    initiatives: custom.initiatives || baseProfile.initiatives || [],
+    initiatives: [],
     contactCards: custom.contactCards || baseProfile.contactCards || [],
     notices: custom.notices || baseProfile.notices || [],
     schoolsSection:

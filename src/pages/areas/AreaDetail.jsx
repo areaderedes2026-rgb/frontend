@@ -309,20 +309,6 @@ export function AreaDetail() {
                         <p className="mt-4 text-sm leading-relaxed text-[#4b505a] sm:text-base">
                           {profile.director.bio}
                         </p>
-                        <div className="mt-5 grid gap-2 text-sm text-[#3e434d] sm:grid-cols-2">
-                          <p className="rounded-xl border border-[#ddd7ca] bg-[#f8f7f3] px-3 py-2">
-                            <span className="font-semibold">Correo:</span>{' '}
-                            {profile.director.email}
-                          </p>
-                          <p className="rounded-xl border border-[#ddd7ca] bg-[#f8f7f3] px-3 py-2">
-                            <span className="font-semibold">Teléfono:</span>{' '}
-                            {profile.director.phone}
-                          </p>
-                          <p className="rounded-xl border border-[#ddd7ca] bg-[#f8f7f3] px-3 py-2 sm:col-span-2">
-                            <span className="font-semibold">Horario:</span>{' '}
-                            {profile.director.officeHours}
-                          </p>
-                        </div>
                       </>
                     )}
                   </div>
@@ -402,32 +388,6 @@ export function AreaDetail() {
                     </li>
                   ))}
                 </ul>
-                </section>
-              </RevealOnScroll>
-
-              <RevealOnScroll variant="slow">
-                <section id="iniciativas-area">
-                <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-                  Iniciativas destacadas
-                </h2>
-                <div className="mt-4 space-y-3">
-                  {profile.initiatives.map((initiative, idx) => (
-                    <article
-                      key={initiative.title}
-                      className="flex gap-3 rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-md hover:shadow-sky-500/8 sm:p-5"
-                    >
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-50 text-sm font-bold text-sky-800 ring-1 ring-sky-100">
-                        {idx + 1}
-                      </span>
-                      <div>
-                        <h3 className="text-base font-bold text-slate-900">{initiative.title}</h3>
-                        <p className="mt-1 text-sm leading-relaxed text-[#4b505a]">
-                          {initiative.description}
-                        </p>
-                      </div>
-                    </article>
-                  ))}
-                </div>
                 </section>
               </RevealOnScroll>
 

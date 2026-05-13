@@ -14,7 +14,6 @@ export function getAreaDetailNavLinks(profile, { showOffices = false } = {}) {
     ['#director-area', 'Dirección'],
     ...afterDirector,
     ['#servicios-area', 'Servicios'],
-    ['#iniciativas-area', 'Iniciativas'],
     ...extras,
     ['#ubicacion-area', 'Ubicación y contacto'],
   ]

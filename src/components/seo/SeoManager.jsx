@@ -47,7 +47,7 @@ function routeSeo(pathname) {
     return {
       title: 'Detalle de area | Municipalidad de Trancas',
       description:
-        'Conoce la informacion institucional del area municipal: autoridades, servicios, iniciativas y canales de contacto.',
+        'Conoce la informacion institucional del area municipal: autoridades, servicios y canales de contacto.',
     }
   }
   if (pathname === '/areas') {
