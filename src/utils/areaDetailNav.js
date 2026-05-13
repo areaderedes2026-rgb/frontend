@@ -10,10 +10,12 @@ export function getAreaDetailNavLinks(profile, { showOffices = false } = {}) {
       ? [['#escuelas-area', profile.schoolsSection.navLabel || 'Escuelas']]
       : []
   const afterDirector = showOffices ? [['#oficinas-area', 'Oficinas']] : []
+  const servicesLink =
+    (profile.serviceBlocks || []).length > 0 ? [['#servicios-area', 'Servicios']] : []
   return [
     ['#director-area', 'Dirección'],
     ...afterDirector,
-    ['#servicios-area', 'Servicios'],
+    ...servicesLink,
     ...extras,
     ['#ubicacion-area', 'Ubicación y contacto'],
   ]

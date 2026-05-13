@@ -15,6 +15,7 @@ import {
   HydrationHeroLightTextBlock,
 } from '../../components/skeleton/PageHydrationSkeleton.jsx'
 import { AreaSchoolsSection } from '../../components/areas/AreaSchoolsSection.jsx'
+import { AreaServicesSection } from '../../components/areas/AreaServicesSection.jsx'
 import { getAreaDetailNavLinks } from '../../utils/areaDetailNav.js'
 
 export function AreaDetail() {
@@ -68,10 +69,8 @@ export function AreaDetail() {
   const officesLoading = isApiConfigured() && !officesHydratedForSlug
   const showOfficesSection =
     officesLoading || showOffices || (officesHydratedForSlug && Boolean(officesState.error))
-  const navLinks = useMemo(
-    () => getAreaDetailNavLinks(profile, { showOffices }),
-    [profile, showOffices],
-  )
+  const showServices = (profile?.serviceBlocks || []).length > 0
+  const navLinks = useMemo(() => getAreaDetailNavLinks(profile, { showOffices }), [profile, showOffices])
 
   useEffect(() => {
     if (location.hash !== '#oficinas-area') return
@@ -372,31 +371,11 @@ export function AreaDetail() {
                 </RevealOnScroll>
               ) : null}
 
-              <RevealOnScroll variant="slow">
-                <section id="servicios-area">
-                <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-                  Servicios y prestaciones
-                </h2>
-                <ul className="mt-4 grid gap-4 sm:grid-cols-2">
-                  {profile.serviceBlocks.map((service) => (
-                    <li
-                      key={service.title}
-                      className="rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-lg hover:shadow-sky-500/8"
-                    >
-                      <p className="text-xs font-bold uppercase tracking-[0.14em] text-sky-700">
-                        {service.mode}
-                      </p>
-                      <h3 className="mt-2 text-lg font-bold tracking-tight text-slate-900">
-                        {service.title}
-                      </h3>
-                      <p className="mt-2 text-sm leading-relaxed text-[#4b505a]">
-                        {service.description}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-                </section>
-              </RevealOnScroll>
+              {showServices ? (
+                <RevealOnScroll variant="slow">
+                  <AreaServicesSection services={profile.serviceBlocks} areaSlug={slug} />
+                </RevealOnScroll>
+              ) : null}
 
               {profile.schoolsSection?.items?.length ? (
                 <AreaSchoolsSection schoolsSection={profile.schoolsSection} />

@@ -22,28 +22,49 @@ const AREA_PROFILES = {
     ],
     serviceBlocks: [
       {
+        id: 'asuntos-srv-acompanamiento',
         title: 'Acompañamiento familiar',
         description:
           'Evaluación social, orientación y seguimiento de situaciones de vulnerabilidad para garantizar acceso a derechos.',
         mode: 'Presencial y territorial',
+        imageUrl:
+          'https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?auto=format&fit=crop&w=1200&q=80',
+        personInCharge: 'Equipo interdisciplinario de trabajo social',
+        generalObjective:
+          'Fortalecer el vínculo con las familias y acompañar procesos de inclusión con enfoque de derechos.',
       },
       {
+        id: 'asuntos-srv-ninez',
         title: 'Niñez y adolescencia',
         description:
           'Espacios de protección, intervenciones tempranas y trabajo conjunto con instituciones educativas y de salud.',
         mode: 'Interdisciplinario',
+        imageUrl:
+          'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?auto=format&fit=crop&w=1200&q=80',
+        personInCharge: '',
+        generalObjective: '',
       },
       {
+        id: 'asuntos-srv-mayores',
         title: 'Personas mayores',
         description:
           'Talleres, actividades recreativas y dispositivos de apoyo para una vejez activa e integrada.',
         mode: 'Programas comunitarios',
+        imageUrl:
+          'https://images.unsplash.com/photo-1581579438747-1dc8d17bb652?auto=format&fit=crop&w=1200&q=80',
+        personInCharge: '',
+        generalObjective: '',
       },
       {
+        id: 'asuntos-srv-asistencia',
         title: 'Asistencia inmediata',
         description:
           'Respuesta social ante contingencias con derivación, contención y articulación con otras áreas municipales.',
         mode: 'Atención prioritaria',
+        imageUrl:
+          'https://images.unsplash.com/photo-1469571486291-0b0e595067b5?auto=format&fit=crop&w=1200&q=80',
+        personInCharge: '',
+        generalObjective: '',
       },
     ],
     contactCards: [
@@ -94,28 +115,49 @@ const AREA_PROFILES = {
     ],
     serviceBlocks: [
       {
+        id: 'cultura-srv-agenda',
         title: 'Agenda cultural y eventos',
         description:
           'Festivales, muestras, peñas y actividades en espacios públicos con información centralizada y reservas cuando corresponda.',
         mode: 'Comunicación y producción',
+        imageUrl:
+          'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1200&q=80',
+        personInCharge: 'Dirección de Cultura y producción técnica',
+        generalObjective:
+          'Ampliar el acceso a la cultura en el territorio con eventos seguros, inclusivos y articulados con la comunidad.',
       },
       {
+        id: 'cultura-srv-patrimonio',
         title: 'Patrimonio y memoria',
         description:
           'Rescate de historias locales, archivo audiovisual comunitario y apoyo a iniciativas de valor patrimonial.',
         mode: 'Territorio',
+        imageUrl:
+          'https://images.unsplash.com/photo-1527004013197-933c4bb611b3?auto=format&fit=crop&w=1200&q=80',
+        personInCharge: '',
+        generalObjective: '',
       },
       {
+        id: 'cultura-srv-biblioteca',
         title: 'Biblioteca y lectura',
         description:
           'Préstamos, clubes de lectura y actividades para infancias y adultos en la red municipal de bibliotecas.',
         mode: 'Presencial',
+        imageUrl:
+          'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=1200&q=80',
+        personInCharge: '',
+        generalObjective: '',
       },
       {
+        id: 'cultura-srv-artistas',
         title: 'Apoyo a artistas locales',
         description:
           'Convocatorias, microbecas y articulación con instituciones para visibilizar propuestas de creadores y colectivos.',
         mode: 'Convocatorias',
+        imageUrl:
+          'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?auto=format&fit=crop&w=1200&q=80',
+        personInCharge: '',
+        generalObjective: '',
       },
     ],
     contactCards: [
@@ -220,16 +262,24 @@ export function createDefaultProfile(area) {
     ],
     serviceBlocks: [
       {
+        id: 'default-srv-principal',
         title: `Servicios de ${area.title}`,
         description:
           'Próximamente publicaremos el detalle completo de prestaciones, requisitos y circuitos de atención.',
         mode: 'En actualización',
+        imageUrl: '',
+        personInCharge: '',
+        generalObjective: '',
       },
       {
+        id: 'default-srv-orientacion',
         title: 'Orientación ciudadana',
         description:
           'Canal inicial para consultas, derivaciones y seguimiento de solicitudes vinculadas al área.',
         mode: 'Atención al vecino',
+        imageUrl: '',
+        personInCharge: '',
+        generalObjective: '',
       },
     ],
     contactCards: [

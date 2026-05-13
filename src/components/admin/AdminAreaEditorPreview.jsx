@@ -6,6 +6,13 @@ import { SingleImageUploadField } from './SingleImageUploadField.jsx'
 import { inputClass, labelClass, textareaClass } from '../ui/formStyles.js'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
 
+function newClientServiceId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  return `srv-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+}
+
 const ACTION_BTN_BASE =
   'inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto'
 const ACTION_BTN_NEUTRAL = `${ACTION_BTN_BASE} border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50`
@@ -123,7 +130,15 @@ function DeleteChip({ label = 'Eliminar', onClick, disabled = false }) {
   )
 }
 
-const EMPTY_SERVICE = { title: '', mode: '', description: '' }
+const EMPTY_SERVICE = {
+  id: '',
+  title: '',
+  mode: '',
+  description: '',
+  imageUrl: '',
+  personInCharge: '',
+  generalObjective: '',
+}
 const EMPTY_CONTACT = { label: '', value: '', note: '' }
 const EMPTY_SCHOOL = {
   id: '',
@@ -343,13 +358,19 @@ export function AdminAreaEditorPreview({
       case 'director':
         applyDirector(draft)
         break
-      case 'service':
+      case 'service': {
+        const id = String(draft.id || '').trim() || newClientServiceId()
         upsertListItem('serviceBlocks', editor.index, {
+          id,
           title: String(draft.title || '').trim(),
           mode: String(draft.mode || '').trim(),
           description: String(draft.description || '').trim(),
+          imageUrl: String(draft.imageUrl || '').trim(),
+          personInCharge: String(draft.personInCharge || '').trim(),
+          generalObjective: String(draft.generalObjective || '').trim(),
         })
         break
+      }
       case 'contact':
         upsertListItem('contactCards', editor.index, {
           label: String(draft.label || '').trim(),
@@ -489,7 +510,11 @@ export function AdminAreaEditorPreview({
         open={editor != null}
         onClose={closeEditor}
         loading={saving}
-        size={editor?.kind === 'school' || editor?.kind === 'identity' ? 'wide' : 'default'}
+        size={
+          editor?.kind === 'school' || editor?.kind === 'identity' || editor?.kind === 'service'
+            ? 'wide'
+            : 'default'
+        }
         title={editorTitle}
         description="Los cambios quedarán pendientes hasta que toques «Guardar cambios» en el pie de la página."
       >
@@ -749,54 +774,83 @@ export function AdminAreaEditorPreview({
                   </EmptyHint>
                 ) : (
                   <ul className="grid gap-4 sm:grid-cols-2">
-                    {form.serviceBlocks.map((service, idx) => (
-                      <li
-                        key={`srv-${idx}`}
-                        className="group relative rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200/80"
-                      >
-                        <div className="absolute right-3 top-3 flex gap-1.5">
-                          <EditChip
-                            label="Editar"
-                            onClick={() => openEditor('service', idx, { ...service })}
-                            disabled={saving}
-                          />
-                          <DeleteChip
-                            label="Quitar"
-                            onClick={() =>
-                              setConfirmRemove({
-                                kind: 'service',
-                                index: idx,
-                                title: '¿Quitar este servicio?',
-                                description: (
-                                  <>
-                                    Vas a quitar{' '}
-                                    <span className="font-semibold">
-                                      «{service.title || 'sin título'}»
-                                    </span>{' '}
-                                    del borrador. Recordá guardar los cambios para que se aplique en
-                                    el portal.
-                                  </>
-                                ),
-                              })
-                            }
-                            disabled={saving}
-                          />
-                        </div>
-                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-sky-700">
-                          {service.mode || '—'}
-                        </p>
-                        <h3 className="mt-2 pr-24 text-lg font-bold tracking-tight text-slate-900">
-                          {service.title || 'Sin título'}
-                        </h3>
-                        <p className="mt-2 text-sm leading-relaxed text-[#4b505a]">
-                          {service.description || (
-                            <span className="italic text-slate-400">
-                              (Sin descripción)
-                            </span>
-                          )}
-                        </p>
-                      </li>
-                    ))}
+                    {form.serviceBlocks.map((service, idx) => {
+                      const srvImg = service.imageUrl ? resolveMediaUrl(service.imageUrl) : ''
+                      return (
+                        <li
+                          key={service.id || `srv-${idx}`}
+                          className="group relative overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200/80"
+                        >
+                          <div className="absolute right-2 top-2 z-10 flex gap-1.5 sm:right-3 sm:top-3">
+                            <EditChip
+                              label="Editar"
+                              onClick={() => openEditor('service', idx, { ...EMPTY_SERVICE, ...service })}
+                              disabled={saving}
+                            />
+                            <DeleteChip
+                              label="Quitar"
+                              onClick={() =>
+                                setConfirmRemove({
+                                  kind: 'service',
+                                  index: idx,
+                                  title: '¿Quitar este servicio?',
+                                  description: (
+                                    <>
+                                      Vas a quitar{' '}
+                                      <span className="font-semibold">
+                                        «{service.title || 'sin título'}»
+                                      </span>{' '}
+                                      del borrador. Recordá guardar los cambios para que se aplique en
+                                      el portal.
+                                    </>
+                                  ),
+                                })
+                              }
+                              disabled={saving}
+                            />
+                          </div>
+                          <div className="relative aspect-16/10 w-full overflow-hidden bg-[#ece8df]">
+                            {srvImg ? (
+                              <img
+                                src={srvImg}
+                                alt=""
+                                className="h-full w-full object-cover"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                                Sin imagen
+                              </div>
+                            )}
+                          </div>
+                          <div className="p-4 sm:p-5">
+                            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-sky-700">
+                              {service.mode || '—'}
+                            </p>
+                            <h3 className="mt-1.5 pr-16 text-base font-bold tracking-tight text-slate-900 sm:pr-24 sm:text-lg">
+                              {service.title || 'Sin título'}
+                            </h3>
+                            <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-[#4b505a]">
+                              {service.description || (
+                                <span className="italic text-slate-400">(Sin descripción)</span>
+                              )}
+                            </p>
+                            {(service.personInCharge || service.generalObjective) && (
+                              <p className="mt-2 text-xs text-slate-500">
+                                {service.personInCharge ? (
+                                  <span className="block truncate">A cargo: {service.personInCharge}</span>
+                                ) : null}
+                                {service.generalObjective ? (
+                                  <span className="mt-0.5 line-clamp-2 block">
+                                    Objetivo: {service.generalObjective}
+                                  </span>
+                                ) : null}
+                              </p>
+                            )}
+                          </div>
+                        </li>
+                      )
+                    })}
                   </ul>
                 )}
               </SectionCard>
@@ -1312,6 +1366,36 @@ function ServiceForm({ draft, setDraftField, saving }) {
           placeholder="Ej. Presencial · Virtual"
         />
       </label>
+      <div className="sm:col-span-2">
+        <SingleImageUploadField
+          label="Imagen del servicio"
+          helpText="Se muestra en la tarjeta del portal y en el detalle ampliado."
+          value={draft.imageUrl || ''}
+          onChange={(value) => setDraftField('imageUrl', value)}
+          kind="gallery"
+          disabled={saving}
+        />
+      </div>
+      <label className={`${labelClass} sm:col-span-2`}>
+        Quien está a cargo
+        <input
+          className={inputClass}
+          value={draft.personInCharge || ''}
+          onChange={(e) => setDraftField('personInCharge', e.target.value)}
+          disabled={saving}
+          placeholder="Nombre o equipo responsable (se muestra en el detalle)"
+        />
+      </label>
+      <label className={`${labelClass} sm:col-span-2`}>
+        Objetivo general
+        <textarea
+          className={`${textareaClass} min-h-24`}
+          value={draft.generalObjective || ''}
+          onChange={(e) => setDraftField('generalObjective', e.target.value)}
+          disabled={saving}
+          placeholder="Resumen del propósito del servicio (detalle ampliado)"
+        />
+      </label>
       <label className={`${labelClass} sm:col-span-2`}>
         Descripción
         <textarea
@@ -1319,6 +1403,7 @@ function ServiceForm({ draft, setDraftField, saving }) {
           value={draft.description || ''}
           onChange={(e) => setDraftField('description', e.target.value)}
           disabled={saving}
+          placeholder="Texto en la tarjeta y en el detalle del portal"
         />
       </label>
     </div>

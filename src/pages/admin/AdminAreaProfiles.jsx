@@ -98,9 +98,13 @@ function mapProfileToForm(profile) {
     },
     serviceBlocks: Array.isArray(profile.serviceBlocks)
       ? profile.serviceBlocks.map((x) => ({
+          id: String(x?.id || '').trim(),
           title: x?.title || '',
           description: x?.description || '',
           mode: x?.mode || '',
+          imageUrl: String(x?.imageUrl || '').trim(),
+          personInCharge: String(x?.personInCharge || '').trim(),
+          generalObjective: String(x?.generalObjective || '').trim(),
         }))
         : [],
     contactCards: Array.isArray(profile.contactCards)
@@ -430,7 +434,15 @@ export function AdminAreaProfiles() {
           phone: '',
           officeHours: '',
         },
-        serviceBlocks: cleanRows(form.serviceBlocks, ['title', 'description', 'mode']),
+        serviceBlocks: cleanRows(form.serviceBlocks, [
+          'id',
+          'title',
+          'description',
+          'mode',
+          'imageUrl',
+          'personInCharge',
+          'generalObjective',
+        ]),
         initiatives: [],
         contactCards: cleanRows(form.contactCards, ['label', 'value', 'note']),
         notices: cleanNotices(form.notices),
