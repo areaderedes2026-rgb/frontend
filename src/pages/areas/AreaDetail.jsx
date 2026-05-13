@@ -445,7 +445,15 @@ export function AreaDetail() {
                 </p>
                 <p className="mt-1 text-sm text-slate-500">{profile.location.references}</p>
 
-                <div className="mt-4 overflow-hidden rounded-2xl border border-[#ddd7ca]">
+                {String(area.description || '').trim() ? (
+                  <div className="mt-6 border-t border-[#e5e2da] pt-6">
+                    <p className="max-w-3xl text-[15px] leading-[1.65] text-[#3a3f47] sm:text-base sm:leading-relaxed">
+                      {String(area.description).trim()}
+                    </p>
+                  </div>
+                ) : null}
+
+                <div className="mt-6 overflow-hidden rounded-2xl border border-[#ddd7ca]">
                   <iframe
                     title={`Mapa de ${area.title}`}
                     src={profile.location.mapEmbedUrl}
