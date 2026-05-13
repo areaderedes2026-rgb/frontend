@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { RevealOnScroll } from '../../components/home/RevealOnScroll.jsx'
 import { Container } from '../../components/ui/Container.jsx'
 import { LinkButton } from '../../components/ui/LinkButton.jsx'
@@ -11,16 +10,58 @@ import { HydrationHeroDarkBackdrop } from '../../components/skeleton/PageHydrati
 const DEFAULT_AREAS_HERO_IMAGE =
   'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1600&q=80'
 
+function normalizeSearch(text) {
+  return String(text || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+}
+
+function sortAreasCopy(list, mode) {
+  const copy = [...list]
+  if (mode === 'alpha') {
+    copy.sort((a, b) =>
+      String(a.title || '').localeCompare(String(b.title || ''), 'es', {
+        sensitivity: 'base',
+      }),
+    )
+    return copy
+  }
+  copy.sort((a, b) => {
+    const pa = Number(a.sortOrder) || 0
+    const pb = Number(b.sortOrder) || 0
+    if (pa !== pb) return pa - pb
+    return String(a.title || '').localeCompare(String(b.title || ''), 'es', {
+      sensitivity: 'base',
+    })
+  })
+  return copy
+}
+
 export function AreasIndex() {
   const apiEnabled = isApiConfigured()
   const { areas, loading, error } = useAreas()
   const [globalCover, setGlobalCover] = useState('')
   const [globalCoverHydrated, setGlobalCoverHydrated] = useState(!apiEnabled)
+  const [directoryQuery, setDirectoryQuery] = useState('')
+  const [directorySort, setDirectorySort] = useState('priority')
   const featured = areas[0] ?? null
   const heroImage = useMemo(
     () => globalCover || DEFAULT_AREAS_HERO_IMAGE,
     [globalCover],
   )
+
+  const directoryAreas = useMemo(() => {
+    const q = normalizeSearch(directoryQuery.trim())
+    const filtered = q
+      ? areas.filter((area) =>
+          normalizeSearch(
+            `${area.title || ''} ${area.slug || ''} ${area.description || ''}`,
+          ).includes(q),
+        )
+      : areas
+    return sortAreasCopy(filtered, directorySort)
+  }, [areas, directoryQuery, directorySort])
 
   useEffect(() => {
     let cancelled = false
@@ -103,7 +144,7 @@ export function AreasIndex() {
               más rápido la gestión que necesitás.
             </p>
             <div className="hero-enter-actions mt-6 flex flex-wrap items-center gap-3">
-              <LinkButton to={`/areas/${featured?.slug}`}>
+              <LinkButton to={featured?.slug ? `/areas/${featured.slug}` : '/areas#areas-grid'}>
                 Empezar recorrido
               </LinkButton>
               <a
@@ -119,32 +160,77 @@ export function AreasIndex() {
 
       <Container className="relative">
         <RevealOnScroll variant="slow">
-          <div className="mt-8 rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-4 shadow-sm sm:p-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-800">
-                  Navegación rápida
-                </p>
-                <p className="mt-1 text-sm text-[#4b505a]">
-                  Accedé directo a las áreas más consultadas por los vecinos.
-                </p>
+          <div
+            className="mt-8 rounded-2xl border border-[#e8e4dc] bg-[#fcfcfa]/95 p-4 shadow-[0_1px_0_rgba(255,255,255,0.85)_inset,0_12px_40px_-28px_rgba(15,23,42,0.18)] backdrop-blur-[2px] sm:p-5"
+            role="search"
+            aria-label="Buscar y ordenar áreas"
+          >
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-stretch lg:gap-5">
+              <div className="relative min-w-0 flex-1">
+                <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8b9099]" aria-hidden>
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-4.35-4.35M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z" />
+                  </svg>
+                </span>
+                <input
+                  type="search"
+                  id="areas-directory-search"
+                  value={directoryQuery}
+                  onChange={(e) => setDirectoryQuery(e.target.value)}
+                  placeholder="Buscar por nombre, slug o descripción…"
+                  autoComplete="off"
+                  className="w-full rounded-xl border border-[#ddd7ca] bg-white py-3 pl-10 pr-3 text-sm text-[#171b22] shadow-inner outline-none ring-sky-300/40 transition placeholder:text-[#8b9099] focus:border-sky-300 focus:ring-2"
+                />
+              </div>
+              <div className="flex shrink-0 flex-col justify-center gap-1.5 sm:flex-row sm:items-center">
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#6b7280] sm:mr-1 sm:self-center">
+                  Orden
+                </span>
+                <div className="inline-flex rounded-xl border border-[#ddd7ca] bg-[#f4f1eb] p-0.5 shadow-sm">
+                  <button
+                    type="button"
+                    onClick={() => setDirectorySort('priority')}
+                    className={`rounded-[10px] px-3.5 py-2 text-xs font-semibold transition sm:px-4 sm:text-sm ${
+                      directorySort === 'priority'
+                        ? 'bg-white text-[#0f172a] shadow-sm ring-1 ring-[#e5e2da]'
+                        : 'text-[#5c6169] hover:text-[#171b22]'
+                    }`}
+                    aria-pressed={directorySort === 'priority'}
+                  >
+                    Prioridad
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDirectorySort('alpha')}
+                    className={`rounded-[10px] px-3.5 py-2 text-xs font-semibold transition sm:px-4 sm:text-sm ${
+                      directorySort === 'alpha'
+                        ? 'bg-white text-[#0f172a] shadow-sm ring-1 ring-[#e5e2da]'
+                        : 'text-[#5c6169] hover:text-[#171b22]'
+                    }`}
+                    aria-pressed={directorySort === 'alpha'}
+                  >
+                    A–Z
+                  </button>
+                </div>
               </div>
             </div>
-            <ul className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-              {areas.slice(0, 5).map((area) => (
-                <li key={`quick-${area.slug}`}>
-                  <Link
-                    to={`/areas/${area.slug}`}
-                    className="group flex items-center justify-between rounded-xl border border-[#ddd7ca] bg-white px-4 py-3 text-sm font-semibold text-[#171b22] transition hover:border-sky-200 hover:bg-sky-50/60 hover:text-[#0f1319]"
-                  >
-                    <span className="truncate">{area.title}</span>
-                    <span className="ml-3 text-sky-700 transition-transform group-hover:translate-x-0.5" aria-hidden>
-                      →
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <p className="mt-3 text-xs text-[#6b7280]">
+              {directoryQuery.trim() ? (
+                <>
+                  <span className="font-semibold tabular-nums text-[#374151]">{directoryAreas.length}</span>
+                  {directoryAreas.length === 1 ? ' resultado' : ' resultados'}
+                  {directorySort === 'priority' ? ' · orden de prioridad municipal' : ' · orden alfabético'}
+                </>
+              ) : (
+                <>
+                  Mostrando las{' '}
+                  <span className="font-semibold text-[#374151]">{areas.length}</span> áreas
+                  {directorySort === 'priority'
+                    ? ' por prioridad (predeterminado).'
+                    : ' en orden alfabético.'}
+                </>
+              )}
+            </p>
           </div>
         </RevealOnScroll>
 
@@ -165,8 +251,28 @@ export function AreasIndex() {
               </p>
             </div>
           </RevealOnScroll>
+          {directoryAreas.length === 0 ? (
+            <RevealOnScroll variant="slow">
+              <div className="rounded-2xl border border-dashed border-[#d6d0c4] bg-[#faf9f6] px-6 py-14 text-center">
+                <p className="font-serif text-lg font-semibold text-[#171b22]">No hay áreas que coincidan</p>
+                <p className="mx-auto mt-2 max-w-md text-sm text-[#5c6169]">
+                  Probá otra palabra o borrá el texto del buscador para ver el listado completo.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDirectoryQuery('')
+                    setDirectorySort('priority')
+                  }}
+                  className="mt-6 inline-flex min-h-11 items-center justify-center rounded-xl border border-[#ddd7ca] bg-white px-5 text-sm font-semibold text-[#171b22] shadow-sm transition hover:border-sky-200 hover:bg-sky-50/50"
+                >
+                  Restablecer búsqueda
+                </button>
+              </div>
+            </RevealOnScroll>
+          ) : (
           <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {areas.map((area, idx) => (
+            {directoryAreas.map((area, idx) => (
               <li key={area.slug}>
                 <RevealOnScroll variant="newsCardSlow" delayMs={idx * 80}>
                   <Link
@@ -182,8 +288,11 @@ export function AreasIndex() {
                         decoding="async"
                       />
                       <div className="absolute inset-0 bg-linear-to-t from-slate-900/70 via-slate-900/0 to-slate-900/0" />
-                      <span className="absolute left-3 top-3 inline-flex rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-sky-900 ring-1 ring-[#d8d5cd]">
-                        Área {idx + 1}
+                      <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-white/92 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-sky-900 ring-1 ring-[#d8d5cd] backdrop-blur-[2px]">
+                        Prioridad
+                        <span className="rounded-md bg-sky-50 px-1.5 py-0.5 font-mono text-[11px] tracking-normal text-sky-950">
+                          {Number(area.sortOrder) || 0}
+                        </span>
                       </span>
                     </div>
                     <div className="flex flex-1 flex-col p-5">
@@ -203,6 +312,7 @@ export function AreasIndex() {
               </li>
             ))}
           </ul>
+          )}
         </div>
       </Container>
     </section>

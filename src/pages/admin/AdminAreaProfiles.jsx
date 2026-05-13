@@ -197,7 +197,9 @@ function paginationModel(page, totalPages) {
 
 export function AdminAreaProfiles() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const [areas, setAreas] = useState(MUNICIPAL_AREAS.map((a, i) => ({ ...a, id: i + 1 })))
+  const [areas, setAreas] = useState(
+    MUNICIPAL_AREAS.map((a, i) => ({ ...a, id: i + 1, sortOrder: (i + 1) * 10 })),
+  )
   const [areasLoading, setAreasLoading] = useState(true)
   const [selectedSlug, setSelectedSlug] = useState(MUNICIPAL_AREAS[0]?.slug || '')
   const [form, setForm] = useState(() => {
@@ -217,6 +219,7 @@ export function AdminAreaProfiles() {
     slug: '',
     description: '',
     coverImage: '',
+    sortOrder: '',
   })
   const [creatingArea, setCreatingArea] = useState(false)
   const [createModalOpen, setCreateModalOpen] = useState(false)
@@ -227,8 +230,10 @@ export function AdminAreaProfiles() {
     slug: '',
     description: '',
     coverImage: '',
+    sortOrder: 0,
   })
   const [searchQuery, setSearchQuery] = useState('')
+  const [catalogSort, setCatalogSort] = useState('priority')
   const [page, setPage] = useState(1)
   const [globalCover, setGlobalCover] = useState('')
   const [globalCoverOpen, setGlobalCoverOpen] = useState(false)
@@ -269,19 +274,40 @@ export function AdminAreaProfiles() {
       normalize(`${area.title || ''} ${area.slug || ''} ${area.description || ''}`).includes(q),
     )
   }, [areas, searchQuery])
-  const totalPages = Math.max(1, Math.ceil(filteredAreas.length / PAGE_SIZE))
+  const catalogOrderedAreas = useMemo(() => {
+    const copy = [...filteredAreas]
+    if (catalogSort === 'alpha') {
+      copy.sort((a, b) =>
+        String(a.title || '').localeCompare(String(b.title || ''), 'es', {
+          sensitivity: 'base',
+        }),
+      )
+      return copy
+    }
+    copy.sort((a, b) => {
+      const oa = Number(a.sortOrder) || 0
+      const ob = Number(b.sortOrder) || 0
+      if (oa !== ob) return oa - ob
+      return String(a.title || '').localeCompare(String(b.title || ''), 'es', {
+        sensitivity: 'base',
+      })
+    })
+    return copy
+  }, [filteredAreas, catalogSort])
+  const totalPages = Math.max(1, Math.ceil(catalogOrderedAreas.length / PAGE_SIZE))
   const safePage = Math.min(Math.max(1, page), totalPages)
   const paginatedAreas = useMemo(() => {
     const start = (safePage - 1) * PAGE_SIZE
-    return filteredAreas.slice(start, start + PAGE_SIZE)
-  }, [filteredAreas, safePage])
+    return catalogOrderedAreas.slice(start, start + PAGE_SIZE)
+  }, [catalogOrderedAreas, safePage])
   const rangeStart = (safePage - 1) * PAGE_SIZE
   const rangeEnd =
-    filteredAreas.length === 0
+    catalogOrderedAreas.length === 0
       ? 0
-      : Math.min(rangeStart + paginatedAreas.length, filteredAreas.length)
+      : Math.min(rangeStart + paginatedAreas.length, catalogOrderedAreas.length)
   const pagModel = paginationModel(safePage, totalPages)
-  const catalogFiltersActive = searchQuery.trim() !== ''
+  const catalogFiltersActive =
+    searchQuery.trim() !== '' || catalogSort !== 'priority'
 
   const loadAreas = useCallback(async () => {
     setCatalogError('')
@@ -373,6 +399,7 @@ export function AdminAreaProfiles() {
       slug: selectedArea?.slug || '',
       description: selectedArea?.description || '',
       coverImage: selectedArea?.coverImage || '',
+      sortOrder: Number(selectedArea?.sortOrder) || 0,
     })
   }, [selectedArea])
 
@@ -397,6 +424,7 @@ export function AdminAreaProfiles() {
         slug: areaMeta.slug.trim(),
         description: areaMeta.description.trim(),
         coverImage: areaMeta.coverImage.trim(),
+        sortOrder: Math.max(0, Math.round(Number(areaMeta.sortOrder)) || 0),
       })
       const payload = {
         expectedUpdatedAt: profileUpdatedAt,
@@ -462,16 +490,26 @@ export function AdminAreaProfiles() {
     }
     setCreatingArea(true)
     try {
+      const maxOrder = areas.reduce(
+        (m, a) => Math.max(m, Number(a.sortOrder) || 0),
+        0,
+      )
+      const rawOrder = String(newArea.sortOrder || '').trim()
+      const sortOrder =
+        rawOrder === ''
+          ? maxOrder + 10
+          : Math.max(0, Math.round(Number(rawOrder)) || 0)
       const created = await createArea({
         title: newArea.title.trim(),
         description: newArea.description.trim(),
         slug: newArea.slug.trim() || undefined,
         coverImage: newArea.coverImage.trim() || undefined,
+        sortOrder,
       })
       await loadAreas()
       if (created?.slug) setSelectedSlug(created.slug)
       if (created?.slug) setTab('edit')
-      setNewArea({ title: '', slug: '', description: '', coverImage: '' })
+      setNewArea({ title: '', slug: '', description: '', coverImage: '', sortOrder: '' })
       setCreateModalOpen(false)
       setToast({ type: 'success', message: 'Área creada correctamente.' })
     } catch (e) {
@@ -609,6 +647,24 @@ export function AdminAreaProfiles() {
               disabled={creatingArea || areasLoading}
             />
           </label>
+          <label className={labelClass}>
+            Prioridad
+            <input
+              type="number"
+              min={0}
+              step={1}
+              className={inputClass}
+              value={newArea.sortOrder}
+              onChange={(e) =>
+                setNewArea((prev) => ({ ...prev, sortOrder: e.target.value }))
+              }
+              disabled={creatingArea || areasLoading}
+              placeholder="Automático"
+            />
+            <span className="mt-1 block text-xs font-normal text-slate-500">
+              Menor número = primero en el portal. Vacío = siguiente libre.
+            </span>
+          </label>
           <label className={`${labelClass} sm:col-span-2`}>
             Descripción base
             <textarea
@@ -716,7 +772,7 @@ export function AdminAreaProfiles() {
           <section className="admin-fade-up space-y-5">
             <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
               <div className="grid gap-3 sm:grid-cols-12 sm:items-end">
-                <label className={`${labelClass} sm:col-span-8`}>
+                <label className={`${labelClass} sm:col-span-5`}>
                   Buscar
                   <input
                     type="search"
@@ -732,6 +788,43 @@ export function AdminAreaProfiles() {
                   />
                 </label>
                 <div className="sm:col-span-4">
+                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Orden del listado
+                  </p>
+                  <div className="inline-flex w-full rounded-xl border border-slate-200 bg-slate-50/90 p-0.5 shadow-inner">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCatalogSort('priority')
+                        setPage(1)
+                      }}
+                      className={`min-h-10 flex-1 rounded-[10px] px-3 text-xs font-semibold transition sm:text-sm ${
+                        catalogSort === 'priority'
+                          ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/80'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                      aria-pressed={catalogSort === 'priority'}
+                    >
+                      Prioridad
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCatalogSort('alpha')
+                        setPage(1)
+                      }}
+                      className={`min-h-10 flex-1 rounded-[10px] px-3 text-xs font-semibold transition sm:text-sm ${
+                        catalogSort === 'alpha'
+                          ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/80'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                      aria-pressed={catalogSort === 'alpha'}
+                    >
+                      A–Z
+                    </button>
+                  </div>
+                </div>
+                <div className="sm:col-span-3">
                   <button
                     type="button"
                     onClick={() => setGlobalCoverOpen(true)}
@@ -742,8 +835,8 @@ export function AdminAreaProfiles() {
                 </div>
               </div>
               <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600">
-                <p className="tabular-nums">
-                  {catalogFiltersActive ? (
+                <p className="tabular-nums leading-relaxed">
+                  {searchQuery.trim() ? (
                     <>
                       <span className="font-semibold text-slate-900">
                         {filteredAreas.length}
@@ -752,27 +845,33 @@ export function AdminAreaProfiles() {
                       <span className="font-semibold text-slate-900">
                         {areas.length}
                       </span>{' '}
-                      áreas coinciden con la búsqueda.
+                      coinciden con el texto.
                     </>
                   ) : (
                     <>
                       <span className="font-semibold text-slate-900">
                         {areas.length}
                       </span>{' '}
-                      áreas cargadas en total.
+                      áreas en el catálogo.
                     </>
-                  )}
+                  )}{' '}
+                  <span className="text-slate-500">
+                    {catalogSort === 'alpha'
+                      ? 'Orden alfabético en la tabla.'
+                      : 'Orden por prioridad (predeterminado).'}
+                  </span>
                 </p>
                 {catalogFiltersActive ? (
                   <button
                     type="button"
                     onClick={() => {
                       setSearchQuery('')
+                      setCatalogSort('priority')
                       setPage(1)
                     }}
                     className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
                   >
-                    Limpiar búsqueda
+                    Restablecer filtros
                   </button>
                 ) : null}
               </div>
@@ -833,11 +932,12 @@ export function AdminAreaProfiles() {
                   type="button"
                   onClick={() => {
                     setSearchQuery('')
+                    setCatalogSort('priority')
                     setPage(1)
                   }}
                   className="mt-5 inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-sky-200 hover:bg-sky-50"
                 >
-                  Limpiar búsqueda
+                  Restablecer búsqueda
                 </button>
               </div>
             ) : (
@@ -848,6 +948,9 @@ export function AdminAreaProfiles() {
                       <tr className="border-b border-slate-200 bg-slate-50/90 text-xs font-bold uppercase tracking-wide text-slate-500">
                         <th className="w-20 px-4 py-3.5" scope="col">
                           <span className="sr-only">Portada</span>
+                        </th>
+                        <th className="w-24 px-3 py-3.5 text-right font-mono normal-case tracking-normal">
+                          Prioridad
                         </th>
                         <th className="min-w-0 px-3 py-3.5">Área</th>
                         <th className="w-56 px-4 py-3.5">Slug</th>
@@ -863,6 +966,9 @@ export function AdminAreaProfiles() {
                         >
                           <td className="px-4 py-3 align-middle">
                             <AreaThumb src={area.coverImage} />
+                          </td>
+                          <td className="px-3 py-3 text-right align-middle font-mono text-xs font-semibold tabular-nums text-slate-700">
+                            {Number(area.sortOrder) || 0}
                           </td>
                           <td className="min-w-0 px-3 py-3 align-middle">
                             <button
@@ -937,8 +1043,11 @@ export function AdminAreaProfiles() {
                         >
                           {area.title || 'Sin título'}
                         </button>
-                        <p className="mt-1 font-mono text-xs text-slate-500">
-                          {area.slug || 'sin-slug'}
+                        <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-xs text-slate-500">
+                          <span>{area.slug || 'sin-slug'}</span>
+                          <span className="rounded-md bg-slate-100 px-1.5 py-0.5 font-semibold text-slate-700 ring-1 ring-slate-200/80">
+                            P. {Number(area.sortOrder) || 0}
+                          </span>
                         </p>
                         <p className="mt-2 line-clamp-2 text-sm text-slate-600">
                           {area.description || 'Sin descripción.'}
@@ -988,7 +1097,7 @@ export function AdminAreaProfiles() {
                     </span>{' '}
                     de{' '}
                     <span className="font-semibold tabular-nums text-slate-900">
-                      {filteredAreas.length}
+                      {catalogOrderedAreas.length}
                     </span>
                     {totalPages > 1 ? (
                       <>

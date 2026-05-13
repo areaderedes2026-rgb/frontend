@@ -219,6 +219,7 @@ export function AdminAreaEditorPreview({
       slug: String(draft.slug || '').trim(),
       description: String(draft.description || '').trim(),
       coverImage: String(draft.coverImage || '').trim(),
+      sortOrder: Math.max(0, Math.round(Number(draft.sortOrder)) || 0),
     })
     setForm((prev) => ({
       ...prev,
@@ -598,6 +599,7 @@ export function AdminAreaEditorPreview({
                     slug: areaMeta.slug,
                     description: areaMeta.description,
                     coverImage: areaMeta.coverImage,
+                    sortOrder: Number(areaMeta.sortOrder) || 0,
                     heroTag: form.heroTag || '',
                     mission: form.mission || '',
                   })
@@ -1264,6 +1266,21 @@ function IdentityForm({ draft, setDraftField, saving }) {
           onChange={(e) => setDraftField('slug', e.target.value)}
           disabled={saving}
         />
+      </label>
+      <label className={labelClass}>
+        Prioridad
+        <input
+          type="number"
+          min={0}
+          step={1}
+          className={inputClass}
+          value={draft.sortOrder ?? 0}
+          onChange={(e) => setDraftField('sortOrder', e.target.value)}
+          disabled={saving}
+        />
+        <span className="mt-1 block text-xs font-normal text-slate-500">
+          Número más bajo = aparece antes en el listado público y en el carrusel.
+        </span>
       </label>
       <label className={`${labelClass} sm:col-span-2`}>
         Descripción corta (catálogo)

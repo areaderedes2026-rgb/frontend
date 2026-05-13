@@ -45,8 +45,8 @@ export function AreasCarousel({ showHeader = true }) {
       >
         {reducedMotion ? (
           <div className="flex flex-wrap justify-center gap-4">
-            {areas.map((area, i) => (
-              <AreaCard key={area.slug} area={area} index={i} compact />
+            {areas.map((area) => (
+              <AreaCard key={area.slug} area={area} compact />
             ))}
           </div>
         ) : (
@@ -57,11 +57,7 @@ export function AreasCarousel({ showHeader = true }) {
             }}
           >
             {loop.map((area, i) => (
-              <AreaCard
-                key={`${area.slug}-${i}`}
-                area={area}
-                index={i % Math.max(areas.length, 1)}
-              />
+              <AreaCard key={`${area.slug}-${i}`} area={area} />
             ))}
           </div>
         )}
@@ -76,8 +72,9 @@ export function AreasCarousel({ showHeader = true }) {
   )
 }
 
-function AreaCard({ area, index, compact = false }) {
+function AreaCard({ area, compact = false }) {
   const src = area.coverImage
+  const priority = Number(area.sortOrder) || 0
   return (
     <div
       className={`shrink-0 ${
@@ -112,7 +109,7 @@ function AreaCard({ area, index, compact = false }) {
               compact ? 'text-[9px]' : 'text-[10px]'
             }`}
           >
-            {String(index + 1).padStart(2, '0')}
+            P.{priority}
           </span>
           <h3
             className={`font-bold tracking-tight text-white drop-shadow-sm ${
