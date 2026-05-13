@@ -198,7 +198,7 @@ export function AreasIndex() {
                     }`}
                     aria-pressed={directorySort === 'priority'}
                   >
-                    Prioridad
+                    Por defecto
                   </button>
                   <button
                     type="button"
@@ -220,14 +220,14 @@ export function AreasIndex() {
                 <>
                   <span className="font-semibold tabular-nums text-[#374151]">{directoryAreas.length}</span>
                   {directoryAreas.length === 1 ? ' resultado' : ' resultados'}
-                  {directorySort === 'priority' ? ' · orden de prioridad municipal' : ' · orden alfabético'}
+                  {directorySort === 'priority' ? ' · orden por defecto' : ' · orden alfabético'}
                 </>
               ) : (
                 <>
                   Mostrando las{' '}
                   <span className="font-semibold text-[#374151]">{areas.length}</span> áreas
                   {directorySort === 'priority'
-                    ? ' por prioridad (predeterminado).'
+                    ? ' en orden por defecto.'
                     : ' en orden alfabético.'}
                 </>
               )}
@@ -289,12 +289,6 @@ export function AreasIndex() {
                         decoding="async"
                       />
                       <div className="absolute inset-0 bg-linear-to-t from-slate-900/70 via-slate-900/0 to-slate-900/0" />
-                      <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-white/92 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-sky-900 ring-1 ring-[#d8d5cd] backdrop-blur-[2px]">
-                        Prioridad
-                        <span className="rounded-md bg-sky-50 px-1.5 py-0.5 font-mono text-[11px] tracking-normal text-sky-950">
-                          {Number(area.sortOrder) || 0}
-                        </span>
-                      </span>
                     </div>
                     <div className="flex flex-1 flex-col p-5">
                       <h3 className="font-serif text-xl font-bold tracking-tight text-[#171b22] transition-colors group-hover:text-[#0f1319]">
