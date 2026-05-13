@@ -290,16 +290,39 @@ export function mergeAreaProfile(baseProfile, custom = {}) {
   }
 }
 
+/** Une datos del listado local (`areas.js`) con la fila remota del catálogo para no perder la descripción si el API devuelve texto vacío. */
+function resolveAreaForProfile(slug, areaOverride) {
+  const local = getAreaBySlug(slug)
+  const fallback = {
+    slug,
+    title: String(slug || '').replace(/-/g, ' '),
+    description: 'Área municipal',
+    coverImage:
+      'https://images.unsplash.com/photo-1509099863731-ef4bff19e808?auto=format&fit=crop&w=1200&q=80',
+  }
+  if (!areaOverride || typeof areaOverride !== 'object') {
+    return local || fallback
+  }
+  const descRemote = String(areaOverride.description ?? '').trim()
+  const descLocal = String(local?.description ?? '').trim()
+  const titleRemote = String(areaOverride.title ?? '').trim()
+  const titleLocal = String(local?.title ?? '').trim()
+  const coverRemote = String(areaOverride.coverImage ?? '').trim()
+  const coverLocal = String(local?.coverImage ?? '').trim()
+  return {
+    id: areaOverride.id != null ? areaOverride.id : local?.id,
+    slug: String(areaOverride.slug || slug || '').trim() || slug,
+    title: titleRemote || titleLocal || fallback.title,
+    description: descRemote || descLocal || fallback.description,
+    coverImage: coverRemote || coverLocal || fallback.coverImage,
+    sortOrder: Number(areaOverride.sortOrder) || Number(local?.sortOrder) || 0,
+    isActive: areaOverride.isActive !== false,
+    updatedAt: areaOverride.updatedAt ?? local?.updatedAt ?? null,
+  }
+}
+
 export function getAreaProfileBySlug(slug, areaOverride = null) {
-  const area =
-    areaOverride ||
-    getAreaBySlug(slug) || {
-      slug,
-      title: String(slug || '').replace(/-/g, ' '),
-      description: 'Área municipal',
-      coverImage:
-        'https://images.unsplash.com/photo-1509099863731-ef4bff19e808?auto=format&fit=crop&w=1200&q=80',
-    }
+  const area = resolveAreaForProfile(slug, areaOverride)
   if (!area) return null
   const fallback = createDefaultProfile(area)
   const base = { area, ...fallback }

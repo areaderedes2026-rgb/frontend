@@ -313,6 +313,19 @@ export function AreaDetail() {
                     )}
                   </div>
                 </div>
+                {String(area.description || '').trim() ? (
+                  <div
+                    id="area-catalogo"
+                    className="mt-8 border-t border-[#e5e2da] pt-8"
+                  >
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-800">
+                      Descripción del catálogo
+                    </p>
+                    <p className="mt-2 max-w-3xl text-sm leading-relaxed text-[#4b505a] sm:text-base">
+                      {String(area.description).trim()}
+                    </p>
+                  </div>
+                ) : null}
                 </section>
               </RevealOnScroll>
 
@@ -404,14 +417,6 @@ export function AreaDetail() {
                   {profile.location.address}
                 </p>
                 <p className="mt-1 text-sm text-slate-500">{profile.location.references}</p>
-
-                {String(area.description || '').trim() ? (
-                  <div className="mt-6 border-t border-[#e5e2da] pt-6">
-                    <p className="max-w-3xl text-[15px] leading-[1.65] text-[#3a3f47] sm:text-base sm:leading-relaxed">
-                      {String(area.description).trim()}
-                    </p>
-                  </div>
-                ) : null}
 
                 <div className="mt-6 overflow-hidden rounded-2xl border border-[#ddd7ca]">
                   <iframe
