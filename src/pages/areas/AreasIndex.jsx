@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { RevealOnScroll } from '../../components/home/RevealOnScroll.jsx'
 import { Container } from '../../components/ui/Container.jsx'
 import { LinkButton } from '../../components/ui/LinkButton.jsx'
