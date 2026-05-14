@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { AdminCitizenAttentionEditorPreview } from '../../components/admin/AdminCitizenAttentionEditorPreview.jsx'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
-import { HeroImageModal } from '../../components/admin/HeroImageModal.jsx'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
 import {
@@ -15,11 +13,6 @@ import {
 } from '../../services/citizenAttentionService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
 import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
-import { ROUTES } from '../../utils/constants.js'
-
-const ACTION_BTN_BASE =
-  'inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto'
-const ACTION_BTN_NEUTRAL = `${ACTION_BTN_BASE} border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50`
 
 function mapContentToForm(content) {
   return {
@@ -68,7 +61,6 @@ export function AdminCitizenAttention() {
 
   const [toast, setToast] = useState(null)
   const [conflictOpen, setConflictOpen] = useState(false)
-  const [heroImageOpen, setHeroImageOpen] = useState(false)
   const dismissToast = useCallback(() => setToast(null), [])
 
   const loadContent = useCallback(async () => {
@@ -171,23 +163,6 @@ export function AdminCitizenAttention() {
         onConfirm={() => window.location.reload()}
       />
       {toast ? <Toast variant={toast.variant} message={toast.message} onDismiss={dismissToast} /> : null}
-      <HeroImageModal
-        open={heroImageOpen}
-        title="Portada de Atención al ciudadano"
-        value={contentForm.heroImageUrl}
-        onChange={(value) => setContentForm((prev) => ({ ...prev, heroImageUrl: value }))}
-        onClose={() => setHeroImageOpen(false)}
-        onSave={() => {
-          setHeroImageOpen(false)
-          setToast({
-            variant: 'success',
-            message: 'Portada actualizada en el formulario. Guardá el contenido para publicarla.',
-          })
-        }}
-        saving={contentSaving}
-        disabled={contentLoading || contentSaving}
-        saveLabel="Aplicar al formulario"
-      />
 
       <AdminPageShell
         showBackLink={false}
@@ -196,19 +171,6 @@ export function AdminCitizenAttention() {
         subtitle="Editá la página pública: hero, canales, preguntas frecuentes y opciones del formulario web."
         maxWidthClass="max-w-none"
         variant="plain"
-        actions={
-          <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end sm:gap-3">
-            <Link
-              to={ROUTES.adminCitizenInquiries}
-              className={`${ACTION_BTN_NEUTRAL} text-center no-underline`}
-            >
-              Ir a consultas ciudadanas
-            </Link>
-            <button type="button" onClick={() => setHeroImageOpen(true)} className={ACTION_BTN_NEUTRAL}>
-              Cambiar portada
-            </button>
-          </div>
-        }
       >
         <h1 className="sr-only">Contenido público de atención al ciudadano</h1>
         {!isApiConfigured() ? (
@@ -223,7 +185,6 @@ export function AdminCitizenAttention() {
           loading={contentLoading}
           saving={contentSaving}
           error={contentError}
-          onChangeCover={() => setHeroImageOpen(true)}
           onSubmit={() => void handleSaveContent()}
           apiAvailable={isApiConfigured()}
         />

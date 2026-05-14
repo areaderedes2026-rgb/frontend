@@ -185,7 +185,6 @@ export function AdminCitizenAttentionEditorPreview({
   loading,
   saving,
   error,
-  onChangeCover,
   onSubmit,
   apiAvailable,
 }) {
@@ -362,27 +361,6 @@ export function AdminCitizenAttentionEditorPreview({
       </Modal>
 
       <div className="admin-fade-up space-y-5">
-        <div className="flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-slate-600">
-            Tocá el lápiz de cada bloque para editar. Los cambios se publican recién al guardar.
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={onChangeCover} disabled={saving} className={ACTION_BTN_NEUTRAL}>
-              Cambiar portada
-            </button>
-            <button type="button" onClick={onSubmit} disabled={saving || loading} className={ACTION_BTN_PRIMARY}>
-              {saving ? (
-                <>
-                  <Spinner tone="white" />
-                  Guardando…
-                </>
-              ) : (
-                'Guardar cambios'
-              )}
-            </button>
-          </div>
-        </div>
-
         {error ? (
           <p
             className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
