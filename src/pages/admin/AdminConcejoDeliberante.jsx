@@ -19,10 +19,6 @@ function cloneContent(c) {
   return JSON.parse(JSON.stringify(c))
 }
 
-function makeId(prefix) {
-  return `${prefix}-${Math.random().toString(36).slice(2, 10)}`
-}
-
 export function AdminConcejoDeliberante() {
   const [form, setForm] = useState(() => cloneContent(DEFAULT_CONCEJO_DELIBERANTE_CONTENT))
   const [contentUpdatedAt, setContentUpdatedAt] = useState(null)
@@ -97,18 +93,7 @@ export function AdminConcejoDeliberante() {
         contactPhone: form.contactPhone.trim(),
         contactAddress: form.contactAddress.trim(),
         contactHours: form.contactHours.trim(),
-        blocks: (form.blocks || []).map((b) => ({
-          id: b.id || makeId('bloque'),
-          name: String(b.name || '').trim(),
-          color: String(b.color || '').trim(),
-          description: String(b.description || '').trim(),
-        })),
         members: form.members || [],
-        commissions: (form.commissions || []).map((c) => ({
-          id: c.id || makeId('comision'),
-          name: String(c.name || '').trim(),
-          description: String(c.description || '').trim(),
-        })),
       }
       const saved = await updateConcejoDeliberanteContent(payload)
       const merged = mergeConcejoDeliberanteContent(

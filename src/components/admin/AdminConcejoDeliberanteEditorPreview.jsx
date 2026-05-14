@@ -16,8 +16,6 @@ const ACTION_BTN_BASE =
 const ACTION_BTN_NEUTRAL = `${ACTION_BTN_BASE} border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50`
 const ACTION_BTN_PRIMARY = `${ACTION_BTN_BASE} bg-sky-700 text-white hover:bg-sky-800`
 
-const ALL_BLOCKS = '__all__'
-
 function Spinner({ tone = 'sky', size = 'sm' }) {
   const dim = size === 'sm' ? 'h-4 w-4 border-2' : 'h-5 w-5 border-2'
   const color =
@@ -145,29 +143,6 @@ function makeId(prefix) {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}`
 }
 
-function blockColor(blocks, name) {
-  const b = (blocks || []).find((x) => x.name === name)
-  return b?.color || '#0369a1'
-}
-
-function BlockChip({ name, color, active, onClick }) {
-  const accent = color || '#0369a1'
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`group inline-flex min-h-9 items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold transition ${
-        active
-          ? 'border-transparent bg-slate-900 text-white shadow-sm'
-          : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-      }`}
-    >
-      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: accent }} aria-hidden />
-      {name}
-    </button>
-  )
-}
-
 function MemberAvatar({ name, photoUrl, color }) {
   const initials = getInitialsFromName(name)
   if (photoUrl) {
@@ -192,24 +167,24 @@ function MemberAvatar({ name, photoUrl, color }) {
   )
 }
 
-const EMPTY_MEMBER_DRAFT = (blocks) => ({
-  id: makeId('concejal'),
-  name: '',
-  role: '',
-  block: blocks?.[0]?.name || '',
-  photoUrl: '',
-  bio: '',
-  email: '',
-  phone: '',
-  period: '',
-})
+function emptyMemberDraft() {
+  return {
+    id: makeId('concejal'),
+    name: '',
+    role: '',
+    photoUrl: '',
+    bio: '',
+    email: '',
+    phone: '',
+    period: '',
+  }
+}
 
 function memberToDraft(member) {
   return {
     id: String(member?.id || ''),
     name: String(member?.name || ''),
     role: String(member?.role || ''),
-    block: String(member?.block || ''),
     photoUrl: String(member?.photoUrl || ''),
     bio: String(member?.bio || ''),
     email: String(member?.email || ''),
@@ -223,7 +198,6 @@ function draftToMember(draft) {
     id: String(draft.id || '').trim() || makeId('concejal'),
     name: String(draft.name || '').trim(),
     role: String(draft.role || '').trim(),
-    block: String(draft.block || '').trim(),
     photoUrl: String(draft.photoUrl || '').trim(),
     bio: String(draft.bio || '').trim(),
     email: String(draft.email || '').trim().toLowerCase(),
@@ -243,26 +217,11 @@ export function AdminConcejoDeliberanteEditorPreview({
   apiAvailable,
 }) {
   const [editor, setEditor] = useState(null)
-  const [selectedBlock, setSelectedBlock] = useState(ALL_BLOCKS)
   const [memberDialog, setMemberDialog] = useState(null)
-  const [memberDraft, setMemberDraft] = useState(() => EMPTY_MEMBER_DRAFT([]))
+  const [memberDraft, setMemberDraft] = useState(() => emptyMemberDraft())
   const [memberFormError, setMemberFormError] = useState('')
   const [removeMemberIndex, setRemoveMemberIndex] = useState(null)
-  const [removeBlockIndex, setRemoveBlockIndex] = useState(null)
-  const [removeCommissionIndex, setRemoveCommissionIndex] = useState(null)
   const [removeParagraphIndex, setRemoveParagraphIndex] = useState(null)
-
-  const blockOptions = useMemo(
-    () => (form.blocks || []).map((b) => b.name).filter(Boolean),
-    [form.blocks],
-  )
-
-  const filteredMembersWithIndex = useMemo(() => {
-    const list = form.members || []
-    return list
-      .map((m, index) => ({ m, index }))
-      .filter(({ m }) => selectedBlock === ALL_BLOCKS || m.block === selectedBlock)
-  }, [form.members, selectedBlock])
 
   const heroUrl = (form.heroImageUrl || '').trim()
 
@@ -285,7 +244,7 @@ export function AdminConcejoDeliberanteEditorPreview({
   }
 
   function openNewMember() {
-    setMemberDraft(EMPTY_MEMBER_DRAFT(form.blocks))
+    setMemberDraft(emptyMemberDraft())
     setMemberFormError('')
     setMemberDialog('new')
   }
@@ -317,17 +276,6 @@ export function AdminConcejoDeliberanteEditorPreview({
       })
     }
     closeMemberModal()
-  }
-
-  function commitRemoveBlock(i) {
-    setForm((prev) => {
-      const removed = (prev.blocks || [])[i]
-      const blocks = (prev.blocks || []).filter((_, j) => j !== i)
-      const members = (prev.members || []).map((m) =>
-        removed && m.block === removed.name ? { ...m, block: '' } : m,
-      )
-      return { ...prev, blocks, members }
-    })
   }
 
   function applyIdentity(draft) {
@@ -370,48 +318,6 @@ export function AdminConcejoDeliberanteEditorPreview({
     }))
   }
 
-  function applyBlock(draft, index) {
-    const built = {
-      id: String(draft.id || '').trim() || makeId('bloque'),
-      name: String(draft.name || '').trim() || 'Bloque',
-      color: String(draft.color || '').trim() || '#0369a1',
-      description: String(draft.description || '').trim(),
-    }
-    setForm((prev) => {
-      const list = [...(prev.blocks || [])]
-      if (index === null || index === undefined) {
-        list.push(built)
-      } else {
-        const prevName = list[index]?.name
-        list[index] = built
-        if (prevName && prevName !== built.name) {
-          const members = (prev.members || []).map((m) =>
-            m.block === prevName ? { ...m, block: built.name } : m,
-          )
-          return { ...prev, blocks: list, members }
-        }
-      }
-      return { ...prev, blocks: list }
-    })
-  }
-
-  function applyCommission(draft, index) {
-    const built = {
-      id: String(draft.id || '').trim() || makeId('comision'),
-      name: String(draft.name || '').trim() || 'Comisión',
-      description: String(draft.description || '').trim(),
-    }
-    setForm((prev) => {
-      const list = [...(prev.commissions || [])]
-      if (index === null || index === undefined) {
-        list.push(built)
-      } else {
-        list[index] = built
-      }
-      return { ...prev, commissions: list }
-    })
-  }
-
   function applySessions(draft) {
     setForm((prev) => ({
       ...prev,
@@ -448,12 +354,6 @@ export function AdminConcejoDeliberanteEditorPreview({
       case 'president':
         applyPresident(draft)
         break
-      case 'block':
-        applyBlock(draft, index)
-        break
-      case 'commission':
-        applyCommission(draft, index)
-        break
       case 'sessions':
         applySessions(draft)
         break
@@ -479,14 +379,6 @@ export function AdminConcejoDeliberanteEditorPreview({
           : 'Editar párrafo'
       case 'president':
         return 'Editar presidencia del Concejo'
-      case 'block':
-        return editor.index === null || editor.index === undefined
-          ? 'Nuevo bloque político'
-          : 'Editar bloque político'
-      case 'commission':
-        return editor.index === null || editor.index === undefined
-          ? 'Nueva comisión'
-          : 'Editar comisión'
       case 'sessions':
         return 'Sesiones (datos institucionales)'
       case 'contact':
@@ -500,14 +392,11 @@ export function AdminConcejoDeliberanteEditorPreview({
     editor &&
     (editor.kind === 'identity' ||
       editor.kind === 'president' ||
-      editor.kind === 'block' ||
-      editor.kind === 'commission' ||
       editor.kind === 'sessions' ||
       editor.kind === 'contact')
 
   const draft = editor?.draft || null
   const totalMembers = (form.members || []).length
-  const filteredCount = filteredMembersWithIndex.length
 
   const presidentPreview =
     form.presidentName ||
@@ -535,45 +424,6 @@ export function AdminConcejoDeliberanteEditorPreview({
             }))
           }
           setRemoveMemberIndex(null)
-        }}
-        variant="danger"
-      />
-
-      <ConfirmDialog
-        open={removeBlockIndex !== null}
-        onClose={() => {
-          if (!saving) setRemoveBlockIndex(null)
-        }}
-        title="¿Quitar este bloque?"
-        description="Los concejales que lo tengan asignado quedarán sin bloque. Guardá para persistir."
-        confirmLabel="Quitar"
-        cancelLabel="Cancelar"
-        loading={false}
-        onConfirm={() => {
-          if (removeBlockIndex !== null) commitRemoveBlock(removeBlockIndex)
-          setRemoveBlockIndex(null)
-        }}
-        variant="danger"
-      />
-
-      <ConfirmDialog
-        open={removeCommissionIndex !== null}
-        onClose={() => {
-          if (!saving) setRemoveCommissionIndex(null)
-        }}
-        title="¿Quitar esta comisión?"
-        description="Se eliminará de la lista. Guardá el formulario para persistir."
-        confirmLabel="Quitar"
-        cancelLabel="Cancelar"
-        loading={false}
-        onConfirm={() => {
-          if (removeCommissionIndex !== null) {
-            setForm((prev) => ({
-              ...prev,
-              commissions: (prev.commissions || []).filter((_, j) => j !== removeCommissionIndex),
-            }))
-          }
-          setRemoveCommissionIndex(null)
         }}
         variant="danger"
       />
@@ -634,22 +484,6 @@ export function AdminConcejoDeliberanteEditorPreview({
               disabled={saving}
               placeholder="Ej. Vicepresidente 1°"
             />
-          </label>
-          <label className={labelClass}>
-            Bloque
-            <select
-              className={inputClass}
-              value={blockOptions.includes(memberDraft.block) ? memberDraft.block : ''}
-              onChange={(e) => setMemberDraft((d) => ({ ...d, block: e.target.value }))}
-              disabled={saving}
-            >
-              <option value="">Sin bloque</option>
-              {blockOptions.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </select>
           </label>
           <label className={labelClass}>
             Período (opcional)
@@ -962,44 +796,20 @@ export function AdminConcejoDeliberanteEditorPreview({
             <SectionCard
               id="concejales-admin"
               title="Cuerpo de Concejales"
-              description="Vista similar al portal: podés filtrar por bloque y editar cada ficha."
+              description="Misma grilla que en el portal: editá cada ficha desde los íconos."
               variant="plain"
               rightSlot={
                 <AddChip label="Nuevo concejal" onClick={openNewMember} disabled={saving} />
               }
             >
-              {(form.blocks || []).length > 0 ? (
-                <div className="mb-5 flex flex-wrap gap-2">
-                  <BlockChip
-                    name="Todos los bloques"
-                    color="#0f172a"
-                    active={selectedBlock === ALL_BLOCKS}
-                    onClick={() => setSelectedBlock(ALL_BLOCKS)}
-                  />
-                  {(form.blocks || []).map((b) => (
-                    <BlockChip
-                      key={b.id || b.name}
-                      name={b.name}
-                      color={b.color}
-                      active={selectedBlock === b.name}
-                      onClick={() => setSelectedBlock(b.name)}
-                    />
-                  ))}
-                </div>
-              ) : null}
-
               {(form.members || []).length === 0 ? (
                 <EmptyHint onAdd={openNewMember} addLabel="Agregar concejal">
                   No hay concejales en el borrador. Agregá la composición del cuerpo legislativo.
                 </EmptyHint>
-              ) : filteredCount === 0 ? (
-                <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 px-4 py-8 text-center text-sm text-slate-600">
-                  No hay concejales en este bloque. Cambiá el filtro o asigná bloques a las fichas.
-                </p>
               ) : (
                 <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {filteredMembersWithIndex.map(({ m, index: idx }) => {
-                    const color = blockColor(form.blocks, m.block)
+                  {(form.members || []).map((m, idx) => {
+                    const color = '#0369a1'
                     return (
                       <li
                         key={m.id || `${m.name}-${idx}`}
@@ -1011,12 +821,6 @@ export function AdminConcejoDeliberanteEditorPreview({
                         </div>
                         <div className="relative aspect-4/5 w-full overflow-hidden bg-slate-100">
                           <MemberAvatar name={m.name} photoUrl={m.photoUrl} color={color} />
-                          {m.block ? (
-                            <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-800 shadow-sm backdrop-blur">
-                              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} aria-hidden />
-                              {m.block}
-                            </span>
-                          ) : null}
                         </div>
                         <div className="flex flex-1 flex-col gap-2 p-4 text-left">
                           <h3 className="pr-16 text-lg font-bold tracking-tight text-slate-900">
@@ -1036,153 +840,9 @@ export function AdminConcejoDeliberanteEditorPreview({
                 </ul>
               )}
               <p className="mt-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Mostrando {filteredCount} de {totalMembers}
+                {totalMembers} {totalMembers === 1 ? 'concejal' : 'concejales'}
               </p>
             </SectionCard>
-
-            <div className="grid gap-6 lg:grid-cols-12 lg:gap-8">
-              <div className="lg:col-span-6">
-                <SectionCard
-                  id="bloques-admin"
-                  title="Bloques políticos"
-                  description="Definición de bloques y colores (como en el portal)."
-                  variant="plain"
-                  rightSlot={
-                    <AddChip
-                      label="Añadir bloque"
-                      onClick={() =>
-                        openEditor('block', null, {
-                          id: makeId('bloque'),
-                          name: 'Nuevo bloque',
-                          color: '#0369a1',
-                          description: '',
-                        })
-                      }
-                      disabled={saving}
-                    />
-                  }
-                >
-                  {(form.blocks || []).length === 0 ? (
-                    <EmptyHint
-                      onAdd={() =>
-                        openEditor('block', null, {
-                          id: makeId('bloque'),
-                          name: 'Nuevo bloque',
-                          color: '#0369a1',
-                          description: '',
-                        })
-                      }
-                      addLabel="Añadir bloque"
-                    >
-                      Todavía no hay bloques. Creá al menos uno para asignar concejales.
-                    </EmptyHint>
-                  ) : (
-                    <ul className="space-y-3">
-                      {(form.blocks || []).map((b, i) => (
-                        <li
-                          key={b.id || `b-${i}`}
-                          className="relative rounded-2xl border border-[#e5e2da] bg-white/90 p-4"
-                          style={{ borderLeft: `6px solid ${b.color || '#0369a1'}` }}
-                        >
-                          <div className="absolute right-2 top-2 flex gap-1">
-                            <EditChip
-                              label="Editar"
-                              onClick={() =>
-                                openEditor('block', i, {
-                                  id: b.id,
-                                  name: b.name || '',
-                                  color: b.color || '#0369a1',
-                                  description: b.description || '',
-                                })
-                              }
-                              disabled={saving}
-                            />
-                            <DeleteChip
-                              label="Quitar"
-                              onClick={() => setRemoveBlockIndex(i)}
-                              disabled={saving}
-                            />
-                          </div>
-                          <h3 className="pr-24 text-base font-bold text-[#171b22]">{b.name}</h3>
-                          <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-[#6b7280]">
-                            {(form.members || []).filter((mem) => mem.block === b.name).length} integrantes
-                          </p>
-                          {b.description ? (
-                            <p className="mt-2 text-sm leading-relaxed text-[#4b505a]">{b.description}</p>
-                          ) : null}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </SectionCard>
-              </div>
-
-              <div className="lg:col-span-6">
-                <SectionCard
-                  id="comisiones-admin"
-                  title="Comisiones de trabajo"
-                  description="Listado tipo portal."
-                  variant="plain"
-                  rightSlot={
-                    <AddChip
-                      label="Añadir comisión"
-                      onClick={() =>
-                        openEditor('commission', null, {
-                          id: makeId('comision'),
-                          name: 'Nueva comisión',
-                          description: '',
-                        })
-                      }
-                      disabled={saving}
-                    />
-                  }
-                >
-                  {(form.commissions || []).length === 0 ? (
-                    <EmptyHint
-                      onAdd={() =>
-                        openEditor('commission', null, {
-                          id: makeId('comision'),
-                          name: 'Nueva comisión',
-                          description: '',
-                        })
-                      }
-                      addLabel="Añadir comisión"
-                    >
-                      No hay comisiones cargadas.
-                    </EmptyHint>
-                  ) : (
-                    <ul className="grid gap-3 sm:grid-cols-2">
-                      {(form.commissions || []).map((c, i) => (
-                        <li key={c.id || `c-${i}`} className="relative rounded-2xl border border-[#e5e2da] bg-white/90 p-4">
-                          <div className="absolute right-2 top-2 flex gap-1">
-                            <EditChip
-                              label="Editar"
-                              onClick={() =>
-                                openEditor('commission', i, {
-                                  id: c.id,
-                                  name: c.name || '',
-                                  description: c.description || '',
-                                })
-                              }
-                              disabled={saving}
-                            />
-                            <DeleteChip
-                              label="Quitar"
-                              onClick={() => setRemoveCommissionIndex(i)}
-                              disabled={saving}
-                            />
-                          </div>
-                          <h3 className="pr-20 text-sm font-bold text-[#171b22]">{c.name}</h3>
-                          {c.description ? (
-                            <p className="mt-2 text-sm leading-relaxed text-[#4b505a]">{c.description}</p>
-                          ) : null}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </SectionCard>
-              </div>
-            </div>
 
             <SectionCard
               id="institucional-oculto"
@@ -1371,72 +1031,6 @@ function EditorConcejoBody({ editor, draft, setDraftField, saving }) {
               disabled={saving}
             />
           </div>
-        </div>
-      )
-    case 'block':
-      return (
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className={labelClass}>
-            Nombre del bloque
-            <input
-              className={inputClass}
-              value={draft.name || ''}
-              onChange={(e) => setDraftField('name', e.target.value)}
-              disabled={saving}
-            />
-          </label>
-          <label className={labelClass}>
-            Color
-            <div className="mt-1 flex items-center gap-2">
-              <input
-                type="color"
-                className="h-10 w-12 cursor-pointer rounded-lg border border-slate-200 bg-white p-1"
-                value={draft.color || '#0369a1'}
-                onChange={(e) => setDraftField('color', e.target.value)}
-                disabled={saving}
-                aria-label="Color del bloque"
-              />
-              <input
-                className={`${inputClass} flex-1`}
-                value={draft.color || ''}
-                onChange={(e) => setDraftField('color', e.target.value)}
-                disabled={saving}
-                placeholder="#0369a1"
-              />
-            </div>
-          </label>
-          <label className={`${labelClass} sm:col-span-2`}>
-            Descripción (opcional)
-            <textarea
-              className={`${textareaClass} min-h-20`}
-              value={draft.description || ''}
-              onChange={(e) => setDraftField('description', e.target.value)}
-              disabled={saving}
-            />
-          </label>
-        </div>
-      )
-    case 'commission':
-      return (
-        <div className="grid gap-4">
-          <label className={labelClass}>
-            Nombre
-            <input
-              className={inputClass}
-              value={draft.name || ''}
-              onChange={(e) => setDraftField('name', e.target.value)}
-              disabled={saving}
-            />
-          </label>
-          <label className={labelClass}>
-            Descripción (opcional)
-            <textarea
-              className={`${textareaClass} min-h-24`}
-              value={draft.description || ''}
-              onChange={(e) => setDraftField('description', e.target.value)}
-              disabled={saving}
-            />
-          </label>
         </div>
       )
     case 'sessions':

@@ -13,14 +13,9 @@ import { fetchConcejoDeliberanteContent } from '../../services/concejoDeliberant
 import { isApiConfigured } from '../../utils/apiConfig.js'
 import { ROUTES } from '../../utils/constants.js'
 
-const ALL_BLOCKS = '__all__'
+const MEMBER_AVATAR_COLOR = '#0369a1'
 
-function blockColor(blocks, name) {
-  const b = (blocks || []).find((x) => x.name === name)
-  return b?.color || '#0369a1'
-}
-
-function MemberAvatar({ name, photoUrl, color }) {
+function MemberAvatar({ name, photoUrl }) {
   const initials = getInitialsFromName(name)
   if (photoUrl) {
     return (
@@ -36,7 +31,7 @@ function MemberAvatar({ name, photoUrl, color }) {
     <div
       className="flex h-full w-full items-center justify-center text-2xl font-bold tracking-wide text-white sm:text-3xl"
       style={{
-        backgroundImage: `linear-gradient(135deg, ${color || '#0369a1'} 0%, rgba(15, 23, 42, 0.9) 100%)`,
+        backgroundImage: `linear-gradient(135deg, ${MEMBER_AVATAR_COLOR} 0%, rgba(15, 23, 42, 0.9) 100%)`,
       }}
       aria-hidden
     >
@@ -45,46 +40,11 @@ function MemberAvatar({ name, photoUrl, color }) {
   )
 }
 
-function BlockChip({ name, color, active, onClick }) {
-  const accent = color || '#0369a1'
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`group inline-flex min-h-9 items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold transition ${
-        active
-          ? 'border-transparent bg-slate-900 text-white shadow-sm'
-          : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-      }`}
-    >
-      <span
-        className="h-2.5 w-2.5 rounded-full"
-        style={{ backgroundColor: accent }}
-        aria-hidden
-      />
-      {name}
-    </button>
-  )
-}
-
-function MemberCard({ member, blocks }) {
-  const color = blockColor(blocks, member.block)
+function MemberCard({ member }) {
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
       <div className="relative aspect-4/5 w-full overflow-hidden bg-slate-100">
-        <MemberAvatar name={member.name} photoUrl={member.photoUrl} color={color} />
-        {member.block ? (
-          <span
-            className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-800 shadow-sm backdrop-blur"
-          >
-            <span
-              className="h-2 w-2 rounded-full"
-              style={{ backgroundColor: color }}
-              aria-hidden
-            />
-            {member.block}
-          </span>
-        ) : null}
+        <MemberAvatar name={member.name} photoUrl={member.photoUrl} />
       </div>
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div>
@@ -158,14 +118,11 @@ export function ConcejoDeliberante() {
           contactPhone: '',
           contactAddress: '',
           contactHours: '',
-          blocks: [],
           members: [],
-          commissions: [],
         }
       : DEFAULT_CONCEJO_DELIBERANTE_CONTENT,
   )
   const [loading, setLoading] = useState(apiEnabled)
-  const [selectedBlock, setSelectedBlock] = useState(ALL_BLOCKS)
 
   useEffect(() => {
     let cancelled = false
@@ -189,13 +146,8 @@ export function ConcejoDeliberante() {
     }
   }, [apiEnabled])
 
-  const filteredMembers = useMemo(() => {
-    const all = content.members || []
-    if (selectedBlock === ALL_BLOCKS) return all
-    return all.filter((m) => m.block === selectedBlock)
-  }, [content.members, selectedBlock])
-
-  const totalMembers = (content.members || []).length
+  const membersList = useMemo(() => content.members || [], [content.members])
+  const totalMembers = membersList.length
 
   const resolvedHeroImage = useMemo(() => {
     const u = String(content.heroImageUrl || '').trim()
@@ -280,11 +232,7 @@ export function ConcejoDeliberante() {
             >
               <div className="grid gap-0 sm:grid-cols-12">
                 <div className="relative aspect-square w-full overflow-hidden bg-[#ece8df] sm:col-span-4 sm:aspect-auto sm:min-h-[220px]">
-                  <MemberAvatar
-                    name={content.presidentName}
-                    photoUrl={content.presidentPhotoUrl}
-                    color="#0369a1"
-                  />
+                  <MemberAvatar name={content.presidentName} photoUrl={content.presidentPhotoUrl} />
                 </div>
                 <div className="flex flex-col justify-center gap-3 p-5 sm:col-span-8 sm:p-7 lg:p-8">
                   <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-700">
@@ -321,115 +269,31 @@ export function ConcejoDeliberante() {
                   Cuerpo de Concejales
                 </h2>
                 <p className="mt-2 max-w-2xl text-sm text-[#5c6169]">
-                  Filtrá por bloque para ver la composición política del Concejo.
+                  Integrantes del cuerpo legislativo que representan a la ciudadanía.
                 </p>
               </div>
               <p className="text-xs font-semibold uppercase tracking-wide text-[#6b7280]">
-                {filteredMembers.length} de {totalMembers}
+                {totalMembers} {totalMembers === 1 ? 'integrante' : 'integrantes'}
               </p>
             </div>
-
-            {(content.blocks || []).length > 0 ? (
-              <div className="mt-5 flex flex-wrap gap-2">
-                <BlockChip
-                  name="Todos los bloques"
-                  color="#0f172a"
-                  active={selectedBlock === ALL_BLOCKS}
-                  onClick={() => setSelectedBlock(ALL_BLOCKS)}
-                />
-                {(content.blocks || []).map((b) => (
-                  <BlockChip
-                    key={b.id}
-                    name={b.name}
-                    color={b.color}
-                    active={selectedBlock === b.name}
-                    onClick={() => setSelectedBlock(b.name)}
-                  />
-                ))}
-              </div>
-            ) : null}
 
             <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {loading
                 ? Array.from({ length: 6 }).map((_, i) => (
                     <MemberCardSkeleton key={`sk-${i}`} />
                   ))
-                : filteredMembers.length === 0
+                : membersList.length === 0
                   ? (
                       <div className="col-span-full rounded-2xl border border-dashed border-[#ddd7ca] bg-[#faf9f6] px-4 py-10 text-center text-sm text-[#5c6169]">
-                        No hay concejales para este bloque por ahora.
+                        No hay concejales cargados por ahora.
                       </div>
                     )
-                  : filteredMembers.map((m) => (
-                      <MemberCard key={m.id} member={m} blocks={content.blocks} />
+                  : membersList.map((m) => (
+                      <MemberCard key={m.id} member={m} />
                     ))}
             </div>
           </section>
         </RevealOnScroll>
-
-        <div className="mt-8 grid gap-6 pb-2 lg:grid-cols-12 lg:gap-8">
-          {(content.blocks || []).length > 0 ? (
-            <RevealOnScroll variant="newsCardSlow" delayMs={120} className="lg:col-span-6">
-              <section
-                id="bloques"
-                className="h-full rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-5 shadow-sm sm:p-6"
-              >
-                <h2 className="font-serif text-xl font-bold tracking-tight text-[#171b22] sm:text-2xl">
-                  Bloques políticos
-                </h2>
-                <ul className="mt-4 space-y-3">
-                  {(content.blocks || []).map((b) => (
-                    <li
-                      key={b.id}
-                      className="rounded-2xl border border-[#e5e2da] bg-white/80 p-4"
-                      style={{ borderLeft: `6px solid ${b.color || '#0369a1'}` }}
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <h3 className="text-base font-bold text-[#171b22]">{b.name}</h3>
-                        <span className="text-xs font-semibold uppercase tracking-wide text-[#6b7280]">
-                          {(content.members || []).filter((m) => m.block === b.name).length}{' '}
-                          integrantes
-                        </span>
-                      </div>
-                      {b.description ? (
-                        <p className="mt-2 text-sm leading-relaxed text-[#4b505a]">{b.description}</p>
-                      ) : null}
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            </RevealOnScroll>
-          ) : null}
-
-          {(content.commissions || []).length > 0 ? (
-            <RevealOnScroll variant="newsCardSlow" delayMs={140} className="lg:col-span-6">
-              <section
-                id="comisiones"
-                className="h-full rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-5 shadow-sm sm:p-6"
-              >
-                <h2 className="font-serif text-xl font-bold tracking-tight text-[#171b22] sm:text-2xl">
-                  Comisiones de trabajo
-                </h2>
-                <p className="mt-2 text-sm text-[#5c6169]">
-                  Cada comisión analiza temas específicos antes de llevarlos al recinto.
-                </p>
-                <ul className="mt-4 grid gap-3 sm:grid-cols-2">
-                  {(content.commissions || []).map((c) => (
-                    <li
-                      key={c.id}
-                      className="rounded-2xl border border-[#e5e2da] bg-white/80 p-4"
-                    >
-                      <h3 className="text-sm font-bold text-[#171b22]">{c.name}</h3>
-                      {c.description ? (
-                        <p className="mt-2 text-sm leading-relaxed text-[#4b505a]">{c.description}</p>
-                      ) : null}
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            </RevealOnScroll>
-          ) : null}
-        </div>
       </Container>
     </section>
   )
