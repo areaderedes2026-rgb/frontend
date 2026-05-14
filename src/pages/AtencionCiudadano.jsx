@@ -188,6 +188,15 @@ export function AtencionCiudadano() {
       setFormError('Ingresá un DNI válido.')
       return
     }
+    const phone = String(form.phone || '').trim()
+    if (!phone || phone.length < 6) {
+      setFormError('Completá un teléfono de contacto (mínimo 6 caracteres).')
+      return
+    }
+    if (phone.length > 80) {
+      setFormError('El teléfono es demasiado largo.')
+      return
+    }
     if (!form.topic) {
       setFormError('Elegí un tema para tu consulta.')
       return
@@ -202,23 +211,23 @@ export function AtencionCiudadano() {
     }
     if (!isApiConfigured()) {
       setToast({
-        type: 'error',
+        variant: 'error',
         message: 'No hay conexión disponible con el backend para enviar consultas.',
       })
       return
     }
     setSending(true)
     try {
-      const inquiry = await createCitizenInquiry({ ...form, dni })
+      const inquiry = await createCitizenInquiry({ ...form, dni, phone })
       setToast({
-        type: 'success',
+        variant: 'success',
         message: inquiry?.id
           ? `Consulta enviada. Número de seguimiento: #${inquiry.id}.`
           : 'Consulta enviada correctamente.',
       })
       setForm(EMPTY_FORM)
     } catch (e2) {
-      setToast({ type: 'error', message: e2.message || 'No se pudo enviar la consulta.' })
+      setToast({ variant: 'error', message: e2.message || 'No se pudo enviar la consulta.' })
     } finally {
       setSending(false)
     }
@@ -226,7 +235,7 @@ export function AtencionCiudadano() {
 
   return (
     <>
-      {toast ? <Toast variant={toast.type} message={toast.message} onDismiss={dismissToast} /> : null}
+      {toast ? <Toast variant={toast.variant} message={toast.message} onDismiss={dismissToast} /> : null}
       <CitizenPageFloats />
 
       <section className="relative -mt-[calc(var(--navbar-h,5rem)+1.5rem)] overflow-hidden bg-linear-to-b from-[#f1eee8] via-[#f7f7f5] to-[#fcfcfa] pb-12 sm:-mt-[calc(var(--navbar-h,5rem)+2rem)] sm:pb-16">
@@ -382,7 +391,7 @@ export function AtencionCiudadano() {
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className={labelClass} htmlFor={`${formId}-tel`}>
-                    Teléfono (opcional)
+                    Teléfono *
                     <input
                       id={`${formId}-tel`}
                       type="tel"
@@ -391,7 +400,10 @@ export function AtencionCiudadano() {
                       onChange={(e) => updateField('phone', e.target.value)}
                       autoComplete="tel"
                       inputMode="tel"
-                      placeholder="Ej. 3862 …"
+                      required
+                      minLength={6}
+                      maxLength={80}
+                      placeholder="Ej. +54 3862 … o 3862 …"
                     />
                   </label>
                 </div>
