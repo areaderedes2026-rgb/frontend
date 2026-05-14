@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Container } from '../../components/ui/Container.jsx'
 import { RevealOnScroll } from '../../components/home/RevealOnScroll.jsx'
+import { LinkButton } from '../../components/ui/LinkButton.jsx'
+import { HydrationHeroDarkBackdrop } from '../../components/skeleton/PageHydrationSkeleton.jsx'
 import {
   DEFAULT_CONCEJO_DELIBERANTE_CONTENT,
   getInitialsFromName,
@@ -194,143 +196,109 @@ export function ConcejoDeliberante() {
   }, [content.members, selectedBlock])
 
   const totalMembers = (content.members || []).length
-  const totalBlocks = (content.blocks || []).length
-  const totalCommissions = (content.commissions || []).length
+
+  const resolvedHeroImage = useMemo(() => {
+    const u = String(content.heroImageUrl || '').trim()
+    if (u) return u
+    return String(DEFAULT_CONCEJO_DELIBERANTE_CONTENT.heroImageUrl || '').trim()
+  }, [content.heroImageUrl])
+
+  const showHeroBackdrop = apiEnabled && loading && !String(content.heroImageUrl || '').trim()
 
   return (
-    <section className="relative bg-linear-to-b from-[#f7f9fc] via-[#fcfcfa] to-white pb-12 sm:pb-16">
-      <Container className="max-w-[min(100%,96rem)]!">
-        <p className="pt-1 text-sm font-medium text-sky-700">
-          <Link to={ROUTES.home} className="transition-colors hover:text-sky-900">
-            ← Volver al inicio
-          </Link>
-        </p>
+    <section className="relative -mt-[calc(var(--navbar-h,5rem)+1.5rem)] overflow-hidden bg-linear-to-b from-[#f1eee8] via-[#f7f7f5] to-[#fcfcfa] pb-10 sm:-mt-[calc(var(--navbar-h,5rem)+2rem)] sm:pb-14">
+      <div
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_85%_45%_at_20%_-10%,rgba(56,189,248,0.12),transparent_60%)]"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_55%_45%_at_100%_10%,rgba(15,23,42,0.12),transparent_70%)]"
+        aria-hidden
+      />
 
-        {/* HERO */}
-        <RevealOnScroll variant="newsCardSlow" delayMs={60}>
-          <div className="relative mt-5 overflow-hidden rounded-3xl border border-slate-200/80 shadow-sm">
-            <div className="absolute inset-0">
-              {content.heroImageUrl ? (
-                <img
-                  src={content.heroImageUrl}
-                  alt=""
-                  className="h-full w-full object-cover"
-                  aria-hidden
-                />
-              ) : (
-                <div className="h-full w-full bg-slate-200" aria-hidden />
-              )}
-              <div className="absolute inset-0 bg-linear-to-r from-slate-950/85 via-slate-900/70 to-slate-900/40" />
-            </div>
-            <div className="relative grid gap-6 p-6 sm:p-8 md:grid-cols-12 md:p-10">
-              <div className="md:col-span-8">
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-200">
-                  {content.heroEyebrow || 'Gobierno municipal'}
-                </p>
-                <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-white sm:text-4xl md:text-5xl">
-                  {content.heroTitle || 'Concejo Deliberante'}
-                </h1>
-                <p className="mt-4 max-w-3xl text-sm leading-relaxed text-slate-100/90 sm:text-base">
-                  {content.heroSubtitle}
-                </p>
-              </div>
-              <div className="md:col-span-4">
-                <div className="grid gap-3 sm:grid-cols-3 md:grid-cols-1">
-                  <div className="rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-white backdrop-blur">
-                    <p className="text-2xl font-bold">{totalMembers}</p>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-sky-100/90">
-                      Concejales
-                    </p>
-                  </div>
-                  <div className="rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-white backdrop-blur">
-                    <p className="text-2xl font-bold">{totalBlocks}</p>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-sky-100/90">
-                      Bloques
-                    </p>
-                  </div>
-                  <div className="rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-white backdrop-blur">
-                    <p className="text-2xl font-bold">{totalCommissions}</p>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-sky-100/90">
-                      Comisiones
-                    </p>
-                  </div>
-                </div>
-              </div>
+      <div className="relative min-h-[52dvh] overflow-hidden border-b border-white/10 bg-[#171b22] sm:min-h-[56dvh] lg:min-h-[58dvh]">
+        {showHeroBackdrop ? (
+          <HydrationHeroDarkBackdrop />
+        ) : (
+          <img
+            src={resolvedHeroImage}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover object-center"
+          />
+        )}
+        <div className="absolute inset-0 bg-linear-to-t from-black/76 via-black/62 to-black/36" />
+        <Container className="relative z-10 flex min-h-[52dvh] flex-col justify-center pt-[calc(var(--navbar-h,5rem)+1rem)] pb-8 sm:min-h-[56dvh] sm:pt-[calc(var(--navbar-h,5rem)+1.5rem)] sm:pb-10 lg:min-h-[58dvh] lg:pb-12">
+          <p className="mb-5 text-sm">
+            <Link to={ROUTES.home} className="font-medium text-white/85 transition hover:text-white">
+              ← Volver al inicio
+            </Link>
+          </p>
+          <div className="max-w-4xl">
+            <p className="hero-enter-eyebrow text-[11px] font-bold uppercase tracking-[0.28em] text-sky-200/95 sm:text-xs sm:tracking-[0.32em]">
+              {content.heroEyebrow || 'Gobierno municipal'}
+            </p>
+            <h1 className="hero-enter-title mt-2 max-w-3xl font-serif text-3xl font-bold leading-tight text-white sm:text-4xl lg:text-[2.85rem]">
+              {content.heroTitle || 'Concejo Deliberante'}
+            </h1>
+            <p className="hero-enter-subtitle mt-3 max-w-2xl text-sm leading-relaxed text-slate-100 sm:text-base">
+              {content.heroSubtitle}
+            </p>
+            <div className="hero-enter-actions mt-6 flex flex-wrap items-center gap-3">
+              <LinkButton to={ROUTES.atencionCiudadano}>Atención al vecino</LinkButton>
+              <a
+                href="#concejales"
+                className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/40 bg-white/10 px-5 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white/70 hover:bg-white/15"
+              >
+                Ver concejales
+              </a>
             </div>
           </div>
+        </Container>
+      </div>
+
+      <Container className="relative max-w-[min(100%,96rem)]!">
+        <RevealOnScroll variant="slow">
+          <section className="mt-8 rounded-2xl border border-[#e8e4dc] bg-[#fcfcfa] p-6 shadow-[0_1px_0_rgba(255,255,255,0.85)_inset,0_12px_40px_-28px_rgba(15,23,42,0.12)] sm:p-8 lg:p-10">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-800">
+              Concejo Deliberante
+            </p>
+            <h2 className="mt-2 font-serif text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
+              {content.introTitle}
+            </h2>
+            <div className="mt-5 max-w-4xl space-y-4 text-sm leading-relaxed text-[#4b505a] sm:text-base">
+              {(content.introParagraphs || []).map((p, i) => (
+                <p key={`intro-p-${i}`}>{p}</p>
+              ))}
+            </div>
+          </section>
         </RevealOnScroll>
 
-        {/* INTRO + SESIONES */}
-        <div className="mt-6 grid gap-6 lg:grid-cols-12">
-          <RevealOnScroll variant="newsCardSlow" delayMs={100} className="lg:col-span-7">
-            <section className="h-full rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6">
-              <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-                {content.introTitle}
-              </h2>
-              <div className="mt-4 space-y-3 text-sm leading-relaxed text-slate-700 sm:text-base">
-                {(content.introParagraphs || []).map((p, i) => (
-                  <p key={`intro-p-${i}`}>{p}</p>
-                ))}
-              </div>
-            </section>
-          </RevealOnScroll>
-
-          <RevealOnScroll variant="slow" delayMs={140} className="lg:col-span-5">
-            <aside className="h-full rounded-3xl border border-slate-200/80 bg-slate-900 p-5 text-slate-100 shadow-sm sm:p-6">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-300">
-                {content.sessionsTitle || 'Sesiones'}
-              </p>
-              <div className="mt-4 space-y-2 text-sm leading-relaxed">
-                {content.sessionsSchedule ? (
-                  <p className="rounded-xl border border-white/15 bg-white/5 px-3 py-2">
-                    <span className="font-semibold">Día y horario:</span>{' '}
-                    {content.sessionsSchedule}
-                  </p>
-                ) : null}
-                {content.sessionsLocation ? (
-                  <p className="rounded-xl border border-white/15 bg-white/5 px-3 py-2">
-                    <span className="font-semibold">Lugar:</span> {content.sessionsLocation}
-                  </p>
-                ) : null}
-              </div>
-              {content.sessionsNote ? (
-                <div className="mt-5 rounded-xl border border-sky-300/30 bg-sky-500/10 p-3 text-xs text-sky-100">
-                  {content.sessionsNote}
-                </div>
-              ) : null}
-            </aside>
-          </RevealOnScroll>
-        </div>
-
-        {/* PRESIDENCIA */}
         {content.presidentName || content.presidentRole || content.presidentBio ? (
-          <RevealOnScroll variant="newsCardSlow" delayMs={160}>
+          <RevealOnScroll variant="newsCardSlow" delayMs={80}>
             <section
               id="presidencia"
-              className="mt-6 overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm"
+              className="mt-8 overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm"
             >
               <div className="grid gap-0 sm:grid-cols-12">
-                <div className="relative aspect-square w-full overflow-hidden bg-slate-100 sm:col-span-4 sm:aspect-auto">
+                <div className="relative aspect-square w-full overflow-hidden bg-[#ece8df] sm:col-span-4 sm:aspect-auto sm:min-h-[220px]">
                   <MemberAvatar
                     name={content.presidentName}
                     photoUrl={content.presidentPhotoUrl}
                     color="#0369a1"
                   />
                 </div>
-                <div className="flex flex-col justify-center gap-3 p-5 sm:col-span-8 sm:p-6">
+                <div className="flex flex-col justify-center gap-3 p-5 sm:col-span-8 sm:p-7 lg:p-8">
                   <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-700">
                     Presidencia del Concejo
                   </p>
-                  <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+                  <h2 className="text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
                     {content.presidentName}
                   </h2>
                   {content.presidentRole ? (
-                    <p className="-mt-1 text-sm font-semibold text-slate-600">
-                      {content.presidentRole}
-                    </p>
+                    <p className="-mt-1 text-sm font-semibold text-[#5c6169]">{content.presidentRole}</p>
                   ) : null}
                   {content.presidentBio ? (
-                    <p className="text-sm leading-relaxed text-slate-700 sm:text-base">
+                    <p className="text-sm leading-relaxed text-[#4b505a] sm:text-base">
                       {content.presidentBio}
                     </p>
                   ) : null}
@@ -340,30 +308,32 @@ export function ConcejoDeliberante() {
           </RevealOnScroll>
         ) : null}
 
-        {/* CONCEJALES */}
-        <RevealOnScroll variant="newsCardSlow" delayMs={180}>
+        <RevealOnScroll variant="newsCardSlow" delayMs={100}>
           <section
             id="concejales"
-            className="mt-6 rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6"
+            className="mt-8 rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-5 shadow-sm sm:p-6 lg:p-8"
           >
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-800">
+                  Representación
+                </p>
+                <h2 className="mt-2 font-serif text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
                   Cuerpo de Concejales
                 </h2>
-                <p className="mt-1 text-sm text-slate-600">
-                  Filtrá por bloque para conocer la composición política del Concejo.
+                <p className="mt-2 max-w-2xl text-sm text-[#5c6169]">
+                  Filtrá por bloque para ver la composición política del Concejo.
                 </p>
               </div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#6b7280]">
                 {filteredMembers.length} de {totalMembers}
               </p>
             </div>
 
             {(content.blocks || []).length > 0 ? (
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="mt-5 flex flex-wrap gap-2">
                 <BlockChip
-                  name={`Todos los bloques`}
+                  name="Todos los bloques"
                   color="#0f172a"
                   active={selectedBlock === ALL_BLOCKS}
                   onClick={() => setSelectedBlock(ALL_BLOCKS)}
@@ -380,14 +350,14 @@ export function ConcejoDeliberante() {
               </div>
             ) : null}
 
-            <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {loading
                 ? Array.from({ length: 6 }).map((_, i) => (
                     <MemberCardSkeleton key={`sk-${i}`} />
                   ))
                 : filteredMembers.length === 0
                   ? (
-                      <div className="col-span-full rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 px-4 py-8 text-center text-sm text-slate-600">
+                      <div className="col-span-full rounded-2xl border border-dashed border-[#ddd7ca] bg-[#faf9f6] px-4 py-10 text-center text-sm text-[#5c6169]">
                         No hay concejales para este bloque por ahora.
                       </div>
                     )
@@ -398,35 +368,32 @@ export function ConcejoDeliberante() {
           </section>
         </RevealOnScroll>
 
-        {/* BLOQUES Y COMISIONES */}
-        <div className="mt-6 grid gap-6 lg:grid-cols-12">
+        <div className="mt-8 grid gap-6 pb-2 lg:grid-cols-12 lg:gap-8">
           {(content.blocks || []).length > 0 ? (
-            <RevealOnScroll variant="newsCardSlow" delayMs={200} className="lg:col-span-6">
+            <RevealOnScroll variant="newsCardSlow" delayMs={120} className="lg:col-span-6">
               <section
                 id="bloques"
-                className="h-full rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6"
+                className="h-full rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-5 shadow-sm sm:p-6"
               >
-                <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+                <h2 className="font-serif text-xl font-bold tracking-tight text-[#171b22] sm:text-2xl">
                   Bloques políticos
                 </h2>
                 <ul className="mt-4 space-y-3">
                   {(content.blocks || []).map((b) => (
                     <li
                       key={b.id}
-                      className="rounded-2xl border border-slate-200/80 bg-slate-50/60 p-4"
+                      className="rounded-2xl border border-[#e5e2da] bg-white/80 p-4"
                       style={{ borderLeft: `6px solid ${b.color || '#0369a1'}` }}
                     >
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <h3 className="text-base font-bold text-slate-900">{b.name}</h3>
-                        <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        <h3 className="text-base font-bold text-[#171b22]">{b.name}</h3>
+                        <span className="text-xs font-semibold uppercase tracking-wide text-[#6b7280]">
                           {(content.members || []).filter((m) => m.block === b.name).length}{' '}
                           integrantes
                         </span>
                       </div>
                       {b.description ? (
-                        <p className="mt-2 text-sm leading-relaxed text-slate-700">
-                          {b.description}
-                        </p>
+                        <p className="mt-2 text-sm leading-relaxed text-[#4b505a]">{b.description}</p>
                       ) : null}
                     </li>
                   ))}
@@ -436,28 +403,26 @@ export function ConcejoDeliberante() {
           ) : null}
 
           {(content.commissions || []).length > 0 ? (
-            <RevealOnScroll variant="newsCardSlow" delayMs={240} className="lg:col-span-6">
+            <RevealOnScroll variant="newsCardSlow" delayMs={140} className="lg:col-span-6">
               <section
                 id="comisiones"
-                className="h-full rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6"
+                className="h-full rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-5 shadow-sm sm:p-6"
               >
-                <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+                <h2 className="font-serif text-xl font-bold tracking-tight text-[#171b22] sm:text-2xl">
                   Comisiones de trabajo
                 </h2>
-                <p className="mt-1 text-sm text-slate-600">
+                <p className="mt-2 text-sm text-[#5c6169]">
                   Cada comisión analiza temas específicos antes de llevarlos al recinto.
                 </p>
                 <ul className="mt-4 grid gap-3 sm:grid-cols-2">
                   {(content.commissions || []).map((c) => (
                     <li
                       key={c.id}
-                      className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4"
+                      className="rounded-2xl border border-[#e5e2da] bg-white/80 p-4"
                     >
-                      <h3 className="text-sm font-bold text-slate-900">{c.name}</h3>
+                      <h3 className="text-sm font-bold text-[#171b22]">{c.name}</h3>
                       {c.description ? (
-                        <p className="mt-2 text-sm leading-relaxed text-slate-700">
-                          {c.description}
-                        </p>
+                        <p className="mt-2 text-sm leading-relaxed text-[#4b505a]">{c.description}</p>
                       ) : null}
                     </li>
                   ))}
@@ -466,66 +431,6 @@ export function ConcejoDeliberante() {
             </RevealOnScroll>
           ) : null}
         </div>
-
-        {/* CONTACTO */}
-        <RevealOnScroll variant="newsCardSlow" delayMs={260}>
-          <section
-            id="contacto-concejo"
-            className="mt-6 overflow-hidden rounded-3xl border border-slate-200/80 bg-slate-900 p-5 text-slate-100 shadow-sm sm:p-6"
-          >
-            <div className="grid gap-6 lg:grid-cols-12">
-              <div className="lg:col-span-7">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-300">
-                  Contacto institucional
-                </p>
-                <h2 className="mt-2 text-xl font-bold tracking-tight text-white sm:text-2xl">
-                  Escribinos al Concejo Deliberante
-                </h2>
-                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-100/90 sm:text-base">
-                  Si tenés una iniciativa, un reclamo vecinal o querés solicitar una
-                  audiencia, podés acercarte a la mesa de entradas o usar los canales
-                  oficiales.
-                </p>
-                <div className="mt-5 flex flex-wrap gap-2">
-                  <Link
-                    to={ROUTES.atencionCiudadano}
-                    className="inline-flex min-h-11 items-center justify-center rounded-xl bg-white px-4 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
-                  >
-                    Mesa de atención al vecino
-                  </Link>
-                  <Link
-                    to={ROUTES.governmentIntendencia}
-                    className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/30 bg-transparent px-4 text-sm font-semibold text-white transition hover:bg-white/10"
-                  >
-                    Ir a Intendencia
-                  </Link>
-                </div>
-              </div>
-              <div className="space-y-2 text-sm leading-relaxed lg:col-span-5">
-                {content.contactEmail ? (
-                  <p className="rounded-xl border border-white/15 bg-white/5 px-3 py-2">
-                    <span className="font-semibold">Correo:</span> {content.contactEmail}
-                  </p>
-                ) : null}
-                {content.contactPhone ? (
-                  <p className="rounded-xl border border-white/15 bg-white/5 px-3 py-2">
-                    <span className="font-semibold">Teléfono:</span> {content.contactPhone}
-                  </p>
-                ) : null}
-                {content.contactAddress ? (
-                  <p className="rounded-xl border border-white/15 bg-white/5 px-3 py-2">
-                    <span className="font-semibold">Dirección:</span> {content.contactAddress}
-                  </p>
-                ) : null}
-                {content.contactHours ? (
-                  <p className="rounded-xl border border-white/15 bg-white/5 px-3 py-2">
-                    <span className="font-semibold">Horario:</span> {content.contactHours}
-                  </p>
-                ) : null}
-              </div>
-            </div>
-          </section>
-        </RevealOnScroll>
       </Container>
     </section>
   )
