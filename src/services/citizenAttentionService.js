@@ -127,3 +127,39 @@ export async function deleteCitizenInquiry(id) {
     throw new Error((await apiErrorMessage(res)) || 'No se pudo eliminar la consulta.')
   }
 }
+
+export async function fetchInquiryWhatsappTemplate() {
+  const b = base()
+  if (!b) return { message: '', updatedAt: null }
+  const res = await fetch(`${b}/api/citizen-attention/admin/inquiry-whatsapp-message`, {
+    headers: jsonAuthHeaders(),
+  })
+  notifyUnauthorizedIfNeeded(res)
+  if (!res.ok) {
+    throw new Error((await apiErrorMessage(res)) || 'No se pudo cargar la plantilla de WhatsApp.')
+  }
+  const data = await res.json().catch(() => ({}))
+  return {
+    message: typeof data.message === 'string' ? data.message : '',
+    updatedAt: data.updatedAt || null,
+  }
+}
+
+export async function updateInquiryWhatsappTemplate({ message, expectedUpdatedAt }) {
+  const b = base()
+  if (!b) throw new Error('Configurá VITE_API_URL para guardar la plantilla.')
+  const res = await fetch(`${b}/api/citizen-attention/admin/inquiry-whatsapp-message`, {
+    method: 'PUT',
+    headers: jsonAuthHeaders(),
+    body: JSON.stringify({ message, expectedUpdatedAt }),
+  })
+  notifyUnauthorizedIfNeeded(res)
+  if (!res.ok) {
+    throw new Error((await apiErrorMessage(res)) || 'No se pudo guardar la plantilla de WhatsApp.')
+  }
+  const data = await res.json().catch(() => ({}))
+  return {
+    message: typeof data.message === 'string' ? data.message : '',
+    updatedAt: data.updatedAt || null,
+  }
+}
