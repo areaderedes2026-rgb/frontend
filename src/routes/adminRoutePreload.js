@@ -16,6 +16,10 @@ export const adminRouteLoaders = {
     () => import('../pages/admin/AdminCitizenAttention.jsx'),
     'AdminCitizenAttention',
   ),
+  citizenInquiries: namedLazy(
+    () => import('../pages/admin/AdminCitizenInquiries.jsx'),
+    'AdminCitizenInquiries',
+  ),
   tourismPlaces: namedLazy(
     () => import('../pages/admin/AdminTourismPlaces.jsx'),
     'AdminTourismPlaces',

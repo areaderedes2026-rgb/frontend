@@ -28,6 +28,7 @@ export const ROUTES = {
   adminAreas: '/admin/areas',
   adminHistory: '/admin/history',
   adminCitizenAttention: '/admin/citizen-attention',
+  adminCitizenInquiries: '/admin/citizen-inquiries',
   adminTourismPlaces: '/admin/tourism-places',
   adminOfertaAcademica: '/admin/oferta-academica',
   adminNewsCreate: '/admin/news/create',

@@ -19,6 +19,7 @@ const AdminNewsStats = lazy(adminRouteLoaders.newsStats)
 const AdminAreaProfiles = lazy(adminRouteLoaders.areas)
 const AdminHistory = lazy(adminRouteLoaders.history)
 const AdminCitizenAttention = lazy(adminRouteLoaders.citizenAttention)
+const AdminCitizenInquiries = lazy(adminRouteLoaders.citizenInquiries)
 const AdminTourismPlaces = lazy(adminRouteLoaders.tourismPlaces)
 const CreateNews = lazy(adminRouteLoaders.createNews)
 const EditNews = lazy(adminRouteLoaders.editNews)
@@ -121,6 +122,14 @@ export function AppRouter() {
             element={
               <Suspense fallback={<AdminRouteFallback />}>
                 <AdminCitizenAttention />
+              </Suspense>
+            }
+          />
+          <Route
+            path="citizen-inquiries"
+            element={
+              <Suspense fallback={<AdminRouteFallback />}>
+                <AdminCitizenInquiries />
               </Suspense>
             }
           />

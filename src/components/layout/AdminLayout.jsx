@@ -42,6 +42,9 @@ export function AdminLayout() {
   const citizenAttentionActive =
     pathname === ROUTES.adminCitizenAttention ||
     pathname.startsWith(`${ROUTES.adminCitizenAttention}/`)
+  const citizenInquiriesActive =
+    pathname === ROUTES.adminCitizenInquiries ||
+    pathname.startsWith(`${ROUTES.adminCitizenInquiries}/`)
   const ofertaAcademicaActive =
     pathname === ROUTES.adminOfertaAcademica ||
     pathname.startsWith(`${ROUTES.adminOfertaAcademica}/`)
@@ -162,6 +165,16 @@ export function AdminLayout() {
               Historia
             </NavLink>
             <NavLink
+              to={ROUTES.adminOfertaAcademica}
+              onMouseEnter={() => preloadAdminRoute('ofertaAcademica')}
+              onFocus={() => preloadAdminRoute('ofertaAcademica')}
+              className={({ isActive }) =>
+                navClass({ isActive: isActive || ofertaAcademicaActive })
+              }
+            >
+              Oferta académica
+            </NavLink>
+            <NavLink
               to={ROUTES.adminCitizenAttention}
               onMouseEnter={() => preloadAdminRoute('citizenAttention')}
               onFocus={() => preloadAdminRoute('citizenAttention')}
@@ -172,14 +185,14 @@ export function AdminLayout() {
               Atención
             </NavLink>
             <NavLink
-              to={ROUTES.adminOfertaAcademica}
-              onMouseEnter={() => preloadAdminRoute('ofertaAcademica')}
-              onFocus={() => preloadAdminRoute('ofertaAcademica')}
+              to={ROUTES.adminCitizenInquiries}
+              onMouseEnter={() => preloadAdminRoute('citizenInquiries')}
+              onFocus={() => preloadAdminRoute('citizenInquiries')}
               className={({ isActive }) =>
-                navClass({ isActive: isActive || ofertaAcademicaActive })
+                navClass({ isActive: isActive || citizenInquiriesActive })
               }
             >
-              Oferta académica
+              Consultas
             </NavLink>
             <NavLink
               to={ROUTES.adminSettings}
