@@ -258,17 +258,16 @@ export function ConcejoDeliberante() {
 
       <Container className="relative max-w-[min(100%,96rem)]!">
         <RevealOnScroll variant="slow">
-          <section className="mt-8 rounded-2xl border border-[#e8e4dc] bg-[#fcfcfa] p-6 shadow-[0_1px_0_rgba(255,255,255,0.85)_inset,0_12px_40px_-28px_rgba(15,23,42,0.12)] sm:p-8 lg:p-10">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-800">
-              Concejo Deliberante
-            </p>
-            <h2 className="mt-2 font-serif text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
-              {content.introTitle}
-            </h2>
-            <div className="mt-5 max-w-4xl space-y-4 text-sm leading-relaxed text-[#4b505a] sm:text-base">
-              {(content.introParagraphs || []).map((p, i) => (
-                <p key={`intro-p-${i}`}>{p}</p>
-              ))}
+          <section className="mt-8 rounded-2xl border border-[#e8e4dc] bg-[#fcfcfa] p-6 text-center shadow-[0_1px_0_rgba(255,255,255,0.85)_inset,0_12px_40px_-28px_rgba(15,23,42,0.12)] sm:p-8 lg:p-10">
+            <div className="mx-auto max-w-4xl">
+              <h2 className="font-serif text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
+                {content.introTitle}
+              </h2>
+              <div className="mt-5 space-y-4 text-sm leading-relaxed text-[#4b505a] sm:text-base">
+                {(content.introParagraphs || []).map((p, i) => (
+                  <p key={`intro-p-${i}`}>{p}</p>
+                ))}
+              </div>
             </div>
           </section>
         </RevealOnScroll>
