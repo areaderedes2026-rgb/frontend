@@ -50,8 +50,13 @@ export function openInquiryWhatsApp(inquiry, storedTemplate) {
   const body = applyInquiryWhatsappPlaceholders(storedTemplate, inquiry)
   const safe = body.slice(0, WA_TEXT_MAX)
   const url = `https://wa.me/${digits}?text=${encodeURIComponent(safe)}`
-  const win = window.open(url, '_blank', 'noopener,noreferrer')
-  if (win == null) {
-    window.location.href = url
-  }
+  const a = document.createElement('a')
+  a.href = url
+  a.target = '_blank'
+  a.rel = 'noopener noreferrer'
+  a.setAttribute('aria-hidden', 'true')
+  a.style.display = 'none'
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
 }
