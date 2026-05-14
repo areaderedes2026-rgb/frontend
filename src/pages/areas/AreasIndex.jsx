@@ -272,15 +272,19 @@ export function AreasIndex() {
               </div>
             </RevealOnScroll>
           ) : (
-          <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <ul className="grid auto-rows-fr gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {directoryAreas.map((area, idx) => (
-              <li key={area.slug}>
-                <RevealOnScroll variant="newsCardSlow" delayMs={idx * 80}>
+              <li key={area.slug} className="flex min-h-0 h-full">
+                <RevealOnScroll
+                  variant="newsCardSlow"
+                  delayMs={idx * 80}
+                  className="h-full min-h-0 w-full"
+                >
                   <Link
                     to={`/areas/${area.slug}`}
-                    className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm ring-1 ring-[#1a1d24]/5 transition-all duration-300 hover:-translate-y-1 hover:border-sky-200/80 hover:shadow-xl hover:shadow-sky-500/10"
+                    className="group flex h-full min-h-0 w-full flex-col overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm ring-1 ring-[#1a1d24]/5 transition-all duration-300 hover:-translate-y-1 hover:border-sky-200/80 hover:shadow-xl hover:shadow-sky-500/10"
                   >
-                    <div className="relative">
+                    <div className="relative shrink-0">
                       <img
                         src={area.coverImage}
                         alt=""
@@ -290,14 +294,16 @@ export function AreasIndex() {
                       />
                       <div className="absolute inset-0 bg-linear-to-t from-slate-900/70 via-slate-900/0 to-slate-900/0" />
                     </div>
-                    <div className="flex flex-1 flex-col p-5">
-                      <h3 className="font-serif text-xl font-bold tracking-tight text-[#171b22] transition-colors group-hover:text-[#0f1319]">
+                    <div className="flex min-h-0 flex-1 flex-col p-5">
+                      <h3 className="line-clamp-2 shrink-0 font-serif text-xl font-bold leading-snug tracking-tight text-[#171b22] transition-colors group-hover:text-[#0f1319]">
                         {area.title}
                       </h3>
-                      <p className="mt-2 flex-1 text-sm leading-relaxed text-[#4b505a]">
-                        {area.description}
-                      </p>
-                      <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-sky-700 transition-all group-hover:gap-2">
+                      <div className="mt-2 min-h-0 flex-1">
+                        <p className="line-clamp-4 text-sm leading-relaxed text-[#4b505a]">
+                          {area.description}
+                        </p>
+                      </div>
+                      <span className="mt-auto inline-flex shrink-0 items-center gap-1.5 pt-4 text-sm font-semibold text-sky-700 transition-all group-hover:gap-2">
                         Explorar área
                         <span aria-hidden>→</span>
                       </span>
