@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
+import { InquiryDetailPanel, InquiryStatusPill } from '../../components/admin/InquiryDetailPanel.jsx'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
 import { Modal } from '../../components/ui/Modal.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
@@ -28,7 +29,6 @@ const ACTION_BTN_BASE =
   'inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto'
 const ACTION_BTN_NEUTRAL = `${ACTION_BTN_BASE} border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50`
 const ACTION_BTN_PRIMARY = `${ACTION_BTN_BASE} bg-sky-700 text-white hover:bg-sky-800`
-const ACTION_BTN_DANGER = `${ACTION_BTN_BASE} bg-red-600 text-white hover:bg-red-700`
 const ACTION_BTN_WHATSAPP = `${ACTION_BTN_BASE} border border-emerald-200 bg-emerald-50 text-emerald-900 hover:border-emerald-300 hover:bg-emerald-100/90`
 
 const STATUS_FILTERS = [
@@ -37,24 +37,6 @@ const STATUS_FILTERS = [
   { value: 'leida', label: 'Leídas' },
   { value: 'resuelta', label: 'Resueltas' },
 ]
-
-const STATUS_META = {
-  sin_resolver: {
-    label: 'Sin resolver',
-    card: 'border-amber-200 bg-amber-50 text-amber-800',
-    dot: 'bg-amber-500',
-  },
-  leida: {
-    label: 'Leída',
-    card: 'border-sky-200 bg-sky-50 text-sky-800',
-    dot: 'bg-sky-500',
-  },
-  resuelta: {
-    label: 'Resuelta',
-    card: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-    dot: 'bg-emerald-500',
-  },
-}
 
 function normalize(text) {
   return String(text || '')
@@ -71,16 +53,6 @@ function formatDateTime(value) {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(d)
-}
-
-function InquiryStatusPill({ status }) {
-  const meta = STATUS_META[status] || STATUS_META.sin_resolver
-  return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${meta.card}`}>
-      <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} aria-hidden />
-      {meta.label}
-    </span>
-  )
 }
 
 function StatCard({ label, value, tone = 'slate' }) {
@@ -252,8 +224,15 @@ export function AdminCitizenInquiries() {
     }
   }
 
+  const statusToastMessage = {
+    sin_resolver: 'Consulta marcada como pendiente.',
+    leida: 'Consulta marcada como leída.',
+    resuelta: 'Consulta marcada como resuelta.',
+  }
+
   async function handleChangeInquiryStatus(nextStatus) {
     if (!selectedInquiry) return
+    if (selectedInquiry.status === nextStatus) return
     setDetailUpdating(true)
     try {
       const updated = await updateCitizenInquiryStatus(
@@ -262,8 +241,13 @@ export function AdminCitizenInquiries() {
         selectedInquiry.updatedAt || null,
       )
       setSelectedInquiry(updated)
-      await loadInquiries()
-      setToast({ variant: 'success', message: 'Estado actualizado.' })
+      setInquiries((prev) =>
+        prev.map((item) => (item.id === updated.id ? { ...item, ...updated } : item)),
+      )
+      setToast({
+        variant: 'success',
+        message: statusToastMessage[nextStatus] || 'Estado actualizado.',
+      })
     } catch (e) {
       if (isConcurrencyConflictError(e)) setConflictOpen(true)
       setToast({ variant: 'error', message: e.message || 'No se pudo actualizar el estado.' })
@@ -390,105 +374,14 @@ export function AdminCitizenInquiries() {
             <div className="h-3 w-5/6 rounded bg-slate-100" />
           </div>
         ) : selectedInquiry ? (
-          <div className="space-y-6">
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <article className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Nombre</p>
-                <p className="mt-1 text-sm font-semibold text-slate-900">
-                  {selectedInquiry.firstName} {selectedInquiry.lastName}
-                </p>
-              </article>
-              <article className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">DNI</p>
-                <p className="mt-1 text-sm font-semibold text-slate-900">{selectedInquiry.dni}</p>
-              </article>
-              <article className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Estado</p>
-                <div className="mt-1">
-                  <InquiryStatusPill status={selectedInquiry.status} />
-                </div>
-              </article>
-              <article className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Teléfono</p>
-                <p className="mt-1 text-sm text-slate-800">{selectedInquiry.phone || 'No informado'}</p>
-              </article>
-              <article className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Tema</p>
-                <p className="mt-1 text-sm font-medium text-slate-900">{selectedInquiry.topic}</p>
-              </article>
-            </div>
-
-            <article className="rounded-xl border border-slate-200/80 bg-white p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Mensaje</p>
-              <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-700">{selectedInquiry.message}</p>
-            </article>
-
-            <div className="grid gap-2 sm:grid-cols-2">
-              <p className="text-xs text-slate-500">
-                Creada: <span className="font-medium text-slate-700">{formatDateTime(selectedInquiry.createdAt)}</span>
-              </p>
-              <p className="text-xs text-slate-500 sm:text-right">
-                Actualizada: <span className="font-medium text-slate-700">{formatDateTime(selectedInquiry.updatedAt)}</span>
-              </p>
-            </div>
-
-            <div className="flex flex-wrap gap-2 border-t border-slate-200/80 pt-4">
-              <button
-                type="button"
-                disabled={detailLoading}
-                onClick={() => void handleDownloadInquiryPdf(selectedInquiry)}
-                className={ACTION_BTN_NEUTRAL}
-              >
-                Descargar PDF
-              </button>
-              <button
-                type="button"
-                disabled={detailLoading || !normalizePhoneForWhatsapp(selectedInquiry.phone)}
-                onClick={() => handleInquiryWhatsapp(selectedInquiry)}
-                className={ACTION_BTN_WHATSAPP}
-                title={
-                  normalizePhoneForWhatsapp(selectedInquiry.phone)
-                    ? 'Abrir WhatsApp con el teléfono del vecino'
-                    : 'No hay teléfono válido para WhatsApp'
-                }
-              >
-                <WhatsAppGlyph className="h-4 w-4 shrink-0" />
-                WhatsApp
-              </button>
-              <button
-                type="button"
-                disabled={detailUpdating}
-                onClick={() => void handleChangeInquiryStatus('sin_resolver')}
-                className={ACTION_BTN_NEUTRAL}
-              >
-                Marcar sin resolver
-              </button>
-              <button
-                type="button"
-                disabled={detailUpdating}
-                onClick={() => void handleChangeInquiryStatus('leida')}
-                className={ACTION_BTN_NEUTRAL}
-              >
-                Marcar leída
-              </button>
-              <button
-                type="button"
-                disabled={detailUpdating}
-                onClick={() => void handleChangeInquiryStatus('resuelta')}
-                className={ACTION_BTN_PRIMARY}
-              >
-                Marcar resuelta
-              </button>
-              <button
-                type="button"
-                disabled={detailUpdating}
-                onClick={() => void handleDeleteInquiry()}
-                className={ACTION_BTN_DANGER}
-              >
-                Eliminar consulta
-              </button>
-            </div>
-          </div>
+          <InquiryDetailPanel
+            inquiry={selectedInquiry}
+            busy={detailUpdating}
+            onChangeStatus={(status) => void handleChangeInquiryStatus(status)}
+            onDownloadPdf={() => void handleDownloadInquiryPdf(selectedInquiry)}
+            onWhatsApp={() => handleInquiryWhatsapp(selectedInquiry)}
+            onDelete={() => void handleDeleteInquiry()}
+          />
         ) : (
           <p className="text-sm text-slate-600">No se pudo cargar la consulta seleccionada.</p>
         )}
