@@ -47,3 +47,9 @@ export const SOCIAL_LINKS = {
   facebook: 'https://www.facebook.com/profile.php?id=100050317032987',
   youtube: 'https://www.youtube.com/@canal6municipal-trancas888',
 }
+
+/** WhatsApp institucional (+54 9 3816 396406). */
+export const MUNICIPAL_WHATSAPP = {
+  phone: '5493816396406',
+  display: '+54 9 3816 396406',
+}

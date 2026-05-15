@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { Navbar } from './Navbar.jsx'
 import { Footer } from './Footer.jsx'
 import { FloatingSocialButtons } from './FloatingSocialButtons.jsx'
+import { FloatingWhatsAppButton } from './FloatingWhatsAppButton.jsx'
 import { PageTransitionOutlet } from './PageTransitionOutlet.jsx'
 import { ScrollToTop } from './ScrollToTop.jsx'
 import { preloadCommonPublicRoutes } from '../../routes/publicRoutePreload.js'
@@ -41,6 +42,7 @@ export function MainLayout() {
       >
         <PageTransitionOutlet />
       </main>
+      <FloatingWhatsAppButton />
       <FloatingSocialButtons />
       <Footer />
     </div>
