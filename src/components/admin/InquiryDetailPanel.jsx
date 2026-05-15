@@ -136,6 +136,61 @@ function WhatsAppGlyph({ className = 'h-3.5 w-3.5' }) {
   )
 }
 
+function InquiryStatusFooter({ inquiry, actions, busy, meta, onChangeStatus }) {
+  return (
+    <footer
+      className={`shrink-0 border-t border-slate-200/90 border-l-4 bg-white/95 px-4 py-3 shadow-[0_-8px_24px_-12px_rgba(15,23,42,0.12)] backdrop-blur-md sm:px-5 sm:py-4 ${meta.accent}`}
+      aria-label="Acciones de seguimiento"
+    >
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
+            Seguimiento
+          </p>
+          <div className="mt-1.5 flex flex-wrap items-center gap-2">
+            <InquiryStatusPill status={inquiry.status} />
+            {busy ? (
+              <span className="text-xs text-slate-500">Actualizando…</span>
+            ) : null}
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2 sm:justify-end">
+          {actions.markLeida ? (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => onChangeStatus('leida')}
+              className={inquiry.status === 'resuelta' ? BTN_NEUTRAL : BTN_SKY}
+            >
+              {inquiry.status === 'resuelta' ? 'Reabrir (leída)' : 'Marcar como leída'}
+            </button>
+          ) : null}
+          {actions.markResuelta ? (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => onChangeStatus('resuelta')}
+              className={BTN_EMERALD}
+            >
+              Marcar como resuelta
+            </button>
+          ) : null}
+          {actions.markSinResolver ? (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => onChangeStatus('sin_resolver')}
+              className={BTN_AMBER}
+            >
+              Volver a pendiente
+            </button>
+          ) : null}
+        </div>
+      </div>
+    </footer>
+  )
+}
+
 export function InquiryDetailPanel({
   inquiry,
   busy = false,
@@ -151,7 +206,8 @@ export function InquiryDetailPanel({
     actions.markLeida || actions.markSinResolver || actions.markResuelta
 
   return (
-    <div className="space-y-5">
+    <div className="-mx-5 -mb-4 flex h-full min-h-0 flex-col sm:-mx-6 sm:-mb-5">
+      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-5 pb-2 pt-1 sm:px-6">
       <section
         className={`rounded-2xl border border-slate-200/90 bg-linear-to-br from-slate-50 to-white p-4 sm:p-5 ring-1 ${meta.ring}`}
       >
@@ -205,51 +261,6 @@ export function InquiryDetailPanel({
         </p>
       </article>
 
-      {hasStatusActions ? (
-        <section
-          className={`rounded-xl border border-slate-200/80 border-l-4 bg-white p-4 shadow-sm sm:p-5 ${meta.accent}`}
-        >
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
-            Seguimiento
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {actions.markLeida ? (
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => onChangeStatus('leida')}
-                className={inquiry.status === 'resuelta' ? BTN_NEUTRAL : BTN_SKY}
-              >
-                {inquiry.status === 'resuelta' ? 'Reabrir (leída)' : 'Marcar como leída'}
-              </button>
-            ) : null}
-            {actions.markResuelta ? (
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => onChangeStatus('resuelta')}
-                className={BTN_EMERALD}
-              >
-                Marcar como resuelta
-              </button>
-            ) : null}
-            {actions.markSinResolver ? (
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => onChangeStatus('sin_resolver')}
-                className={BTN_AMBER}
-              >
-                Volver a pendiente
-              </button>
-            ) : null}
-          </div>
-          {busy ? (
-            <p className="mt-2 text-xs text-slate-500">Actualizando estado…</p>
-          ) : null}
-        </section>
-      ) : null}
-
       <section className="rounded-xl border border-slate-200/80 bg-white p-4 sm:p-5">
         <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
           Comunicación y archivo
@@ -295,6 +306,17 @@ export function InquiryDetailPanel({
           Eliminar consulta
         </button>
       </section>
+      </div>
+
+      {hasStatusActions ? (
+        <InquiryStatusFooter
+          inquiry={inquiry}
+          actions={actions}
+          busy={busy}
+          meta={meta}
+          onChangeStatus={onChangeStatus}
+        />
+      ) : null}
     </div>
   )
 }

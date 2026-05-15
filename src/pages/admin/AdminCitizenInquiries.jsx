@@ -364,6 +364,7 @@ export function AdminCitizenInquiries() {
         }}
         loading={detailUpdating}
         size="wide"
+        bodyClassName="flex flex-col overflow-hidden"
         title={selectedInquiry ? `Consulta #${selectedInquiry.id}` : 'Detalle de consulta'}
         description="Revisá la información y actualizá el estado de seguimiento."
       >
