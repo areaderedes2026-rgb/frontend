@@ -39,6 +39,10 @@ export function Home() {
 
   const upcomingEvents = useMemo(() => pickUpcomingPublicEvents(events, 3), [events])
   const showEventsSection = !eventsLoading && upcomingEvents.length > 0
+  const areasTone = showEventsSection ? 'light' : 'accent'
+  const mapTone = showEventsSection ? 'accent' : 'light'
+  const accessTone = showEventsSection ? 'light' : 'accent'
+  const accessIsAccent = accessTone === 'accent'
 
   useEffect(() => {
     let cancelled = false
@@ -115,7 +119,7 @@ export function Home() {
             Ver todas las noticias
           </LinkButton>
         }
-        tone="soft"
+        tone="light"
         className="relative"
       >
         <div className="grid gap-6 lg:grid-cols-12">
@@ -184,9 +188,9 @@ export function Home() {
       </StorySection>
 
       {showEventsSection ? (
-        <section className="relative isolate overflow-visible border-y border-[#e8e5dd] bg-[radial-gradient(circle_at_20%_0%,rgba(14,165,233,0.12),transparent_24rem),linear-gradient(180deg,#f7f7f5_0%,#efebe2_100%)] py-12 sm:py-14">
+        <section className="relative isolate overflow-visible border-y border-white/10 bg-[#171b22] py-12 text-white sm:py-14">
           <svg
-            className="pointer-events-none absolute inset-x-0 -top-12 z-0 h-12 w-full text-[#f7f7f5]"
+            className="pointer-events-none absolute inset-x-0 -top-12 z-0 h-12 w-full text-[#171b22]"
             viewBox="0 0 1440 96"
             preserveAspectRatio="none"
             aria-hidden
@@ -196,14 +200,13 @@ export function Home() {
               d="M0 58L60 52C120 46 240 34 360 42C480 50 600 78 720 74C840 70 960 34 1080 30C1200 26 1320 54 1380 68L1440 82V96H0V58Z"
             />
           </svg>
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(23,27,34,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(23,27,34,0.025)_1px,transparent_1px)] bg-size-[36px_36px]" aria-hidden />
           <Container className="relative z-10">
             <RevealOnScroll variant="slow">
               <div className="mx-auto max-w-2xl text-center">
-                <p className="inline-flex rounded-full border border-[#ddd7ca] bg-white/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-sky-800">
+                <p className="inline-flex rounded-full border border-white/14 bg-white/8 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-sky-100">
                   Agenda municipal
                 </p>
-                <h2 className="mt-3 font-serif text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
+                <h2 className="mt-3 font-serif text-2xl font-bold tracking-tight text-white sm:text-3xl">
                   Próximos eventos
                 </h2>
               </div>
@@ -258,7 +261,7 @@ export function Home() {
               <div className="mt-5 flex justify-center sm:mt-6">
                 <Link
                   to={ROUTES.events}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-[#ddd7ca] bg-white/75 px-4 py-2 text-sm font-semibold text-sky-800 shadow-sm transition hover:border-sky-200 hover:bg-white hover:text-[#0f1319]"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-white/14 bg-white/8 px-4 py-2 text-sm font-semibold text-sky-100 shadow-sm transition hover:border-sky-200/60 hover:bg-white/12 hover:text-white"
                 >
                   Ver todos los eventos
                   <span aria-hidden>→</span>
@@ -273,7 +276,7 @@ export function Home() {
         eyebrow="Áreas municipales"
         title="Explorá las áreas municipales"
         subtitle="Conocé las dependencias, sus funciones y la información principal de cada área."
-        tone="light"
+        tone={areasTone}
         className="relative"
       >
         <RevealOnScroll variant="slow">
@@ -285,7 +288,7 @@ export function Home() {
         eyebrow="Mapa de Trancas"
         title="Puntos clave del municipio"
         subtitle="Explorá ubicaciones importantes y conocé información útil directamente desde el mapa interactivo."
-        tone="light"
+        tone={mapTone}
         className="relative"
       >
         <RevealOnScroll variant="slow">
@@ -297,7 +300,7 @@ export function Home() {
         eyebrow="Gestiones"
         title="Accesos directos"
         subtitle="Seleccioná la opción que necesitás para continuar con tu trámite o consulta."
-        tone="accent"
+        tone={accessTone}
         className="relative"
       >
         <div className="grid gap-5 sm:grid-cols-3">
@@ -322,16 +325,35 @@ export function Home() {
             },
           ].map((card, i) => (
             <RevealOnScroll key={card.title} variant="slow" delayMs={i * 120} className="h-full">
-              <article className="group relative flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-white/14 bg-white/[0.07] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-all duration-500 hover:-translate-y-1 hover:border-sky-200/60 hover:bg-white/11">
-                <span className="pointer-events-none absolute -right-10 -top-10 h-24 w-24 rounded-full bg-sky-300/10 blur-2xl transition group-hover:bg-sky-300/18" aria-hidden />
-                <span className="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/12 bg-white/8 text-sm font-bold text-sky-100">
+              <article
+                className={`group relative flex h-full flex-col overflow-hidden rounded-[1.75rem] p-6 transition-all duration-500 hover:-translate-y-1 ${
+                  accessIsAccent
+                    ? 'border border-white/14 bg-white/[0.07] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] hover:border-sky-200/60 hover:bg-white/11'
+                    : 'border border-white/70 bg-white/72 shadow-[0_16px_50px_-34px_rgba(23,27,34,0.45)] ring-1 ring-[#171b22]/5 backdrop-blur hover:border-sky-200/80 hover:bg-white/85'
+                }`}
+              >
+                <span
+                  className={`pointer-events-none absolute -right-10 -top-10 h-24 w-24 rounded-full blur-2xl transition ${
+                    accessIsAccent ? 'bg-sky-300/10 group-hover:bg-sky-300/18' : 'bg-sky-300/16 group-hover:bg-sky-300/24'
+                  }`}
+                  aria-hidden
+                />
+                <span
+                  className={`mb-5 inline-flex h-11 w-11 items-center justify-center rounded-2xl border text-sm font-bold ${
+                    accessIsAccent
+                      ? 'border-white/12 bg-white/8 text-sky-100'
+                      : 'border-[#ddd7ca] bg-[#171b22] text-white'
+                  }`}
+                >
                   0{i + 1}
                 </span>
-                <h3 className="text-lg font-semibold text-white">{card.title}</h3>
-                <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-200">{card.text}</p>
+                <h3 className={`text-lg font-semibold ${accessIsAccent ? 'text-white' : 'text-[#171b22]'}`}>{card.title}</h3>
+                <p className={`mt-2 flex-1 text-sm leading-relaxed ${accessIsAccent ? 'text-slate-200' : 'text-[#4b505a]'}`}>{card.text}</p>
                 <Link
                   to={card.to}
-                  className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-sky-200 transition-colors hover:text-white"
+                  className={`mt-5 inline-flex items-center gap-1 text-sm font-semibold transition-colors ${
+                    accessIsAccent ? 'text-sky-200 hover:text-white' : 'text-sky-800 hover:text-[#0f1319]'
+                  }`}
                 >
                   {card.cta}
                   <span className="transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden>

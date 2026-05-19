@@ -2,17 +2,14 @@ import { Container } from '../ui/Container.jsx'
 import { RevealOnScroll } from './RevealOnScroll.jsx'
 
 const TONE_CLASS = {
-  light:
-    'border-y border-[#e8e5dd] bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.10),transparent_32rem),linear-gradient(180deg,#fbfaf7_0%,#f4f1ea_100%)]',
-  soft:
-    'border-y border-[#e4dfd4] bg-[radial-gradient(circle_at_80%_0%,rgba(23,27,34,0.10),transparent_30rem),radial-gradient(circle_at_10%_85%,rgba(14,165,233,0.10),transparent_28rem),linear-gradient(180deg,#f1eee8_0%,#fbfaf7_100%)]',
-  accent:
-    'border-y border-white/10 bg-[radial-gradient(circle_at_20%_0%,rgba(14,165,233,0.20),transparent_30rem),radial-gradient(circle_at_85%_80%,rgba(255,255,255,0.10),transparent_26rem),linear-gradient(180deg,#171b22_0%,#1a1d24_48%,#171b22_100%)] text-white',
+  light: 'border-y border-[#e8e5dd] bg-[#f7f7f5]',
+  soft: 'border-y border-[#e8e5dd] bg-[#f7f7f5]',
+  accent: 'border-y border-white/10 bg-[#171b22] text-white',
 }
 
 const WAVE_CLASS = {
-  light: 'text-[#fbfaf7]',
-  soft: 'text-[#f1eee8]',
+  light: 'text-[#f7f7f5]',
+  soft: 'text-[#f7f7f5]',
   accent: 'text-[#171b22]',
 }
 
@@ -59,26 +56,6 @@ export function StorySection({
           d="M0 58L60 52C120 46 240 34 360 42C480 50 600 78 720 74C840 70 960 34 1080 30C1200 26 1320 54 1380 68L1440 82V96H0V58Z"
         />
       </svg>
-      <div
-        className={`pointer-events-none absolute inset-0 opacity-45 ${
-          isAccent
-            ? 'bg-[linear-gradient(rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)]'
-            : 'bg-[linear-gradient(rgba(23,27,34,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(23,27,34,0.028)_1px,transparent_1px)]'
-        } bg-size-[38px_38px]`}
-        aria-hidden
-      />
-      <div
-        className={`pointer-events-none absolute -right-24 top-10 h-56 w-56 rounded-full blur-3xl ${
-          isAccent ? 'bg-sky-300/12' : 'bg-sky-300/18'
-        }`}
-        aria-hidden
-      />
-      <div
-        className={`pointer-events-none absolute -left-28 bottom-6 h-64 w-64 rounded-full blur-3xl ${
-          isAccent ? 'bg-white/8' : 'bg-[#171b22]/8'
-        }`}
-        aria-hidden
-      />
 
       <Container className="relative z-10">
         <RevealOnScroll variant="slow">
