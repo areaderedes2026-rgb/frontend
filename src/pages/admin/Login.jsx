@@ -17,6 +17,7 @@ export function Login() {
 
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -84,14 +85,25 @@ export function Login() {
             </label>
             <label className={labelClass}>
               Contraseña
-              <input
-                className={inputClass}
-                type="password"
-                name="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+              <div className="relative">
+                <input
+                  className={`${inputClass} pr-24`}
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-1 right-1 inline-flex items-center justify-center rounded-lg px-3 text-xs font-bold uppercase tracking-wide text-slate-500 transition hover:bg-slate-100 hover:text-sky-700 focus:outline-none focus:ring-3 focus:ring-sky-500/15"
+                  onClick={() => setShowPassword((current) => !current)}
+                  aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  aria-pressed={showPassword}
+                >
+                  {showPassword ? 'Ocultar' : 'Ver'}
+                </button>
+              </div>
             </label>
             <Button type="submit" className="mt-1 w-full sm:w-auto" disabled={submitting}>
               {submitting ? 'Ingresando…' : 'Ingresar'}
