@@ -4,6 +4,7 @@ const KIND_LABEL = {
   news: 'Noticia',
   event: 'Evento',
   area: 'Área municipal',
+  area_service: 'Servicio de área',
   tourism: 'Lugar / turismo',
   page: 'Sitio',
 }
@@ -57,13 +58,13 @@ function ClearQueryButton({ visible, compact, onClear }) {
 function EmptyStateIcon({ className, minimal }) {
   if (minimal) {
     return (
-      <div className={`mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/[0.06] ${className}`} aria-hidden>
+      <div className={`mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/6 ${className}`} aria-hidden>
         <SearchIcon className="h-[1.15rem] w-[1.15rem] text-white/30" />
       </div>
     )
   }
   return (
-    <div className={`mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] ${className}`} aria-hidden>
+    <div className={`mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/4 ${className}`} aria-hidden>
       <SearchIcon className="h-5 w-5 text-white/35" />
     </div>
   )
@@ -93,29 +94,29 @@ function SearchResultsBody({
       role="listbox"
       aria-label="Resultados de búsqueda"
       ref={listRef}
-      className={`${panelTone} motion-safe:transition-[opacity,transform] motion-safe:duration-[720ms] motion-safe:ease-out ${
+      className={`${panelTone} motion-safe:transition-[opacity,transform] motion-safe:duration-720 motion-safe:ease-out ${
         isMobile ? '' : 'absolute right-0 left-auto top-full z-70 mt-2 w-full min-w-0 max-w-[min(100vw-0.75rem,28rem)]'
       }`}
     >
       {!showResultsChrome ? (
-        <div className="motion-safe:[animation:site-search-results-shell_0.75s_cubic-bezier(0.16,1,0.3,1)_both] px-4 py-7 text-center sm:px-5 sm:py-8">
+        <div className="motion-safe:animate-[site-search-results-shell_0.75s_cubic-bezier(0.16,1,0.3,1)_both] px-4 py-7 text-center sm:px-5 sm:py-8">
           <EmptyStateIcon minimal={!isMobile} />
           <p className="text-sm font-medium leading-relaxed text-white/48">Escribí al menos 2 caracteres.</p>
           <p className="mt-2 text-xs leading-relaxed text-white/32">Flechas, Enter y Escape.</p>
         </div>
       ) : loading && items.length === 0 ? (
-        <div className="motion-safe:[animation:site-search-results-shell_0.75s_cubic-bezier(0.16,1,0.3,1)_both] flex flex-col items-center px-5 py-9">
+        <div className="motion-safe:animate-[site-search-results-shell_0.75s_cubic-bezier(0.16,1,0.3,1)_both] flex flex-col items-center px-5 py-9">
           <Spinner className="mb-3.5 scale-110" />
           <p className="text-sm font-medium text-white/50">Buscando…</p>
         </div>
       ) : items.length === 0 ? (
-        <div className="motion-safe:[animation:site-search-results-shell_0.75s_cubic-bezier(0.16,1,0.3,1)_both] px-4 py-7 text-center sm:px-5 sm:py-8">
+        <div className="motion-safe:animate-[site-search-results-shell_0.75s_cubic-bezier(0.16,1,0.3,1)_both] px-4 py-7 text-center sm:px-5 sm:py-8">
           <EmptyStateIcon minimal={!isMobile} />
           <p className="text-sm font-medium text-white/48">No hay resultados.</p>
           <p className="mt-2 text-xs text-white/32">Probá otras palabras.</p>
         </div>
       ) : (
-        <div key={resultsKey} className="motion-safe:[animation:site-search-results-shell_0.78s_cubic-bezier(0.16,1,0.3,1)_both]">
+        <div key={resultsKey} className="motion-safe:animate-[site-search-results-shell_0.78s_cubic-bezier(0.16,1,0.3,1)_both]">
           <div className="mx-3 mb-1.5 mt-2 h-px bg-linear-to-r from-transparent via-white/12 to-transparent" aria-hidden />
           <ul className="site-search-results-list min-w-0 max-w-full px-1 pb-2 pt-0.5">
             {items.map((item, idx) => {
@@ -130,16 +131,16 @@ function SearchResultsBody({
                     data-idx={idx}
                     onMouseEnter={() => setActiveIdx(idx)}
                     onClick={() => onSelect(item)}
-                    className={`group relative flex min-w-0 w-full flex-col gap-0.5 rounded-lg px-3 py-3 text-left transition-[background-color,box-shadow,transform] duration-[560ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-safe:duration-[640ms] ${
+                    className={`group relative flex min-w-0 w-full flex-col gap-0.5 rounded-lg px-3 py-3 text-left transition-[background-color,box-shadow,transform] duration-560 ease-[cubic-bezier(0.16,1,0.3,1)] motion-safe:duration-640 ${
                       active
-                        ? 'bg-white/[0.09] shadow-[inset_2px_0_0_0_rgba(255,255,255,0.45)]'
-                        : 'hover:bg-white/[0.05] motion-safe:hover:translate-x-[0.04rem]'
+                        ? 'bg-white/9 shadow-[inset_2px_0_0_0_rgba(255,255,255,0.45)]'
+                        : 'hover:bg-white/5 motion-safe:hover:translate-x-[0.04rem]'
                     }`}
                   >
                     <span className="min-w-0 text-[0.6rem] font-semibold uppercase tracking-[0.2em] text-white/40 transition-colors duration-500 group-hover:text-white/55">
                       {label}
                     </span>
-                    <span className="site-search-result-title min-w-0 break-words text-[0.95rem] text-white/94 sm:text-[1rem]">
+                    <span className="site-search-result-title min-w-0 wrap-break-word text-[0.95rem] text-white/94 sm:text-[1rem]">
                       {item.title}
                     </span>
                     {item.subtitle ? (
@@ -231,7 +232,7 @@ export function SiteSearchPanel({ variant, query, setQuery, items, loading, onSe
   if (isMobile) {
     return (
       <div className="flex w-full min-w-0 max-w-full flex-col gap-4">
-        <div className="relative min-w-0 max-w-full rounded-[1.2rem] bg-linear-to-br from-white/[0.1] via-white/[0.04] to-transparent p-px shadow-[0_10px_36px_-16px_rgba(0,0,0,0.55)]">
+        <div className="relative min-w-0 max-w-full rounded-[1.2rem] bg-linear-to-br from-white/10 via-white/4 to-transparent p-px shadow-[0_10px_36px_-16px_rgba(0,0,0,0.55)]">
           <div
             className={`flex w-full min-w-0 max-w-full items-center gap-2 rounded-[1.14rem] bg-linear-to-b from-[#181c26]/98 to-[#0f1116]/98 px-2 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-xl ${
               compact ? 'py-1.5' : ''
@@ -241,7 +242,7 @@ export function SiteSearchPanel({ variant, query, setQuery, items, loading, onSe
               type="button"
               onMouseDown={(e) => e.preventDefault()}
               onClick={onClose}
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white/72 transition-colors duration-500 hover:bg-white/[0.08] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white/72 transition-colors duration-500 hover:bg-white/8 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
               aria-label="Cerrar búsqueda"
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor" aria-hidden>
@@ -293,7 +294,7 @@ export function SiteSearchPanel({ variant, query, setQuery, items, loading, onSe
   return (
     <div className="relative w-full min-w-0 max-w-full">
       <div
-        className={`flex w-full min-w-0 max-w-full items-center gap-1.5 rounded-full bg-white/[0.07] px-1.5 transition-[background-color] duration-[800ms] ease-out focus-within:bg-white/[0.11] ${
+        className={`flex w-full min-w-0 max-w-full items-center gap-1.5 rounded-full bg-white/7 px-1.5 transition-[background-color] duration-800 ease-out focus-within:bg-white/11 ${
           compact ? 'py-1' : 'py-1.5 sm:py-2'
         }`}
       >
@@ -308,7 +309,7 @@ export function SiteSearchPanel({ variant, query, setQuery, items, loading, onSe
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
           </svg>
         </button>
-        <SearchIcon className="pointer-events-none h-[1rem] w-[1rem] shrink-0 text-white/40" />
+        <SearchIcon className="pointer-events-none h-4 w-4 shrink-0 text-white/40" />
         <input
           ref={inputRef}
           type="text"
@@ -354,10 +355,10 @@ export function SearchOpenButton({ onClick, scrolled, className = '' }) {
       onClick={onClick}
       aria-label="Abrir búsqueda"
       title="Buscar (Ctrl+K)"
-      className={`group inline-flex items-center justify-center rounded-xl border-0 bg-transparent text-white transition-[transform,background-color,opacity] duration-[620ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.04] hover:bg-white/[0.07] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/22 focus-visible:ring-offset-2 focus-visible:ring-offset-[#161a21] motion-reduce:duration-200 ${scrolled ? 'h-9 w-9' : 'h-10 w-10'} ${className}`}
+      className={`group inline-flex items-center justify-center rounded-xl border-0 bg-transparent text-white transition-[transform,background-color,opacity] duration-620 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.04] hover:bg-white/7 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/22 focus-visible:ring-offset-2 focus-visible:ring-offset-[#161a21] motion-reduce:duration-200 ${scrolled ? 'h-9 w-9' : 'h-10 w-10'} ${className}`}
     >
       <svg
-        className="h-[1.15rem] w-[1.15rem] transition-transform duration-[620ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-110 motion-reduce:transition-none"
+        className="h-[1.15rem] w-[1.15rem] transition-transform duration-620 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-110 motion-reduce:transition-none"
         fill="none"
         viewBox="0 0 24 24"
         strokeWidth={1.75}

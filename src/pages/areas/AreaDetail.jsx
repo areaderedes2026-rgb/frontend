@@ -71,6 +71,10 @@ export function AreaDetail() {
     officesLoading || showOffices || (officesHydratedForSlug && Boolean(officesState.error))
   const showServices = (profile?.serviceBlocks || []).length > 0
   const navLinks = useMemo(() => getAreaDetailNavLinks(profile, { showOffices }), [profile, showOffices])
+  const selectedServiceId = useMemo(() => {
+    const params = new URLSearchParams(location.search)
+    return params.get('serviceId') || ''
+  }, [location.search])
 
   useEffect(() => {
     if (location.hash !== '#oficinas-area') return
@@ -133,12 +137,15 @@ export function AreaDetail() {
   useEffect(() => {
     let cancelled = false
     if (!isApiConfigured()) return () => {}
-    setOfficesState({
-      slug,
-      items: [],
-      hydrated: false,
-      error: '',
-    })
+    const resetTimer = window.setTimeout(() => {
+      if (cancelled) return
+      setOfficesState({
+        slug,
+        items: [],
+        hydrated: false,
+        error: '',
+      })
+    }, 0)
     fetchAreaOfficesPublic(slug)
       .then((items) => {
         if (!cancelled) {
@@ -162,6 +169,7 @@ export function AreaDetail() {
       })
     return () => {
       cancelled = true
+      window.clearTimeout(resetTimer)
     }
   }, [slug])
 
@@ -373,7 +381,11 @@ export function AreaDetail() {
 
               {showServices ? (
                 <RevealOnScroll variant="slow">
-                  <AreaServicesSection services={profile.serviceBlocks} areaSlug={slug} />
+                  <AreaServicesSection
+                    services={profile.serviceBlocks}
+                    areaSlug={slug}
+                    selectedServiceId={selectedServiceId}
+                  />
                 </RevealOnScroll>
               ) : null}
 

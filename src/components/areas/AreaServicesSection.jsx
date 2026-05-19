@@ -65,7 +65,7 @@ const easeOut = [0.22, 1, 0.36, 1]
 /**
  * Carrusel de servicios del área: 1 tarjeta en móvil, 2 desde `sm`, navegación por páginas.
  */
-export function AreaServicesSection({ services, areaSlug }) {
+export function AreaServicesSection({ services, areaSlug, selectedServiceId = '' }) {
   const list = useMemo(
     () =>
       (Array.isArray(services) ? services : [])
@@ -97,6 +97,21 @@ export function AreaServicesSection({ services, areaSlug }) {
   const goNext = useCallback(() => setPage((p) => Math.min(maxPage, p + 1)), [maxPage])
 
   const pageDuration = reduceMotion ? 0.01 : 0.45
+
+  useEffect(() => {
+    if (!selectedServiceId || !list.length) return
+    const serviceIndex = list.findIndex(
+      (service) => String(service?.id || '') === String(selectedServiceId),
+    )
+    if (serviceIndex < 0) return
+    const service = list[serviceIndex]
+    const nextPage = Math.floor(serviceIndex / perPage)
+    const t = window.setTimeout(() => {
+      setPage(nextPage)
+      setDetail(service)
+    }, 180)
+    return () => window.clearTimeout(t)
+  }, [list, perPage, selectedServiceId])
 
   if (!list.length) return null
 
