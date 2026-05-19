@@ -64,6 +64,14 @@ export const adminRouteLoaders = {
     'AdminOfertaAcademica',
   ),
   settingsUsers: namedLazy(() => import('../pages/admin/AdminUsers.jsx'), 'AdminUsers'),
+  myAreaServices: namedLazy(
+    () => import('../pages/admin/AdminMyAreaServices.jsx'),
+    'AdminMyAreaServices',
+  ),
+  areaServiceEditor: namedLazy(
+    () => import('../pages/admin/AdminAreaServiceEditor.jsx'),
+    'AdminAreaServiceEditor',
+  ),
 }
 
 export function preloadAdminRoute(key) {

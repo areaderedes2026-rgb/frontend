@@ -42,6 +42,9 @@ export const ROUTES = {
   adminSettingsIntendencia: '/admin/settings/intendencia',
   adminSettingsLegisladorEste: '/admin/settings/legislador-este',
   adminSettingsConcejoDeliberante: '/admin/settings/concejo-deliberante',
+  adminMyAreaServices: '/admin/my-area-services',
+  adminAreaServiceEditor: (areaSlug, serviceId) =>
+    `/admin/area-services/${areaSlug}/${serviceId}`,
 }
 
 export const SOCIAL_LINKS = {

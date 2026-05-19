@@ -8,6 +8,8 @@ import { Services } from '../pages/Services.jsx'
 import { AtencionCiudadano } from '../pages/AtencionCiudadano.jsx'
 import { Login } from '../pages/admin/Login.jsx'
 import { RequireAdminOutlet } from './RequireAdminOutlet.jsx'
+import { RequireStaffOutlet } from './RequireStaffOutlet.jsx'
+import { AdminIndexRedirect } from './AdminIndexRedirect.jsx'
 import { NotFound } from '../pages/NotFound.jsx'
 import { adminRouteLoaders } from './adminRoutePreload.js'
 import { publicRouteLoaders } from './publicRoutePreload.js'
@@ -34,6 +36,8 @@ const AdminLegisladorEste = lazy(adminRouteLoaders.settingsLegisladorEste)
 const AdminConcejoDeliberante = lazy(adminRouteLoaders.settingsConcejoDeliberante)
 const AdminOfertaAcademica = lazy(adminRouteLoaders.ofertaAcademica)
 const AdminUsers = lazy(adminRouteLoaders.settingsUsers)
+const AdminMyAreaServices = lazy(adminRouteLoaders.myAreaServices)
+const AdminAreaServiceEditor = lazy(adminRouteLoaders.areaServiceEditor)
 const History = lazy(publicRouteLoaders.history)
 const Events = lazy(publicRouteLoaders.events)
 const TourismPlaceDetail = lazy(publicRouteLoaders.tourismPlaceDetail)
@@ -69,8 +73,25 @@ export function AppRouter() {
       <Route path="/admin/login" element={<Login />} />
 
       <Route path="/admin" element={<ProtectedRoute />}>
-        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route index element={<AdminIndexRedirect />} />
         <Route element={<AdminLayout />}>
+          <Route
+            path="my-area-services"
+            element={
+              <Suspense fallback={<AdminRouteFallback />}>
+                <AdminMyAreaServices />
+              </Suspense>
+            }
+          />
+          <Route
+            path="area-services/:areaSlug/:serviceId"
+            element={
+              <Suspense fallback={<AdminRouteFallback />}>
+                <AdminAreaServiceEditor />
+              </Suspense>
+            }
+          />
+          <Route element={<RequireStaffOutlet />}>
           <Route
             path="dashboard"
             element={
@@ -254,6 +275,7 @@ export function AppRouter() {
                 }
               />
             </Route>
+          </Route>
           </Route>
         </Route>
       </Route>

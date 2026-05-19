@@ -117,6 +117,17 @@ export function AdminLayout() {
           aria-label="Administración"
         >
           <Container className="flex flex-wrap gap-1 py-2.5 sm:gap-2">
+            {user?.role === 'area_service_editor' ? (
+              <NavLink
+                to={ROUTES.adminMyAreaServices}
+                className={navClass}
+                onMouseEnter={() => preloadAdminRoute('myAreaServices')}
+                onFocus={() => preloadAdminRoute('myAreaServices')}
+              >
+                Mis servicios
+              </NavLink>
+            ) : (
+              <>
             <NavLink
               to="/admin/dashboard"
               className={navClass}
@@ -214,6 +225,8 @@ export function AdminLayout() {
             >
               Configuración
             </NavLink>
+              </>
+            )}
           </Container>
         </nav>
       </header>
