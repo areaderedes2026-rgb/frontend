@@ -94,7 +94,7 @@ const desktopAlignClasses = {
   },
 }
 
-export function HomeHeroBanner({ content = DEFAULT_HOME_HERO_CONTENT, preview = false }) {
+export function HomeHeroBanner({ content = DEFAULT_HOME_HERO_CONTENT, preview = false, loading = false }) {
   const [activeIndex, setActiveIndex] = useState(0)
   const [paused, setPaused] = useState(false)
   const reducedMotion = usePrefersReducedMotion()
@@ -134,6 +134,29 @@ export function HomeHeroBanner({ content = DEFAULT_HOME_HERO_CONTENT, preview = 
   const containerHeightClass = preview
     ? 'min-h-[28rem] py-10'
     : 'min-h-dvh pt-[calc(var(--navbar-h,5rem)+1.25rem)] pb-10 sm:pt-[calc(var(--navbar-h,5rem)+2rem)] sm:pb-14 lg:pb-16'
+
+  if (loading) {
+    return (
+      <section
+        className={`relative isolate overflow-hidden border-b border-slate-200/40 bg-[#171b22] ${minHeightClass}`}
+        aria-busy="true"
+        aria-label="Cargando banners principales"
+      >
+        <div className="absolute inset-0 bg-linear-to-t from-black/80 via-[#171b22] to-[#222831]" aria-hidden />
+        <Container className={`relative z-10 flex flex-col justify-center ${containerHeightClass}`}>
+          <div className="max-w-4xl">
+            <div className="h-3 w-40 animate-pulse rounded-full bg-white/12" />
+            <div className="mt-4 h-12 w-full max-w-xl animate-pulse rounded-2xl bg-white/10 sm:h-16" />
+            <div className="mt-4 h-5 w-full max-w-lg animate-pulse rounded-full bg-white/8" />
+            <div className="mt-8 flex gap-3">
+              <div className="h-11 w-36 animate-pulse rounded-xl bg-white/12" />
+              <div className="h-11 w-32 animate-pulse rounded-xl bg-white/8" />
+            </div>
+          </div>
+        </Container>
+      </section>
+    )
+  }
 
   return (
     <section

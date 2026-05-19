@@ -29,6 +29,7 @@ function excerptWords(text, maxWords = 14) {
 export function Home() {
   const { items: news } = useNewsList()
   const [homeHeroContent, setHomeHeroContent] = useState(DEFAULT_HOME_HERO_CONTENT)
+  const [homeHeroLoading, setHomeHeroLoading] = useState(true)
   const [homeMapContent, setHomeMapContent] = useState(DEFAULT_HOME_MAP_CONTENT)
   const [events, setEvents] = useState([])
   const [eventsLoading, setEventsLoading] = useState(true)
@@ -50,6 +51,10 @@ export function Home() {
       } catch {
         if (!cancelled) {
           setHomeHeroContent(DEFAULT_HOME_HERO_CONTENT)
+        }
+      } finally {
+        if (!cancelled) {
+          setHomeHeroLoading(false)
         }
       }
     }
@@ -99,7 +104,7 @@ export function Home() {
 
   return (
     <>
-      <HomeHeroBanner content={homeHeroContent} />
+      <HomeHeroBanner content={homeHeroContent} loading={homeHeroLoading} />
 
       <StorySection
         eyebrow="Actualidad municipal"

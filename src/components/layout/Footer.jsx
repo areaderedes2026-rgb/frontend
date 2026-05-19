@@ -5,10 +5,10 @@ import { Container } from '../ui/Container.jsx'
 export function Footer() {
   const year = new Date().getFullYear()
   return (
-    <footer className="relative mt-auto overflow-hidden bg-[#82bd73] text-white">
+    <footer className="relative mt-auto overflow-hidden bg-[#171b22] text-white">
       <div className="absolute inset-x-0 top-0 h-24 bg-slate-50" aria-hidden />
       <svg
-        className="relative z-0 -mb-px block h-24 w-full text-[#82bd73] sm:h-28 lg:h-32"
+        className="relative z-0 -mb-px block h-24 w-full text-[#171b22] sm:h-28 lg:h-32"
         viewBox="0 0 1440 160"
         preserveAspectRatio="none"
         aria-hidden
@@ -95,7 +95,7 @@ export function Footer() {
           </div>
         </div>
       </Container>
-      <div className="relative z-10 border-t border-white/20 bg-[#75ad68]">
+      <div className="relative z-10 border-t border-white/10 bg-[#141922]">
         <Container className="flex flex-col gap-1 py-5 text-center text-xs text-white/78 sm:flex-row sm:justify-between sm:text-left">
           <span>
             © {year} {APP_NAME}
