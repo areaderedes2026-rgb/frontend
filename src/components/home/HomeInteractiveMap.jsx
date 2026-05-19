@@ -41,6 +41,30 @@ function MapInteractivityController({ interactive }) {
   return null
 }
 
+function MapFocusController({ point, defaultCenter, defaultZoom }) {
+  const map = useMap()
+  useEffect(() => {
+    if (!map) return
+    map.invalidateSize()
+    if (!point) {
+      map.flyTo(defaultCenter, defaultZoom, {
+        animate: true,
+        duration: 0.75,
+      })
+      return
+    }
+    const lat = Number(point.lat)
+    const lng = Number(point.lng)
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return
+    const focusZoom = Math.min(18, Math.max(defaultZoom + 2, 16))
+    map.flyTo([lat, lng], focusZoom, {
+      animate: true,
+      duration: 0.85,
+    })
+  }, [defaultCenter, defaultZoom, map, point])
+  return null
+}
+
 export function HomeInteractiveMap({ content }) {
   const [activePointId, setActivePointId] = useState('')
   const [interactive, setInteractive] = useState(false)
@@ -64,6 +88,11 @@ export function HomeInteractiveMap({ content }) {
     if (points.some((p) => p.id === activePointId)) return activePointId
     return points[0].id
   }, [activePointId, points])
+  const selectedPoint = useMemo(
+    () => points.find((point) => point.id === activePointId) || null,
+    [activePointId, points],
+  )
+  const visiblePoints = selectedPoint ? [selectedPoint] : points
   const markerIcons = useMemo(
     () => ({
       base: buildMarkerIcon(false),
@@ -78,6 +107,11 @@ export function HomeInteractiveMap({ content }) {
       left: direction * 220,
       behavior: 'smooth',
     })
+  }
+
+  function selectPoint(pointId) {
+    setActivePointId(pointId)
+    setInteractive(true)
   }
 
   return (
@@ -102,7 +136,7 @@ export function HomeInteractiveMap({ content }) {
                 <button
                   key={point.id}
                   type="button"
-                  onClick={() => setActivePointId(point.id)}
+                  onClick={() => selectPoint(point.id)}
                   className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
                     active
                       ? 'border-[#2a313b] bg-[#171b22] text-white shadow-sm'
@@ -126,7 +160,6 @@ export function HomeInteractiveMap({ content }) {
       </div>
       <div
         className="relative h-88 w-full bg-[#171b22] sm:h-104 lg:h-120"
-        onMouseLeave={() => setInteractive(false)}
       >
         <MapContainer
           center={center}
@@ -144,11 +177,14 @@ export function HomeInteractiveMap({ content }) {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          {points.map((point) => (
+          {visiblePoints.map((point) => (
             <Marker
               key={point.id}
               position={[Number(point.lat), Number(point.lng)]}
               icon={point.id === effectiveActivePointId ? markerIcons.active : markerIcons.base}
+              eventHandlers={{
+                click: () => selectPoint(point.id),
+              }}
             >
               <Popup>
                 <div className="space-y-1 pr-1">
@@ -160,6 +196,11 @@ export function HomeInteractiveMap({ content }) {
             </Marker>
           ))}
           <MapInteractivityController interactive={interactive} />
+          <MapFocusController
+            point={selectedPoint}
+            defaultCenter={center}
+            defaultZoom={zoom}
+          />
         </MapContainer>
 
         {!interactive ? (
