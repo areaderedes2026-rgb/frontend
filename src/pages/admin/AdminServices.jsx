@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { AdminServicesEditorPreview } from '../../components/admin/AdminServicesEditorPreview.jsx'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
+import { HeroImageModal } from '../../components/admin/HeroImageModal.jsx'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
 import { Modal } from '../../components/ui/Modal.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
@@ -83,7 +84,6 @@ function serviceToForm(service) {
 }
 
 export function AdminServices() {
-  const itemsRef = useRef(null)
   const [contentForm, setContentForm] = useState(() => mapContentToForm(DEFAULT_SERVICES_PAGE_CONTENT))
   const [contentUpdatedAt, setContentUpdatedAt] = useState(null)
   const [contentLoading, setContentLoading] = useState(true)
@@ -96,6 +96,7 @@ export function AdminServices() {
 
   const [toast, setToast] = useState(null)
   const [conflictOpen, setConflictOpen] = useState(false)
+  const [heroImageOpen, setHeroImageOpen] = useState(false)
   const dismissToast = useCallback(() => setToast(null), [])
 
   const [modalOpen, setModalOpen] = useState(false)
@@ -105,6 +106,8 @@ export function AdminServices() {
   const [serviceFormError, setServiceFormError] = useState('')
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleting, setDeleting] = useState(false)
+
+  const apiAvailable = isApiConfigured()
 
   const loadContent = useCallback(async () => {
     setContentLoading(true)
@@ -135,17 +138,17 @@ export function AdminServices() {
   }, [])
 
   useEffect(() => {
-    if (!isApiConfigured()) {
+    if (!apiAvailable) {
       setContentLoading(false)
       setItemsLoading(false)
       return
     }
     void loadContent()
     void loadItems()
-  }, [loadContent, loadItems])
+  }, [apiAvailable, loadContent, loadItems])
 
   const handleSaveContent = useCallback(async () => {
-    if (!isApiConfigured()) {
+    if (!apiAvailable) {
       setToast({ variant: 'error', message: 'No hay conexión con el backend.' })
       return
     }
@@ -167,7 +170,7 @@ export function AdminServices() {
     } finally {
       setContentSaving(false)
     }
-  }, [contentForm, contentUpdatedAt])
+  }, [apiAvailable, contentForm, contentUpdatedAt])
 
   function openCreateService() {
     setEditingService(null)
@@ -243,10 +246,6 @@ export function AdminServices() {
     }
   }
 
-  const sortedServices = [...services].sort(
-    (a, b) => (Number(a.sortOrder) || 0) - (Number(b.sortOrder) || 0),
-  )
-
   return (
     <>
       <ConfirmDialog
@@ -272,16 +271,34 @@ export function AdminServices() {
       />
       {toast ? <Toast variant={toast.variant} message={toast.message} onDismiss={dismissToast} /> : null}
 
+      <HeroImageModal
+        open={heroImageOpen}
+        title="Portada de Servicios al vecino"
+        value={contentForm.heroImageUrl}
+        onChange={(value) => setContentForm((prev) => ({ ...prev, heroImageUrl: value }))}
+        onClose={() => setHeroImageOpen(false)}
+        onSave={() => {
+          setHeroImageOpen(false)
+          setToast({
+            variant: 'success',
+            message: 'Portada actualizada en el borrador. Guardá los cambios para publicarla.',
+          })
+        }}
+        saving={contentSaving}
+        disabled={contentLoading || contentSaving}
+        saveLabel="Aplicar al borrador"
+      />
+
       <AdminPageShell
         showBackLink={false}
         eyebrow="Gestión municipal"
         title="Servicios al vecino"
-        subtitle="Editá la página pública y el directorio de trámites que ven los vecinos en el portal."
+        subtitle="Editá la página pública igual que la ven los vecinos: cada bloque tiene sus acciones de editar, agregar y quitar."
         maxWidthClass="max-w-none"
         variant="plain"
       >
         <h1 className="sr-only">Administración de servicios al vecino</h1>
-        {!isApiConfigured() ? (
+        {!apiAvailable ? (
           <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
             Esta sección requiere conexión activa con el backend.
           </div>
@@ -291,91 +308,18 @@ export function AdminServices() {
           form={contentForm}
           setForm={setContentForm}
           services={services}
+          servicesLoading={itemsLoading}
+          servicesError={itemsError}
           loading={contentLoading}
           saving={contentSaving}
           error={contentError}
           onSubmit={() => void handleSaveContent()}
-          apiAvailable={isApiConfigured()}
-          onScrollToItems={() => itemsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          onChangeCover={() => setHeroImageOpen(true)}
+          apiAvailable={apiAvailable}
+          onAddService={openCreateService}
+          onEditService={openEditService}
+          onDeleteService={setDeleteTarget}
         />
-
-        <section ref={itemsRef} className="mt-10 scroll-mt-24">
-          <div className="flex flex-col gap-4 border-t border-slate-200 pt-10 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-sky-800">Directorio</p>
-              <h2 className="mt-1 text-xl font-bold text-slate-900">Trámites y servicios</h2>
-              <p className="mt-1 text-sm text-slate-600">
-                Cada ítem aparece en las tarjetas del directorio. Los inactivos no se muestran al público.
-              </p>
-            </div>
-            <button type="button" onClick={openCreateService} className={ACTION_BTN_PRIMARY} disabled={!isApiConfigured()}>
-              Nuevo trámite
-            </button>
-          </div>
-
-          {itemsError ? (
-            <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{itemsError}</p>
-          ) : null}
-
-          {itemsLoading ? (
-            <p className="mt-6 text-sm text-slate-600">Cargando trámites…</p>
-          ) : sortedServices.length === 0 ? (
-            <p className="mt-6 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center text-sm text-slate-600">
-              Todavía no hay trámites cargados.
-            </p>
-          ) : (
-            <div className="mt-6 overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <table className="min-w-full text-left text-sm">
-                <thead className="border-b border-slate-100 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500">
-                  <tr>
-                    <th className="px-4 py-3">Orden</th>
-                    <th className="px-4 py-3">Trámite</th>
-                    <th className="px-4 py-3">Categoría</th>
-                    <th className="px-4 py-3">Estado</th>
-                    <th className="px-4 py-3 text-right">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {sortedServices.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-50/80">
-                      <td className="px-4 py-3 tabular-nums text-slate-600">{item.sortOrder}</td>
-                      <td className="px-4 py-3">
-                        <p className="font-semibold text-slate-900">{item.title}</p>
-                        <p className="text-xs text-slate-500">{item.slug}</p>
-                      </td>
-                      <td className="px-4 py-3 text-slate-700">{item.category || '—'}</td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${
-                            item.isActive
-                              ? 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200'
-                              : 'bg-slate-100 text-slate-600 ring-1 ring-slate-200'
-                          }`}
-                        >
-                          {item.isActive ? 'Activo' : 'Oculto'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex justify-end gap-2">
-                          <button type="button" className={ACTION_BTN_NEUTRAL} onClick={() => openEditService(item)}>
-                            Editar
-                          </button>
-                          <button
-                            type="button"
-                            className={`${ACTION_BTN_NEUTRAL} text-red-700 hover:border-red-200 hover:bg-red-50`}
-                            onClick={() => setDeleteTarget(item)}
-                          >
-                            Eliminar
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
       </AdminPageShell>
 
       <Modal
@@ -383,7 +327,7 @@ export function AdminServices() {
         onClose={() => !serviceSaving && setModalOpen(false)}
         loading={serviceSaving}
         title={editingService ? 'Editar trámite' : 'Nuevo trámite'}
-        description="Completá los datos que verán los vecinos en la tarjeta del directorio."
+        description="Los datos del trámite se guardan al confirmar. El contenido de la página se publica con «Guardar cambios»."
         footer={
           <div className="flex flex-wrap justify-end gap-2">
             <button type="button" disabled={serviceSaving} onClick={() => setModalOpen(false)} className={ACTION_BTN_NEUTRAL}>
