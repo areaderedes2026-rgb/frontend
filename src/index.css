@@ -317,12 +317,6 @@ body {
   }
 }
 
-@media (max-width: 767px) {
-  .home-hero-image {
-    object-position: var(--mobile-object-position, center) !important;
-  }
-}
-
 @layer utilities {
   .animate-areas-marquee {
     animation: areas-marquee 85s linear infinite;

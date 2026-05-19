@@ -22,8 +22,6 @@ const EMPTY_SLIDE = {
   imageUrl: '',
   mobileImageUrl: '',
   imageAlt: '',
-  desktopObjectPosition: 'center',
-  mobileObjectPosition: 'center',
   overlayOpacity: 65,
   showEyebrow: true,
   showTitle: true,
@@ -38,18 +36,6 @@ const EMPTY_SLIDE = {
   isActive: true,
   sortOrder: 0,
 }
-
-const IMAGE_POSITION_OPTIONS = [
-  { value: 'center', label: 'Centro' },
-  { value: 'top', label: 'Arriba' },
-  { value: 'bottom', label: 'Abajo' },
-  { value: 'left', label: 'Izquierda' },
-  { value: 'right', label: 'Derecha' },
-  { value: 'left top', label: 'Arriba izquierda' },
-  { value: 'right top', label: 'Arriba derecha' },
-  { value: 'left bottom', label: 'Abajo izquierda' },
-  { value: 'right bottom', label: 'Abajo derecha' },
-]
 
 function cleanText(value) {
   return String(value || '').trim()
@@ -91,12 +77,6 @@ function stripRowIds(slides) {
 function normalizeSlideForSave(slide, index) {
   const title = cleanText(slide.title)
   const fallbackId = slugFromText(title || slide.eyebrow || `banner-${index + 1}`, `banner-${index + 1}`)
-  const desktopObjectPosition = IMAGE_POSITION_OPTIONS.some((option) => option.value === slide.desktopObjectPosition)
-    ? slide.desktopObjectPosition
-    : 'center'
-  const mobileObjectPosition = IMAGE_POSITION_OPTIONS.some((option) => option.value === slide.mobileObjectPosition)
-    ? slide.mobileObjectPosition
-    : desktopObjectPosition
 
   return {
     ...slide,
@@ -107,8 +87,6 @@ function normalizeSlideForSave(slide, index) {
     imageUrl: cleanText(slide.imageUrl),
     mobileImageUrl: cleanText(slide.mobileImageUrl),
     imageAlt: cleanText(slide.imageAlt),
-    desktopObjectPosition,
-    mobileObjectPosition,
     overlayOpacity: Math.min(90, Math.max(0, Math.round(Number(slide.overlayOpacity) || 0))),
     primaryLabel: cleanText(slide.primaryLabel),
     primaryHref: cleanText(slide.primaryHref),
@@ -446,36 +424,6 @@ export function AdminSettingsHomeBanners() {
                 <option value="right">Derecha</option>
               </select>
             </label>
-            <label className={labelClass}>
-              Foco imagen desktop
-              <select
-                className={inputClass}
-                value={slideDraft.desktopObjectPosition}
-                disabled={saving}
-                onChange={(e) => updateDraft('desktopObjectPosition', e.target.value)}
-              >
-                {IMAGE_POSITION_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className={labelClass}>
-              Foco imagen celular
-              <select
-                className={inputClass}
-                value={slideDraft.mobileObjectPosition}
-                disabled={saving}
-                onChange={(e) => updateDraft('mobileObjectPosition', e.target.value)}
-              >
-                {IMAGE_POSITION_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
             <label className={`${labelClass} md:col-span-2`}>
               Opacidad del overlay: {Math.min(90, Math.max(0, Number(slideDraft.overlayOpacity) || 0))}%
               <input
@@ -710,8 +658,7 @@ export function AdminSettingsHomeBanners() {
                         <img
                           src={image}
                           alt=""
-                          className="h-full w-full object-cover"
-                          style={{ objectPosition: slide.desktopObjectPosition || 'center' }}
+                          className="h-full w-full object-cover object-center"
                           loading="lazy"
                         />
                       ) : (

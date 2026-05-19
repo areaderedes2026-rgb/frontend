@@ -93,8 +93,6 @@ export function HomeHeroBanner({ content = DEFAULT_HOME_HERO_CONTENT, preview = 
     : ''
   const primaryImageUrl = imageUrl || mobileImageUrl
   const align = alignClasses[current?.textAlign] || alignClasses.left
-  const desktopObjectPosition = current?.desktopObjectPosition || 'center'
-  const mobileObjectPosition = current?.mobileObjectPosition || desktopObjectPosition
   const overlayOpacity = Math.min(90, Math.max(0, Number(current?.overlayOpacity ?? 65))) / 100
 
   useEffect(() => {
@@ -135,11 +133,7 @@ export function HomeHeroBanner({ content = DEFAULT_HOME_HERO_CONTENT, preview = 
               alt=""
               fetchPriority={preview ? undefined : 'high'}
               decoding="async"
-              className="home-hero-image h-full w-full object-cover motion-safe:animate-[hero-fade_780ms_ease-out_both]"
-              style={{
-                objectPosition: desktopObjectPosition,
-                '--mobile-object-position': mobileObjectPosition,
-              }}
+              className="h-full w-full object-cover object-center motion-safe:animate-[hero-fade_780ms_ease-out_both]"
             />
           </picture>
         ) : (

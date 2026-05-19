@@ -14,8 +14,6 @@ export const DEFAULT_HOME_HERO_CONTENT = {
       imageUrl: '/rio.jpeg',
       mobileImageUrl: '',
       imageAlt: 'Paisaje de Trancas',
-      desktopObjectPosition: 'center',
-      mobileObjectPosition: 'center',
       overlayOpacity: 65,
       showEyebrow: true,
       showTitle: true,
@@ -44,11 +42,6 @@ function cleanNumber(value, fallback) {
   return Number.isFinite(n) ? n : fallback
 }
 
-function cleanPosition(value, fallback = 'center') {
-  const allowed = ['center', 'top', 'bottom', 'left', 'right', 'left top', 'right top', 'left bottom', 'right bottom']
-  return allowed.includes(value) ? value : fallback
-}
-
 function cleanBool(value, fallback = true) {
   return typeof value === 'boolean' ? value : fallback
 }
@@ -68,8 +61,6 @@ function mapSlide(raw, fallback, index) {
     imageUrl: cleanText(raw?.imageUrl ?? base.imageUrl, 2048),
     mobileImageUrl: cleanText(raw?.mobileImageUrl ?? base.mobileImageUrl, 2048),
     imageAlt: cleanText(raw?.imageAlt ?? base.imageAlt, 180),
-    desktopObjectPosition: cleanPosition(raw?.desktopObjectPosition, base.desktopObjectPosition || 'center'),
-    mobileObjectPosition: cleanPosition(raw?.mobileObjectPosition, base.mobileObjectPosition || 'center'),
     overlayOpacity: Math.min(
       90,
       Math.max(0, Math.round(cleanNumber(raw?.overlayOpacity, cleanNumber(base.overlayOpacity, 65)))),
