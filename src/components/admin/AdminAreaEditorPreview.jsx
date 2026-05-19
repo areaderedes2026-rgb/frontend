@@ -3,8 +3,10 @@ import { Modal } from '../ui/Modal.jsx'
 import { ConfirmDialog } from '../ui/ConfirmDialog.jsx'
 import { AdminAreaOfficesPanel } from './AdminAreaOfficesPanel.jsx'
 import { SingleImageUploadField } from './SingleImageUploadField.jsx'
+import { ServiceProjectsEditor } from './ServiceProjectsEditor.jsx'
 import { inputClass, labelClass, textareaClass } from '../ui/formStyles.js'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
+import { normalizeServiceProjects } from '../../utils/serviceProjects.js'
 
 function newClientServiceId() {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -138,6 +140,7 @@ const EMPTY_SERVICE = {
   imageUrl: '',
   personInCharge: '',
   generalObjective: '',
+  projects: [],
 }
 const EMPTY_CONTACT = { label: '', value: '', note: '' }
 const EMPTY_SCHOOL = {
@@ -368,6 +371,7 @@ export function AdminAreaEditorPreview({
           imageUrl: String(draft.imageUrl || '').trim(),
           personInCharge: String(draft.personInCharge || '').trim(),
           generalObjective: String(draft.generalObjective || '').trim(),
+          projects: normalizeServiceProjects(draft.projects),
         })
         break
       }
@@ -784,7 +788,13 @@ export function AdminAreaEditorPreview({
                           <div className="absolute right-2 top-2 z-10 flex gap-1.5 sm:right-3 sm:top-3">
                             <EditChip
                               label="Editar"
-                              onClick={() => openEditor('service', idx, { ...EMPTY_SERVICE, ...service })}
+                              onClick={() =>
+                                openEditor('service', idx, {
+                                  ...EMPTY_SERVICE,
+                                  ...service,
+                                  projects: normalizeServiceProjects(service.projects),
+                                })
+                              }
                               disabled={saving}
                             />
                             <DeleteChip
@@ -847,6 +857,11 @@ export function AdminAreaEditorPreview({
                                 ) : null}
                               </p>
                             )}
+                            {normalizeServiceProjects(service.projects).length ? (
+                              <p className="mt-3 inline-flex rounded-full bg-sky-50 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-sky-800 ring-1 ring-sky-100">
+                                {normalizeServiceProjects(service.projects).length} proyecto(s)
+                              </p>
+                            ) : null}
                           </div>
                         </li>
                       )
@@ -1406,6 +1421,11 @@ function ServiceForm({ draft, setDraftField, saving }) {
           placeholder="Texto en la tarjeta y en el detalle del portal"
         />
       </label>
+      <ServiceProjectsEditor
+        projects={draft.projects}
+        onChange={(projects) => setDraftField('projects', projects)}
+        saving={saving}
+      />
     </div>
   )
 }

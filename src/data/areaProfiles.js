@@ -1,4 +1,5 @@
 import { getAreaBySlug } from './areas.js'
+import { normalizeServiceProjects } from '../utils/serviceProjects.js'
 
 const DEFAULT_MAP_EMBED =
   'https://www.openstreetmap.org/export/embed.html?bbox=-65.335%2C-26.275%2C-65.236%2C-26.198&layer=mapnik&marker=-26.2366%2C-65.2852'
@@ -32,6 +33,19 @@ const AREA_PROFILES = {
         personInCharge: 'Equipo interdisciplinario de trabajo social',
         generalObjective:
           'Fortalecer el vínculo con las familias y acompañar procesos de inclusión con enfoque de derechos.',
+        projects: [
+          {
+            id: 'red-acompanamiento-barrial',
+            title: 'Red de acompañamiento barrial',
+            status: 'En curso',
+            description:
+              'Dispositivo territorial para detectar necesidades, orientar trámites y sostener seguimientos familiares con referentes comunitarios.',
+            imageUrl:
+              'https://images.unsplash.com/photo-1559027615-cd4628902d4a?auto=format&fit=crop&w=1200&q=80',
+            linkUrl: '',
+            linkLabel: '',
+          },
+        ],
       },
       {
         id: 'asuntos-srv-ninez',
@@ -125,6 +139,19 @@ const AREA_PROFILES = {
         personInCharge: 'Dirección de Cultura y producción técnica',
         generalObjective:
           'Ampliar el acceso a la cultura en el territorio con eventos seguros, inclusivos y articulados con la comunidad.',
+        projects: [
+          {
+            id: 'circuito-cultural-barrial',
+            title: 'Circuito cultural barrial',
+            status: 'Programación anual',
+            description:
+              'Agenda descentralizada de muestras, talleres y encuentros en plazas, escuelas y centros comunitarios.',
+            imageUrl:
+              'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=1200&q=80',
+            linkUrl: '',
+            linkLabel: '',
+          },
+        ],
       },
       {
         id: 'cultura-srv-patrimonio',
@@ -270,6 +297,7 @@ export function createDefaultProfile(area) {
         imageUrl: '',
         personInCharge: '',
         generalObjective: '',
+        projects: [],
       },
       {
         id: 'default-srv-orientacion',
@@ -280,6 +308,7 @@ export function createDefaultProfile(area) {
         imageUrl: '',
         personInCharge: '',
         generalObjective: '',
+        projects: [],
       },
     ],
     contactCards: [
@@ -329,7 +358,10 @@ export function mergeAreaProfile(baseProfile, custom = {}) {
     },
     location: { ...(baseProfile.location || {}), ...(custom.location || {}) },
     highlights: custom.highlights || baseProfile.highlights || [],
-    serviceBlocks: custom.serviceBlocks || baseProfile.serviceBlocks || [],
+    serviceBlocks: (custom.serviceBlocks || baseProfile.serviceBlocks || []).map((service) => ({
+      ...service,
+      projects: normalizeServiceProjects(service?.projects),
+    })),
     initiatives: [],
     contactCards: custom.contactCards || baseProfile.contactCards || [],
     notices: custom.notices || baseProfile.notices || [],

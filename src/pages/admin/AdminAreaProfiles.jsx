@@ -24,6 +24,7 @@ import {
 import { isApiConfigured } from '../../utils/apiConfig.js'
 import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
+import { normalizeServiceProjects } from '../../utils/serviceProjects.js'
 import {
   fetchAreasPageContent,
   updateAreasPageContent,
@@ -86,6 +87,52 @@ function buildSchoolsPayload(section) {
   }
 }
 
+function mapServiceProjects(projects) {
+  return normalizeServiceProjects(projects).map((project) => ({
+    ...project,
+    id: project.id || '',
+  }))
+}
+
+function mapServiceToForm(service) {
+  return {
+    id: String(service?.id || '').trim(),
+    title: service?.title || '',
+    description: service?.description || '',
+    mode: service?.mode || '',
+    imageUrl: String(service?.imageUrl || '').trim(),
+    personInCharge: String(service?.personInCharge || '').trim(),
+    generalObjective: String(service?.generalObjective || '').trim(),
+    projects: mapServiceProjects(service?.projects),
+  }
+}
+
+function buildServicesPayload(services) {
+  return (Array.isArray(services) ? services : [])
+    .map((service) => ({
+      id: String(service?.id || '').trim(),
+      title: String(service?.title || '').trim(),
+      description: String(service?.description || '').trim(),
+      mode: String(service?.mode || '').trim(),
+      imageUrl: String(service?.imageUrl || '').trim(),
+      personInCharge: String(service?.personInCharge || '').trim(),
+      generalObjective: String(service?.generalObjective || '').trim(),
+      projects: normalizeServiceProjects(service?.projects),
+    }))
+    .filter((service) =>
+      Boolean(
+        service.id ||
+          service.title ||
+          service.description ||
+          service.mode ||
+          service.imageUrl ||
+          service.personInCharge ||
+          service.generalObjective ||
+          service.projects.length,
+      ),
+    )
+}
+
 function mapProfileToForm(profile) {
   return {
     heroTag: profile.heroTag || '',
@@ -97,15 +144,7 @@ function mapProfileToForm(profile) {
       photoUrl: profile.director?.photoUrl || '',
     },
     serviceBlocks: Array.isArray(profile.serviceBlocks)
-      ? profile.serviceBlocks.map((x) => ({
-          id: String(x?.id || '').trim(),
-          title: x?.title || '',
-          description: x?.description || '',
-          mode: x?.mode || '',
-          imageUrl: String(x?.imageUrl || '').trim(),
-          personInCharge: String(x?.personInCharge || '').trim(),
-          generalObjective: String(x?.generalObjective || '').trim(),
-        }))
+      ? profile.serviceBlocks.map(mapServiceToForm)
         : [],
     contactCards: Array.isArray(profile.contactCards)
       ? profile.contactCards.map((x) => ({
@@ -434,15 +473,7 @@ export function AdminAreaProfiles() {
           phone: '',
           officeHours: '',
         },
-        serviceBlocks: cleanRows(form.serviceBlocks, [
-          'id',
-          'title',
-          'description',
-          'mode',
-          'imageUrl',
-          'personInCharge',
-          'generalObjective',
-        ]),
+        serviceBlocks: buildServicesPayload(form.serviceBlocks),
         initiatives: [],
         contactCards: cleanRows(form.contactCards, ['label', 'value', 'note']),
         notices: cleanNotices(form.notices),

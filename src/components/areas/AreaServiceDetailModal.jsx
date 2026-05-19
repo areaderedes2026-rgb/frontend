@@ -1,6 +1,6 @@
 import { useEffect, useId, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, motion as Motion } from 'motion/react'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
 
 function usePrefersReducedMotion() {
@@ -10,7 +10,6 @@ function usePrefersReducedMotion() {
   )
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
-    setReduce(mq.matches)
     const fn = () => setReduce(mq.matches)
     mq.addEventListener('change', fn)
     return () => mq.removeEventListener('change', fn)
@@ -50,6 +49,63 @@ function DescriptionBlock({ description }) {
   )
 }
 
+function ProjectCard({ project }) {
+  const img = project?.imageUrl ? resolveMediaUrl(project.imageUrl) : ''
+  const title = String(project?.title || '').trim()
+  const description = String(project?.description || '').trim()
+  const status = String(project?.status || '').trim()
+  const linkUrl = String(project?.linkUrl || '').trim()
+  const linkLabel = String(project?.linkLabel || '').trim() || 'Ver proyecto'
+  if (!title && !description && !status && !img && !linkUrl) return null
+  return (
+    <article className="group overflow-hidden rounded-2xl border border-[#e5e2da] bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-lg hover:shadow-sky-500/10">
+      {img ? (
+        <img
+          src={img}
+          alt=""
+          className="aspect-video w-full object-cover transition duration-500 group-hover:scale-[1.02]"
+          loading="lazy"
+          decoding="async"
+        />
+      ) : (
+        <div className="flex aspect-video items-center justify-center bg-linear-to-br from-slate-100 to-sky-50 text-xs font-bold uppercase tracking-wide text-slate-400">
+          Proyecto
+        </div>
+      )}
+      <div className="p-4 sm:p-5">
+        {status ? (
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-sky-700">
+            {status}
+          </p>
+        ) : null}
+        {title ? (
+          <h3 className={`text-base font-bold tracking-tight text-slate-900 ${status ? 'mt-1.5' : ''}`}>
+            {title}
+          </h3>
+        ) : null}
+        {description ? (
+          <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-[#4b505a]">
+            {description}
+          </p>
+        ) : null}
+        {linkUrl ? (
+          <a
+            href={linkUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 inline-flex items-center rounded-xl border border-[#d7d1c7] bg-[#fcfcfa] px-3 py-2 text-xs font-bold text-sky-800 transition hover:border-sky-200 hover:bg-sky-50"
+          >
+            {linkLabel}
+            <span className="ml-1" aria-hidden>
+              ↗
+            </span>
+          </a>
+        ) : null}
+      </div>
+    </article>
+  )
+}
+
 /**
  * Modal público de detalle de servicio: panel muy ancho (7xl / 88rem), 2 columnas en `lg`, 3 zonas en `xl`.
  */
@@ -82,15 +138,27 @@ export function AreaServiceDetailModal({ service, open, onClose }) {
   const description = String(service?.description || '').trim()
   const personInCharge = String(service?.personInCharge || '').trim()
   const generalObjective = String(service?.generalObjective || '').trim()
+  const projects = Array.isArray(service?.projects)
+    ? service.projects.filter((project) =>
+        Boolean(
+          project?.title ||
+            project?.description ||
+            project?.status ||
+            project?.imageUrl ||
+            project?.linkUrl,
+        ),
+      )
+    : []
   const hasMeta = Boolean(personInCharge || generalObjective)
+  const hasProjects = projects.length > 0
   const hasAnyContent =
-    Boolean(img) || Boolean(mode) || hasMeta || Boolean(description)
+    Boolean(img) || Boolean(mode) || hasMeta || Boolean(description) || hasProjects
   const modalKey = service?.id || title
 
   return createPortal(
     <AnimatePresence mode="wait">
       {open && service ? (
-        <motion.div
+        <Motion.div
           key={modalKey}
           className="fixed inset-0 z-100 flex items-center justify-center p-3 sm:p-5 lg:p-8"
           initial={{ opacity: 0 }}
@@ -104,7 +172,7 @@ export function AreaServiceDetailModal({ service, open, onClose }) {
             className="absolute inset-0 bg-slate-900/45 backdrop-blur-[2px]"
             onClick={onClose}
           />
-          <motion.div
+          <Motion.div
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
@@ -194,11 +262,35 @@ export function AreaServiceDetailModal({ service, open, onClose }) {
                       <DescriptionBlock description={description} />
                     </div>
                   </div>
+                  {hasProjects ? (
+                    <section className="lg:col-span-12">
+                      <div className="rounded-3xl border border-[#e5e2da] bg-[#f8f7f3] p-4 sm:p-6">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                          <div>
+                            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-sky-800">
+                              Proyectos
+                            </p>
+                            <h3 className="mt-1 text-xl font-bold tracking-tight text-slate-900">
+                              Proyectos vinculados al servicio
+                            </h3>
+                          </div>
+                          <p className="text-xs font-semibold text-slate-500">
+                            {projects.length} proyecto{projects.length === 1 ? '' : 's'}
+                          </p>
+                        </div>
+                        <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                          {projects.map((project, idx) => (
+                            <ProjectCard key={project.id || `project-${idx}`} project={project} />
+                          ))}
+                        </div>
+                      </div>
+                    </section>
+                  ) : null}
                 </div>
               )}
             </div>
-          </motion.div>
-        </motion.div>
+          </Motion.div>
+        </Motion.div>
       ) : null}
     </AnimatePresence>,
     document.body,

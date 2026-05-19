@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
 import { SingleImageUploadField } from '../../components/admin/SingleImageUploadField.jsx'
+import { ServiceProjectsEditor } from '../../components/admin/ServiceProjectsEditor.jsx'
 import { Button } from '../../components/ui/Button.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
 import {
@@ -17,6 +18,7 @@ import {
 import { isApiConfigured } from '../../utils/apiConfig.js'
 import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
+import { normalizeServiceProjects } from '../../utils/serviceProjects.js'
 
 const EMPTY_SERVICE = {
   id: '',
@@ -26,6 +28,7 @@ const EMPTY_SERVICE = {
   imageUrl: '',
   personInCharge: '',
   generalObjective: '',
+  projects: [],
 }
 
 function snapshot(service) {
@@ -36,6 +39,7 @@ function snapshot(service) {
     imageUrl: service.imageUrl || '',
     personInCharge: service.personInCharge || '',
     generalObjective: service.generalObjective || '',
+    projects: normalizeServiceProjects(service.projects),
   })
 }
 
@@ -65,7 +69,11 @@ export function AdminAreaServiceEditor() {
     fetchAreaProfileService(areaSlug, serviceId)
       .then((data) => {
         if (cancelled) return
-        const next = { ...EMPTY_SERVICE, ...(data?.service || {}) }
+        const next = {
+          ...EMPTY_SERVICE,
+          ...(data?.service || {}),
+          projects: normalizeServiceProjects(data?.service?.projects),
+        }
         setArea(data?.area || null)
         setService(next)
         setSavedSnapshot(snapshot(next))
@@ -100,9 +108,16 @@ export function AdminAreaServiceEditor() {
     try {
       const data = await updateAreaProfileService(areaSlug, serviceId, {
         expectedUpdatedAt,
-        service,
+        service: {
+          ...service,
+          projects: normalizeServiceProjects(service.projects),
+        },
       })
-      const next = { ...EMPTY_SERVICE, ...(data?.service || {}) }
+      const next = {
+        ...EMPTY_SERVICE,
+        ...(data?.service || {}),
+        projects: normalizeServiceProjects(data?.service?.projects),
+      }
       setArea(data?.area || area)
       setService(next)
       setSavedSnapshot(snapshot(next))
@@ -221,6 +236,12 @@ export function AdminAreaServiceEditor() {
                 disabled={saving}
                 kind="cover"
               />
+              <ServiceProjectsEditor
+                projects={service.projects}
+                onChange={(projects) => updateField('projects', projects)}
+                saving={saving}
+                imageKind="cover"
+              />
               <div className="flex flex-wrap gap-3 pt-2">
                 <Button type="submit" disabled={saving || !hasChanges}>
                   {saving ? 'Guardando...' : 'Guardar cambios'}
@@ -257,6 +278,30 @@ export function AdminAreaServiceEditor() {
                 <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-slate-600">
                   {service.description}
                 </p>
+              ) : null}
+              {normalizeServiceProjects(service.projects).length ? (
+                <div className="mt-5 rounded-2xl border border-sky-100 bg-sky-50/70 p-3">
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-700">
+                    Proyectos
+                  </p>
+                  <div className="mt-3 space-y-2">
+                    {normalizeServiceProjects(service.projects).map((project) => (
+                      <div
+                        key={project.id || project.title}
+                        className="rounded-xl bg-white px-3 py-2 text-sm shadow-sm"
+                      >
+                        <p className="font-semibold text-slate-900">
+                          {project.title || 'Proyecto sin título'}
+                        </p>
+                        {project.status ? (
+                          <p className="mt-0.5 text-xs font-semibold text-sky-700">
+                            {project.status}
+                          </p>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               ) : null}
               {hasChanges ? (
                 <p className="mt-5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">
