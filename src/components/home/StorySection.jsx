@@ -10,6 +10,12 @@ const TONE_CLASS = {
     'border-y border-white/10 bg-[radial-gradient(circle_at_20%_0%,rgba(14,165,233,0.20),transparent_30rem),radial-gradient(circle_at_85%_80%,rgba(255,255,255,0.10),transparent_26rem),linear-gradient(180deg,#171b22_0%,#1a1d24_48%,#171b22_100%)] text-white',
 }
 
+const WAVE_CLASS = {
+  light: 'text-[#fbfaf7]',
+  soft: 'text-[#f1eee8]',
+  accent: 'text-[#171b22]',
+}
+
 const EYE_BROW_CLASS = {
   light: 'text-sky-800/90',
   soft: 'text-sky-800/90',
@@ -41,7 +47,18 @@ export function StorySection({
 }) {
   const isAccent = tone === 'accent'
   return (
-    <section id={id} className={`relative overflow-hidden py-14 sm:py-16 lg:py-20 ${TONE_CLASS[tone] ?? TONE_CLASS.light} ${className}`.trim()}>
+    <section id={id} className={`relative isolate overflow-visible py-14 sm:py-16 lg:py-20 ${TONE_CLASS[tone] ?? TONE_CLASS.light} ${className}`.trim()}>
+      <svg
+        className={`pointer-events-none absolute inset-x-0 -top-12 z-0 h-12 w-full ${WAVE_CLASS[tone] ?? WAVE_CLASS.light}`}
+        viewBox="0 0 1440 96"
+        preserveAspectRatio="none"
+        aria-hidden
+      >
+        <path
+          fill="currentColor"
+          d="M0 58L60 52C120 46 240 34 360 42C480 50 600 78 720 74C840 70 960 34 1080 30C1200 26 1320 54 1380 68L1440 82V96H0V58Z"
+        />
+      </svg>
       <div
         className={`pointer-events-none absolute inset-0 opacity-45 ${
           isAccent

@@ -184,7 +184,18 @@ export function Home() {
       </StorySection>
 
       {showEventsSection ? (
-        <section className="relative overflow-hidden border-y border-[#e8e5dd] bg-[radial-gradient(circle_at_20%_0%,rgba(14,165,233,0.12),transparent_24rem),linear-gradient(180deg,#f7f7f5_0%,#efebe2_100%)] py-12 sm:py-14">
+        <section className="relative isolate overflow-visible border-y border-[#e8e5dd] bg-[radial-gradient(circle_at_20%_0%,rgba(14,165,233,0.12),transparent_24rem),linear-gradient(180deg,#f7f7f5_0%,#efebe2_100%)] py-12 sm:py-14">
+          <svg
+            className="pointer-events-none absolute inset-x-0 -top-12 z-0 h-12 w-full text-[#f7f7f5]"
+            viewBox="0 0 1440 96"
+            preserveAspectRatio="none"
+            aria-hidden
+          >
+            <path
+              fill="currentColor"
+              d="M0 58L60 52C120 46 240 34 360 42C480 50 600 78 720 74C840 70 960 34 1080 30C1200 26 1320 54 1380 68L1440 82V96H0V58Z"
+            />
+          </svg>
           <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(23,27,34,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(23,27,34,0.025)_1px,transparent_1px)] bg-size-[36px_36px]" aria-hidden />
           <Container className="relative z-10">
             <RevealOnScroll variant="slow">
