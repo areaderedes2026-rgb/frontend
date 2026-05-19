@@ -20,7 +20,11 @@ const EMPTY_SLIDE = {
   title: '',
   subtitle: '',
   imageUrl: '',
+  mobileImageUrl: '',
   imageAlt: '',
+  desktopObjectPosition: 'center',
+  mobileObjectPosition: 'center',
+  overlayOpacity: 65,
   showEyebrow: true,
   showTitle: true,
   showSubtitle: true,
@@ -34,6 +38,18 @@ const EMPTY_SLIDE = {
   isActive: true,
   sortOrder: 0,
 }
+
+const IMAGE_POSITION_OPTIONS = [
+  { value: 'center', label: 'Centro' },
+  { value: 'top', label: 'Arriba' },
+  { value: 'bottom', label: 'Abajo' },
+  { value: 'left', label: 'Izquierda' },
+  { value: 'right', label: 'Derecha' },
+  { value: 'left top', label: 'Arriba izquierda' },
+  { value: 'right top', label: 'Arriba derecha' },
+  { value: 'left bottom', label: 'Abajo izquierda' },
+  { value: 'right bottom', label: 'Abajo derecha' },
+]
 
 function cleanText(value) {
   return String(value || '').trim()
@@ -75,6 +91,13 @@ function stripRowIds(slides) {
 function normalizeSlideForSave(slide, index) {
   const title = cleanText(slide.title)
   const fallbackId = slugFromText(title || slide.eyebrow || `banner-${index + 1}`, `banner-${index + 1}`)
+  const desktopObjectPosition = IMAGE_POSITION_OPTIONS.some((option) => option.value === slide.desktopObjectPosition)
+    ? slide.desktopObjectPosition
+    : 'center'
+  const mobileObjectPosition = IMAGE_POSITION_OPTIONS.some((option) => option.value === slide.mobileObjectPosition)
+    ? slide.mobileObjectPosition
+    : desktopObjectPosition
+
   return {
     ...slide,
     id: slugFromText(slide.id || fallbackId, fallbackId),
@@ -82,7 +105,11 @@ function normalizeSlideForSave(slide, index) {
     title,
     subtitle: String(slide.subtitle || '').trim(),
     imageUrl: cleanText(slide.imageUrl),
+    mobileImageUrl: cleanText(slide.mobileImageUrl),
     imageAlt: cleanText(slide.imageAlt),
+    desktopObjectPosition,
+    mobileObjectPosition,
+    overlayOpacity: Math.min(90, Math.max(0, Math.round(Number(slide.overlayOpacity) || 0))),
     primaryLabel: cleanText(slide.primaryLabel),
     primaryHref: cleanText(slide.primaryHref),
     secondaryLabel: cleanText(slide.secondaryLabel),
@@ -96,6 +123,28 @@ function normalizeSlideForSave(slide, index) {
     showPrimaryButton: slide.showPrimaryButton !== false,
     showSecondaryButton: slide.showSecondaryButton !== false,
   }
+}
+
+function buildPayload(form, expectedUpdatedAt = null) {
+  const slides = stripRowIds(form.slides || []).map((slide, idx) => normalizeSlideForSave(slide, idx))
+  const activeSlideId = slides.some((slide) => slide.id === form.activeSlideId)
+    ? form.activeSlideId
+    : slides[0]?.id || ''
+
+  return {
+    expectedUpdatedAt,
+    displayMode: form.displayMode === 'carousel' ? 'carousel' : 'single',
+    activeSlideId,
+    autoplayEnabled: form.autoplayEnabled !== false,
+    autoplaySeconds: Math.min(30, Math.max(3, Math.round(Number(form.autoplaySeconds) || 6))),
+    slides,
+  }
+}
+
+function snapshotFromForm(form) {
+  const content = buildPayload(form, null)
+  delete content.expectedUpdatedAt
+  return JSON.stringify(content)
 }
 
 function Toggle({ label, checked, onChange, disabled = false }) {
@@ -114,7 +163,9 @@ function Toggle({ label, checked, onChange, disabled = false }) {
 }
 
 export function AdminSettingsHomeBanners() {
-  const [form, setForm] = useState(() => withRowIds(mergeHomeHeroContent(DEFAULT_HOME_HERO_CONTENT, {})))
+  const initialForm = useMemo(() => withRowIds(mergeHomeHeroContent(DEFAULT_HOME_HERO_CONTENT, {})), [])
+  const [form, setForm] = useState(initialForm)
+  const [savedSnapshot, setSavedSnapshot] = useState(() => snapshotFromForm(initialForm))
   const [contentUpdatedAt, setContentUpdatedAt] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -133,6 +184,10 @@ export function AdminSettingsHomeBanners() {
     [form.slides],
   )
   const activeSlides = useMemo(() => sortedSlides.filter((slide) => slide.isActive !== false), [sortedSlides])
+  const hasUnsavedChanges = useMemo(
+    () => snapshotFromForm(form) !== savedSnapshot,
+    [form, savedSnapshot],
+  )
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -140,7 +195,9 @@ export function AdminSettingsHomeBanners() {
     try {
       const remote = await fetchHomeHeroContent()
       const merged = mergeHomeHeroContent(DEFAULT_HOME_HERO_CONTENT, remote || {})
-      setForm(withRowIds(merged))
+      const nextForm = withRowIds(merged)
+      setForm(nextForm)
+      setSavedSnapshot(snapshotFromForm(nextForm))
       setContentUpdatedAt(remote?.updatedAt || null)
     } catch (e) {
       setError(e.message || 'No se pudieron cargar los banners de Inicio.')
@@ -183,7 +240,7 @@ export function AdminSettingsHomeBanners() {
 
   function saveSlideFromModal() {
     const next = normalizeSlideForSave(slideDraft, form.slides.length)
-    if (!next.title && !next.imageUrl) {
+    if (!next.title && !next.imageUrl && !next.mobileImageUrl) {
       setToast({ type: 'error', message: 'Completá al menos un título o una imagen para el banner.' })
       return
     }
@@ -226,7 +283,7 @@ export function AdminSettingsHomeBanners() {
   }
 
   async function handleSubmit(event) {
-    event.preventDefault()
+    event?.preventDefault?.()
     if (!isApiConfigured()) {
       setToast({ type: 'error', message: 'No hay conexión disponible con el backend.' })
       return
@@ -234,21 +291,12 @@ export function AdminSettingsHomeBanners() {
     setSaving(true)
     setError('')
     try {
-      const slides = stripRowIds(form.slides).map((slide, idx) => normalizeSlideForSave(slide, idx))
-      const activeSlideId = slides.some((slide) => slide.id === form.activeSlideId)
-        ? form.activeSlideId
-        : slides[0]?.id || ''
-      const payload = {
-        expectedUpdatedAt: contentUpdatedAt,
-        displayMode: form.displayMode === 'carousel' ? 'carousel' : 'single',
-        activeSlideId,
-        autoplayEnabled: form.autoplayEnabled !== false,
-        autoplaySeconds: Math.min(30, Math.max(3, Math.round(Number(form.autoplaySeconds) || 6))),
-        slides,
-      }
+      const payload = buildPayload(form, contentUpdatedAt)
       const saved = await updateHomeHeroContent(payload)
       const merged = mergeHomeHeroContent(DEFAULT_HOME_HERO_CONTENT, saved || {})
-      setForm(withRowIds(merged))
+      const nextForm = withRowIds(merged)
+      setForm(nextForm)
+      setSavedSnapshot(snapshotFromForm(nextForm))
       setContentUpdatedAt(saved?.updatedAt || null)
       setToast({ type: 'success', message: 'Banners de Inicio actualizados.' })
     } catch (e) {
@@ -312,9 +360,17 @@ export function AdminSettingsHomeBanners() {
       >
         <div className="grid gap-5">
           <SingleImageUploadField
-            label="Imagen del banner"
+            label="Imagen desktop del banner"
+            helpText="Imagen horizontal para pantallas grandes. Recomendado: formato banner ancho."
             value={slideDraft.imageUrl}
             onChange={(url) => updateDraft('imageUrl', url)}
+            disabled={saving}
+          />
+          <SingleImageUploadField
+            label="Imagen para celular (opcional)"
+            helpText="Usala cuando el recorte del banner horizontal no funcione bien en móvil. Si queda vacía, se usa la imagen desktop."
+            value={slideDraft.mobileImageUrl}
+            onChange={(url) => updateDraft('mobileImageUrl', url)}
             disabled={saving}
           />
 
@@ -390,6 +446,52 @@ export function AdminSettingsHomeBanners() {
                 <option value="right">Derecha</option>
               </select>
             </label>
+            <label className={labelClass}>
+              Foco imagen desktop
+              <select
+                className={inputClass}
+                value={slideDraft.desktopObjectPosition}
+                disabled={saving}
+                onChange={(e) => updateDraft('desktopObjectPosition', e.target.value)}
+              >
+                {IMAGE_POSITION_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className={labelClass}>
+              Foco imagen celular
+              <select
+                className={inputClass}
+                value={slideDraft.mobileObjectPosition}
+                disabled={saving}
+                onChange={(e) => updateDraft('mobileObjectPosition', e.target.value)}
+              >
+                {IMAGE_POSITION_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className={`${labelClass} md:col-span-2`}>
+              Opacidad del overlay: {Math.min(90, Math.max(0, Number(slideDraft.overlayOpacity) || 0))}%
+              <input
+                type="range"
+                min={0}
+                max={90}
+                step={5}
+                className="mt-2 w-full accent-sky-700"
+                value={slideDraft.overlayOpacity}
+                disabled={saving}
+                onChange={(e) => updateDraft('overlayOpacity', e.target.value)}
+              />
+              <span className="mt-1 text-xs font-normal text-slate-500">
+                Subila si necesitás más contraste en los textos; bajala si la imagen ya tiene buen contraste.
+              </span>
+            </label>
           </div>
 
           <section className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
@@ -462,6 +564,27 @@ export function AdminSettingsHomeBanners() {
         </div>
       </Modal>
 
+      {hasUnsavedChanges ? (
+        <div className="fixed inset-x-0 bottom-4 z-40 px-4">
+          <div className="mx-auto flex max-w-3xl flex-col gap-3 rounded-2xl border border-sky-200 bg-white/95 p-3 shadow-2xl shadow-slate-900/20 backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-slate-900">Hay cambios sin guardar</p>
+              <p className="text-xs text-slate-600">
+                Guardalos para que se publiquen en la portada del sitio.
+              </p>
+            </div>
+            <Button
+              type="button"
+              disabled={loading || saving || !isApiConfigured()}
+              onClick={() => void handleSubmit()}
+              className="shrink-0"
+            >
+              {saving ? 'Guardando…' : 'Guardar cambios'}
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
       <AdminPageShell
         showBackLink={false}
         eyebrow="Configuración"
@@ -476,7 +599,7 @@ export function AdminSettingsHomeBanners() {
           </div>
         ) : null}
 
-        <form className="space-y-6" onSubmit={handleSubmit}>
+        <form className={`space-y-6 ${hasUnsavedChanges ? 'pb-28' : ''}`} onSubmit={handleSubmit}>
           {error ? (
             <p className={formErrorClass} role="alert">
               {error}
@@ -491,8 +614,8 @@ export function AdminSettingsHomeBanners() {
                   Elegí si se muestra un solo banner o una secuencia automática.
                 </p>
               </div>
-              <Button type="submit" disabled={loading || saving}>
-                {saving ? 'Guardando…' : 'Guardar banners'}
+              <Button type="submit" disabled={loading || saving || !hasUnsavedChanges}>
+                {saving ? 'Guardando…' : hasUnsavedChanges ? 'Guardar banners' : 'Sin cambios'}
               </Button>
             </div>
             <div className="mt-5 grid gap-4 md:grid-cols-4">
@@ -574,7 +697,9 @@ export function AdminSettingsHomeBanners() {
 
             <div className="mt-5 grid gap-4 lg:grid-cols-2">
               {sortedSlides.map((slide) => {
-                const image = slide.imageUrl ? resolveMediaUrl(slide.imageUrl) || slide.imageUrl : ''
+                const imageSource = slide.imageUrl || slide.mobileImageUrl
+                const image = imageSource ? resolveMediaUrl(imageSource) || imageSource : ''
+                const overlay = Math.min(90, Math.max(0, Number(slide.overlayOpacity ?? 65))) / 100
                 return (
                   <article
                     key={slide._rowId}
@@ -582,13 +707,24 @@ export function AdminSettingsHomeBanners() {
                   >
                     <div className="relative aspect-16/7 bg-slate-900">
                       {image ? (
-                        <img src={image} alt="" className="h-full w-full object-cover" loading="lazy" />
+                        <img
+                          src={image}
+                          alt=""
+                          className="h-full w-full object-cover"
+                          style={{ objectPosition: slide.desktopObjectPosition || 'center' }}
+                          loading="lazy"
+                        />
                       ) : (
                         <div className="grid h-full place-items-center text-sm text-slate-400">
                           Sin imagen
                         </div>
                       )}
-                      <div className="absolute inset-0 bg-linear-to-t from-black/75 via-black/35 to-transparent" />
+                      <div
+                        className="absolute inset-0"
+                        style={{
+                          background: `linear-gradient(to top, rgba(0,0,0,${Math.min(0.92, overlay + 0.18)}), rgba(0,0,0,${overlay}), rgba(0,0,0,${Math.max(0, overlay - 0.25)}))`,
+                        }}
+                      />
                       <div className="absolute left-4 right-4 bottom-4">
                         {slide.showEyebrow !== false && slide.eyebrow ? (
                           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-sky-100">{slide.eyebrow}</p>
@@ -608,6 +744,14 @@ export function AdminSettingsHomeBanners() {
                         <span className="rounded-full bg-white px-2.5 py-1 ring-1 ring-slate-200">ID: {slide.id}</span>
                         <span className="rounded-full bg-white px-2.5 py-1 ring-1 ring-slate-200">Orden: {slide.sortOrder}</span>
                         <span className="rounded-full bg-white px-2.5 py-1 ring-1 ring-slate-200">Texto: {slide.textAlign}</span>
+                        <span className="rounded-full bg-white px-2.5 py-1 ring-1 ring-slate-200">
+                          Overlay: {Math.round(overlay * 100)}%
+                        </span>
+                        {slide.mobileImageUrl ? (
+                          <span className="rounded-full bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-800 ring-1 ring-emerald-100">
+                            Imagen móvil
+                          </span>
+                        ) : null}
                         {form.activeSlideId === slide.id ? (
                           <span className="rounded-full bg-sky-50 px-2.5 py-1 font-semibold text-sky-800 ring-1 ring-sky-100">
                             Banner fijo

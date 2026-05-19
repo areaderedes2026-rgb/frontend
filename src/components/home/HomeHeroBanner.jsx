@@ -88,7 +88,14 @@ export function HomeHeroBanner({ content = DEFAULT_HOME_HERO_CONTENT, preview = 
   const autoplay = isCarousel && content?.autoplayEnabled !== false && !paused && !reducedMotion
   const seconds = Math.min(30, Math.max(3, Number(content?.autoplaySeconds) || 6))
   const imageUrl = current?.imageUrl ? resolveMediaUrl(current.imageUrl) || current.imageUrl : ''
+  const mobileImageUrl = current?.mobileImageUrl
+    ? resolveMediaUrl(current.mobileImageUrl) || current.mobileImageUrl
+    : ''
+  const primaryImageUrl = imageUrl || mobileImageUrl
   const align = alignClasses[current?.textAlign] || alignClasses.left
+  const desktopObjectPosition = current?.desktopObjectPosition || 'center'
+  const mobileObjectPosition = current?.mobileObjectPosition || desktopObjectPosition
+  const overlayOpacity = Math.min(90, Math.max(0, Number(current?.overlayOpacity ?? 65))) / 100
 
   useEffect(() => {
     if (!autoplay) return undefined
@@ -120,19 +127,31 @@ export function HomeHeroBanner({ content = DEFAULT_HOME_HERO_CONTENT, preview = 
       aria-label="Banners principales"
     >
       <div className="absolute inset-0">
-        {imageUrl ? (
-          <img
-            key={current.id}
-            src={imageUrl}
-            alt=""
-            fetchPriority={preview ? undefined : 'high'}
-            decoding="async"
-            className="h-full w-full object-cover object-center motion-safe:animate-[hero-fade_780ms_ease-out_both]"
-          />
+        {primaryImageUrl ? (
+          <picture key={current.id} className="block h-full w-full">
+            {mobileImageUrl ? <source media="(max-width: 767px)" srcSet={mobileImageUrl} /> : null}
+            <img
+              src={primaryImageUrl}
+              alt=""
+              fetchPriority={preview ? undefined : 'high'}
+              decoding="async"
+              className="home-hero-image h-full w-full object-cover motion-safe:animate-[hero-fade_780ms_ease-out_both]"
+              style={{
+                objectPosition: desktopObjectPosition,
+                '--mobile-object-position': mobileObjectPosition,
+              }}
+            />
+          </picture>
         ) : (
           <div className="h-full w-full bg-linear-to-br from-slate-900 via-slate-800 to-sky-950" />
         )}
-        <div className="absolute inset-0 bg-linear-to-t from-black/82 via-black/60 to-black/35" aria-hidden />
+        <div
+          className="absolute inset-0"
+          style={{
+            background: `linear-gradient(to top, rgba(0,0,0,${Math.min(0.92, overlayOpacity + 0.18)}), rgba(0,0,0,${overlayOpacity}), rgba(0,0,0,${Math.max(0, overlayOpacity - 0.25)}))`,
+          }}
+          aria-hidden
+        />
       </div>
 
       <Container className={`relative z-10 flex flex-col justify-center ${containerHeightClass}`}>
