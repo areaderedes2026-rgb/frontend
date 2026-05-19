@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, motion as Motion } from 'motion/react'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
 import { AreaServiceDetailModal } from './AreaServiceDetailModal.jsx'
 
 function usePerPage() {
-  const [perPage, setPerPage] = useState(2)
+  const [perPage, setPerPage] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(min-width: 640px)').matches ? 2 : 1,
+  )
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 640px)')
     const apply = () => setPerPage(mq.matches ? 2 : 1)
-    apply()
     mq.addEventListener('change', apply)
     return () => mq.removeEventListener('change', apply)
   }, [])
@@ -22,7 +23,6 @@ function usePrefersReducedMotion() {
   )
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
-    setReduce(mq.matches)
     const fn = () => setReduce(mq.matches)
     mq.addEventListener('change', fn)
     return () => mq.removeEventListener('change', fn)
@@ -66,7 +66,19 @@ const easeOut = [0.22, 1, 0.36, 1]
  * Carrusel de servicios del área: 1 tarjeta en móvil, 2 desde `sm`, navegación por páginas.
  */
 export function AreaServicesSection({ services, areaSlug }) {
-  const list = Array.isArray(services) ? services : []
+  const list = useMemo(
+    () =>
+      (Array.isArray(services) ? services : [])
+        .map((service, idx) => ({ service, idx }))
+        .sort((a, b) => {
+          const oa = Math.max(0, Math.round(Number(a.service?.sortOrder)) || 0)
+          const ob = Math.max(0, Math.round(Number(b.service?.sortOrder)) || 0)
+          if (oa !== ob) return oa - ob
+          return a.idx - b.idx
+        })
+        .map(({ service }) => service),
+    [services],
+  )
   const perPage = usePerPage()
   const reduceMotion = usePrefersReducedMotion()
   const [page, setPage] = useState(0)
@@ -74,17 +86,14 @@ export function AreaServicesSection({ services, areaSlug }) {
 
   const totalPages = Math.max(1, Math.ceil(list.length / perPage))
   const maxPage = totalPages - 1
-
-  useEffect(() => {
-    setPage((p) => Math.min(p, maxPage))
-  }, [maxPage, list.length])
+  const safePage = Math.min(page, maxPage)
 
   const visible = useMemo(() => {
-    const start = page * perPage
+    const start = safePage * perPage
     return list.slice(start, start + perPage)
-  }, [list, page, perPage])
+  }, [list, safePage, perPage])
 
-  const goPrev = useCallback(() => setPage((p) => Math.max(0, p - 1)), [])
+  const goPrev = useCallback(() => setPage((p) => Math.max(0, Math.min(p, maxPage) - 1)), [maxPage])
   const goNext = useCallback(() => setPage((p) => Math.min(maxPage, p + 1)), [maxPage])
 
   const pageDuration = reduceMotion ? 0.01 : 0.45
@@ -106,13 +115,13 @@ export function AreaServicesSection({ services, areaSlug }) {
         <div
           className="mt-4"
           role="group"
-          aria-label={`Página ${page + 1} de ${totalPages}`}
+          aria-label={`Página ${safePage + 1} de ${totalPages}`}
         >
           {reduceMotion ? (
             <ul className="grid gap-4 sm:grid-cols-2">
               {visible.map((service, i) => (
                 <ServiceCard
-                  key={service.id || `${areaSlug}-srv-${page * perPage + i}`}
+                  key={service.id || `${areaSlug}-srv-${safePage * perPage + i}`}
                   service={service}
                   onOpen={() => setDetail(service)}
                 />
@@ -120,8 +129,8 @@ export function AreaServicesSection({ services, areaSlug }) {
             </ul>
           ) : (
             <AnimatePresence mode="wait" initial={false}>
-              <motion.ul
-                key={`${page}-${perPage}`}
+              <Motion.ul
+                key={`${safePage}-${perPage}`}
                 className="grid gap-4 sm:grid-cols-2"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -130,12 +139,12 @@ export function AreaServicesSection({ services, areaSlug }) {
               >
                 {visible.map((service, i) => (
                   <ServiceCard
-                    key={service.id || `${areaSlug}-srv-${page * perPage + i}`}
+                    key={service.id || `${areaSlug}-srv-${safePage * perPage + i}`}
                     service={service}
                     onOpen={() => setDetail(service)}
                   />
                 ))}
-              </motion.ul>
+              </Motion.ul>
             </AnimatePresence>
           )}
         </div>
@@ -145,19 +154,19 @@ export function AreaServicesSection({ services, areaSlug }) {
             <button
               type="button"
               onClick={goPrev}
-              disabled={page <= 0}
+              disabled={safePage <= 0}
               className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#ddd7ca] bg-white text-slate-700 shadow-sm transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-900 disabled:pointer-events-none disabled:opacity-35"
               aria-label="Ver página anterior de servicios"
             >
               <ChevronLeft />
             </button>
             <span className="min-w-18 text-center text-xs font-semibold tabular-nums text-[#4b505a]">
-              {page + 1} / {totalPages}
+              {safePage + 1} / {totalPages}
             </span>
             <button
               type="button"
               onClick={goNext}
-              disabled={page >= maxPage}
+              disabled={safePage >= maxPage}
               className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#ddd7ca] bg-white text-slate-700 shadow-sm transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-900 disabled:pointer-events-none disabled:opacity-35"
               aria-label="Ver página siguiente de servicios"
             >

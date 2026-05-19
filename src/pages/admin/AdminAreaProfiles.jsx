@@ -7,6 +7,7 @@ import { SingleImageUploadField } from '../../components/admin/SingleImageUpload
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
 import { Modal } from '../../components/ui/Modal.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
+import { useAuth } from '../../hooks/useAuth.js'
 import {
   inputClass,
   labelClass,
@@ -94,7 +95,8 @@ function mapServiceProjects(projects) {
   }))
 }
 
-function mapServiceToForm(service) {
+function mapServiceToForm(service, idx = 0) {
+  const rawOrder = service?.sortOrder
   return {
     id: String(service?.id || '').trim(),
     title: service?.title || '',
@@ -103,6 +105,10 @@ function mapServiceToForm(service) {
     imageUrl: String(service?.imageUrl || '').trim(),
     personInCharge: String(service?.personInCharge || '').trim(),
     generalObjective: String(service?.generalObjective || '').trim(),
+    sortOrder:
+      rawOrder == null || rawOrder === ''
+        ? (idx + 1) * 10
+        : Math.max(0, Math.round(Number(rawOrder)) || 0),
     projects: mapServiceProjects(service?.projects),
   }
 }
@@ -117,6 +123,7 @@ function buildServicesPayload(services) {
       imageUrl: String(service?.imageUrl || '').trim(),
       personInCharge: String(service?.personInCharge || '').trim(),
       generalObjective: String(service?.generalObjective || '').trim(),
+      sortOrder: Math.max(0, Math.round(Number(service?.sortOrder)) || 0),
       projects: normalizeServiceProjects(service?.projects),
     }))
     .filter((service) =>
@@ -230,6 +237,7 @@ function paginationModel(page, totalPages) {
 }
 
 export function AdminAreaProfiles() {
+  const { user } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const [areas, setAreas] = useState(
     MUNICIPAL_AREAS.map((a, i) => ({ ...a, id: i + 1, sortOrder: (i + 1) * 10 })),
@@ -1214,6 +1222,7 @@ export function AdminAreaProfiles() {
             onSubmit={() => void handleSubmit()}
             onBackToCatalog={() => setTab('catalog')}
             apiAvailable={isApiConfigured()}
+            canManageServicePriority={user?.role === 'admin'}
           />
         ) : null}
       </AdminPageShell>

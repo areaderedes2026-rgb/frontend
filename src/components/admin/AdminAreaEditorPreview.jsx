@@ -140,6 +140,7 @@ const EMPTY_SERVICE = {
   imageUrl: '',
   personInCharge: '',
   generalObjective: '',
+  sortOrder: 0,
   projects: [],
 }
 const EMPTY_CONTACT = { label: '', value: '', note: '' }
@@ -213,6 +214,7 @@ export function AdminAreaEditorPreview({
   onSubmit,
   onBackToCatalog,
   apiAvailable,
+  canManageServicePriority = false,
 }) {
   const [editor, setEditor] = useState(null)
   const [confirmRemove, setConfirmRemove] = useState(null)
@@ -228,6 +230,15 @@ export function AdminAreaEditorPreview({
     setEditor((prev) =>
       prev ? { ...prev, draft: { ...(prev.draft || {}), [field]: value } } : prev,
     )
+  }
+
+  function nextServicePriority() {
+    const list = Array.isArray(form.serviceBlocks) ? form.serviceBlocks : []
+    const maxOrder = list.reduce(
+      (max, service) => Math.max(max, Math.max(0, Math.round(Number(service?.sortOrder)) || 0)),
+      0,
+    )
+    return maxOrder + 10
   }
 
   function applyIdentity(draft) {
@@ -371,6 +382,7 @@ export function AdminAreaEditorPreview({
           imageUrl: String(draft.imageUrl || '').trim(),
           personInCharge: String(draft.personInCharge || '').trim(),
           generalObjective: String(draft.generalObjective || '').trim(),
+          sortOrder: Math.max(0, Math.round(Number(draft.sortOrder)) || 0),
           projects: normalizeServiceProjects(draft.projects),
         })
         break
@@ -527,6 +539,7 @@ export function AdminAreaEditorPreview({
           draft={draft}
           setDraftField={setDraftField}
           saving={saving}
+          canManageServicePriority={canManageServicePriority}
         />
         <div className="mt-5 flex flex-col-reverse gap-2 border-t border-slate-200/80 pt-4 sm:flex-row sm:justify-end">
           <button
@@ -764,21 +777,39 @@ export function AdminAreaEditorPreview({
                 rightSlot={
                   <AddChip
                     label="Agregar servicio"
-                    onClick={() => openEditor('service', null, { ...EMPTY_SERVICE })}
+                    onClick={() =>
+                      openEditor('service', null, {
+                        ...EMPTY_SERVICE,
+                        sortOrder: nextServicePriority(),
+                      })
+                    }
                     disabled={saving}
                   />
                 }
               >
                 {(form.serviceBlocks || []).length === 0 ? (
                   <EmptyHint
-                    onAdd={() => openEditor('service', null, { ...EMPTY_SERVICE })}
+                    onAdd={() =>
+                      openEditor('service', null, {
+                        ...EMPTY_SERVICE,
+                        sortOrder: nextServicePriority(),
+                      })
+                    }
                     addLabel="Agregar servicio"
                   >
                     Aún no hay servicios cargados. Agregá el primero para que aparezca en la página.
                   </EmptyHint>
                 ) : (
                   <ul className="grid gap-4 sm:grid-cols-2">
-                    {form.serviceBlocks.map((service, idx) => {
+                    {[...(form.serviceBlocks || [])]
+                      .map((service, idx) => ({ service, idx }))
+                      .sort((a, b) => {
+                        const oa = Math.max(0, Math.round(Number(a.service?.sortOrder)) || 0)
+                        const ob = Math.max(0, Math.round(Number(b.service?.sortOrder)) || 0)
+                        if (oa !== ob) return oa - ob
+                        return a.idx - b.idx
+                      })
+                      .map(({ service, idx }) => {
                       const srvImg = service.imageUrl ? resolveMediaUrl(service.imageUrl) : ''
                       return (
                         <li
@@ -834,9 +865,16 @@ export function AdminAreaEditorPreview({
                             )}
                           </div>
                           <div className="p-4 sm:p-5">
-                            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-sky-700">
-                              {service.mode || '—'}
-                            </p>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-sky-700">
+                                {service.mode || '—'}
+                              </p>
+                              {canManageServicePriority ? (
+                                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-600 ring-1 ring-slate-200">
+                                  Prioridad {Math.max(0, Math.round(Number(service.sortOrder)) || 0)}
+                                </span>
+                              ) : null}
+                            </div>
                             <h3 className="mt-1.5 pr-16 text-base font-bold tracking-tight text-slate-900 sm:pr-24 sm:text-lg">
                               {service.title || 'Sin título'}
                             </h3>
@@ -1204,7 +1242,7 @@ function StickyFooter({ saving, loading, selectedSlug, onSubmit }) {
 }
 
 /** Cuerpo dinámico del modal según `editor.kind`. */
-function EditorBody({ editor, draft, setDraftField, saving }) {
+function EditorBody({ editor, draft, setDraftField, saving, canManageServicePriority }) {
   if (!editor) return null
   switch (editor.kind) {
     case 'identity':
@@ -1212,7 +1250,14 @@ function EditorBody({ editor, draft, setDraftField, saving }) {
     case 'director':
       return <DirectorForm draft={draft} setDraftField={setDraftField} saving={saving} />
     case 'service':
-      return <ServiceForm draft={draft} setDraftField={setDraftField} saving={saving} />
+      return (
+        <ServiceForm
+          draft={draft}
+          setDraftField={setDraftField}
+          saving={saving}
+          canManageServicePriority={canManageServicePriority}
+        />
+      )
     case 'contact':
       return <ContactForm draft={draft} setDraftField={setDraftField} saving={saving} />
     case 'notice':
@@ -1358,7 +1403,7 @@ function DirectorForm({ draft, setDraftField, saving }) {
   )
 }
 
-function ServiceForm({ draft, setDraftField, saving }) {
+function ServiceForm({ draft, setDraftField, saving, canManageServicePriority }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <label className={labelClass}>
@@ -1381,6 +1426,23 @@ function ServiceForm({ draft, setDraftField, saving }) {
           placeholder="Ej. Presencial · Virtual"
         />
       </label>
+      {canManageServicePriority ? (
+        <label className={labelClass}>
+          Prioridad de visualización
+          <input
+            type="number"
+            min={0}
+            step={1}
+            className={inputClass}
+            value={draft.sortOrder ?? 0}
+            onChange={(e) => setDraftField('sortOrder', e.target.value)}
+            disabled={saving}
+          />
+          <span className="mt-1 block text-xs font-normal text-slate-500">
+            Número más bajo = aparece antes en el portal público.
+          </span>
+        </label>
+      ) : null}
       <div className="sm:col-span-2">
         <SingleImageUploadField
           label="Imagen del servicio"

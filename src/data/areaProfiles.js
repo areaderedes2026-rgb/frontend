@@ -358,8 +358,12 @@ export function mergeAreaProfile(baseProfile, custom = {}) {
     },
     location: { ...(baseProfile.location || {}), ...(custom.location || {}) },
     highlights: custom.highlights || baseProfile.highlights || [],
-    serviceBlocks: (custom.serviceBlocks || baseProfile.serviceBlocks || []).map((service) => ({
+    serviceBlocks: (custom.serviceBlocks || baseProfile.serviceBlocks || []).map((service, idx) => ({
       ...service,
+      sortOrder:
+        service?.sortOrder == null || service?.sortOrder === ''
+          ? (idx + 1) * 10
+          : Math.max(0, Math.round(Number(service.sortOrder)) || 0),
       projects: normalizeServiceProjects(service?.projects),
     })),
     initiatives: [],
