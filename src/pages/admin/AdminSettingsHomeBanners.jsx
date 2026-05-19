@@ -33,9 +33,17 @@ const EMPTY_SLIDE = {
   secondaryLabel: 'Ver servicios',
   secondaryHref: ROUTES.services,
   textAlign: 'left',
+  desktopTextAlign: 'left',
+  mobileTextAlign: 'center',
   isActive: true,
   sortOrder: 0,
 }
+
+const ALIGN_OPTIONS = [
+  { value: 'left', label: 'Izquierda' },
+  { value: 'center', label: 'Centro' },
+  { value: 'right', label: 'Derecha' },
+]
 
 function cleanText(value) {
   return String(value || '').trim()
@@ -77,6 +85,15 @@ function stripRowIds(slides) {
 function normalizeSlideForSave(slide, index) {
   const title = cleanText(slide.title)
   const fallbackId = slugFromText(title || slide.eyebrow || `banner-${index + 1}`, `banner-${index + 1}`)
+  const legacyAlign = ALIGN_OPTIONS.some((option) => option.value === slide.textAlign)
+    ? slide.textAlign
+    : 'left'
+  const desktopTextAlign = ALIGN_OPTIONS.some((option) => option.value === slide.desktopTextAlign)
+    ? slide.desktopTextAlign
+    : legacyAlign
+  const mobileTextAlign = ALIGN_OPTIONS.some((option) => option.value === slide.mobileTextAlign)
+    ? slide.mobileTextAlign
+    : desktopTextAlign
 
   return {
     ...slide,
@@ -92,7 +109,9 @@ function normalizeSlideForSave(slide, index) {
     primaryHref: cleanText(slide.primaryHref),
     secondaryLabel: cleanText(slide.secondaryLabel),
     secondaryHref: cleanText(slide.secondaryHref),
-    textAlign: ['left', 'center', 'right'].includes(slide.textAlign) ? slide.textAlign : 'left',
+    textAlign: desktopTextAlign,
+    desktopTextAlign,
+    mobileTextAlign,
     sortOrder: Math.max(0, Math.round(Number(slide.sortOrder) || index * 10)),
     isActive: slide.isActive !== false,
     showEyebrow: slide.showEyebrow !== false,
@@ -207,6 +226,8 @@ export function AdminSettingsHomeBanners() {
     setSlideDraft({
       ...EMPTY_SLIDE,
       ...slide,
+      desktopTextAlign: slide.desktopTextAlign || slide.textAlign || EMPTY_SLIDE.desktopTextAlign,
+      mobileTextAlign: slide.mobileTextAlign || slide.textAlign || EMPTY_SLIDE.mobileTextAlign,
       sortOrder: String(slide.sortOrder ?? 0),
     })
     setModalOpen(true)
@@ -412,16 +433,33 @@ export function AdminSettingsHomeBanners() {
               />
             </label>
             <label className={labelClass}>
-              Alineación del texto
+              Alineación del texto en PC
               <select
                 className={inputClass}
-                value={slideDraft.textAlign}
+                value={slideDraft.desktopTextAlign}
                 disabled={saving}
-                onChange={(e) => updateDraft('textAlign', e.target.value)}
+                onChange={(e) => updateDraft('desktopTextAlign', e.target.value)}
               >
-                <option value="left">Izquierda</option>
-                <option value="center">Centro</option>
-                <option value="right">Derecha</option>
+                {ALIGN_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className={labelClass}>
+              Alineación del texto en celular
+              <select
+                className={inputClass}
+                value={slideDraft.mobileTextAlign}
+                disabled={saving}
+                onChange={(e) => updateDraft('mobileTextAlign', e.target.value)}
+              >
+                {ALIGN_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </label>
             <label className={`${labelClass} md:col-span-2`}>
@@ -690,7 +728,12 @@ export function AdminSettingsHomeBanners() {
                       <div className="flex flex-wrap gap-2 text-xs text-slate-600">
                         <span className="rounded-full bg-white px-2.5 py-1 ring-1 ring-slate-200">ID: {slide.id}</span>
                         <span className="rounded-full bg-white px-2.5 py-1 ring-1 ring-slate-200">Orden: {slide.sortOrder}</span>
-                        <span className="rounded-full bg-white px-2.5 py-1 ring-1 ring-slate-200">Texto: {slide.textAlign}</span>
+                        <span className="rounded-full bg-white px-2.5 py-1 ring-1 ring-slate-200">
+                          PC: {slide.desktopTextAlign || slide.textAlign}
+                        </span>
+                        <span className="rounded-full bg-white px-2.5 py-1 ring-1 ring-slate-200">
+                          Móvil: {slide.mobileTextAlign || slide.textAlign}
+                        </span>
                         <span className="rounded-full bg-white px-2.5 py-1 ring-1 ring-slate-200">
                           Overlay: {Math.round(overlay * 100)}%
                         </span>

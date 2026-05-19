@@ -25,6 +25,8 @@ export const DEFAULT_HOME_HERO_CONTENT = {
       secondaryLabel: 'Ver servicios',
       secondaryHref: ROUTES.services,
       textAlign: 'left',
+      desktopTextAlign: 'left',
+      mobileTextAlign: 'center',
       isActive: true,
       sortOrder: 10,
     },
@@ -46,12 +48,22 @@ function cleanBool(value, fallback = true) {
   return typeof value === 'boolean' ? value : fallback
 }
 
+function cleanAlign(value, fallback = 'left') {
+  return ['left', 'center', 'right'].includes(value) ? value : fallback
+}
+
 function mapSlide(raw, fallback, index) {
   const base = fallback || {}
   const id = cleanText(raw?.id || base.id || `banner-${index + 1}`, 80)
-  const textAlign = ['left', 'center', 'right'].includes(raw?.textAlign)
-    ? raw.textAlign
-    : base.textAlign || 'left'
+  const legacyAlign = cleanAlign(raw?.textAlign, cleanAlign(base.textAlign, 'left'))
+  const desktopTextAlign = cleanAlign(
+    raw?.desktopTextAlign,
+    cleanAlign(base.desktopTextAlign, legacyAlign),
+  )
+  const mobileTextAlign = cleanAlign(
+    raw?.mobileTextAlign,
+    cleanAlign(base.mobileTextAlign, desktopTextAlign),
+  )
 
   return {
     id,
@@ -74,7 +86,9 @@ function mapSlide(raw, fallback, index) {
     showSecondaryButton: cleanBool(raw?.showSecondaryButton, base.showSecondaryButton !== false),
     secondaryLabel: cleanText(raw?.secondaryLabel ?? base.secondaryLabel, 80),
     secondaryHref: cleanText(raw?.secondaryHref ?? base.secondaryHref, 2048),
-    textAlign,
+    textAlign: desktopTextAlign,
+    desktopTextAlign,
+    mobileTextAlign,
     isActive: cleanBool(raw?.isActive, base.isActive !== false),
     sortOrder: Math.max(0, Math.round(cleanNumber(raw?.sortOrder, cleanNumber(base.sortOrder, index * 10)))),
   }

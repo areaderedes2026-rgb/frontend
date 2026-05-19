@@ -76,6 +76,24 @@ const alignClasses = {
   },
 }
 
+const desktopAlignClasses = {
+  left: {
+    box: 'md:items-start md:text-left',
+    content: 'md:mx-0',
+    actions: 'md:justify-start',
+  },
+  center: {
+    box: 'md:items-center md:text-center',
+    content: 'md:mx-auto',
+    actions: 'md:justify-center',
+  },
+  right: {
+    box: 'md:items-end md:text-right',
+    content: 'md:ml-auto md:mr-0',
+    actions: 'md:justify-end',
+  },
+}
+
 export function HomeHeroBanner({ content = DEFAULT_HOME_HERO_CONTENT, preview = false }) {
   const [activeIndex, setActiveIndex] = useState(0)
   const [paused, setPaused] = useState(false)
@@ -92,7 +110,9 @@ export function HomeHeroBanner({ content = DEFAULT_HOME_HERO_CONTENT, preview = 
     ? resolveMediaUrl(current.mobileImageUrl) || current.mobileImageUrl
     : ''
   const primaryImageUrl = imageUrl || mobileImageUrl
-  const align = alignClasses[current?.textAlign] || alignClasses.left
+  const mobileAlign = alignClasses[current?.mobileTextAlign || current?.textAlign] || alignClasses.left
+  const desktopAlign =
+    desktopAlignClasses[current?.desktopTextAlign || current?.textAlign] || desktopAlignClasses.left
   const overlayOpacity = Math.min(90, Math.max(0, Number(current?.overlayOpacity ?? 65))) / 100
 
   useEffect(() => {
@@ -149,7 +169,7 @@ export function HomeHeroBanner({ content = DEFAULT_HOME_HERO_CONTENT, preview = 
       </div>
 
       <Container className={`relative z-10 flex flex-col justify-center ${containerHeightClass}`}>
-        <div className={`flex max-w-4xl flex-col ${align.box} ${align.content}`.trim()}>
+        <div className={`flex max-w-4xl flex-col ${mobileAlign.box} ${desktopAlign.box} ${mobileAlign.content} ${desktopAlign.content}`.trim()}>
           {current?.showEyebrow !== false && current?.eyebrow ? (
             <p className="hero-enter-eyebrow text-xs font-semibold uppercase tracking-[0.2em] text-white/70">
               {current.eyebrow}
@@ -166,7 +186,7 @@ export function HomeHeroBanner({ content = DEFAULT_HOME_HERO_CONTENT, preview = 
             </p>
           ) : null}
           {showPrimary || showSecondary ? (
-            <div className={`hero-enter-actions mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-4 ${align.actions}`}>
+            <div className={`hero-enter-actions mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-4 ${mobileAlign.actions} ${desktopAlign.actions}`}>
               {showPrimary ? (
                 <HeroAction href={current.primaryHref} label={current.primaryLabel} preview={preview} />
               ) : null}
