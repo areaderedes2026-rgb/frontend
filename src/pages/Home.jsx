@@ -35,6 +35,7 @@ export function Home() {
   const secondaryNews = useMemo(() => news.slice(1, 5), [news])
 
   const upcomingEvents = useMemo(() => pickUpcomingPublicEvents(events, 3), [events])
+  const showEventsSection = !eventsLoading && upcomingEvents.length > 0
 
   useEffect(() => {
     let cancelled = false
@@ -182,95 +183,74 @@ export function Home() {
         </div>
       </StorySection>
 
-      <section className="relative border-y border-[#e8e5dd] bg-[#f7f7f5] py-10 sm:py-12">
-        <Container>
-          <RevealOnScroll variant="slow">
-            <h2 className="text-center font-serif text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
-              Próximos eventos
-            </h2>
-          </RevealOnScroll>
+      {showEventsSection ? (
+        <section className="relative border-y border-[#e8e5dd] bg-[#f7f7f5] py-10 sm:py-12">
+          <Container>
+            <RevealOnScroll variant="slow">
+              <h2 className="text-center font-serif text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
+                Próximos eventos
+              </h2>
+            </RevealOnScroll>
 
-          <div className="mt-6 sm:mt-8">
-            {eventsLoading ? (
+            <div className="mt-6 sm:mt-8">
               <div className="mx-auto grid max-w-3xl justify-items-center gap-3 sm:grid-cols-3 sm:gap-4">
-                {[0, 1, 2].map((i) => (
-                  <div
-                    key={i}
-                    className="w-full max-w-56 overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm ring-1 ring-[#1a1d24]/5"
+                {upcomingEvents.map((event, index) => (
+                  <RevealOnScroll
+                    key={event.id}
+                    variant="slow"
+                    delayMs={index * 90}
+                    className="h-full w-full max-w-56"
                   >
-                    <div className="aspect-3/4 w-full animate-pulse bg-slate-200/70" />
-                    <div className="space-y-2 p-3">
-                      <div className="h-3 w-20 animate-pulse rounded bg-slate-200/70" />
-                      <div className="h-4 w-full animate-pulse rounded bg-slate-200/70" />
-                    </div>
-                  </div>
+                    <article className="group h-full overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm ring-1 ring-[#1a1d24]/5 transition-all duration-500 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-lg hover:shadow-sky-500/10">
+                      <Link
+                        to={ROUTES.events}
+                        className="flex h-full flex-col"
+                        aria-label={`${event.title}: ver agenda completa`}
+                      >
+                        <div className="relative flex aspect-3/4 w-full items-center justify-center bg-slate-900/95 p-2.5">
+                          {event.flyerUrl ? (
+                            <img
+                              src={event.flyerUrl}
+                              alt={event.title}
+                              className="max-h-full max-w-full rounded-md object-contain transition-transform duration-500 group-hover:scale-[1.02]"
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          ) : (
+                            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                              Sin flyer
+                            </span>
+                          )}
+                          <span className="absolute left-2.5 top-2.5 rounded-full border border-sky-300/40 bg-slate-900/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-sky-100">
+                            {formatShortDate(event.eventDate)}
+                          </span>
+                        </div>
+                        <div className="flex flex-1 flex-col gap-1 p-3">
+                          <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-[#171b22]">
+                            {event.title}
+                          </h3>
+                          <p className="line-clamp-1 text-xs text-[#4b505a]">
+                            {event.place}
+                          </p>
+                        </div>
+                      </Link>
+                    </article>
+                  </RevealOnScroll>
                 ))}
               </div>
-            ) : upcomingEvents.length === 0 ? (
-              <div className="mx-auto max-w-2xl rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-5 text-center text-sm text-[#4b505a]">
-                Todavía no hay eventos publicados. Pronto se mostrarán aquí.
+              <div className="mt-5 flex justify-center sm:mt-6">
+                <Link
+                  to={ROUTES.events}
+                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-sky-800 transition-colors hover:text-[#0f1319]"
+                >
+                  Ver todos los eventos
+                  <span aria-hidden>→</span>
+                </Link>
               </div>
-            ) : (
-              <>
-                <div className="mx-auto grid max-w-3xl justify-items-center gap-3 sm:grid-cols-3 sm:gap-4">
-                  {upcomingEvents.map((event, index) => (
-                    <RevealOnScroll
-                      key={event.id}
-                      variant="slow"
-                      delayMs={index * 90}
-                      className="h-full w-full max-w-56"
-                    >
-                      <article className="group h-full overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm ring-1 ring-[#1a1d24]/5 transition-all duration-500 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-lg hover:shadow-sky-500/10">
-                        <Link
-                          to={ROUTES.events}
-                          className="flex h-full flex-col"
-                          aria-label={`${event.title}: ver agenda completa`}
-                        >
-                          <div className="relative flex aspect-3/4 w-full items-center justify-center bg-slate-900/95 p-2.5">
-                            {event.flyerUrl ? (
-                              <img
-                                src={event.flyerUrl}
-                                alt={event.title}
-                                className="max-h-full max-w-full rounded-md object-contain transition-transform duration-500 group-hover:scale-[1.02]"
-                                loading="lazy"
-                                decoding="async"
-                              />
-                            ) : (
-                              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                                Sin flyer
-                              </span>
-                            )}
-                            <span className="absolute left-2.5 top-2.5 rounded-full border border-sky-300/40 bg-slate-900/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-sky-100">
-                              {formatShortDate(event.eventDate)}
-                            </span>
-                          </div>
-                          <div className="flex flex-1 flex-col gap-1 p-3">
-                            <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-[#171b22]">
-                              {event.title}
-                            </h3>
-                            <p className="line-clamp-1 text-xs text-[#4b505a]">
-                              {event.place}
-                            </p>
-                          </div>
-                        </Link>
-                      </article>
-                    </RevealOnScroll>
-                  ))}
-                </div>
-                <div className="mt-5 flex justify-center sm:mt-6">
-                  <Link
-                    to={ROUTES.events}
-                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-sky-800 transition-colors hover:text-[#0f1319]"
-                  >
-                    Ver todos los eventos
-                    <span aria-hidden>→</span>
-                  </Link>
-                </div>
-              </>
-            )}
-          </div>
-        </Container>
-      </section>
+            </div>
+          </Container>
+        </section>
+      ) : null}
 
       <StorySection
         eyebrow="Áreas municipales"
