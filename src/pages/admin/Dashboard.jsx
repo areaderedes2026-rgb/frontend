@@ -113,6 +113,21 @@ export function Dashboard() {
               </span>
             </a>
             <Link
+              to={ROUTES.adminServices}
+              className="group rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-md sm:p-6"
+            >
+              <p className="text-xs font-bold uppercase tracking-wide text-sky-700">
+                Gestión municipal
+              </p>
+              <p className="mt-2 text-lg font-semibold text-slate-900">Servicios al vecino</p>
+              <p className="mt-1 text-sm leading-relaxed text-slate-600">
+                Página de trámites, directorio y preguntas frecuentes del portal.
+              </p>
+              <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-sky-700 group-hover:text-sky-900">
+                Abrir sección <span aria-hidden>→</span>
+              </span>
+            </Link>
+            <Link
               to={ROUTES.adminCitizenAttention}
               className="group rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-md sm:p-6"
             >

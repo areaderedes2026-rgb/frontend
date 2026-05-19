@@ -45,6 +45,8 @@ export function AdminLayout() {
   const citizenInquiriesActive =
     pathname === ROUTES.adminCitizenInquiries ||
     pathname.startsWith(`${ROUTES.adminCitizenInquiries}/`)
+  const servicesActive =
+    pathname === ROUTES.adminServices || pathname.startsWith(`${ROUTES.adminServices}/`)
   const ofertaAcademicaActive =
     pathname === ROUTES.adminOfertaAcademica ||
     pathname.startsWith(`${ROUTES.adminOfertaAcademica}/`)
@@ -173,6 +175,14 @@ export function AdminLayout() {
               }
             >
               Oferta académica
+            </NavLink>
+            <NavLink
+              to={ROUTES.adminServices}
+              onMouseEnter={() => preloadAdminRoute('services')}
+              onFocus={() => preloadAdminRoute('services')}
+              className={({ isActive }) => navClass({ isActive: isActive || servicesActive })}
+            >
+              Servicios
             </NavLink>
             <NavLink
               to={ROUTES.adminCitizenAttention}
