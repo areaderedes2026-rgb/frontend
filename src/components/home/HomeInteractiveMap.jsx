@@ -81,13 +81,13 @@ export function HomeInteractiveMap({ content }) {
   }
 
   return (
-    <article className="overflow-hidden rounded-3xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm ring-1 ring-[#1a1d24]/5">
-      <div className="border-b border-[#ddd7ca] bg-[#f8f7f3] px-3 py-3 sm:px-5">
+    <article className="overflow-hidden rounded-4xl border border-white/70 bg-white/72 shadow-[0_24px_80px_-46px_rgba(23,27,34,0.55)] ring-1 ring-[#171b22]/5 backdrop-blur">
+      <div className="border-b border-[#ddd7ca]/80 bg-white/58 px-3 py-3 backdrop-blur sm:px-5">
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => scrollTabs(-1)}
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#d6d0c3] bg-white text-sm font-bold text-[#3e434d] transition hover:border-sky-200 hover:text-sky-800"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#d6d0c3] bg-white/90 text-sm font-bold text-[#3e434d] shadow-sm transition hover:border-sky-200 hover:text-sky-800"
             aria-label="Ver puntos anteriores"
           >
             ←
@@ -105,8 +105,8 @@ export function HomeInteractiveMap({ content }) {
                   onClick={() => setActivePointId(point.id)}
                   className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
                     active
-                      ? 'border-[#2a313b] bg-[#171b22] text-white'
-                      : 'border-[#d6d0c3] bg-white text-[#3e434d] hover:border-sky-200'
+                      ? 'border-[#2a313b] bg-[#171b22] text-white shadow-sm'
+                      : 'border-[#d6d0c3] bg-white/90 text-[#3e434d] hover:border-sky-200 hover:bg-white'
                   }`}
                 >
                   {point.title || point.id}
@@ -117,7 +117,7 @@ export function HomeInteractiveMap({ content }) {
           <button
             type="button"
             onClick={() => scrollTabs(1)}
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#d6d0c3] bg-white text-sm font-bold text-[#3e434d] transition hover:border-sky-200 hover:text-sky-800"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#d6d0c3] bg-white/90 text-sm font-bold text-[#3e434d] shadow-sm transition hover:border-sky-200 hover:text-sky-800"
             aria-label="Ver siguientes puntos"
           >
             →
@@ -125,7 +125,7 @@ export function HomeInteractiveMap({ content }) {
         </div>
       </div>
       <div
-        className="relative h-88 w-full sm:h-104 lg:h-120"
+        className="relative h-88 w-full bg-[#171b22] sm:h-104 lg:h-120"
         onMouseLeave={() => setInteractive(false)}
       >
         <MapContainer
@@ -166,7 +166,7 @@ export function HomeInteractiveMap({ content }) {
           <button
             type="button"
             onClick={() => setInteractive(true)}
-            className="absolute inset-0 z-1000 flex cursor-pointer items-center justify-center bg-slate-900/25 backdrop-blur-[1px] transition hover:bg-slate-900/35 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
+            className="absolute inset-0 z-1000 flex cursor-pointer items-center justify-center bg-[#171b22]/28 backdrop-blur-[1px] transition hover:bg-[#171b22]/38 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
             aria-label="Activar mapa interactivo"
           >
             <span className="pointer-events-none inline-flex items-center gap-2 rounded-full bg-white/95 px-4 py-2 text-sm font-semibold text-[#171b22] shadow-lg ring-1 ring-slate-900/10 sm:px-5 sm:text-base">

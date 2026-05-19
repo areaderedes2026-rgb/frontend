@@ -31,7 +31,7 @@ export function AreasCarousel({ showHeader = true }) {
       ) : null}
 
       <div
-        className="relative overflow-hidden py-2 sm:py-3"
+        className="relative overflow-hidden rounded-4xl border border-white/60 bg-white/45 px-3 py-4 shadow-[0_20px_70px_-44px_rgba(23,27,34,0.45)] ring-1 ring-[#171b22]/5 backdrop-blur sm:px-4 sm:py-5"
         role="region"
         aria-label="Áreas municipales en desplazamiento continuo. Se detiene al pasar el cursor o al tocar."
         onMouseEnter={() => setPaused(true)}
@@ -83,7 +83,7 @@ function AreaCard({ area, compact = false }) {
     >
       <Link
         to={`/areas/${area.slug}`}
-        className={`group relative flex w-full overflow-hidden rounded-2xl bg-slate-200 shadow-md ring-1 ring-slate-900/10 transition-shadow duration-300 hover:shadow-xl hover:ring-slate-900/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2 ${
+        className={`group relative flex w-full overflow-hidden rounded-[1.75rem] bg-slate-200 shadow-[0_18px_48px_-28px_rgba(23,27,34,0.65)] ring-1 ring-slate-900/10 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_24px_64px_-28px_rgba(23,27,34,0.72)] hover:ring-sky-200/45 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2 ${
           compact ? 'min-h-[240px]' : 'min-h-[260px] sm:min-h-[300px]'
         }`}
       >
@@ -94,10 +94,8 @@ function AreaCard({ area, compact = false }) {
           decoding="async"
           className="absolute inset-0 h-full w-full object-cover transition duration-700 ease-out group-hover:scale-105"
         />
-        <div
-          className="absolute inset-0 bg-linear-to-t from-black/90 via-black/45 to-black/10"
-          aria-hidden
-        />
+        <div className="absolute inset-0 bg-linear-to-t from-black/92 via-black/48 to-black/8" aria-hidden />
+        <div className="absolute inset-x-0 top-0 h-24 bg-linear-to-b from-white/12 to-transparent" aria-hidden />
 
         <div
           className={`relative z-1 mt-auto flex w-full flex-col justify-end ${
@@ -105,7 +103,7 @@ function AreaCard({ area, compact = false }) {
           }`}
         >
           <span
-            className={`mb-2 inline-flex w-fit items-center rounded-md border border-white/25 bg-white/15 px-2 py-1 font-mono font-bold uppercase tracking-widest text-white backdrop-blur-sm ${
+            className={`mb-2 inline-flex w-fit items-center rounded-full border border-white/25 bg-white/15 px-2.5 py-1 font-mono font-bold uppercase tracking-widest text-white backdrop-blur-sm ${
               compact ? 'text-[9px]' : 'text-[10px]'
             }`}
           >

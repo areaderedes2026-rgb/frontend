@@ -121,16 +121,19 @@ export function Home() {
         <div className="grid gap-6 lg:grid-cols-12">
           <RevealOnScroll className="lg:col-span-7" variant="slow">
             {featuredNews ? (
-              <article className="group overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm ring-1 ring-[#1a1d24]/5 transition-all duration-500 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-lg hover:shadow-sky-500/10">
-                <NewsCoverMedia
-                  imageUrl={featuredNews.imageUrl}
-                  className="aspect-16/10 w-full"
-                  imgClassName="transition-transform duration-700 group-hover:scale-[1.03]"
-                  loading="lazy"
-                  iconScale="lg"
-                />
+              <article className="group overflow-hidden rounded-4xl border border-white/70 bg-white/72 shadow-[0_22px_70px_-38px_rgba(23,27,34,0.45)] ring-1 ring-[#171b22]/5 backdrop-blur transition-all duration-500 hover:-translate-y-1 hover:border-sky-200/80 hover:shadow-[0_28px_80px_-36px_rgba(2,132,199,0.35)]">
+                <div className="relative overflow-hidden">
+                  <NewsCoverMedia
+                    imageUrl={featuredNews.imageUrl}
+                    className="aspect-16/10 w-full"
+                    imgClassName="transition-transform duration-700 group-hover:scale-[1.04]"
+                    loading="lazy"
+                    iconScale="lg"
+                  />
+                  <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-[#171b22]/28 via-transparent to-transparent" />
+                </div>
                 <div className="p-6">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-sky-800">
+                  <p className="inline-flex rounded-full border border-sky-100 bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-sky-800">
                     {featuredNews.category} · {formatShortDate(featuredNews.publishedAt)}
                   </p>
                   <h3 className="mt-2 font-serif text-2xl font-bold tracking-tight text-[#171b22]">
@@ -144,7 +147,7 @@ export function Home() {
                 </div>
               </article>
             ) : (
-              <article className="rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-6 text-sm text-[#4b505a]">
+              <article className="rounded-4xl border border-dashed border-[#d8d1c3] bg-white/65 p-6 text-sm text-[#4b505a] shadow-sm backdrop-blur">
                 Estamos preparando novedades destacadas.
               </article>
             )}
@@ -156,7 +159,7 @@ export function Home() {
                 secondaryNews.map((item) => (
                   <article
                     key={item.id}
-                    className="group flex h-full flex-col rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-4 shadow-sm ring-1 ring-[#1a1d24]/5 transition-all duration-500 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-lg hover:shadow-sky-500/10 sm:p-5"
+                    className="group flex h-full flex-col rounded-3xl border border-white/70 bg-white/70 p-4 shadow-[0_16px_50px_-34px_rgba(23,27,34,0.45)] ring-1 ring-[#171b22]/5 backdrop-blur transition-all duration-500 hover:-translate-y-1 hover:border-sky-200/80 hover:bg-white/85 hover:shadow-[0_22px_60px_-34px_rgba(2,132,199,0.35)] sm:p-5"
                   >
                     <p className="text-xs font-semibold uppercase tracking-wide text-sky-800">{item.category}</p>
                     <h4 className="mt-1 line-clamp-2 text-base font-semibold text-[#171b22]">
@@ -170,7 +173,7 @@ export function Home() {
                   </article>
                 ))
               ) : (
-                <article className="rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-4 text-sm text-[#4b505a] sm:p-5">
+                <article className="rounded-3xl border border-dashed border-[#d8d1c3] bg-white/65 p-4 text-sm text-[#4b505a] sm:p-5">
                   Próximamente aparecerán más novedades aquí.
                 </article>
               )}
@@ -181,12 +184,18 @@ export function Home() {
       </StorySection>
 
       {showEventsSection ? (
-        <section className="relative border-y border-[#e8e5dd] bg-[#f7f7f5] py-10 sm:py-12">
-          <Container>
+        <section className="relative overflow-hidden border-y border-[#e8e5dd] bg-[radial-gradient(circle_at_20%_0%,rgba(14,165,233,0.12),transparent_24rem),linear-gradient(180deg,#f7f7f5_0%,#efebe2_100%)] py-12 sm:py-14">
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(23,27,34,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(23,27,34,0.025)_1px,transparent_1px)] bg-size-[36px_36px]" aria-hidden />
+          <Container className="relative z-10">
             <RevealOnScroll variant="slow">
-              <h2 className="text-center font-serif text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
-                Próximos eventos
-              </h2>
+              <div className="mx-auto max-w-2xl text-center">
+                <p className="inline-flex rounded-full border border-[#ddd7ca] bg-white/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-sky-800">
+                  Agenda municipal
+                </p>
+                <h2 className="mt-3 font-serif text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
+                  Próximos eventos
+                </h2>
+              </div>
             </RevealOnScroll>
 
             <div className="mt-6 sm:mt-8">
@@ -198,13 +207,13 @@ export function Home() {
                     delayMs={index * 90}
                     className="h-full w-full max-w-56"
                   >
-                    <article className="group h-full overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm ring-1 ring-[#1a1d24]/5 transition-all duration-500 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-lg hover:shadow-sky-500/10">
+                    <article className="group h-full overflow-hidden rounded-[1.6rem] border border-white/70 bg-white/75 shadow-[0_18px_55px_-34px_rgba(23,27,34,0.55)] ring-1 ring-[#171b22]/5 backdrop-blur transition-all duration-500 hover:-translate-y-1 hover:border-sky-200/80 hover:shadow-[0_24px_70px_-36px_rgba(2,132,199,0.38)]">
                       <Link
                         to={ROUTES.events}
                         className="flex h-full flex-col"
                         aria-label={`${event.title}: ver agenda completa`}
                       >
-                        <div className="relative flex aspect-3/4 w-full items-center justify-center bg-slate-900/95 p-2.5">
+                        <div className="relative flex aspect-3/4 w-full items-center justify-center bg-[#171b22] p-2.5">
                           {event.flyerUrl ? (
                             <img
                               src={event.flyerUrl}
@@ -222,7 +231,7 @@ export function Home() {
                             {formatShortDate(event.eventDate)}
                           </span>
                         </div>
-                        <div className="flex flex-1 flex-col gap-1 p-3">
+                        <div className="flex flex-1 flex-col gap-1 p-3.5">
                           <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-[#171b22]">
                             {event.title}
                           </h3>
@@ -238,7 +247,7 @@ export function Home() {
               <div className="mt-5 flex justify-center sm:mt-6">
                 <Link
                   to={ROUTES.events}
-                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-sky-800 transition-colors hover:text-[#0f1319]"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[#ddd7ca] bg-white/75 px-4 py-2 text-sm font-semibold text-sky-800 shadow-sm transition hover:border-sky-200 hover:bg-white hover:text-[#0f1319]"
                 >
                   Ver todos los eventos
                   <span aria-hidden>→</span>
@@ -302,7 +311,11 @@ export function Home() {
             },
           ].map((card, i) => (
             <RevealOnScroll key={card.title} variant="slow" delayMs={i * 120} className="h-full">
-              <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-white/20 bg-white/5 p-6 transition-all duration-500 hover:-translate-y-1 hover:border-sky-200/70 hover:bg-white/10">
+              <article className="group relative flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-white/14 bg-white/[0.07] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-all duration-500 hover:-translate-y-1 hover:border-sky-200/60 hover:bg-white/11">
+                <span className="pointer-events-none absolute -right-10 -top-10 h-24 w-24 rounded-full bg-sky-300/10 blur-2xl transition group-hover:bg-sky-300/18" aria-hidden />
+                <span className="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/12 bg-white/8 text-sm font-bold text-sky-100">
+                  0{i + 1}
+                </span>
                 <h3 className="text-lg font-semibold text-white">{card.title}</h3>
                 <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-200">{card.text}</p>
                 <Link
