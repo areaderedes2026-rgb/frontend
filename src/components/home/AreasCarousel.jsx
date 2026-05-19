@@ -31,7 +31,7 @@ export function AreasCarousel({ showHeader = true }) {
       ) : null}
 
       <div
-        className="relative overflow-hidden rounded-4xl border border-white/60 bg-white/45 px-3 py-4 shadow-[0_20px_70px_-44px_rgba(23,27,34,0.45)] ring-1 ring-[#171b22]/5 backdrop-blur sm:px-4 sm:py-5"
+        className="relative overflow-hidden rounded-4xl bg-white/12 py-4 shadow-[0_24px_80px_-54px_rgba(15,23,42,0.75)] backdrop-blur-md sm:py-5"
         role="region"
         aria-label="Áreas municipales en desplazamiento continuo. Se detiene al pasar el cursor o al tocar."
         onMouseEnter={() => setPaused(true)}
@@ -43,22 +43,44 @@ export function AreasCarousel({ showHeader = true }) {
           if (!e.currentTarget.contains(e.relatedTarget)) setPaused(false)
         }}
       >
+        <div
+          className="pointer-events-none absolute inset-0 bg-linear-to-r from-white/6 via-white/12 to-white/6"
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute inset-y-0 left-0 z-10 w-14 bg-linear-to-r from-[#171b22]/35 to-transparent sm:w-24"
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute inset-y-0 right-0 z-10 w-14 bg-linear-to-l from-[#171b22]/35 to-transparent sm:w-24"
+          aria-hidden
+        />
         {reducedMotion ? (
-          <div className="flex flex-wrap justify-center gap-4">
+          <div className="relative z-1 flex flex-wrap justify-center gap-4 px-3 sm:px-4">
             {areas.map((area) => (
               <AreaCard key={area.slug} area={area} compact />
             ))}
           </div>
         ) : (
           <div
-            className="flex w-max gap-4 will-change-transform animate-areas-marquee"
+            className="relative z-1 overflow-hidden px-3 sm:px-4"
             style={{
-              animationPlayState: paused ? 'paused' : 'running',
+              WebkitMaskImage:
+                'linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%)',
+              maskImage:
+                'linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%)',
             }}
           >
-            {loop.map((area, i) => (
-              <AreaCard key={`${area.slug}-${i}`} area={area} />
-            ))}
+            <div
+              className="flex w-max gap-4 will-change-transform animate-areas-marquee"
+              style={{
+                animationPlayState: paused ? 'paused' : 'running',
+              }}
+            >
+              {loop.map((area, i) => (
+                <AreaCard key={`${area.slug}-${i}`} area={area} />
+              ))}
+            </div>
           </div>
         )}
       </div>
