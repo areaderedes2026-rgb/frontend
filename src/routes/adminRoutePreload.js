@@ -39,6 +39,10 @@ export const adminRouteLoaders = {
     () => import('../pages/admin/AdminCategories.jsx'),
     'AdminCategories',
   ),
+  settingsHomeBanners: namedLazy(
+    () => import('../pages/admin/AdminSettingsHomeBanners.jsx'),
+    'AdminSettingsHomeBanners',
+  ),
   settingsHomeMap: namedLazy(
     () => import('../pages/admin/AdminSettingsHomeMap.jsx'),
     'AdminSettingsHomeMap',

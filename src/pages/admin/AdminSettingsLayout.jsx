@@ -26,6 +26,9 @@ export function AdminSettingsLayout() {
         <NavLink to={ROUTES.adminSettingsCategories} className={subNavClass}>
           Categorías
         </NavLink>
+        <NavLink to={ROUTES.adminSettingsHomeBanners} className={subNavClass}>
+          Banners Inicio
+        </NavLink>
         <NavLink to={ROUTES.adminSettingsHomeMap} className={subNavClass}>
           Mapa Inicio
         </NavLink>

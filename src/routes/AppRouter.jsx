@@ -27,6 +27,7 @@ const EditNews = lazy(adminRouteLoaders.editNews)
 const AdminSettingsLayout = lazy(adminRouteLoaders.settingsLayout)
 const AdminSettingsHome = lazy(adminRouteLoaders.settingsHome)
 const AdminCategories = lazy(adminRouteLoaders.settingsCategories)
+const AdminSettingsHomeBanners = lazy(adminRouteLoaders.settingsHomeBanners)
 const AdminSettingsHomeMap = lazy(adminRouteLoaders.settingsHomeMap)
 const AdminIntendencia = lazy(adminRouteLoaders.settingsIntendencia)
 const AdminLegisladorEste = lazy(adminRouteLoaders.settingsLegisladorEste)
@@ -195,6 +196,14 @@ export function AppRouter() {
               element={
                 <Suspense fallback={<AdminRouteFallback />}>
                   <AdminCategories />
+                </Suspense>
+              }
+            />
+            <Route
+              path="home-banners"
+              element={
+                <Suspense fallback={<AdminRouteFallback />}>
+                  <AdminSettingsHomeBanners />
                 </Suspense>
               }
             />

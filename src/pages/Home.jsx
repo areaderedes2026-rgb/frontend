@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { HomeHeroBanner } from '../components/home/HomeHeroBanner.jsx'
 import { HomeInteractiveMap } from '../components/home/HomeInteractiveMap.jsx'
 import { Link } from 'react-router-dom'
 import { AreasCarousel } from '../components/home/AreasCarousel.jsx'
@@ -7,15 +8,15 @@ import { StorySection } from '../components/home/StorySection.jsx'
 import { NewsCoverMedia } from '../components/news/NewsCoverMedia.jsx'
 import { Container } from '../components/ui/Container.jsx'
 import { LinkButton } from '../components/ui/LinkButton.jsx'
+import { DEFAULT_HOME_HERO_CONTENT, mergeHomeHeroContent } from '../data/homeHeroContent.js'
 import { DEFAULT_HOME_MAP_CONTENT, mergeHomeMapContent } from '../data/homeMapContent.js'
 import { useNewsList } from '../hooks/useNewsList.js'
 import { fetchPublicEvents } from '../services/eventsService.js'
+import { fetchHomeHeroContent } from '../services/homeHeroService.js'
 import { fetchHomeMapContent } from '../services/homeMapService.js'
 import { formatShortDate } from '../utils/formatDate.js'
 import { pickUpcomingPublicEvents } from '../utils/publicEvents.js'
 import { ROUTES } from '../utils/constants.js'
-
-const HERO_IMAGE = '/rio.jpeg'
 
 function excerptWords(text, maxWords = 14) {
   const value = String(text || '').trim()
@@ -27,6 +28,7 @@ function excerptWords(text, maxWords = 14) {
 
 export function Home() {
   const { items: news } = useNewsList()
+  const [homeHeroContent, setHomeHeroContent] = useState(DEFAULT_HOME_HERO_CONTENT)
   const [homeMapContent, setHomeMapContent] = useState(DEFAULT_HOME_MAP_CONTENT)
   const [events, setEvents] = useState([])
   const [eventsLoading, setEventsLoading] = useState(true)
@@ -36,6 +38,26 @@ export function Home() {
 
   const upcomingEvents = useMemo(() => pickUpcomingPublicEvents(events, 3), [events])
   const showEventsSection = !eventsLoading && upcomingEvents.length > 0
+
+  useEffect(() => {
+    let cancelled = false
+    async function loadHero() {
+      try {
+        const remote = await fetchHomeHeroContent()
+        if (!cancelled) {
+          setHomeHeroContent(mergeHomeHeroContent(DEFAULT_HOME_HERO_CONTENT, remote || {}))
+        }
+      } catch {
+        if (!cancelled) {
+          setHomeHeroContent(DEFAULT_HOME_HERO_CONTENT)
+        }
+      }
+    }
+    void loadHero()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -77,37 +99,7 @@ export function Home() {
 
   return (
     <>
-      <section className="relative isolate min-h-dvh overflow-hidden border-b border-slate-200/40">
-        <div className="absolute inset-0">
-          <img
-            src={HERO_IMAGE}
-            alt=""
-            fetchPriority="high"
-            decoding="async"
-            className="h-full w-full object-cover object-center"
-          />
-          <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/60 to-black/35" aria-hidden />
-        </div>
-
-        <Container className="relative z-10 flex min-h-dvh flex-col justify-center pt-[calc(var(--navbar-h,5rem)+1.25rem)] pb-10 sm:pt-[calc(var(--navbar-h,5rem)+2rem)] sm:pb-14 lg:pb-16">
-          <div className="max-w-4xl">
-            <p className="hero-enter-eyebrow text-xs font-semibold uppercase tracking-[0.2em] text-white/70">
-              Municipalidad de Trancas
-            </p>
-            <h1 className="hero-enter-title mt-2 font-serif text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
-              Trancas tierra gaucha
-            </h1>
-            <div className="hero-enter-actions mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-4">
-              <LinkButton to={ROUTES.atencionCiudadano}>
-                Realizar consulta
-              </LinkButton>
-              <LinkButton to={ROUTES.services} variant="secondary">
-                Ver servicios
-              </LinkButton>
-            </div>
-          </div>
-        </Container>
-      </section>
+      <HomeHeroBanner content={homeHeroContent} />
 
       <StorySection
         eyebrow="Actualidad municipal"

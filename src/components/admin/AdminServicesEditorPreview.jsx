@@ -236,7 +236,6 @@ export function AdminServicesEditorPreview({
           if (index === null || index === undefined) {
             if (!list.includes(value)) list.push(value)
           } else {
-            const previous = list[index]
             list[index] = value
             return {
               ...prev,

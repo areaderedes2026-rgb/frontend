@@ -19,6 +19,23 @@ export function AdminSettingsHome() {
     >
       <div className="grid gap-4 sm:grid-cols-2">
         <Link
+          to={ROUTES.adminSettingsHomeBanners}
+          onMouseEnter={() => preloadAdminRoute('settingsHomeBanners')}
+          onFocus={() => preloadAdminRoute('settingsHomeBanners')}
+          className="group admin-fade-up rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-md"
+        >
+          <p className="text-xs font-bold uppercase tracking-wide text-sky-700">
+            Inicio
+          </p>
+          <p className="mt-2 text-lg font-semibold text-slate-900">Banners principales</p>
+          <p className="mt-2 text-sm leading-relaxed text-slate-600">
+            Editá imágenes, textos, botones, visibilidad y rotación automática del hero.
+          </p>
+          <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-sky-800 group-hover:text-sky-950">
+            Abrir módulo <span aria-hidden>→</span>
+          </span>
+        </Link>
+        <Link
           to={ROUTES.adminSettingsCategories}
           className="group admin-fade-up rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-md"
         >

@@ -37,6 +37,7 @@ export const ROUTES = {
   adminUsers: '/admin/settings/users',
   adminSettings: '/admin/settings',
   adminSettingsCategories: '/admin/settings/categories',
+  adminSettingsHomeBanners: '/admin/settings/home-banners',
   adminSettingsHomeMap: '/admin/settings/home-map',
   adminSettingsIntendencia: '/admin/settings/intendencia',
   adminSettingsLegisladorEste: '/admin/settings/legislador-este',
