@@ -7,7 +7,8 @@ import { fetchAreaProfile } from '../../services/areaProfilesService.js'
 import { fetchAreaPublicBySlug } from '../../services/areasService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
 import { ROUTES } from '../../utils/constants.js'
-import { resolveMediaUrl } from '../../utils/imageUrl.js'
+import { ServiceContactSection } from '../../components/areas/ServiceContactSection.jsx'
+import { isServiceContactSectionVisible } from '../../utils/serviceContacts.js'
 
 function ServiceDetailSkeleton() {
   return (
@@ -224,6 +225,8 @@ export function AreaServiceDetail() {
       )
     : []
   const hasMeta = Boolean(personInCharge || generalObjective)
+  const showContacts = isServiceContactSectionVisible(service.contactSection)
+  const showSidebar = hasMeta || showContacts
 
   return (
     <section className="relative pb-14 sm:pb-20">
@@ -336,22 +339,31 @@ export function AreaServiceDetail() {
                 ) : null}
               </div>
 
-              {hasMeta ? (
+              {showSidebar ? (
                 <aside className="lg:col-span-4">
                   <RevealOnScroll variant="slow" delayMs={110}>
-                    <article className="sticky top-[calc(var(--navbar-h,5rem)+1rem)] rounded-2xl border border-[#ddd7ca] bg-[#f8f7f3] px-5 py-2">
-                      <h3 className="border-b border-[#e8e4dc] py-4 text-sm font-bold uppercase tracking-[0.16em] text-sky-800">
-                        Información clave
-                      </h3>
-                      <dl>
-                        <InfoRow label="A cargo">
-                          {personInCharge ? (
-                            <span className="font-semibold text-[#171b22]">{personInCharge}</span>
-                          ) : null}
-                        </InfoRow>
-                        <InfoRow label="Objetivo general">{generalObjective}</InfoRow>
-                      </dl>
-                    </article>
+                    <div className="sticky top-[calc(var(--navbar-h,5rem)+1rem)] space-y-5">
+                      {hasMeta ? (
+                        <article className="rounded-2xl border border-[#ddd7ca] bg-[#f8f7f3] px-5 py-2">
+                          <h3 className="border-b border-[#e8e4dc] py-4 text-sm font-bold uppercase tracking-[0.16em] text-sky-800">
+                            Información clave
+                          </h3>
+                          <dl>
+                            <InfoRow label="A cargo">
+                              {personInCharge ? (
+                                <span className="font-semibold text-[#171b22]">{personInCharge}</span>
+                              ) : null}
+                            </InfoRow>
+                            <InfoRow label="Objetivo general">{generalObjective}</InfoRow>
+                          </dl>
+                        </article>
+                      ) : null}
+                      {showContacts ? (
+                        <article className="rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-5">
+                          <ServiceContactSection contactSection={service.contactSection} />
+                        </article>
+                      ) : null}
+                    </div>
                   </RevealOnScroll>
                 </aside>
               ) : null}

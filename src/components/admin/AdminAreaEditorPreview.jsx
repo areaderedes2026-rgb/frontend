@@ -3,10 +3,15 @@ import { Modal } from '../ui/Modal.jsx'
 import { ConfirmDialog } from '../ui/ConfirmDialog.jsx'
 import { AdminAreaOfficesPanel } from './AdminAreaOfficesPanel.jsx'
 import { SingleImageUploadField } from './SingleImageUploadField.jsx'
+import { ServiceContactsEditor } from './ServiceContactsEditor.jsx'
 import { ServiceProjectsEditor } from './ServiceProjectsEditor.jsx'
 import { inputClass, labelClass, textareaClass } from '../ui/formStyles.js'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
 import { normalizeServiceProjects } from '../../utils/serviceProjects.js'
+import {
+  isServiceContactSectionVisible,
+  normalizeServiceContactSection,
+} from '../../utils/serviceContacts.js'
 
 function newClientServiceId() {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -142,6 +147,7 @@ const EMPTY_SERVICE = {
   generalObjective: '',
   sortOrder: 0,
   projects: [],
+  contactSection: { enabled: false, title: 'Contacto', items: [] },
 }
 const EMPTY_CONTACT = { label: '', value: '', note: '' }
 const EMPTY_SCHOOL = {
@@ -384,6 +390,7 @@ export function AdminAreaEditorPreview({
           generalObjective: String(draft.generalObjective || '').trim(),
           sortOrder: Math.max(0, Math.round(Number(draft.sortOrder)) || 0),
           projects: normalizeServiceProjects(draft.projects),
+          contactSection: normalizeServiceContactSection(draft.contactSection),
         })
         break
       }
@@ -824,6 +831,7 @@ export function AdminAreaEditorPreview({
                                   ...EMPTY_SERVICE,
                                   ...service,
                                   projects: normalizeServiceProjects(service.projects),
+                                  contactSection: normalizeServiceContactSection(service.contactSection),
                                 })
                               }
                               disabled={saving}
@@ -898,6 +906,11 @@ export function AdminAreaEditorPreview({
                             {normalizeServiceProjects(service.projects).length ? (
                               <p className="mt-3 inline-flex rounded-full bg-sky-50 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-sky-800 ring-1 ring-sky-100">
                                 {normalizeServiceProjects(service.projects).length} proyecto(s)
+                              </p>
+                            ) : null}
+                            {isServiceContactSectionVisible(service.contactSection) ? (
+                              <p className="mt-2 inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-emerald-800 ring-1 ring-emerald-100">
+                                Contactos activos
                               </p>
                             ) : null}
                           </div>
@@ -1486,6 +1499,11 @@ function ServiceForm({ draft, setDraftField, saving, canManageServicePriority })
       <ServiceProjectsEditor
         projects={draft.projects}
         onChange={(projects) => setDraftField('projects', projects)}
+        saving={saving}
+      />
+      <ServiceContactsEditor
+        contactSection={draft.contactSection}
+        onChange={(contactSection) => setDraftField('contactSection', contactSection)}
         saving={saving}
       />
     </div>

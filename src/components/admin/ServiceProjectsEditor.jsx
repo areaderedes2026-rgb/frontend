@@ -55,7 +55,7 @@ export function ServiceProjectsEditor({
         <div>
           <p className="text-sm font-bold text-slate-900">Proyectos del servicio</p>
           <p className="mt-1 text-xs leading-relaxed text-slate-600">
-            Se muestran como cards dentro del modal público del servicio.
+            Se muestran en la página pública de detalle del servicio.
           </p>
         </div>
         <button

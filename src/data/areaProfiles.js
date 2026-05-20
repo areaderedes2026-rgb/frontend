@@ -1,4 +1,5 @@
 import { getAreaBySlug } from './areas.js'
+import { normalizeServiceContactSection } from '../utils/serviceContacts.js'
 import { normalizeServiceProjects } from '../utils/serviceProjects.js'
 
 const DEFAULT_MAP_EMBED =
@@ -46,6 +47,28 @@ const AREA_PROFILES = {
             linkLabel: '',
           },
         ],
+        contactSection: {
+          enabled: true,
+          title: 'Contacto',
+          items: [
+            {
+              id: 'asuntos-srv-acomp-tel',
+              type: 'phone',
+              label: 'Atención telefónica',
+              value: '+54 381 400-1201',
+              note: 'Lunes a viernes de 8 a 13 hs',
+              url: '',
+            },
+            {
+              id: 'asuntos-srv-acomp-wa',
+              type: 'whatsapp',
+              label: 'WhatsApp',
+              value: '3816396406',
+              note: 'Consultas y turnos',
+              url: '',
+            },
+          ],
+        },
       },
       {
         id: 'asuntos-srv-ninez',
@@ -365,6 +388,7 @@ export function mergeAreaProfile(baseProfile, custom = {}) {
           ? (idx + 1) * 10
           : Math.max(0, Math.round(Number(service.sortOrder)) || 0),
       projects: normalizeServiceProjects(service?.projects),
+      contactSection: normalizeServiceContactSection(service?.contactSection),
     })),
     initiatives: [],
     contactCards: custom.contactCards || baseProfile.contactCards || [],

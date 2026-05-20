@@ -25,6 +25,10 @@ import {
 import { isApiConfigured } from '../../utils/apiConfig.js'
 import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
+import {
+  isServiceContactSectionVisible,
+  normalizeServiceContactSection,
+} from '../../utils/serviceContacts.js'
 import { normalizeServiceProjects } from '../../utils/serviceProjects.js'
 import {
   fetchAreasPageContent,
@@ -110,6 +114,7 @@ function mapServiceToForm(service, idx = 0) {
         ? (idx + 1) * 10
         : Math.max(0, Math.round(Number(rawOrder)) || 0),
     projects: mapServiceProjects(service?.projects),
+    contactSection: normalizeServiceContactSection(service?.contactSection),
   }
 }
 
@@ -125,6 +130,7 @@ function buildServicesPayload(services) {
       generalObjective: String(service?.generalObjective || '').trim(),
       sortOrder: Math.max(0, Math.round(Number(service?.sortOrder)) || 0),
       projects: normalizeServiceProjects(service?.projects),
+      contactSection: normalizeServiceContactSection(service?.contactSection),
     }))
     .filter((service) =>
       Boolean(
@@ -135,7 +141,8 @@ function buildServicesPayload(services) {
           service.imageUrl ||
           service.personInCharge ||
           service.generalObjective ||
-          service.projects.length,
+          service.projects.length ||
+          isServiceContactSectionVisible(service.contactSection),
       ),
     )
 }

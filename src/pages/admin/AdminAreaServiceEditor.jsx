@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
 import { SingleImageUploadField } from '../../components/admin/SingleImageUploadField.jsx'
+import { ServiceContactsEditor } from '../../components/admin/ServiceContactsEditor.jsx'
 import { ServiceProjectsEditor } from '../../components/admin/ServiceProjectsEditor.jsx'
 import { Button } from '../../components/ui/Button.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
@@ -18,6 +19,7 @@ import {
 import { isApiConfigured } from '../../utils/apiConfig.js'
 import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
+import { isServiceContactSectionVisible, normalizeServiceContactSection } from '../../utils/serviceContacts.js'
 import { normalizeServiceProjects } from '../../utils/serviceProjects.js'
 
 const EMPTY_SERVICE = {
@@ -29,6 +31,7 @@ const EMPTY_SERVICE = {
   personInCharge: '',
   generalObjective: '',
   projects: [],
+  contactSection: { enabled: false, title: 'Contacto', items: [] },
 }
 
 function snapshot(service) {
@@ -40,6 +43,7 @@ function snapshot(service) {
     personInCharge: service.personInCharge || '',
     generalObjective: service.generalObjective || '',
     projects: normalizeServiceProjects(service.projects),
+    contactSection: normalizeServiceContactSection(service.contactSection),
   })
 }
 
@@ -73,6 +77,7 @@ export function AdminAreaServiceEditor() {
           ...EMPTY_SERVICE,
           ...(data?.service || {}),
           projects: normalizeServiceProjects(data?.service?.projects),
+          contactSection: normalizeServiceContactSection(data?.service?.contactSection),
         }
         setArea(data?.area || null)
         setService(next)
@@ -111,12 +116,14 @@ export function AdminAreaServiceEditor() {
         service: {
           ...service,
           projects: normalizeServiceProjects(service.projects),
+          contactSection: normalizeServiceContactSection(service.contactSection),
         },
       })
       const next = {
         ...EMPTY_SERVICE,
         ...(data?.service || {}),
         projects: normalizeServiceProjects(data?.service?.projects),
+        contactSection: normalizeServiceContactSection(data?.service?.contactSection),
       }
       setArea(data?.area || area)
       setService(next)
@@ -242,6 +249,11 @@ export function AdminAreaServiceEditor() {
                 saving={saving}
                 imageKind="cover"
               />
+              <ServiceContactsEditor
+                contactSection={service.contactSection}
+                onChange={(contactSection) => updateField('contactSection', contactSection)}
+                saving={saving}
+              />
               <div className="flex flex-wrap gap-3 pt-2">
                 <Button type="submit" disabled={saving || !hasChanges}>
                   {saving ? 'Guardando...' : 'Guardar cambios'}
@@ -297,6 +309,26 @@ export function AdminAreaServiceEditor() {
                           <p className="mt-0.5 text-xs font-semibold text-sky-700">
                             {project.status}
                           </p>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              {isServiceContactSectionVisible(service.contactSection) ? (
+                <div className="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50/70 p-3">
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-800">
+                    {normalizeServiceContactSection(service.contactSection).title}
+                  </p>
+                  <div className="mt-3 space-y-2">
+                    {normalizeServiceContactSection(service.contactSection).items.map((item) => (
+                      <div
+                        key={item.id || item.label}
+                        className="rounded-xl bg-white px-3 py-2 text-sm shadow-sm"
+                      >
+                        <p className="font-semibold text-slate-900">{item.label || item.value}</p>
+                        {item.value && item.label ? (
+                          <p className="mt-0.5 text-slate-600">{item.value}</p>
                         ) : null}
                       </div>
                     ))}
