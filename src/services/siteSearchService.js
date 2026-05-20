@@ -154,7 +154,7 @@ async function fetchAreaServiceFallbackItems(base, query, signal) {
           id: `${area.slug}:${serviceId}`,
           title,
           subtitle: serviceSubtitle(area.title, service, normalizedQuery),
-          path: `/areas/${encodeURIComponent(area.slug)}?serviceId=${encodeURIComponent(serviceId)}#servicios-area`,
+          path: `/areas/${encodeURIComponent(area.slug)}/servicios/${encodeURIComponent(serviceId)}`,
         })
       })
   })

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { AnimatePresence, motion as Motion } from 'motion/react'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
-import { AreaServiceDetailModal } from './AreaServiceDetailModal.jsx'
+import { ROUTES } from '../../utils/constants.js'
 
 function usePerPage() {
   const [perPage, setPerPage] = useState(() =>
@@ -65,7 +66,7 @@ const easeOut = [0.22, 1, 0.36, 1]
 /**
  * Carrusel de servicios del área: 1 tarjeta en móvil, 2 desde `sm`, navegación por páginas.
  */
-export function AreaServicesSection({ services, areaSlug, selectedServiceId = '' }) {
+export function AreaServicesSection({ services, areaSlug }) {
   const list = useMemo(
     () =>
       (Array.isArray(services) ? services : [])
@@ -82,7 +83,6 @@ export function AreaServicesSection({ services, areaSlug, selectedServiceId = ''
   const perPage = usePerPage()
   const reduceMotion = usePrefersReducedMotion()
   const [page, setPage] = useState(0)
-  const [detail, setDetail] = useState(null)
 
   const totalPages = Math.max(1, Math.ceil(list.length / perPage))
   const maxPage = totalPages - 1
@@ -98,119 +98,97 @@ export function AreaServicesSection({ services, areaSlug, selectedServiceId = ''
 
   const pageDuration = reduceMotion ? 0.01 : 0.45
 
-  useEffect(() => {
-    if (!selectedServiceId || !list.length) return
-    const serviceIndex = list.findIndex(
-      (service) => String(service?.id || '') === String(selectedServiceId),
-    )
-    if (serviceIndex < 0) return
-    const service = list[serviceIndex]
-    const nextPage = Math.floor(serviceIndex / perPage)
-    const t = window.setTimeout(() => {
-      setPage(nextPage)
-      setDetail(service)
-    }, 180)
-    return () => window.clearTimeout(t)
-  }, [list, perPage, selectedServiceId])
-
   if (!list.length) return null
 
   return (
-    <>
-      <section
-        id="servicios-area"
-        className="scroll-mt-32"
-        aria-roledescription="carrusel"
-        aria-label="Servicios y prestaciones del área"
-      >
-        <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-          Servicios y prestaciones
-        </h2>
+    <section
+      id="servicios-area"
+      className="scroll-mt-32"
+      aria-roledescription="carrusel"
+      aria-label="Servicios y prestaciones del área"
+    >
+      <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+        Servicios y prestaciones
+      </h2>
 
-        <div
-          className="mt-4"
-          role="group"
-          aria-label={`Página ${safePage + 1} de ${totalPages}`}
-        >
-          {reduceMotion ? (
-            <ul className="grid gap-4 sm:grid-cols-2">
+      <div
+        className="mt-4"
+        role="group"
+        aria-label={`Página ${safePage + 1} de ${totalPages}`}
+      >
+        {reduceMotion ? (
+          <ul className="grid gap-4 sm:grid-cols-2">
+            {visible.map((service, i) => (
+              <ServiceCard
+                key={service.id || `${areaSlug}-srv-${safePage * perPage + i}`}
+                service={service}
+                areaSlug={areaSlug}
+              />
+            ))}
+          </ul>
+        ) : (
+          <AnimatePresence mode="wait" initial={false}>
+            <Motion.ul
+              key={`${safePage}-${perPage}`}
+              className="grid gap-4 sm:grid-cols-2"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: pageDuration, ease: easeOut }}
+            >
               {visible.map((service, i) => (
                 <ServiceCard
                   key={service.id || `${areaSlug}-srv-${safePage * perPage + i}`}
                   service={service}
-                  onOpen={() => setDetail(service)}
+                  areaSlug={areaSlug}
                 />
               ))}
-            </ul>
-          ) : (
-            <AnimatePresence mode="wait" initial={false}>
-              <Motion.ul
-                key={`${safePage}-${perPage}`}
-                className="grid gap-4 sm:grid-cols-2"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: pageDuration, ease: easeOut }}
-              >
-                {visible.map((service, i) => (
-                  <ServiceCard
-                    key={service.id || `${areaSlug}-srv-${safePage * perPage + i}`}
-                    service={service}
-                    onOpen={() => setDetail(service)}
-                  />
-                ))}
-              </Motion.ul>
-            </AnimatePresence>
-          )}
+            </Motion.ul>
+          </AnimatePresence>
+        )}
+      </div>
+
+      {totalPages > 1 ? (
+        <div className="mt-6 flex items-center justify-center gap-4">
+          <button
+            type="button"
+            onClick={goPrev}
+            disabled={safePage <= 0}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#ddd7ca] bg-white text-slate-700 shadow-sm transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-900 disabled:pointer-events-none disabled:opacity-35"
+            aria-label="Ver página anterior de servicios"
+          >
+            <ChevronLeft />
+          </button>
+          <span className="min-w-18 text-center text-xs font-semibold tabular-nums text-[#4b505a]">
+            {safePage + 1} / {totalPages}
+          </span>
+          <button
+            type="button"
+            onClick={goNext}
+            disabled={safePage >= maxPage}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#ddd7ca] bg-white text-slate-700 shadow-sm transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-900 disabled:pointer-events-none disabled:opacity-35"
+            aria-label="Ver página siguiente de servicios"
+          >
+            <ChevronRight />
+          </button>
         </div>
-
-        {totalPages > 1 ? (
-          <div className="mt-6 flex items-center justify-center gap-4">
-            <button
-              type="button"
-              onClick={goPrev}
-              disabled={safePage <= 0}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#ddd7ca] bg-white text-slate-700 shadow-sm transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-900 disabled:pointer-events-none disabled:opacity-35"
-              aria-label="Ver página anterior de servicios"
-            >
-              <ChevronLeft />
-            </button>
-            <span className="min-w-18 text-center text-xs font-semibold tabular-nums text-[#4b505a]">
-              {safePage + 1} / {totalPages}
-            </span>
-            <button
-              type="button"
-              onClick={goNext}
-              disabled={safePage >= maxPage}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#ddd7ca] bg-white text-slate-700 shadow-sm transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-900 disabled:pointer-events-none disabled:opacity-35"
-              aria-label="Ver página siguiente de servicios"
-            >
-              <ChevronRight />
-            </button>
-          </div>
-        ) : null}
-      </section>
-
-      <AreaServiceDetailModal
-        service={detail}
-        open={detail != null}
-        onClose={() => setDetail(null)}
-      />
-    </>
+      ) : null}
+    </section>
   )
 }
 
-function ServiceCard({ service, onOpen }) {
+function ServiceCard({ service, areaSlug }) {
   const img = service?.imageUrl ? resolveMediaUrl(service.imageUrl) : ''
   const title = String(service?.title || '').trim() || 'Servicio'
   const mode = String(service?.mode || '').trim()
   const description = String(service?.description || '').trim()
+  const serviceId = String(service?.id || '').trim()
+  const detailUrl = serviceId ? ROUTES.areaServiceDetail(areaSlug, serviceId) : '#'
 
   return (
     <li className="min-w-0 list-none">
-      <button
-        type="button"
-        onClick={onOpen}
+      <Link
+        to={detailUrl}
         className="group flex w-full flex-col overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] text-left shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-lg hover:shadow-sky-500/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500"
       >
         <div className="relative aspect-16/10 w-full overflow-hidden bg-[#ece8df]">
@@ -241,13 +219,13 @@ function ServiceCard({ service, onOpen }) {
           {description ? (
             <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-[#4b505a]">{description}</p>
           ) : (
-            <p className="mt-2 text-sm italic text-slate-400">Tocá para ver el detalle</p>
+            <p className="mt-2 text-sm italic text-slate-400">Ver información completa</p>
           )}
           <span className="mt-3 text-xs font-semibold text-sky-800 opacity-80 transition group-hover:opacity-100">
             Ver detalle →
           </span>
         </div>
-      </button>
+      </Link>
     </li>
   )
 }

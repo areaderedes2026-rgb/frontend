@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useLocation, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Container } from '../../components/ui/Container.jsx'
 import { RevealOnScroll } from '../../components/home/RevealOnScroll.jsx'
 import { AreaOfficeIcon } from '../../components/areas/areaOfficeIcons.jsx'
@@ -17,10 +17,12 @@ import {
 import { AreaSchoolsSection } from '../../components/areas/AreaSchoolsSection.jsx'
 import { AreaServicesSection } from '../../components/areas/AreaServicesSection.jsx'
 import { getAreaDetailNavLinks } from '../../utils/areaDetailNav.js'
+import { ROUTES } from '../../utils/constants.js'
 
 export function AreaDetail() {
   const { slug } = useParams()
   const location = useLocation()
+  const navigate = useNavigate()
   const [remoteAreaState, setRemoteAreaState] = useState({
     slug: '',
     data: null,
@@ -71,10 +73,13 @@ export function AreaDetail() {
     officesLoading || showOffices || (officesHydratedForSlug && Boolean(officesState.error))
   const showServices = (profile?.serviceBlocks || []).length > 0
   const navLinks = useMemo(() => getAreaDetailNavLinks(profile, { showOffices }), [profile, showOffices])
-  const selectedServiceId = useMemo(() => {
+
+  useEffect(() => {
     const params = new URLSearchParams(location.search)
-    return params.get('serviceId') || ''
-  }, [location.search])
+    const legacyServiceId = params.get('serviceId')
+    if (!legacyServiceId) return
+    navigate(ROUTES.areaServiceDetail(slug, legacyServiceId), { replace: true })
+  }, [location.search, navigate, slug])
 
   useEffect(() => {
     if (location.hash !== '#oficinas-area') return
@@ -384,7 +389,6 @@ export function AreaDetail() {
                   <AreaServicesSection
                     services={profile.serviceBlocks}
                     areaSlug={slug}
-                    selectedServiceId={selectedServiceId}
                   />
                 </RevealOnScroll>
               ) : null}

@@ -16,6 +16,10 @@ export const publicRouteLoaders = {
     () => import('../pages/areas/AreaOfficeDetail.jsx'),
     'AreaOfficeDetail',
   ),
+  areaServiceDetail: namedLazy(
+    () => import('../pages/areas/AreaServiceDetail.jsx'),
+    'AreaServiceDetail',
+  ),
   governmentIntendencia: namedLazy(
     () => import('../pages/government/Intendencia.jsx'),
     'Intendencia',

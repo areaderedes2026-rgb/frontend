@@ -15,6 +15,8 @@ export const ROUTES = {
   ofertaAcademica: '/gobierno/oferta-academica',
   areas: '/areas',
   area: (slug) => `/areas/${slug}`,
+  areaServiceDetail: (areaSlug, serviceId) =>
+    `/areas/${areaSlug}/servicios/${serviceId}`,
   /** Atención al ciudadano (consultas y contacto). */
   atencionCiudadano: '/atencion-ciudadano',
   /** Redirige a `atencionCiudadano` en el router. */

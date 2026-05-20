@@ -44,6 +44,20 @@ function routeSeo(pathname) {
     }
   }
   if (pathname.startsWith('/areas/')) {
+    if (pathname.includes('/servicios/')) {
+      return {
+        title: 'Servicio del area | Municipalidad de Trancas',
+        description:
+          'Informacion detallada de un servicio o prestacion del area municipal.',
+      }
+    }
+    if (pathname.includes('/oficinas/')) {
+      return {
+        title: 'Oficina del area | Municipalidad de Trancas',
+        description:
+          'Descripcion y actividades de una oficina interna del area municipal.',
+      }
+    }
     return {
       title: 'Detalle de area | Municipalidad de Trancas',
       description:
