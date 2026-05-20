@@ -122,9 +122,9 @@ export function Intendencia() {
             id="perfil-intendente"
             className="overflow-hidden rounded-[1.75rem] border border-[#ddd7ca] bg-white shadow-[0_24px_80px_-54px_rgba(15,23,42,0.35)]"
           >
-            <div className="grid gap-0 lg:grid-cols-[minmax(0,300px)_1fr]">
+            <div className="grid gap-0 lg:grid-cols-[300px_1fr] lg:items-stretch">
               {showMayorPhoto ? (
-                <div className="relative aspect-square w-full overflow-hidden bg-slate-200 lg:max-w-[300px]">
+                <div className="relative aspect-square w-full overflow-hidden bg-slate-200 lg:aspect-auto lg:h-full lg:min-h-[300px]">
                   {loadingContent ? (
                     <div className="absolute inset-0 animate-pulse bg-slate-200" aria-hidden />
                   ) : (
