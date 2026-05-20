@@ -12,6 +12,8 @@ const startLinks = [
 
 const newsLink = { to: '/news', label: 'Noticias' }
 
+const areasLink = { to: '/areas', label: 'Áreas', preload: 'areasIndex', end: true }
+
 const afterAreasLinks = [
   { to: '/services', label: 'Servicios' },
   { to: '/eventos', label: 'Eventos', preload: 'events' },
@@ -32,18 +34,11 @@ const afterAreasLinks = [
 const governmentLinks = [
   { to: '/gobierno/intendencia', label: 'Intendencia', preload: 'governmentIntendencia', end: true },
   {
-    to: '/gobierno/legislador-este',
-    label: 'Legislador por el Este',
-    preload: 'governmentLegisladorEste',
-    end: true,
-  },
-  {
     to: '/gobierno/concejo-deliberante',
     label: 'Concejo Deliberante',
     preload: 'governmentConcejoDeliberante',
     end: true,
   },
-  { to: '/areas', label: 'Áreas', preload: 'areasIndex', end: true },
 ]
 
 function DesktopNavLink({
@@ -121,9 +116,11 @@ export function Navbar() {
     loading: searchLoading,
     reset: resetSearch,
   } = useSiteSearch()
-  const governmentActive =
-    (location.pathname.startsWith('/gobierno') || location.pathname.startsWith('/areas')) &&
-    location.pathname !== '/gobierno/oferta-academica'
+  const governmentActive = governmentLinks.some((item) =>
+    item.end
+      ? location.pathname === item.to
+      : location.pathname.startsWith(item.to),
+  )
 
   const forceCloseSearch = useCallback(() => {
     setDesktopSearchOpen(false)
@@ -399,6 +396,22 @@ export function Navbar() {
             </div>
 
             <div className="shrink-0 border-t border-white/6 pt-2">
+              <NavLink
+                to={areasLink.to}
+                className={mobileLinkClass}
+                end={areasLink.end}
+                onMouseEnter={() => preloadPublicRoute(areasLink.preload)}
+                onFocus={() => preloadPublicRoute(areasLink.preload)}
+                onClick={() => {
+                  setOpen(false)
+                  setMobileGovernmentOpen(false)
+                }}
+              >
+                {areasLink.label}
+              </NavLink>
+            </div>
+
+            <div className="shrink-0 border-t border-white/6 pt-2">
               {afterAreasLinks.map((link) => (
                 <NavLink
                   key={link.to}
@@ -593,6 +606,15 @@ export function Navbar() {
                   </ul>
                 </div>
               </div>
+
+              <DesktopNavLink
+                to={areasLink.to}
+                label={areasLink.label}
+                end={areasLink.end}
+                onMouseEnter={() => preloadPublicRoute(areasLink.preload)}
+                onFocus={() => preloadPublicRoute(areasLink.preload)}
+                compact={scrolled}
+              />
 
               {afterAreasLinks.map((link) => (
                 <DesktopNavLink
