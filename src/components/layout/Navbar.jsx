@@ -39,6 +39,12 @@ const governmentLinks = [
     preload: 'governmentConcejoDeliberante',
     end: true,
   },
+  {
+    to: '/gobierno/legislador-este',
+    label: 'Legislador por el Este',
+    preload: 'governmentLegisladorEste',
+    end: true,
+  },
 ]
 
 function DesktopNavLink({
@@ -575,7 +581,7 @@ export function Navbar() {
                   id="menu-gobierno-escritorio"
                   role="menu"
                   aria-labelledby="boton-menu-gobierno"
-                  className={`absolute left-0 top-full z-[60] mt-1.5 w-[min(15rem,calc(100vw-1.25rem))] origin-top overflow-hidden rounded-lg border border-white/8 bg-[#1a1d24]/98 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.6)] backdrop-blur-xl transition-all duration-300 ease-out ${
+                  className={`absolute left-0 top-full z-[60] mt-1.5 w-[min(17.5rem,calc(100vw-1.25rem))] origin-top overflow-hidden rounded-lg border border-white/8 bg-[#1a1d24]/98 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.6)] backdrop-blur-xl transition-all duration-300 ease-out ${
                     governmentOpen
                       ? 'pointer-events-auto translate-y-0 opacity-100'
                       : 'pointer-events-none -translate-y-1 opacity-0'
