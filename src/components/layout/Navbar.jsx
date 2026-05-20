@@ -14,8 +14,9 @@ const newsLink = { to: '/news', label: 'Noticias' }
 
 const areasLink = { to: '/areas', label: 'Áreas', preload: 'areasIndex', end: true }
 
-const afterAreasLinks = [
-  { to: '/services', label: 'Servicios' },
+const servicesLink = { to: '/services', label: 'Servicios' }
+
+const ourCityLinks = [
   { to: '/eventos', label: 'Eventos', preload: 'events' },
   {
     to: '/gobierno/oferta-academica',
@@ -24,12 +25,13 @@ const afterAreasLinks = [
     end: true,
   },
   { to: '/history', label: 'Historia', preload: 'history' },
-  {
-    to: '/atencion-ciudadano',
-    label: 'Atención',
-    ariaLabel: 'Atención al ciudadano',
-  },
 ]
+
+const attentionLink = {
+  to: '/atencion-ciudadano',
+  label: 'Atención',
+  ariaLabel: 'Atención al ciudadano',
+}
 
 const governmentLinks = [
   { to: '/gobierno/intendencia', label: 'Intendencia', preload: 'governmentIntendencia', end: true },
@@ -46,6 +48,14 @@ const governmentLinks = [
     end: true,
   },
 ]
+
+function isDropdownLinkActive(pathname, links) {
+  return links.some((item) =>
+    item.end
+      ? pathname === item.to
+      : pathname === item.to || pathname.startsWith(`${item.to}/`),
+  )
+}
 
 function DesktopNavLink({
   to,
@@ -106,12 +116,15 @@ function mobileSubLinkClass({ isActive }) {
 export function Navbar() {
   const [open, setOpen] = useState(false)
   const [governmentOpen, setGovernmentOpen] = useState(false)
+  const [cityOpen, setCityOpen] = useState(false)
   const [mobileGovernmentOpen, setMobileGovernmentOpen] = useState(false)
+  const [mobileCityOpen, setMobileCityOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [desktopSearchOpen, setDesktopSearchOpen] = useState(false)
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
   const headerRef = useRef(null)
-  const dropdownRef = useRef(null)
+  const governmentDropdownRef = useRef(null)
+  const cityDropdownRef = useRef(null)
   const desktopSearchRef = useRef(null)
   const navigate = useNavigate()
   const location = useLocation()
@@ -122,11 +135,13 @@ export function Navbar() {
     loading: searchLoading,
     reset: resetSearch,
   } = useSiteSearch()
-  const governmentActive = governmentLinks.some((item) =>
-    item.end
-      ? location.pathname === item.to
-      : location.pathname.startsWith(item.to),
-  )
+  const governmentActive = isDropdownLinkActive(location.pathname, governmentLinks)
+  const cityActive = isDropdownLinkActive(location.pathname, ourCityLinks)
+
+  const closeDesktopDropdowns = useCallback(() => {
+    setGovernmentOpen(false)
+    setCityOpen(false)
+  }, [])
 
   const forceCloseSearch = useCallback(() => {
     setDesktopSearchOpen(false)
@@ -139,15 +154,16 @@ export function Navbar() {
   }, [forceCloseSearch])
 
   const openSearchPalette = useCallback(() => {
-    setGovernmentOpen(false)
+    closeDesktopDropdowns()
     if (typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches) {
       setDesktopSearchOpen(true)
     } else {
       setOpen(false)
       setMobileGovernmentOpen(false)
+      setMobileCityOpen(false)
       setMobileSearchOpen(true)
     }
-  }, [])
+  }, [closeDesktopDropdowns])
 
   const handleSelectSearchResult = useCallback(
     (item) => {
@@ -208,6 +224,7 @@ export function Navbar() {
       if (!open) return
       setOpen(false)
       setMobileGovernmentOpen(false)
+      setMobileCityOpen(false)
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
@@ -251,7 +268,7 @@ export function Navbar() {
   useEffect(() => {
     if (!governmentOpen) return
     function handlePointerDown(e) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+      if (governmentDropdownRef.current && !governmentDropdownRef.current.contains(e.target)) {
         setGovernmentOpen(false)
       }
     }
@@ -264,6 +281,21 @@ export function Navbar() {
   }, [governmentOpen])
 
   useEffect(() => {
+    if (!cityOpen) return
+    function handlePointerDown(e) {
+      if (cityDropdownRef.current && !cityDropdownRef.current.contains(e.target)) {
+        setCityOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handlePointerDown)
+    document.addEventListener('touchstart', handlePointerDown)
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown)
+      document.removeEventListener('touchstart', handlePointerDown)
+    }
+  }, [cityOpen])
+
+  useEffect(() => {
     if (!governmentOpen) return
     function handleKey(e) {
       if (e.key === 'Escape') setGovernmentOpen(false)
@@ -271,6 +303,15 @@ export function Navbar() {
     document.addEventListener('keydown', handleKey)
     return () => document.removeEventListener('keydown', handleKey)
   }, [governmentOpen])
+
+  useEffect(() => {
+    if (!cityOpen) return
+    function handleKey(e) {
+      if (e.key === 'Escape') setCityOpen(false)
+    }
+    document.addEventListener('keydown', handleKey)
+    return () => document.removeEventListener('keydown', handleKey)
+  }, [cityOpen])
 
   const mobileMenuLayer =
     typeof document !== 'undefined' &&
@@ -339,6 +380,7 @@ export function Navbar() {
                 onClick={() => {
                   setOpen(false)
                   setMobileGovernmentOpen(false)
+                  setMobileCityOpen(false)
                 }}
               >
                 {newsLink.label}
@@ -411,6 +453,7 @@ export function Navbar() {
                 onClick={() => {
                   setOpen(false)
                   setMobileGovernmentOpen(false)
+                  setMobileCityOpen(false)
                 }}
               >
                 {areasLink.label}
@@ -418,18 +461,85 @@ export function Navbar() {
             </div>
 
             <div className="shrink-0 border-t border-white/6 pt-2">
-              {afterAreasLinks.map((link) => (
-                <NavLink
-                  key={link.to}
-                  to={link.to}
-                  className={mobileLinkClass}
-                  end={link.end}
-                  aria-label={link.ariaLabel}
-                  onClick={() => setOpen(false)}
+              <NavLink
+                to={servicesLink.to}
+                className={mobileLinkClass}
+                onClick={() => {
+                  setOpen(false)
+                  setMobileGovernmentOpen(false)
+                  setMobileCityOpen(false)
+                }}
+              >
+                {servicesLink.label}
+              </NavLink>
+            </div>
+
+            <div className="shrink-0 border-t border-white/6 pt-3">
+              <button
+                type="button"
+                className={`flex min-h-12 w-full shrink-0 items-center justify-between rounded-xl px-4 py-3 text-left text-base font-semibold tracking-wide text-white transition-colors duration-300 hover:bg-white/5 active:bg-white/10 ${
+                  cityActive || mobileCityOpen ? 'bg-white/6' : 'text-white/90'
+                }`}
+                aria-expanded={mobileCityOpen}
+                onClick={() => setMobileCityOpen((v) => !v)}
+              >
+                Nuestra Ciudad
+                <svg
+                  className={`h-5 w-5 shrink-0 transition-transform duration-300 ease-out ${
+                    mobileCityOpen ? 'rotate-180' : ''
+                  }`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={2}
+                  stroke="currentColor"
+                  aria-hidden
                 >
-                  {link.ariaLabel ?? link.label}
-                </NavLink>
-              ))}
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="m19.5 8.25-7.5 7.5-7.5-7.5"
+                  />
+                </svg>
+              </button>
+              <div
+                className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+                  mobileCityOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+                }`}
+              >
+                <div className="overflow-hidden">
+                  <ul className="mt-3 space-y-1.5 border-l border-white/10 pl-3.5">
+                    {ourCityLinks.map((item) => (
+                      <li key={item.to} className="shrink-0">
+                        <NavLink
+                          to={item.to}
+                          className={mobileSubLinkClass}
+                          end={Boolean(item.end)}
+                          onMouseEnter={() => preloadPublicRoute(item.preload)}
+                          onFocus={() => preloadPublicRoute(item.preload)}
+                          onClick={() => {
+                            setOpen(false)
+                            setMobileCityOpen(false)
+                            setMobileGovernmentOpen(false)
+                          }}
+                        >
+                          {item.label}
+                        </NavLink>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="shrink-0 border-t border-white/6 pt-2">
+              <NavLink
+                to={attentionLink.to}
+                className={mobileLinkClass}
+                aria-label={attentionLink.ariaLabel}
+                onClick={() => setOpen(false)}
+              >
+                {attentionLink.ariaLabel ?? attentionLink.label}
+              </NavLink>
             </div>
           </nav>
         </div>
@@ -539,7 +649,7 @@ export function Navbar() {
                 compact={scrolled}
               />
 
-              <div className="relative px-0.5" ref={dropdownRef}>
+              <div className="relative px-0.5" ref={governmentDropdownRef}>
                 <button
                   type="button"
                   className={`group relative inline-flex items-center gap-1.5 rounded-lg px-3 font-semibold tracking-wide text-white transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
@@ -549,7 +659,10 @@ export function Navbar() {
                   aria-haspopup="true"
                   aria-controls="menu-gobierno-escritorio"
                   id="boton-menu-gobierno"
-                  onClick={() => setGovernmentOpen((v) => !v)}
+                  onClick={() => {
+                    setCityOpen(false)
+                    setGovernmentOpen((v) => !v)
+                  }}
                 >
                   <span className="relative">Gobierno</span>
                   <svg
@@ -622,18 +735,95 @@ export function Navbar() {
                 compact={scrolled}
               />
 
-              {afterAreasLinks.map((link) => (
-                <DesktopNavLink
-                  key={link.to}
-                  to={link.to}
-                  label={link.label}
-                  ariaLabel={link.ariaLabel}
-                  end={link.end}
-                  onMouseEnter={link.preload ? () => preloadPublicRoute(link.preload) : undefined}
-                  onFocus={link.preload ? () => preloadPublicRoute(link.preload) : undefined}
-                  compact={scrolled}
-                />
-              ))}
+              <DesktopNavLink
+                to={servicesLink.to}
+                label={servicesLink.label}
+                compact={scrolled}
+              />
+
+              <div className="relative px-0.5" ref={cityDropdownRef}>
+                <button
+                  type="button"
+                  className={`group relative inline-flex items-center gap-1.5 rounded-lg px-3 font-semibold tracking-wide text-white transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                    scrolled ? 'py-1.5 text-[0.8125rem]' : 'py-2 text-sm'
+                  }`}
+                  aria-expanded={cityOpen}
+                  aria-haspopup="true"
+                  aria-controls="menu-nuestra-ciudad-escritorio"
+                  id="boton-menu-nuestra-ciudad"
+                  onClick={() => {
+                    setGovernmentOpen(false)
+                    setCityOpen((v) => !v)
+                  }}
+                >
+                  <span className="relative">Nuestra Ciudad</span>
+                  <svg
+                    className={`relative h-4 w-4 transition-transform duration-300 ease-out ${
+                      cityOpen ? 'rotate-180' : ''
+                    }`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2}
+                    stroke="currentColor"
+                    aria-hidden
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="m19.5 8.25-7.5 7.5-7.5-7.5"
+                    />
+                  </svg>
+                  <span
+                    className={`absolute left-3 right-3 h-[2px] origin-center rounded-full bg-sky-200 transition-transform duration-300 ease-out ${
+                      scrolled ? 'bottom-0.5' : 'bottom-1'
+                    } ${
+                      cityActive || cityOpen ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'
+                    }`}
+                  />
+                </button>
+
+                <div
+                  id="menu-nuestra-ciudad-escritorio"
+                  role="menu"
+                  aria-labelledby="boton-menu-nuestra-ciudad"
+                  className={`absolute left-0 top-full z-[60] mt-1.5 w-[min(16rem,calc(100vw-1.25rem))] origin-top overflow-hidden rounded-lg border border-white/8 bg-[#1a1d24]/98 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.6)] backdrop-blur-xl transition-all duration-300 ease-out ${
+                    cityOpen
+                      ? 'pointer-events-auto translate-y-0 opacity-100'
+                      : 'pointer-events-none -translate-y-1 opacity-0'
+                  }`}
+                >
+                  <ul className="py-1">
+                    {ourCityLinks.map((item) => (
+                      <li key={item.to}>
+                        <NavLink
+                          to={item.to}
+                          role="menuitem"
+                          className={({ isActive }) =>
+                            `block px-3 py-1.5 text-sm font-semibold tracking-wide transition-colors duration-200 ${
+                              isActive
+                                ? 'bg-white/10 text-white'
+                                : 'text-white/90 hover:bg-white/5 hover:text-white'
+                            }`
+                          }
+                          end={Boolean(item.end)}
+                          onMouseEnter={() => preloadPublicRoute(item.preload)}
+                          onFocus={() => preloadPublicRoute(item.preload)}
+                          onClick={() => setCityOpen(false)}
+                        >
+                          {item.label}
+                        </NavLink>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              <DesktopNavLink
+                to={attentionLink.to}
+                label={attentionLink.label}
+                ariaLabel={attentionLink.ariaLabel}
+                compact={scrolled}
+              />
             </nav>
           </div>
 
@@ -642,7 +832,7 @@ export function Navbar() {
               <SearchOpenButton
                 scrolled={scrolled}
                 onClick={() => {
-                  setGovernmentOpen(false)
+                  closeDesktopDropdowns()
                   setDesktopSearchOpen(true)
                 }}
               />
@@ -673,6 +863,7 @@ export function Navbar() {
             onClick={() => {
               setOpen(false)
               setMobileGovernmentOpen(false)
+              setMobileCityOpen(false)
               setMobileSearchOpen(true)
             }}
           />
