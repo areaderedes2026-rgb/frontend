@@ -102,42 +102,38 @@ export function Intendencia() {
   const showManagementAxes = Boolean(content.showManagementAxes)
 
   return (
-    <section className="relative bg-[#f7f7f5] pb-12 sm:pb-16">
+    <section className="relative -mt-[calc(var(--navbar-h,5rem)+1.5rem)] bg-[#f7f7f5] pb-12 pt-[calc(var(--navbar-h,5rem)+0.5rem)] sm:-mt-[calc(var(--navbar-h,5rem)+2rem)] sm:pb-16 sm:pt-[calc(var(--navbar-h,5rem)+0.75rem)]">
       <div
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_85%_45%_at_20%_-10%,rgba(56,189,248,0.08),transparent_60%)]"
         aria-hidden
       />
 
-      <Container className="relative max-w-[min(100%,96rem)]! pt-[calc(var(--navbar-h,5rem)+1.25rem)] sm:pt-[calc(var(--navbar-h,5rem)+1.75rem)]">
+      <Container className="relative max-w-[min(100%,96rem)]!">
         <p className="text-sm font-medium text-sky-700">
           <Link to={ROUTES.home} className="transition-colors hover:text-sky-900">
             ← Volver al inicio
           </Link>
         </p>
 
-        <header className="mt-6 max-w-3xl">
+        <header className="mt-4 max-w-3xl">
           {loadingContent ? (
             <div className="animate-pulse space-y-3" aria-hidden>
               <div className="h-4 w-36 rounded bg-slate-200" />
               <div className="h-10 w-64 rounded bg-slate-200" />
-              <div className="h-4 w-full max-w-xl rounded bg-slate-100" />
             </div>
           ) : (
             <>
               <p className="inline-flex rounded-full border border-[#ddd7ca] bg-white/70 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-sky-800">
                 {content.heroEyebrow}
               </p>
-              <h1 className="mt-4 font-serif text-3xl font-bold tracking-tight text-[#171b22] sm:text-4xl">
+              <h1 className="mt-3 font-serif text-3xl font-bold tracking-tight text-[#171b22] sm:text-4xl">
                 {content.heroTitle}
               </h1>
-              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#3e434d] sm:text-base">
-                {content.heroSubtitle}
-              </p>
             </>
           )}
         </header>
 
-        <RevealOnScroll variant="newsCardSlow" delayMs={80} className="mt-8">
+        <RevealOnScroll variant="newsCardSlow" delayMs={80} className="mt-6">
           <article
             id="perfil-intendente"
             className="rounded-[1.75rem] border border-[#ddd7ca] bg-white shadow-[0_24px_80px_-54px_rgba(15,23,42,0.35)]"
