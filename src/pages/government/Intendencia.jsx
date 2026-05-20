@@ -109,38 +109,22 @@ export function Intendencia() {
       />
 
       <Container className="relative max-w-[min(100%,96rem)]!">
+        <h1 className="sr-only">{content.heroTitle || 'Intendencia'}</h1>
+
         <p className="text-sm font-medium text-sky-700">
           <Link to={ROUTES.home} className="transition-colors hover:text-sky-900">
             ← Volver al inicio
           </Link>
         </p>
 
-        <header className="mt-4 max-w-3xl">
-          {loadingContent ? (
-            <div className="animate-pulse space-y-3" aria-hidden>
-              <div className="h-4 w-36 rounded bg-slate-200" />
-              <div className="h-10 w-64 rounded bg-slate-200" />
-            </div>
-          ) : (
-            <>
-              <p className="inline-flex rounded-full border border-[#ddd7ca] bg-white/70 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-sky-800">
-                {content.heroEyebrow}
-              </p>
-              <h1 className="mt-3 font-serif text-3xl font-bold tracking-tight text-[#171b22] sm:text-4xl">
-                {content.heroTitle}
-              </h1>
-            </>
-          )}
-        </header>
-
-        <RevealOnScroll variant="newsCardSlow" delayMs={80} className="mt-6">
+        <RevealOnScroll variant="newsCardSlow" delayMs={80} className="mb-2 mt-4">
           <article
             id="perfil-intendente"
-            className="rounded-[1.75rem] border border-[#ddd7ca] bg-white shadow-[0_24px_80px_-54px_rgba(15,23,42,0.35)]"
+            className="overflow-hidden rounded-[1.75rem] border border-[#ddd7ca] bg-white shadow-[0_24px_80px_-54px_rgba(15,23,42,0.35)]"
           >
             <div className="grid gap-0 lg:grid-cols-[minmax(0,300px)_1fr]">
               {showMayorPhoto ? (
-                <div className="relative min-h-[240px] overflow-hidden rounded-t-[1.75rem] bg-slate-200 lg:min-h-[320px] lg:rounded-none lg:rounded-l-[1.75rem]">
+                <div className="relative aspect-square w-full overflow-hidden bg-slate-200 lg:max-w-[300px]">
                   {loadingContent ? (
                     <div className="absolute inset-0 animate-pulse bg-slate-200" aria-hidden />
                   ) : (
@@ -159,7 +143,7 @@ export function Intendencia() {
                 </div>
               ) : null}
 
-              <div className="flex flex-col justify-center p-5 sm:p-7 lg:p-8">
+              <div className="flex flex-col justify-center p-5 pb-8 sm:p-7 sm:pb-10 lg:p-8 lg:pb-12">
                 <p className="inline-flex w-fit rounded-full border border-sky-200/80 bg-sky-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-sky-800">
                   Intendente
                 </p>
@@ -252,7 +236,9 @@ export function Intendencia() {
           title="Ejes de gestión"
           subtitle="Prioridades que orientan la coordinación del gobierno local y el trabajo con la comunidad."
           tone="light"
-          className="pb-0!"
+          showWave={false}
+          showBorder={false}
+          className="pt-8 pb-12 sm:pt-10 sm:pb-16"
         >
           <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {MANAGEMENT_AXES.map((item, index) => (

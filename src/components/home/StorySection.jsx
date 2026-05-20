@@ -1,10 +1,16 @@
 import { Container } from '../ui/Container.jsx'
 import { RevealOnScroll } from './RevealOnScroll.jsx'
 
-const TONE_CLASS = {
-  light: 'border-y border-[#e8e5dd] bg-[#f7f7f5]',
-  soft: 'border-y border-[#e8e5dd] bg-[#f7f7f5]',
-  accent: 'border-y border-white/10 bg-[#171b22] text-white',
+const TONE_BG_CLASS = {
+  light: 'bg-[#f7f7f5]',
+  soft: 'bg-[#f7f7f5]',
+  accent: 'bg-[#171b22] text-white',
+}
+
+const TONE_BORDER_CLASS = {
+  light: 'border-y border-[#e8e5dd]',
+  soft: 'border-y border-[#e8e5dd]',
+  accent: 'border-y border-white/10',
 }
 
 const WAVE_CLASS = {
@@ -39,23 +45,34 @@ export function StorySection({
   children,
   actions = null,
   tone = 'light',
+  showWave = true,
+  showBorder = true,
   className = '',
   contentClassName = '',
 }) {
   const isAccent = tone === 'accent'
+  const surfaceClass = [
+    TONE_BG_CLASS[tone] ?? TONE_BG_CLASS.light,
+    showBorder ? TONE_BORDER_CLASS[tone] ?? TONE_BORDER_CLASS.light : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
+
   return (
-    <section id={id} className={`relative isolate overflow-visible py-14 sm:py-16 lg:py-20 ${TONE_CLASS[tone] ?? TONE_CLASS.light} ${className}`.trim()}>
-      <svg
-        className={`pointer-events-none absolute inset-x-0 -top-12 z-0 h-12 w-full ${WAVE_CLASS[tone] ?? WAVE_CLASS.light}`}
-        viewBox="0 0 1440 96"
-        preserveAspectRatio="none"
-        aria-hidden
-      >
-        <path
-          fill="currentColor"
-          d="M0 58L60 52C120 46 240 34 360 42C480 50 600 78 720 74C840 70 960 34 1080 30C1200 26 1320 54 1380 68L1440 82V96H0V58Z"
-        />
-      </svg>
+    <section id={id} className={`relative isolate overflow-visible py-14 sm:py-16 lg:py-20 ${surfaceClass} ${className}`.trim()}>
+      {showWave ? (
+        <svg
+          className={`pointer-events-none absolute inset-x-0 -top-12 z-0 h-12 w-full ${WAVE_CLASS[tone] ?? WAVE_CLASS.light}`}
+          viewBox="0 0 1440 96"
+          preserveAspectRatio="none"
+          aria-hidden
+        >
+          <path
+            fill="currentColor"
+            d="M0 58L60 52C120 46 240 34 360 42C480 50 600 78 720 74C840 70 960 34 1080 30C1200 26 1320 54 1380 68L1440 82V96H0V58Z"
+          />
+        </svg>
+      ) : null}
 
       <Container className="relative z-10">
         <RevealOnScroll variant="slow">
