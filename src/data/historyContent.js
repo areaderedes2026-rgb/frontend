@@ -10,7 +10,7 @@ export const DEFAULT_HISTORY_CONTENT = {
   ctaPrimaryLabel: 'Leer resumen histórico',
   ctaPrimaryHref: '#resumen-historia',
   ctaSecondaryLabel: 'Puntos turísticos',
-  ctaSecondaryHref: '#turismo',
+  ctaSecondaryHref: '/turismo',
   legacyItems: [
     {
       title: 'Identidad cultural',

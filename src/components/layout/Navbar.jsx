@@ -24,6 +24,7 @@ const ourCityLinks = [
     preload: 'governmentOfertaAcademica',
     end: true,
   },
+  { to: '/turismo', label: 'Turismo', preload: 'tourism' },
   { to: '/history', label: 'Historia', preload: 'history' },
 ]
 

@@ -797,7 +797,7 @@ function IdentityForm({ draft, setDraftField, saving }) {
             value={draft.ctaSecondaryHref || ''}
             onChange={(e) => setDraftField('ctaSecondaryHref', e.target.value)}
             disabled={saving}
-            placeholder="#turismo"
+            placeholder="/turismo"
           />
         </label>
       </fieldset>

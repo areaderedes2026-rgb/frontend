@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes, useParams } from 'react-router-dom'
 import { MainLayout } from '../components/layout/MainLayout.jsx'
 import { AdminLayout } from '../components/layout/AdminLayout.jsx'
 import { ProtectedRoute } from './ProtectedRoute.jsx'
@@ -39,6 +39,7 @@ const AdminUsers = lazy(adminRouteLoaders.settingsUsers)
 const AdminMyAreaServices = lazy(adminRouteLoaders.myAreaServices)
 const AdminAreaServiceEditor = lazy(adminRouteLoaders.areaServiceEditor)
 const History = lazy(publicRouteLoaders.history)
+const Turismo = lazy(publicRouteLoaders.tourism)
 const Events = lazy(publicRouteLoaders.events)
 const TourismPlaceDetail = lazy(publicRouteLoaders.tourismPlaceDetail)
 const AreasIndex = lazy(publicRouteLoaders.areasIndex)
@@ -50,6 +51,11 @@ const ConcejoDeliberante = lazy(publicRouteLoaders.governmentConcejoDeliberante)
 const OfertaAcademica = lazy(publicRouteLoaders.governmentOfertaAcademica)
 const NewsList = lazy(publicRouteLoaders.newsList)
 const NewsDetail = lazy(publicRouteLoaders.newsDetail)
+
+function LegacyTourismPlaceRedirect() {
+  const { slug = '' } = useParams()
+  return <Navigate to={`/turismo/lugares/${encodeURIComponent(slug)}`} replace />
+}
 
 function AdminRouteFallback() {
   return (
@@ -291,13 +297,22 @@ export function AppRouter() {
           }
         />
         <Route
-          path="/history/lugares/:slug"
+          path="/turismo"
+          element={
+            <Suspense fallback={<PublicRouteFallback />}>
+              <Turismo />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/turismo/lugares/:slug"
           element={
             <Suspense fallback={<PublicRouteFallback />}>
               <TourismPlaceDetail />
             </Suspense>
           }
         />
+        <Route path="/history/lugares/:slug" element={<LegacyTourismPlaceRedirect />} />
         <Route path="/about" element={<Navigate to="/history" replace />} />
         <Route path="/services" element={<Services />} />
         <Route

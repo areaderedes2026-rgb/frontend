@@ -5,8 +5,9 @@ function namedLazy(loader, exportName) {
 export const publicRouteLoaders = {
   events: namedLazy(() => import('../pages/Events.jsx'), 'Events'),
   history: namedLazy(() => import('../pages/History.jsx'), 'History'),
+  tourism: namedLazy(() => import('../pages/tourism/Turismo.jsx'), 'Turismo'),
   tourismPlaceDetail: namedLazy(
-    () => import('../pages/history/TourismPlaceDetail.jsx'),
+    () => import('../pages/tourism/TourismPlaceDetail.jsx'),
     'TourismPlaceDetail',
   ),
   areasIndex: namedLazy(() => import('../pages/areas/AreasIndex.jsx'), 'AreasIndex'),
@@ -45,6 +46,7 @@ export function preloadCommonPublicRoutes() {
   return Promise.allSettled([
     preloadPublicRoute('events'),
     preloadPublicRoute('history'),
+    preloadPublicRoute('tourism'),
     preloadPublicRoute('areasIndex'),
     preloadPublicRoute('newsList'),
   ])

@@ -108,9 +108,23 @@ function routeSeo(pathname) {
   }
   if (pathname === '/history') {
     return {
-      title: 'Historia y turismo | Municipalidad de Trancas',
+      title: 'Historia y patrimonio | Municipalidad de Trancas',
       description:
-        'Historia local, patrimonio y puntos turisticos del departamento de Trancas, Tucuman.',
+        'Historia local, identidad cultural y patrimonio del departamento de Trancas, Tucuman.',
+    }
+  }
+  if (pathname === '/turismo') {
+    return {
+      title: 'Turismo en Trancas | Municipalidad de Trancas',
+      description:
+        'Puntos turisticos y destinos para descubrir en Trancas y la region.',
+    }
+  }
+  if (pathname.startsWith('/turismo/lugares/')) {
+    return {
+      title: 'Lugar turistico | Municipalidad de Trancas',
+      description:
+        'Informacion, ubicacion y detalles de un punto turistico de Trancas.',
     }
   }
   return { title: DEFAULT_TITLE, description: DEFAULT_DESCRIPTION }

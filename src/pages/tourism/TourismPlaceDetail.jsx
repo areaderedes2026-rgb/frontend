@@ -37,7 +37,7 @@ export function TourismPlaceDetail() {
 
   if (loading) {
     return (
-      <section className="pb-10 sm:pb-14">
+      <section className="relative -mt-[calc(var(--navbar-h,5rem)+1.5rem)] bg-[#f7f7f5] pb-10 pt-[calc(var(--navbar-h,5rem)+0.5rem)] sm:-mt-[calc(var(--navbar-h,5rem)+2rem)] sm:pb-14 sm:pt-[calc(var(--navbar-h,5rem)+0.75rem)]">
         <Container>
           <div className="animate-pulse rounded-3xl border border-[#ddd7ca] bg-[#fcfcfa] p-8 shadow-sm">
             <div className="h-6 w-48 rounded bg-slate-100" />
@@ -51,15 +51,15 @@ export function TourismPlaceDetail() {
 
   if (error || !place) {
     return (
-      <section className="pb-10 sm:pb-14">
+      <section className="relative -mt-[calc(var(--navbar-h,5rem)+1.5rem)] bg-[#f7f7f5] pb-10 pt-[calc(var(--navbar-h,5rem)+0.5rem)] sm:-mt-[calc(var(--navbar-h,5rem)+2rem)] sm:pb-14 sm:pt-[calc(var(--navbar-h,5rem)+0.75rem)]">
         <Container>
           <div className="rounded-3xl border border-red-200 bg-red-50 px-6 py-10 text-center shadow-sm">
             <p className="text-base font-semibold text-red-900">{error || 'Lugar no encontrado.'}</p>
             <Link
-              to={ROUTES.history}
+              to={ROUTES.turismo}
               className="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl border border-red-200 bg-white px-5 text-sm font-semibold text-red-800 transition hover:bg-red-100"
             >
-              Volver a Historia
+              Volver a Turismo
             </Link>
           </div>
         </Container>
@@ -71,14 +71,11 @@ export function TourismPlaceDetail() {
   const gallery = Array.isArray(place.gallery) ? place.gallery.filter(Boolean) : []
 
   return (
-    <section className="relative pb-10 sm:pb-14">
+    <section className="relative -mt-[calc(var(--navbar-h,5rem)+1.5rem)] bg-[#f7f7f5] pb-10 pt-[calc(var(--navbar-h,5rem)+0.5rem)] sm:-mt-[calc(var(--navbar-h,5rem)+2rem)] sm:pb-14 sm:pt-[calc(var(--navbar-h,5rem)+0.75rem)]">
       <Container className="max-w-[min(100%,96rem)]!">
         <p className="text-sm font-medium text-sky-700">
-          <Link
-            to={ROUTES.history}
-            className="transition-colors hover:text-sky-900"
-          >
-            ← Volver a Historia
+          <Link to={ROUTES.turismo} className="transition-colors hover:text-sky-900">
+            ← Volver a Turismo
           </Link>
         </p>
         <article className="mt-5 overflow-hidden rounded-3xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm">
@@ -113,53 +110,53 @@ export function TourismPlaceDetail() {
             <section className="space-y-6 lg:col-span-8">
               <RevealOnScroll variant="slow">
                 <article className="rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-5">
-                <h2 className="text-xl font-bold tracking-tight text-slate-900">Sobre este lugar</h2>
-                <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-[#4b505a] sm:text-base">
-                  {place.fullDescription}
-                </p>
+                  <h2 className="text-xl font-bold tracking-tight text-slate-900">Sobre este lugar</h2>
+                  <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-[#4b505a] sm:text-base">
+                    {place.fullDescription}
+                  </p>
                 </article>
               </RevealOnScroll>
 
               {gallery.length > 0 ? (
                 <RevealOnScroll variant="newsCardSlow" delayMs={90}>
                   <article className="rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-5">
-                  <h2 className="text-xl font-bold tracking-tight text-slate-900">Galería</h2>
-                  <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                    {gallery.map((url, i) => (
-                      <li
-                        key={`${url}-${i}`}
-                        className="overflow-hidden rounded-xl border border-[#ddd7ca] bg-slate-50"
-                      >
-                        <img
-                          src={resolveMediaUrl(url)}
-                          alt=""
-                          className="aspect-video w-full object-cover"
-                          loading="lazy"
-                          decoding="async"
-                        />
-                      </li>
-                    ))}
-                  </ul>
+                    <h2 className="text-xl font-bold tracking-tight text-slate-900">Galería</h2>
+                    <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                      {gallery.map((url, i) => (
+                        <li
+                          key={`${url}-${i}`}
+                          className="overflow-hidden rounded-xl border border-[#ddd7ca] bg-slate-50"
+                        >
+                          <img
+                            src={resolveMediaUrl(url)}
+                            alt=""
+                            className="aspect-video w-full object-cover"
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        </li>
+                      ))}
+                    </ul>
                   </article>
                 </RevealOnScroll>
               ) : null}
 
               <RevealOnScroll variant="newsCardSlow" delayMs={130}>
                 <article className="rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-5">
-                <h2 className="text-xl font-bold tracking-tight text-slate-900">Como llegar</h2>
-                <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-[#4b505a] sm:text-base">
-                  {place.howToGet || 'Próximamente sumaremos indicaciones de acceso para este lugar.'}
-                </p>
-                {place.mapExternalUrl ? (
-                  <a
-                    href={place.mapExternalUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl border border-[#2a313b] bg-[#171b22] px-5 text-sm font-semibold text-white transition hover:bg-[#222831]"
-                  >
-                    Abrir mapa en nueva pestaña ↗
-                  </a>
-                ) : null}
+                  <h2 className="text-xl font-bold tracking-tight text-slate-900">Como llegar</h2>
+                  <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-[#4b505a] sm:text-base">
+                    {place.howToGet || 'Próximamente sumaremos indicaciones de acceso para este lugar.'}
+                  </p>
+                  {place.mapExternalUrl ? (
+                    <a
+                      href={place.mapExternalUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl border border-[#2a313b] bg-[#171b22] px-5 text-sm font-semibold text-white transition hover:bg-[#222831]"
+                    >
+                      Abrir mapa en nueva pestaña ↗
+                    </a>
+                  ) : null}
                 </article>
               </RevealOnScroll>
             </section>
@@ -167,48 +164,48 @@ export function TourismPlaceDetail() {
             <aside className="space-y-5 lg:col-span-4">
               <RevealOnScroll variant="slow" delayMs={110}>
                 <article className="rounded-2xl border border-[#ddd7ca] bg-[#f8f7f3] p-5">
-                <h3 className="text-sm font-bold uppercase tracking-[0.16em] text-sky-800">
-                  Información útil
-                </h3>
-                <dl className="mt-3 space-y-3 text-sm text-[#3e434d]">
-                  <div>
-                    <dt className="font-semibold text-slate-900">Dirección</dt>
-                    <dd>{place.address || 'A confirmar'}</dd>
-                  </div>
-                  <div>
-                    <dt className="font-semibold text-slate-900">Horario</dt>
-                    <dd>{place.visitingHours || 'Consultar disponibilidad'}</dd>
-                  </div>
-                  <div>
-                    <dt className="font-semibold text-slate-900">Teléfono</dt>
-                    <dd>{place.contactPhone || 'No informado'}</dd>
-                  </div>
-                  <div>
-                    <dt className="font-semibold text-slate-900">Email</dt>
-                    <dd>{place.contactEmail || 'No informado'}</dd>
-                  </div>
-                </dl>
+                  <h3 className="text-sm font-bold uppercase tracking-[0.16em] text-sky-800">
+                    Información útil
+                  </h3>
+                  <dl className="mt-3 space-y-3 text-sm text-[#3e434d]">
+                    <div>
+                      <dt className="font-semibold text-slate-900">Dirección</dt>
+                      <dd>{place.address || 'A confirmar'}</dd>
+                    </div>
+                    <div>
+                      <dt className="font-semibold text-slate-900">Horario</dt>
+                      <dd>{place.visitingHours || 'Consultar disponibilidad'}</dd>
+                    </div>
+                    <div>
+                      <dt className="font-semibold text-slate-900">Teléfono</dt>
+                      <dd>{place.contactPhone || 'No informado'}</dd>
+                    </div>
+                    <div>
+                      <dt className="font-semibold text-slate-900">Email</dt>
+                      <dd>{place.contactEmail || 'No informado'}</dd>
+                    </div>
+                  </dl>
                 </article>
               </RevealOnScroll>
 
               <RevealOnScroll variant="newsCardSlow" delayMs={150}>
                 <article className="overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa]">
-                <h3 className="border-b border-[#ddd7ca] px-5 py-4 text-sm font-bold uppercase tracking-[0.16em] text-sky-800">
-                  Mapa
-                </h3>
-                {place.mapEmbedUrl ? (
-                  <iframe
-                    src={place.mapEmbedUrl}
-                    title={`Mapa de ${place.name}`}
-                    className="h-64 w-full border-0"
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                  />
-                ) : (
-                  <div className="p-5 text-sm text-slate-600">
-                    Próximamente se incorporará el mapa embebido para este destino.
-                  </div>
-                )}
+                  <h3 className="border-b border-[#ddd7ca] px-5 py-4 text-sm font-bold uppercase tracking-[0.16em] text-sky-800">
+                    Mapa
+                  </h3>
+                  {place.mapEmbedUrl ? (
+                    <iframe
+                      src={place.mapEmbedUrl}
+                      title={`Mapa de ${place.name}`}
+                      className="h-64 w-full border-0"
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                    />
+                  ) : (
+                    <div className="p-5 text-sm text-slate-600">
+                      Próximamente se incorporará el mapa embebido para este destino.
+                    </div>
+                  )}
                 </article>
               </RevealOnScroll>
             </aside>
