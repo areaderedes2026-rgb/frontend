@@ -89,7 +89,7 @@ export const DEFAULT_MUNICIPAL_SERVICES = [
 
 export const DEFAULT_SERVICES_PAGE_CONTENT = {
   heroEyebrow: 'Guía municipal',
-  heroTitle: 'Servicios al vecino',
+  heroTitle: 'Trámites y servicios',
   heroSubtitle:
     'Encontrá trámites, requisitos y canales de gestión en un solo lugar. Diseñado para que puedas resolver tus gestiones de forma rápida y clara.',
   heroImageUrl:
