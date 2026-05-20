@@ -13,8 +13,6 @@ import { isApiConfigured } from '../../utils/apiConfig.js'
 import { ROUTES } from '../../utils/constants.js'
 import {
   HydrationDarkPanelRows,
-  HydrationHeroDarkBackdrop,
-  HydrationHeroLightTextBlock,
   HydrationIntendenciaBioLines,
 } from '../../components/skeleton/PageHydrationSkeleton.jsx'
 
@@ -103,81 +101,50 @@ export function Intendencia() {
   const showMayorBio = Boolean(content.showMayorBio)
   const showManagementAxes = Boolean(content.showManagementAxes)
 
-  const heroImage =
-    content.heroImageUrl ||
-    content.mayorPhotoUrl ||
-    DEFAULT_INTENDENCIA_CONTENT.heroImageUrl
-
   return (
-    <section className="relative overflow-hidden bg-[#f7f7f5]">
+    <section className="relative bg-[#f7f7f5] pb-12 sm:pb-16">
       <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_85%_45%_at_20%_-10%,rgba(56,189,248,0.1),transparent_60%)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_85%_45%_at_20%_-10%,rgba(56,189,248,0.08),transparent_60%)]"
         aria-hidden
       />
 
-      <div className="relative min-h-[42dvh] overflow-hidden border-b border-white/10 bg-[#171b22] sm:min-h-[46dvh] lg:min-h-[48dvh]">
-        {loadingContent ? (
-          <HydrationHeroDarkBackdrop />
-        ) : (
-          <img
-            src={heroImage}
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover object-[center_30%]"
-          />
-        )}
-        <div className="absolute inset-0 bg-linear-to-t from-[#171b22] via-[#171b22]/78 to-[#171b22]/42" />
-        <Container className="relative z-10 flex min-h-[42dvh] flex-col justify-end pb-8 pt-[calc(var(--navbar-h,5rem)+1rem)] sm:min-h-[46dvh] sm:pb-10 lg:min-h-[48dvh] lg:pb-12">
-          <div className="max-w-3xl">
-            {loadingContent ? (
-              <HydrationHeroLightTextBlock />
-            ) : (
-              <>
-                <p className="hero-enter-eyebrow text-[11px] font-bold uppercase tracking-[0.28em] text-sky-200 sm:text-xs">
-                  {content.heroEyebrow}
-                </p>
-                <h1 className="hero-enter-title mt-2 font-serif text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl lg:text-[2.75rem]">
-                  {content.heroTitle}
-                </h1>
-                <p className="hero-enter-subtitle mt-3 max-w-2xl text-sm leading-relaxed text-slate-200 sm:text-base">
-                  {content.heroSubtitle}
-                </p>
-              </>
-            )}
-            <div className="hero-enter-actions mt-6 flex flex-wrap gap-3">
-              <a
-                href="#perfil-intendente"
-                className="inline-flex min-h-11 items-center justify-center rounded-xl bg-white px-5 text-sm font-semibold text-[#171b22] shadow-sm transition hover:bg-slate-100"
-              >
-                Conocer al intendente
-              </a>
-              {showContactPanel ? (
-                <a
-                  href="#contacto-intendencia"
-                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/45 bg-white/10 px-5 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white/70 hover:bg-white/15"
-                >
-                  Contacto directo
-                </a>
-              ) : null}
-            </div>
-          </div>
-        </Container>
-      </div>
-
-      <Container className="relative max-w-[min(100%,96rem)]!">
-        <p className="pt-6 text-sm font-medium text-sky-700 sm:pt-8">
+      <Container className="relative max-w-[min(100%,96rem)]! pt-[calc(var(--navbar-h,5rem)+1.25rem)] sm:pt-[calc(var(--navbar-h,5rem)+1.75rem)]">
+        <p className="text-sm font-medium text-sky-700">
           <Link to={ROUTES.home} className="transition-colors hover:text-sky-900">
             ← Volver al inicio
           </Link>
         </p>
 
-        <RevealOnScroll variant="newsCardSlow" delayMs={80}>
+        <header className="mt-6 max-w-3xl">
+          {loadingContent ? (
+            <div className="animate-pulse space-y-3" aria-hidden>
+              <div className="h-4 w-36 rounded bg-slate-200" />
+              <div className="h-10 w-64 rounded bg-slate-200" />
+              <div className="h-4 w-full max-w-xl rounded bg-slate-100" />
+            </div>
+          ) : (
+            <>
+              <p className="inline-flex rounded-full border border-[#ddd7ca] bg-white/70 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-sky-800">
+                {content.heroEyebrow}
+              </p>
+              <h1 className="mt-4 font-serif text-3xl font-bold tracking-tight text-[#171b22] sm:text-4xl">
+                {content.heroTitle}
+              </h1>
+              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#3e434d] sm:text-base">
+                {content.heroSubtitle}
+              </p>
+            </>
+          )}
+        </header>
+
+        <RevealOnScroll variant="newsCardSlow" delayMs={80} className="mt-8">
           <article
             id="perfil-intendente"
-            className="mt-5 overflow-hidden rounded-[1.75rem] border border-[#ddd7ca] bg-white shadow-[0_24px_80px_-54px_rgba(15,23,42,0.35)]"
+            className="rounded-[1.75rem] border border-[#ddd7ca] bg-white shadow-[0_24px_80px_-54px_rgba(15,23,42,0.35)]"
           >
             <div className="grid gap-0 lg:grid-cols-[minmax(0,300px)_1fr]">
               {showMayorPhoto ? (
-                <div className="relative min-h-[240px] bg-slate-200 lg:min-h-full">
+                <div className="relative min-h-[240px] overflow-hidden rounded-t-[1.75rem] bg-slate-200 lg:min-h-[320px] lg:rounded-none lg:rounded-l-[1.75rem]">
                   {loadingContent ? (
                     <div className="absolute inset-0 animate-pulse bg-slate-200" aria-hidden />
                   ) : (
@@ -188,7 +155,7 @@ export function Intendencia() {
                         className="absolute inset-0 h-full w-full object-cover object-top"
                       />
                       <div
-                        className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/35 via-transparent to-transparent lg:bg-linear-to-r lg:from-transparent lg:via-transparent lg:to-black/10"
+                        className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/25 via-transparent to-transparent lg:bg-linear-to-r lg:from-transparent lg:via-transparent lg:to-black/8"
                         aria-hidden
                       />
                     </>
@@ -236,17 +203,15 @@ export function Intendencia() {
             {showContactPanel ? (
               <aside
                 id="contacto-intendencia"
-                className="border-t border-white/10 bg-[#171b22] px-5 py-5 sm:px-7 sm:py-6"
+                className="rounded-b-[1.75rem] border-t border-white/10 bg-[#171b22] px-5 py-6 sm:px-7 sm:py-7"
               >
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                  <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-sky-300">
-                      Contacto directo
-                    </p>
-                    <p className="mt-1 max-w-xl text-sm text-slate-300">
-                      Canales oficiales del despacho de intendencia.
-                    </p>
-                  </div>
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-sky-300">
+                    Contacto directo
+                  </p>
+                  <p className="mt-1 max-w-xl text-sm text-slate-300">
+                    Canales oficiales del despacho de intendencia.
+                  </p>
                 </div>
 
                 {loadingContent ? (
@@ -274,7 +239,7 @@ export function Intendencia() {
                 )}
 
                 {content.showContactNote ? (
-                  <p className="mt-4 rounded-2xl border border-sky-300/20 bg-sky-500/10 px-4 py-3 text-sm leading-relaxed text-sky-100">
+                  <p className="mt-5 rounded-2xl border border-sky-300/20 bg-sky-500/10 px-4 py-3.5 text-sm leading-relaxed text-sky-100">
                     La intendencia articula con todas las áreas para priorizar obras, servicios y
                     acciones comunitarias.
                   </p>
@@ -291,7 +256,7 @@ export function Intendencia() {
           title="Ejes de gestión"
           subtitle="Prioridades que orientan la coordinación del gobierno local y el trabajo con la comunidad."
           tone="light"
-          className="!pb-12 sm:!pb-16"
+          className="pb-0!"
         >
           <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {MANAGEMENT_AXES.map((item, index) => (
@@ -308,9 +273,7 @@ export function Intendencia() {
             ))}
           </ul>
         </StorySection>
-      ) : (
-        <div className="pb-12 sm:pb-16" aria-hidden />
-      )}
+      ) : null}
     </section>
   )
 }
