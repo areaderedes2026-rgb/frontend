@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ServicesPublicView, ServicesPublicSkeleton } from '../components/services/ServicesPublicView.jsx'
+import { ServicesPublicView } from '../components/services/ServicesPublicView.jsx'
 import {
   DEFAULT_MUNICIPAL_SERVICES,
   DEFAULT_SERVICES_PAGE_CONTENT,
@@ -52,7 +52,11 @@ export function Services() {
   }, [])
 
   if (loading && isApiConfigured()) {
-    return <ServicesPublicSkeleton />
+    return (
+      <div className="flex min-h-[50dvh] items-center justify-center px-4 py-16 text-sm text-slate-600">
+        Cargando servicios...
+      </div>
+    )
   }
 
   return <ServicesPublicView content={mergedContent} services={services} />
