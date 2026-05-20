@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { Container } from '../../components/ui/Container.jsx'
 import { RevealOnScroll } from '../../components/home/RevealOnScroll.jsx'
 import { StorySection } from '../../components/home/StorySection.jsx'
@@ -111,13 +110,7 @@ export function LegisladorEste() {
       <Container className="relative max-w-[min(100%,96rem)]!">
         <h1 className="sr-only">{content.heroTitle || 'Legislador por el Este'}</h1>
 
-        <p className="text-sm font-medium text-sky-700">
-          <Link to={ROUTES.home} className="transition-colors hover:text-sky-900">
-            ← Volver al inicio
-          </Link>
-        </p>
-
-        <RevealOnScroll variant="newsCardSlow" delayMs={80} className="mb-2 mt-4">
+        <RevealOnScroll variant="newsCardSlow" delayMs={80} className="mb-2">
           <article
             id="legislador-este"
             className="overflow-hidden rounded-[1.75rem] border border-[#ddd7ca] bg-white shadow-[0_24px_80px_-54px_rgba(15,23,42,0.35)]"
