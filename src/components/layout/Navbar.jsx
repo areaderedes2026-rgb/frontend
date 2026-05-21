@@ -238,16 +238,10 @@ export function Navbar() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  /** Altura real de la barra fija → `--navbar-h` para el padding del `<main>` (sin solapar contenido). */
   useLayoutEffect(() => {
     const el = headerRef.current
     if (!el) return
     const sync = () => {
-      // Reflejamos siempre el alto real del header. Evitamos `Math.max` con un
-      // valor previo: en mobile la transición scrolled/no-scrolled cambia el
-      // alto, y mantener el máximo histórico generaba un padding-top excesivo
-      // en `<main>` (espacio en blanco al ingresar a una sección hasta hacer
-      // refresh).
       document.documentElement.style.setProperty(
         '--navbar-h',
         `${el.offsetHeight}px`,
