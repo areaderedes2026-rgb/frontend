@@ -1,6 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { ROUTES } from '../../utils/constants.js'
 
 function getScrollOffset() {
   const root = document.documentElement
@@ -70,29 +68,16 @@ export function ConcejoPageNav({ title = 'Concejo Deliberante', sections = [] })
   if (!sections.length) return null
 
   return (
-    <header className="mb-6 sm:mb-8">
-      <p className="text-sm">
-        <Link
-          to={ROUTES.home}
-          className="inline-flex items-center gap-1 font-medium text-[#5c6169] transition hover:text-[#171b22]"
-        >
-          <span aria-hidden>←</span> Volver al inicio
-        </Link>
+    <header className="mb-5 sm:mb-6">
+      <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-sky-800">
+        Gobierno municipal
       </p>
-
-      <div className="mt-4 flex flex-col gap-4 sm:mt-5 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-sky-800">
-            Gobierno municipal
-          </p>
-          <h1 className="mt-1 font-serif text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl lg:text-[2.125rem]">
-            {title}
-          </h1>
-        </div>
-      </div>
+      <h1 className="mt-1 font-serif text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl lg:text-[2.125rem]">
+        {title}
+      </h1>
 
       <div
-        className="sticky z-30 mt-5 border-y border-[#e8e4dc] bg-[#f7f7f5]/92 backdrop-blur-md supports-[backdrop-filter]:bg-[#f7f7f5]/80"
+        className="sticky z-30 -mx-4 mt-3 border-y border-[#e8e4dc] bg-[#f7f7f5]/92 px-4 backdrop-blur-md supports-[backdrop-filter]:bg-[#f7f7f5]/80 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
         style={{
           top: 'var(--navbar-h, 5rem)',
           height: 'var(--concejo-subnav-h, 3.25rem)',

@@ -167,7 +167,7 @@ export function ConcejoDeliberante() {
   )
 
   return (
-    <section className="relative bg-[#f7f7f5] pb-10 pt-[calc(var(--navbar-h,5rem)+0.75rem)] sm:pb-14 sm:pt-[calc(var(--navbar-h,5rem)+1rem)]">
+    <section className="relative -mt-[calc(var(--navbar-h,5rem)+1.25rem)] bg-[#f7f7f5] pb-10 pt-[calc(var(--navbar-h,5rem)+0.35rem)] sm:-mt-[calc(var(--navbar-h,5rem)+1.5rem)] sm:pb-14 sm:pt-[calc(var(--navbar-h,5rem)+0.5rem)]">
       <div
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(56,189,248,0.06),transparent_55%)]"
         aria-hidden
