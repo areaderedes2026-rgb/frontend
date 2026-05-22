@@ -13,6 +13,7 @@ import {
 import { fetchConcejoDeliberanteContent } from '../../services/concejoDeliberanteService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
 import { ROUTES } from '../../utils/constants.js'
+import { ConcejoMainFunctionsSection } from '../../components/concejo/ConcejoMainFunctionsSection.jsx'
 
 const MEMBER_AVATAR_COLOR = '#0369a1'
 
@@ -120,6 +121,7 @@ export function ConcejoDeliberante() {
           contactAddress: '',
           contactHours: '',
           members: [],
+          mainFunctions: { enabled: true, title: '', sections: [] },
         }
       : DEFAULT_CONCEJO_DELIBERANTE_CONTENT,
   )
@@ -202,6 +204,12 @@ export function ConcejoDeliberante() {
             <div className="hero-enter-actions mt-6 flex flex-wrap items-center gap-3">
               <LinkButton to={ROUTES.atencionCiudadano}>Atención al vecino</LinkButton>
               <a
+                href="#funciones-principales"
+                className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/40 bg-white/10 px-5 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white/70 hover:bg-white/15"
+              >
+                Funciones del HCD
+              </a>
+              <a
                 href="#concejales"
                 className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/40 bg-white/10 px-5 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white/70 hover:bg-white/15"
               >
@@ -226,6 +234,10 @@ export function ConcejoDeliberante() {
               </div>
             </div>
           </section>
+        </RevealOnScroll>
+
+        <RevealOnScroll variant="newsCardSlow" delayMs={60}>
+          <ConcejoMainFunctionsSection mainFunctions={content.mainFunctions} />
         </RevealOnScroll>
 
         {content.presidentName || content.presidentRole || content.presidentBio ? (

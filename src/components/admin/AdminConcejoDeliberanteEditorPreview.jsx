@@ -15,6 +15,7 @@ import {
   nextConcejoMemberPriority,
   sortConcejoMembers,
 } from '../../data/concejoDeliberanteContent.js'
+import { AdminConcejoMainFunctionsPanel } from './concejo/AdminConcejoMainFunctionsPanel.jsx'
 
 const ACTION_BTN_BASE =
   'inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto'
@@ -725,8 +726,8 @@ export function AdminConcejoDeliberanteEditorPreview({
           <div className="space-y-10 p-5 sm:p-7 lg:p-10">
             <SectionCard
               id="intro-concejo"
-              title="Introducción"
-              description="Texto centrado debajo del hero en la página pública."
+              title="Órgano Legislativo y de Control Municipal"
+              description="Bloque introductorio centrado debajo del hero en la página pública."
               variant="plain"
               rightSlot={
                 <div className="flex flex-wrap gap-2">
@@ -785,6 +786,15 @@ export function AdminConcejoDeliberanteEditorPreview({
                   </ul>
                 )}
               </div>
+            </SectionCard>
+
+            <SectionCard
+              id="funciones-principales-admin"
+              title="Funciones principales del HCD"
+              description="Segunda sección del portal: funciones legislativa, de contralor y representativa."
+              variant="plain"
+            >
+              <AdminConcejoMainFunctionsPanel form={form} setForm={setForm} saving={saving} />
             </SectionCard>
 
             <SectionCard

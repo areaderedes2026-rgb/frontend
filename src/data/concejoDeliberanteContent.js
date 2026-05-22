@@ -2,6 +2,11 @@
  * Contenido público del Concejo Deliberante (vista ciudadana + valores por defecto del panel).
  */
 
+import {
+  DEFAULT_CONCEJO_MAIN_FUNCTIONS,
+  normalizeMainFunctions,
+} from './concejoMainFunctionsContent.js'
+
 function makeId(prefix) {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}`
 }
@@ -66,11 +71,12 @@ export const DEFAULT_CONCEJO_DELIBERANTE_CONTENT = {
     'Cuerpo legislativo de la ciudad. Conocé a las concejalas y concejales que representan a la comunidad de Trancas.',
   heroImageUrl:
     'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1600&q=80',
-  introTitle: 'Una representación plural y cercana',
+  introTitle: 'Órgano Legislativo y de Control Municipal',
   introParagraphs: [
-    'El Concejo Deliberante sanciona ordenanzas, controla la gestión municipal y canaliza las inquietudes de los vecinos a través de proyectos y audiencias.',
-    'Las sesiones son públicas: cualquier vecino o vecina puede asistir y conocer la agenda de los temas que se debaten cada semana.',
+    'El Honorable Concejo Deliberante es el órgano representativo de la voluntad popular en el ámbito municipal. Integra el Poder Legislativo local junto con la función de control de la gestión del Ejecutivo.',
+    'Su misión es legislar para el bien común, fiscalizar el uso de los recursos públicos y canalizar las demandas de la ciudadanía con transparencia y cercanía institucional.',
   ],
+  mainFunctions: DEFAULT_CONCEJO_MAIN_FUNCTIONS,
   presidentName: 'Nombre del Presidente',
   presidentRole: 'Presidente del Concejo Deliberante',
   presidentBio:
@@ -160,6 +166,7 @@ export function mergeConcejoDeliberanteContent(base, remote) {
     return {
       ...base,
       members: [...(base.members || [])],
+      mainFunctions: normalizeMainFunctions(base.mainFunctions, DEFAULT_CONCEJO_MAIN_FUNCTIONS),
     }
   }
 
@@ -192,6 +199,10 @@ export function mergeConcejoDeliberanteContent(base, remote) {
     contactAddress: String(remote.contactAddress ?? base.contactAddress ?? ''),
     contactHours: String(remote.contactHours ?? base.contactHours ?? ''),
     members,
+    mainFunctions: normalizeMainFunctions(
+      remote.mainFunctions ?? remote.blocks,
+      base.mainFunctions || DEFAULT_CONCEJO_MAIN_FUNCTIONS,
+    ),
   }
 }
 
