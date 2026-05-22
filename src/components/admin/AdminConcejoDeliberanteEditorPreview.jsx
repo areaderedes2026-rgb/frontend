@@ -17,6 +17,7 @@ import {
 } from '../../data/concejoDeliberanteContent.js'
 import { AdminConcejoMainFunctionsPanel } from './concejo/AdminConcejoMainFunctionsPanel.jsx'
 import { AdminConcejoCommissionsPanel } from './concejo/AdminConcejoCommissionsPanel.jsx'
+import { ConcejoContactInfoSection } from '../concejo/ConcejoContactInfoSection.jsx'
 
 const ACTION_BTN_BASE =
   'inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto'
@@ -383,6 +384,22 @@ export function AdminConcejoDeliberanteEditorPreview({
     }))
   }
 
+  function applyConcejoInfo(draft) {
+    setForm((prev) => ({
+      ...prev,
+      contactSectionTitle: String(draft.contactSectionTitle || '').trim(),
+      contactSectionSubtitle: String(draft.contactSectionSubtitle || '').trim(),
+      contactEmail: String(draft.contactEmail || '').trim(),
+      commissionsSchedule: String(draft.commissionsSchedule || '').trim(),
+      sessionsSchedule: String(draft.sessionsSchedule || '').trim(),
+      sessionsLocation: String(draft.sessionsLocation || '').trim(),
+      sessionsNote: String(draft.sessionsNote || ''),
+      contactPhone: String(draft.contactPhone || '').trim(),
+      contactAddress: String(draft.contactAddress || '').trim(),
+      contactHours: String(draft.contactHours || '').trim(),
+    }))
+  }
+
   function handleSaveEditor() {
     if (!editor) return
     const { kind, index, draft } = editor
@@ -404,6 +421,9 @@ export function AdminConcejoDeliberanteEditorPreview({
         break
       case 'contact':
         applyContact(draft)
+        break
+      case 'concejoInfo':
+        applyConcejoInfo(draft)
         break
       default:
         break
@@ -428,6 +448,8 @@ export function AdminConcejoDeliberanteEditorPreview({
         return 'Sesiones (datos institucionales)'
       case 'contact':
         return 'Contacto institucional'
+      case 'concejoInfo':
+        return 'Contacto e información del Concejo'
       default:
         return ''
     }
@@ -438,7 +460,8 @@ export function AdminConcejoDeliberanteEditorPreview({
     (editor.kind === 'identity' ||
       editor.kind === 'president' ||
       editor.kind === 'sessions' ||
-      editor.kind === 'contact')
+      editor.kind === 'contact' ||
+      editor.kind === 'concejoInfo')
 
   const draft = editor?.draft || null
   const totalMembers = (form.members || []).length
@@ -939,54 +962,32 @@ export function AdminConcejoDeliberanteEditorPreview({
             </SectionCard>
 
             <SectionCard
-              id="institucional-oculto"
-              title="Datos institucionales (no visibles en el portal actual)"
-              description="Sesiones y contacto se guardan en el servidor; la vista pública actual no los muestra."
+              id="contacto-concejo-admin"
+              title="Contacto e información del Concejo"
+              description="Sección final del portal: correo, días de comisión y sesiones ordinarias."
               variant="plain"
               rightSlot={
-                <div className="flex flex-wrap gap-2">
-                  <EditChip
-                    label="Sesiones"
-                    onClick={() =>
-                      openEditor('sessions', null, {
-                        sessionsTitle: form.sessionsTitle || '',
-                        sessionsSchedule: form.sessionsSchedule || '',
-                        sessionsLocation: form.sessionsLocation || '',
-                        sessionsNote: form.sessionsNote || '',
-                      })
-                    }
-                    disabled={saving}
-                  />
-                  <EditChip
-                    label="Contacto"
-                    onClick={() =>
-                      openEditor('contact', null, {
-                        contactEmail: form.contactEmail || '',
-                        contactPhone: form.contactPhone || '',
-                        contactAddress: form.contactAddress || '',
-                        contactHours: form.contactHours || '',
-                      })
-                    }
-                    disabled={saving}
-                  />
-                </div>
+                <EditChip
+                  label="Editar"
+                  onClick={() =>
+                    openEditor('concejoInfo', null, {
+                      contactSectionTitle: form.contactSectionTitle || '',
+                      contactSectionSubtitle: form.contactSectionSubtitle || '',
+                      contactEmail: form.contactEmail || '',
+                      commissionsSchedule: form.commissionsSchedule || '',
+                      sessionsSchedule: form.sessionsSchedule || '',
+                      sessionsLocation: form.sessionsLocation || '',
+                      sessionsNote: form.sessionsNote || '',
+                      contactPhone: form.contactPhone || '',
+                      contactAddress: form.contactAddress || '',
+                      contactHours: form.contactHours || '',
+                    })
+                  }
+                  disabled={saving}
+                />
               }
             >
-              <div className="grid gap-4 rounded-3xl border border-dashed border-slate-200 bg-slate-50/60 p-5 sm:grid-cols-2">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Sesiones</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-800">{form.sessionsTitle || '—'}</p>
-                  <p className="mt-1 text-sm text-slate-600">{form.sessionsSchedule || '—'}</p>
-                  <p className="text-sm text-slate-600">{form.sessionsLocation || '—'}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Contacto</p>
-                  <p className="mt-1 text-sm text-slate-600">{form.contactEmail || '—'}</p>
-                  <p className="text-sm text-slate-600">{form.contactPhone || '—'}</p>
-                  <p className="text-sm text-slate-600">{form.contactAddress || '—'}</p>
-                  <p className="text-sm text-slate-600">{form.contactHours || '—'}</p>
-                </div>
-              </div>
+              <ConcejoContactInfoSection content={form} />
             </SectionCard>
           </div>
         </article>
@@ -1204,6 +1205,108 @@ function EditorConcejoBody({ editor, draft, setDraftField, saving }) {
               className={inputClass}
               value={draft.contactHours || ''}
               onChange={(e) => setDraftField('contactHours', e.target.value)}
+              disabled={saving}
+            />
+          </label>
+        </div>
+      )
+    case 'concejoInfo':
+      return (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className={`${labelClass} sm:col-span-2`}>
+            Título de la sección
+            <input
+              className={inputClass}
+              value={draft.contactSectionTitle || ''}
+              onChange={(e) => setDraftField('contactSectionTitle', e.target.value)}
+              disabled={saving}
+            />
+          </label>
+          <label className={`${labelClass} sm:col-span-2`}>
+            Subtítulo (opcional)
+            <textarea
+              className={`${textareaClass} min-h-16`}
+              value={draft.contactSectionSubtitle || ''}
+              onChange={(e) => setDraftField('contactSectionSubtitle', e.target.value)}
+              disabled={saving}
+            />
+          </label>
+          <label className={labelClass}>
+            Correo del Concejo
+            <input
+              type="email"
+              className={inputClass}
+              value={draft.contactEmail || ''}
+              onChange={(e) => setDraftField('contactEmail', e.target.value)}
+              disabled={saving}
+              placeholder="concejo@trancas.gob.ar"
+            />
+          </label>
+          <label className={labelClass}>
+            Días de comisión
+            <input
+              className={inputClass}
+              value={draft.commissionsSchedule || ''}
+              onChange={(e) => setDraftField('commissionsSchedule', e.target.value)}
+              disabled={saving}
+              placeholder="Ej. Miércoles — 17:00 hs"
+            />
+          </label>
+          <label className={labelClass}>
+            Días de sesiones ordinarias
+            <input
+              className={inputClass}
+              value={draft.sessionsSchedule || ''}
+              onChange={(e) => setDraftField('sessionsSchedule', e.target.value)}
+              disabled={saving}
+              placeholder="Ej. Martes — 19:00 hs"
+            />
+          </label>
+          <label className={labelClass}>
+            Lugar de sesiones (opcional)
+            <input
+              className={inputClass}
+              value={draft.sessionsLocation || ''}
+              onChange={(e) => setDraftField('sessionsLocation', e.target.value)}
+              disabled={saving}
+            />
+          </label>
+          <label className={`${labelClass} sm:col-span-2`}>
+            Nota sobre sesiones (opcional)
+            <textarea
+              className={`${textareaClass} min-h-20`}
+              value={draft.sessionsNote || ''}
+              onChange={(e) => setDraftField('sessionsNote', e.target.value)}
+              disabled={saving}
+            />
+          </label>
+          <p className="sm:col-span-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Datos complementarios (opcionales, se muestran debajo si están cargados)
+          </p>
+          <label className={labelClass}>
+            Teléfono
+            <input
+              className={inputClass}
+              value={draft.contactPhone || ''}
+              onChange={(e) => setDraftField('contactPhone', e.target.value)}
+              disabled={saving}
+            />
+          </label>
+          <label className={labelClass}>
+            Horario de atención
+            <input
+              className={inputClass}
+              value={draft.contactHours || ''}
+              onChange={(e) => setDraftField('contactHours', e.target.value)}
+              disabled={saving}
+            />
+          </label>
+          <label className={`${labelClass} sm:col-span-2`}>
+            Dirección
+            <input
+              className={inputClass}
+              value={draft.contactAddress || ''}
+              onChange={(e) => setDraftField('contactAddress', e.target.value)}
               disabled={saving}
             />
           </label>

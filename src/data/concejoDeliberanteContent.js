@@ -87,11 +87,15 @@ export const DEFAULT_CONCEJO_DELIBERANTE_CONTENT = {
   presidentBio:
     'Conduce las sesiones del cuerpo, representa institucionalmente al Concejo y articula con la intendencia y las áreas municipales.',
   presidentPhotoUrl: '',
-  sessionsTitle: 'Sesiones del Concejo',
-  sessionsSchedule: 'Martes a las 19:00 hs',
+  sessionsTitle: 'Sesiones ordinarias',
+  sessionsSchedule: 'Martes — 19:00 hs',
   sessionsLocation: 'Salón de Sesiones — Casa Municipal',
   sessionsNote:
-    'Las sesiones son públicas. Consultá la agenda semanal en los canales oficiales antes de asistir.',
+    'Las sesiones ordinarias son públicas. Consultá la agenda semanal en los canales oficiales antes de asistir.',
+  commissionsSchedule: 'Miércoles — 17:00 hs (reunión de comisiones, según calendario legislativo)',
+  contactSectionTitle: 'Contacto e información del Concejo',
+  contactSectionSubtitle:
+    'Canales oficiales y calendario de reuniones de comisiones y sesiones del Honorable Concejo Deliberante.',
   contactEmail: 'concejo@trancas.gob.ar',
   contactPhone: '+54 381 4XX-XXXX',
   contactAddress: 'San Martín 100 — Trancas, Tucumán',
@@ -200,6 +204,13 @@ export function mergeConcejoDeliberanteContent(base, remote) {
     sessionsSchedule: String(remote.sessionsSchedule ?? base.sessionsSchedule ?? ''),
     sessionsLocation: String(remote.sessionsLocation ?? base.sessionsLocation ?? ''),
     sessionsNote: String(remote.sessionsNote ?? base.sessionsNote ?? ''),
+    commissionsSchedule: String(remote.commissionsSchedule ?? base.commissionsSchedule ?? ''),
+    contactSectionTitle: String(
+      remote.contactSectionTitle ?? base.contactSectionTitle ?? '',
+    ),
+    contactSectionSubtitle: String(
+      remote.contactSectionSubtitle ?? base.contactSectionSubtitle ?? '',
+    ),
     contactEmail: String(remote.contactEmail ?? base.contactEmail ?? ''),
     contactPhone: String(remote.contactPhone ?? base.contactPhone ?? ''),
     contactAddress: String(remote.contactAddress ?? base.contactAddress ?? ''),

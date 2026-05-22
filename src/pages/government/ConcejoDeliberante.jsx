@@ -15,6 +15,7 @@ import { isApiConfigured } from '../../utils/apiConfig.js'
 import { ROUTES } from '../../utils/constants.js'
 import { ConcejoMainFunctionsSection } from '../../components/concejo/ConcejoMainFunctionsSection.jsx'
 import { ConcejoCommissionsSection } from '../../components/concejo/ConcejoCommissionsSection.jsx'
+import { ConcejoContactInfoSection } from '../../components/concejo/ConcejoContactInfoSection.jsx'
 
 const MEMBER_AVATAR_COLOR = '#0369a1'
 
@@ -223,6 +224,12 @@ export function ConcejoDeliberante() {
               >
                 Comisiones
               </a>
+              <a
+                href="#contacto-concejo"
+                className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/40 bg-white/10 px-5 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white/70 hover:bg-white/15"
+              >
+                Contacto
+              </a>
             </div>
           </div>
         </Container>
@@ -321,6 +328,10 @@ export function ConcejoDeliberante() {
 
         <RevealOnScroll variant="newsCardSlow" delayMs={120}>
           <ConcejoCommissionsSection commissions={content.commissions} />
+        </RevealOnScroll>
+
+        <RevealOnScroll variant="newsCardSlow" delayMs={140}>
+          <ConcejoContactInfoSection content={content} />
         </RevealOnScroll>
       </Container>
     </section>
