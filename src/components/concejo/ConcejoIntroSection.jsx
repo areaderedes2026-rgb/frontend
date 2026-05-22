@@ -28,29 +28,29 @@ export function ConcejoIntroSection({
   return (
     <div className={className}>
       <div
-        className={`flex flex-col gap-6 ${
+        className={
           hasLogo
-            ? 'items-center sm:flex-row sm:items-center sm:justify-center sm:gap-8 lg:gap-10'
-            : 'items-center text-center'
-        }`}
+            ? 'grid grid-cols-1 gap-8 sm:grid-cols-[minmax(11rem,17rem)_1fr] sm:items-start sm:gap-10 lg:grid-cols-[minmax(13rem,19rem)_1fr] lg:gap-12'
+            : 'mx-auto max-w-4xl text-center'
+        }
       >
         {hasLogo ? (
-          <div className="flex shrink-0 items-center justify-center rounded-2xl bg-transparent p-1">
-            <img
-              src={logoSrc}
-              alt={hasTitle ? `Logo — ${title}` : 'Logo del Concejo Deliberante'}
-              className="h-20 w-auto max-w-[min(100%,200px)] object-contain object-center sm:h-24 sm:max-w-[220px] lg:h-28 lg:max-w-[260px]"
-              loading="lazy"
-              decoding="async"
-            />
-          </div>
+          <figure className="m-0 flex justify-center sm:justify-start sm:pt-0.5">
+            <div className="flex w-full max-w-[17rem] items-center justify-center sm:max-w-none sm:w-full">
+              <img
+                src={logoSrc}
+                alt={hasTitle ? `Logo — ${title}` : 'Logo del Concejo Deliberante'}
+                className="h-auto w-full max-h-[11rem] min-h-[7.5rem] object-contain object-center sm:max-h-[13rem] sm:min-h-[9rem] lg:max-h-[15rem] lg:min-h-[10rem]"
+                loading="lazy"
+                decoding="async"
+              />
+            </div>
+          </figure>
         ) : null}
 
-        <div
-          className={`min-w-0 flex-1 ${hasLogo ? 'text-left sm:max-w-2xl' : 'mx-auto max-w-4xl text-center'}`}
-        >
+        <div className={`min-w-0 ${hasLogo ? 'text-left' : ''}`}>
           {hasTitle ? (
-            <h2 className="font-serif text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
+            <h2 className="font-serif text-2xl font-bold leading-tight tracking-tight text-[#171b22] sm:text-3xl">
               {title}
             </h2>
           ) : null}
