@@ -936,7 +936,7 @@ export function AdminConcejoDeliberanteEditorPreview({
             <SectionCard
               id="comisiones-admin"
               title="Comisiones de Trabajo"
-              description="Presidente y vocales por comisión. La comisión coordinadora (8) muestra además los presidentes de las demás."
+              description="Presidente y vicepresidentes por comisión. La comisión coordinadora (8) muestra además los presidentes de las demás."
               variant="plain"
             >
               <AdminConcejoCommissionsPanel form={form} setForm={setForm} saving={saving} />

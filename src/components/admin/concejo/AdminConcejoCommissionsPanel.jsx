@@ -31,10 +31,10 @@ function emptyCommissionDraft(sortOrder = 10, kind = 'standard') {
     kind,
     presidenteName: '',
     presidenteRole: '',
-    vocal1Name: '',
-    vocal1Role: '',
-    vocal2Name: '',
-    vocal2Role: '',
+    vicepresidente1Name: '',
+    vicepresidente1Role: '',
+    vicepresidente2Name: '',
+    vicepresidente2Role: '',
   }
 }
 
@@ -47,10 +47,10 @@ function commissionToDraft(commission) {
     kind: commission.kind === 'coordinating' ? 'coordinating' : 'standard',
     presidenteName: commission.presidente?.name || '',
     presidenteRole: commission.presidente?.role || '',
-    vocal1Name: commission.vocal1?.name || '',
-    vocal1Role: commission.vocal1?.role || '',
-    vocal2Name: commission.vocal2?.name || '',
-    vocal2Role: commission.vocal2?.role || '',
+    vicepresidente1Name: commission.vicepresidente1?.name || '',
+    vicepresidente1Role: commission.vicepresidente1?.role || '',
+    vicepresidente2Name: commission.vicepresidente2?.name || '',
+    vicepresidente2Role: commission.vicepresidente2?.role || '',
   }
 }
 
@@ -69,8 +69,14 @@ function draftToCommission(draft) {
     name,
     kind,
     presidente: holder(draft.presidenteName, draft.presidenteRole),
-    vocal1: kind === 'standard' ? holder(draft.vocal1Name, draft.vocal1Role) : { name: '', role: '' },
-    vocal2: kind === 'standard' ? holder(draft.vocal2Name, draft.vocal2Role) : { name: '', role: '' },
+    vicepresidente1:
+      kind === 'standard'
+        ? holder(draft.vicepresidente1Name, draft.vicepresidente1Role)
+        : { name: '', role: '' },
+    vicepresidente2:
+      kind === 'standard'
+        ? holder(draft.vicepresidente2Name, draft.vicepresidente2Role)
+        : { name: '', role: '' },
   }
 }
 
@@ -136,7 +142,7 @@ function CommissionAdminCard({
       <p className="mt-1 text-xs text-slate-500">
         {isCoord
           ? `Presidente: ${commission.presidente?.name || '(sin asignar)'} · Lista auto desde com. 1–7`
-          : `Presidente: ${commission.presidente?.name || '—'} · Vocal 1: ${commission.vocal1?.name || '—'} · Vocal 2: ${commission.vocal2?.name || '—'}`}
+          : `Presidente: ${commission.presidente?.name || '—'} · Vicepres. 1: ${commission.vicepresidente1?.name || '—'} · Vicepres. 2: ${commission.vicepresidente2?.name || '—'}`}
       </p>
     </li>
   )
@@ -332,7 +338,7 @@ export function AdminConcejoCommissionsPanel({ form, setForm, saving }) {
         description={
           isCoordinatingDraft
             ? 'Comisión coordinadora: solo presidente. Los presidentes de las comisiones 1 a 7 se listan automáticamente en el portal.'
-            : 'Presidente/a y dos vocales por comisión.'
+            : 'Presidente/a y dos vicepresidentes por comisión.'
         }
         size="wide"
         loading={saving}
@@ -357,7 +363,7 @@ export function AdminConcejoCommissionsPanel({ form, setForm, saving }) {
                 }
                 disabled={saving}
               >
-                <option value="standard">Comisión estándar (presidente + 2 vocales)</option>
+                <option value="standard">Comisión estándar (presidente + 2 vicepresidentes)</option>
                 <option value="coordinating">Comisión coordinadora (n.º 8)</option>
               </select>
             </label>
@@ -410,15 +416,15 @@ export function AdminConcejoCommissionsPanel({ form, setForm, saving }) {
           {!isCoordinatingDraft ? (
             <>
               <HolderFields
-                prefix="vocal1"
-                labelPrefix="Vocal 1°"
+                prefix="vicepresidente1"
+                labelPrefix="Vicepresidente 1°"
                 draft={commissionDraft}
                 setDraft={setCommissionDraft}
                 saving={saving}
               />
               <HolderFields
-                prefix="vocal2"
-                labelPrefix="Vocal 2°"
+                prefix="vicepresidente2"
+                labelPrefix="Vicepresidente 2°"
                 draft={commissionDraft}
                 setDraft={setCommissionDraft}
                 saving={saving}

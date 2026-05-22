@@ -19,6 +19,14 @@ function normalizeRoleHolder(raw) {
   }
 }
 
+/** Compatibilidad con datos guardados como vocal1 / vocal2. */
+function normalizeVicepresidenteHolder(raw, slot) {
+  if (!raw || typeof raw !== 'object') return { name: '', role: '' }
+  const modern = slot === 1 ? raw.vicepresidente1 : raw.vicepresidente2
+  const legacy = slot === 1 ? raw.vocal1 : raw.vocal2
+  return normalizeRoleHolder(modern ?? legacy)
+}
+
 function normalizeCommission(raw, index = 0) {
   if (!raw || typeof raw !== 'object') return null
   const name = String(raw.name || '').trim()
@@ -34,8 +42,10 @@ function normalizeCommission(raw, index = 0) {
     name,
     kind,
     presidente: normalizeRoleHolder(raw.presidente),
-    vocal1: kind === 'standard' ? normalizeRoleHolder(raw.vocal1) : { name: '', role: '' },
-    vocal2: kind === 'standard' ? normalizeRoleHolder(raw.vocal2) : { name: '', role: '' },
+    vicepresidente1:
+      kind === 'standard' ? normalizeVicepresidenteHolder(raw, 1) : { name: '', role: '' },
+    vicepresidente2:
+      kind === 'standard' ? normalizeVicepresidenteHolder(raw, 2) : { name: '', role: '' },
   }
 }
 
@@ -86,8 +96,8 @@ function standardCommission(id, number, sortOrder, name) {
     name,
     kind: 'standard',
     presidente: emptyHolder(),
-    vocal1: emptyHolder(),
-    vocal2: emptyHolder(),
+    vicepresidente1: emptyHolder(),
+    vicepresidente2: emptyHolder(),
   }
 }
 
@@ -111,8 +121,8 @@ export const DEFAULT_CONCEJO_COMMISSIONS = {
       name: 'Comisión de Coordinación de Comisiones',
       kind: 'coordinating',
       presidente: emptyHolder(),
-      vocal1: emptyHolder(),
-      vocal2: emptyHolder(),
+      vicepresidente1: emptyHolder(),
+      vicepresidente2: emptyHolder(),
     },
   ],
 }

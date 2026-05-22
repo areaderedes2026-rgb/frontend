@@ -65,10 +65,10 @@ function CommissionMembersBody({ commission }) {
         <RoleRow label="Presidente/a" holder={commission.presidente} highlight />
       </li>
       <li className="py-3">
-        <RoleRow label="Vocal 1°" holder={commission.vocal1} />
+        <RoleRow label="Vicepresidente 1°" holder={commission.vicepresidente1} />
       </li>
       <li className="py-3 last:pb-0">
-        <RoleRow label="Vocal 2°" holder={commission.vocal2} />
+        <RoleRow label="Vicepresidente 2°" holder={commission.vicepresidente2} />
       </li>
     </ul>
   )
@@ -323,7 +323,7 @@ export function ConcejoCommissionsSection({ commissions }) {
           </p>
         ) : (
           <p className="mt-2 text-sm leading-relaxed text-[#5c6169] sm:text-base">
-            Tocá cada comisión para ver presidente y vocales.
+            Tocá cada comisión para ver presidente y vicepresidentes.
           </p>
         )}
       </div>
