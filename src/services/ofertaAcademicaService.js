@@ -1,6 +1,7 @@
 import { DEFAULT_OFERTA_ACADEMICA_CONTENT } from '../data/ofertaAcademicaContent.js'
 import { getApiBase } from '../utils/apiConfig.js'
 import { jsonAuthHeaders, notifyUnauthorizedIfNeeded } from '../utils/authStorage.js'
+import { errorFromApiResponse } from '../utils/concurrencyConflict.js'
 
 function base() {
   return getApiBase().trim()
@@ -32,7 +33,7 @@ export async function updateOfertaAcademicaContent(payload) {
   })
   notifyUnauthorizedIfNeeded(res)
   if (!res.ok) {
-    throw new Error((await apiErrorMessage(res)) || 'No se pudo guardar Oferta académica.')
+    throw await errorFromApiResponse(res, 'No se pudo guardar Oferta académica.')
   }
   const data = await res.json().catch(() => ({}))
   return data.content ?? null

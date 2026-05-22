@@ -10,6 +10,7 @@ import {
   labelClass,
   textareaClass,
 } from '../../components/ui/formStyles.js'
+import { useContentEditorConcurrencyConflict } from '../../hooks/useContentEditorConcurrencyConflict.jsx'
 import {
   createTourismPlace,
   deleteTourismPlace,
@@ -17,7 +18,6 @@ import {
   updateTourismPlace,
 } from '../../services/tourismPlacesService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
-import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
 import { ROUTES } from '../../utils/constants.js'
 
@@ -140,7 +140,6 @@ export function AdminTourismPlaces() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [toast, setToast] = useState(null)
-  const [conflictOpen, setConflictOpen] = useState(false)
   const dismissToast = useCallback(() => setToast(null), [])
 
   const [modalOpen, setModalOpen] = useState(false)
@@ -156,6 +155,83 @@ export function AdminTourismPlaces() {
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
   const [page, setPage] = useState(1)
+
+  const loadFromServer = useCallback(async () => {
+    if (!isApiConfigured()) return
+    const list = await fetchTourismPlacesAdmin()
+    const nextPlaces = Array.isArray(list) ? list : []
+    setPlaces(nextPlaces)
+    if (editingPlace?.id) {
+      const fresh = nextPlaces.find((p) => p.id === editingPlace.id)
+      if (fresh) {
+        setEditingPlace(fresh)
+        setForm(toForm(fresh))
+      }
+    }
+  }, [editingPlace?.id])
+
+  const buildPayload = useCallback(
+    () => ({
+      name: form.name.trim(),
+      slug: form.slug.trim(),
+      category: form.category.trim(),
+      shortDescription: form.shortDescription,
+      fullDescription: form.fullDescription,
+      imageUrl: form.imageUrl.trim(),
+      gallery: form.galleryUrls.filter((x) => typeof x === 'string' && x.trim()),
+      address: form.address.trim(),
+      howToGet: form.howToGet,
+      mapEmbedUrl: form.mapEmbedUrl.trim(),
+      mapExternalUrl: form.mapExternalUrl.trim(),
+      contactPhone: form.contactPhone.trim(),
+      contactEmail: form.contactEmail.trim(),
+      contactWhatsapp: form.contactWhatsapp.trim(),
+      visitingHours: form.visitingHours.trim(),
+      sortOrder: Number(form.sortOrder) || 0,
+      isActive: Boolean(form.isActive),
+    }),
+    [form],
+  )
+
+  const persistContent = useCallback(
+    async ({ forceOverwrite = false } = {}) => {
+      const payload = { ...buildPayload(), forceOverwrite }
+      if (editingPlace) {
+        await updateTourismPlace(editingPlace.id, {
+          ...payload,
+          expectedUpdatedAt: editingPlace.updatedAt || null,
+        })
+        setToast({ type: 'success', message: 'Lugar turístico actualizado.' })
+      } else {
+        await createTourismPlace(payload)
+        setToast({ type: 'success', message: 'Lugar turístico creado.' })
+      }
+      setModalOpen(false)
+      await loadFromServer()
+    },
+    [buildPayload, editingPlace, loadFromServer],
+  )
+
+  const { conflictDialog, handleConflict } = useContentEditorConcurrencyConflict({
+    reloadFromServer: loadFromServer,
+    persistContent,
+    entityLabel: 'este lugar turístico',
+    onReloadSuccess: () =>
+      setToast({
+        type: 'success',
+        message: 'Se cargó la última versión del servidor.',
+      }),
+    onReloadError: (e) =>
+      setToast({
+        type: 'error',
+        message: e.message || 'No se pudo recargar el listado.',
+      }),
+    onForceSaveError: (e) => {
+      const msg = e.message || 'No se pudo guardar el lugar turístico.'
+      setFormError(msg)
+      setToast({ type: 'error', message: msg })
+    },
+  })
 
   const loadPlaces = useCallback(
     async (showToast = false) => {
@@ -283,39 +359,9 @@ export function AdminTourismPlaces() {
     }
     setSaving(true)
     try {
-      const payload = {
-        name: form.name.trim(),
-        slug: form.slug.trim(),
-        category: form.category.trim(),
-        shortDescription: form.shortDescription,
-        fullDescription: form.fullDescription,
-        imageUrl: form.imageUrl.trim(),
-        gallery: form.galleryUrls.filter((x) => typeof x === 'string' && x.trim()),
-        address: form.address.trim(),
-        howToGet: form.howToGet,
-        mapEmbedUrl: form.mapEmbedUrl.trim(),
-        mapExternalUrl: form.mapExternalUrl.trim(),
-        contactPhone: form.contactPhone.trim(),
-        contactEmail: form.contactEmail.trim(),
-        contactWhatsapp: form.contactWhatsapp.trim(),
-        visitingHours: form.visitingHours.trim(),
-        sortOrder: Number(form.sortOrder) || 0,
-        isActive: Boolean(form.isActive),
-      }
-      if (editingPlace) {
-        await updateTourismPlace(editingPlace.id, {
-          ...payload,
-          expectedUpdatedAt: editingPlace.updatedAt || null,
-        })
-        setToast({ type: 'success', message: 'Lugar turístico actualizado.' })
-      } else {
-        await createTourismPlace(payload)
-        setToast({ type: 'success', message: 'Lugar turístico creado.' })
-      }
-      setModalOpen(false)
-      await loadPlaces()
+      await persistContent()
     } catch (e) {
-      if (isConcurrencyConflictError(e)) setConflictOpen(true)
+      if (handleConflict(e)) return
       const msg = e.message || 'No se pudo guardar el lugar turístico.'
       setFormError(msg)
       setToast({ type: 'error', message: msg })
@@ -347,16 +393,7 @@ export function AdminTourismPlaces() {
       {toast ? (
         <Toast variant={toast.type} message={toast.message} onDismiss={dismissToast} />
       ) : null}
-      <ConfirmDialog
-        open={conflictOpen}
-        onClose={() => setConflictOpen(false)}
-        title="Cambios desactualizados"
-        description="Otro usuario guardó cambios antes que vos. Recargá la última versión y reintentá."
-        confirmLabel="Recargar última versión y reintentar"
-        cancelLabel="Cerrar"
-        loading={false}
-        onConfirm={() => window.location.reload()}
-      />
+      {conflictDialog}
       <ConfirmDialog
         open={deleteTarget != null}
         onClose={() => {

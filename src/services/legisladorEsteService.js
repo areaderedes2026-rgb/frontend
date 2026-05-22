@@ -1,6 +1,7 @@
 import { DEFAULT_LEGISLADOR_ESTE_CONTENT } from '../data/legisladorEsteContent.js'
 import { getApiBase } from '../utils/apiConfig.js'
 import { jsonAuthHeaders, notifyUnauthorizedIfNeeded } from '../utils/authStorage.js'
+import { errorFromApiResponse } from '../utils/concurrencyConflict.js'
 
 function base() {
   return getApiBase().trim()
@@ -35,9 +36,7 @@ export async function updateLegisladorEsteContent(payload) {
   })
   notifyUnauthorizedIfNeeded(res)
   if (!res.ok) {
-    throw new Error(
-      (await apiErrorMessage(res)) || 'No se pudo guardar Legislador por el Este.',
-    )
+    throw await errorFromApiResponse(res, 'No se pudo guardar Legislador por el Este.')
   }
   const data = await res.json().catch(() => ({}))
   return data.content || null

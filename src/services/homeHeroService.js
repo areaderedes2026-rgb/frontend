@@ -1,6 +1,7 @@
 import { DEFAULT_HOME_HERO_CONTENT } from '../data/homeHeroContent.js'
 import { getApiBase } from '../utils/apiConfig.js'
 import { jsonAuthHeaders, notifyUnauthorizedIfNeeded } from '../utils/authStorage.js'
+import { errorFromApiResponse } from '../utils/concurrencyConflict.js'
 
 function base() {
   return getApiBase().trim()
@@ -32,7 +33,7 @@ export async function updateHomeHeroContent(payload) {
   })
   notifyUnauthorizedIfNeeded(res)
   if (!res.ok) {
-    throw new Error((await apiErrorMessage(res)) || 'No se pudieron guardar los banners de Inicio.')
+    throw await errorFromApiResponse(res, 'No se pudieron guardar los banners de Inicio.')
   }
   const data = await res.json().catch(() => ({}))
   return data.content || null

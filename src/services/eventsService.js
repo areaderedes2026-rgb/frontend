@@ -5,6 +5,7 @@ import {
   jsonAuthHeaders,
   notifyUnauthorizedIfNeeded,
 } from '../utils/authStorage.js'
+import { errorFromApiResponse } from '../utils/concurrencyConflict.js'
 
 const API_BASE = getApiBase()
 
@@ -113,7 +114,7 @@ export async function updateEvent(id, payload) {
       body: JSON.stringify(payload),
     })
     notifyUnauthorizedIfNeeded(res)
-    if (!res.ok) throw new Error((await apiErrorMessage(res)) || 'No se pudo editar el evento.')
+    if (!res.ok) throw await errorFromApiResponse(res, 'No se pudo editar el evento.')
     const data = await res.json().catch(() => ({}))
     return normalize(data.item)
   }

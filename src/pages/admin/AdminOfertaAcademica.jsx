@@ -2,18 +2,17 @@ import { useCallback, useEffect, useState } from 'react'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
 import { AdminOfertaAcademicaEditorPreview } from '../../components/admin/AdminOfertaAcademicaEditorPreview.jsx'
 import { HeroImageModal } from '../../components/admin/HeroImageModal.jsx'
-import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
 import {
   DEFAULT_OFERTA_ACADEMICA_CONTENT,
   mergeOfertaAcademicaContent,
 } from '../../data/ofertaAcademicaContent.js'
+import { useContentEditorConcurrencyConflict } from '../../hooks/useContentEditorConcurrencyConflict.jsx'
 import {
   fetchOfertaAcademicaContent,
   updateOfertaAcademicaContent,
 } from '../../services/ofertaAcademicaService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
-import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
 
 function cloneContent(c) {
   return JSON.parse(JSON.stringify(c))
@@ -25,12 +24,19 @@ export function AdminOfertaAcademica() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [conflictOpen, setConflictOpen] = useState(false)
   const [heroImageOpen, setHeroImageOpen] = useState(false)
   const [toast, setToast] = useState(null)
   const dismissToast = useCallback(() => setToast(null), [])
 
   const apiAvailable = isApiConfigured()
+
+  const loadFromServer = useCallback(async () => {
+    const remote = await fetchOfertaAcademicaContent()
+    const merged = mergeOfertaAcademicaContent(DEFAULT_OFERTA_ACADEMICA_CONTENT, remote || {})
+    setForm(cloneContent(merged))
+    setContentUpdatedAt(remote?.updatedAt || null)
+    setError('')
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -42,12 +48,7 @@ export function AdminOfertaAcademica() {
         return
       }
       try {
-        const remote = await fetchOfertaAcademicaContent()
-        const merged = mergeOfertaAcademicaContent(DEFAULT_OFERTA_ACADEMICA_CONTENT, remote || {})
-        if (!cancelled) {
-          setForm(cloneContent(merged))
-          setContentUpdatedAt(remote?.updatedAt || null)
-        }
+        await loadFromServer()
       } catch (e) {
         if (!cancelled) setError(e.message || 'No se pudo cargar Oferta académica.')
       } finally {
@@ -58,7 +59,68 @@ export function AdminOfertaAcademica() {
     return () => {
       cancelled = true
     }
-  }, [apiAvailable])
+  }, [apiAvailable, loadFromServer])
+
+  const buildPayload = useCallback(
+    (forceOverwrite = false) => ({
+      expectedUpdatedAt: contentUpdatedAt,
+      forceOverwrite,
+      heroEyebrow: String(form.heroEyebrow || '').trim(),
+      heroTitle: String(form.heroTitle || '').trim(),
+      heroSubtitle: String(form.heroSubtitle || ''),
+      heroImageUrl: String(form.heroImageUrl || '').trim(),
+      introTitle: String(form.introTitle || '').trim(),
+      introParagraphs: (form.introParagraphs || [])
+        .map((p) => String(p || '').trim())
+        .filter(Boolean),
+      highlights: (form.highlights || [])
+        .map((h) => ({
+          label: String(h?.label || '').trim(),
+          value: String(h?.value || '').trim(),
+        }))
+        .filter((h) => h.label || h.value),
+      categories: (form.categories || [])
+        .map((c) => String(c || '').trim())
+        .filter(Boolean),
+      offers: form.offers || [],
+      ctaTitle: String(form.ctaTitle || '').trim(),
+      ctaBody: String(form.ctaBody || ''),
+    }),
+    [contentUpdatedAt, form],
+  )
+
+  const persistContent = useCallback(
+    async ({ forceOverwrite = false } = {}) => {
+      const saved = await updateOfertaAcademicaContent(buildPayload(forceOverwrite))
+      const merged = mergeOfertaAcademicaContent(DEFAULT_OFERTA_ACADEMICA_CONTENT, saved || {})
+      setForm(cloneContent(merged))
+      setContentUpdatedAt(saved?.updatedAt || null)
+      setError('')
+      setToast({ variant: 'success', message: 'Se guardaron los cambios de Oferta académica.' })
+    },
+    [buildPayload],
+  )
+
+  const { conflictDialog, handleConflict } = useContentEditorConcurrencyConflict({
+    reloadFromServer: loadFromServer,
+    persistContent,
+    entityLabel: 'Oferta académica',
+    onReloadSuccess: () =>
+      setToast({
+        variant: 'success',
+        message: 'Se cargó la última versión del servidor.',
+      }),
+    onReloadError: (e) =>
+      setToast({
+        variant: 'error',
+        message: e.message || 'No se pudo recargar el contenido.',
+      }),
+    onForceSaveError: (e) => {
+      const msg = e.message || 'No se pudo guardar.'
+      setError(msg)
+      setToast({ variant: 'error', message: msg })
+    },
+  })
 
   const handleSubmit = useCallback(async () => {
     setError('')
@@ -76,56 +138,20 @@ export function AdminOfertaAcademica() {
     }
     setSaving(true)
     try {
-      const payload = {
-        expectedUpdatedAt: contentUpdatedAt,
-        heroEyebrow: String(form.heroEyebrow || '').trim(),
-        heroTitle: String(form.heroTitle || '').trim(),
-        heroSubtitle: String(form.heroSubtitle || ''),
-        heroImageUrl: String(form.heroImageUrl || '').trim(),
-        introTitle: String(form.introTitle || '').trim(),
-        introParagraphs: (form.introParagraphs || [])
-          .map((p) => String(p || '').trim())
-          .filter(Boolean),
-        highlights: (form.highlights || [])
-          .map((h) => ({
-            label: String(h?.label || '').trim(),
-            value: String(h?.value || '').trim(),
-          }))
-          .filter((h) => h.label || h.value),
-        categories: (form.categories || [])
-          .map((c) => String(c || '').trim())
-          .filter(Boolean),
-        offers: form.offers || [],
-        ctaTitle: String(form.ctaTitle || '').trim(),
-        ctaBody: String(form.ctaBody || ''),
-      }
-      const saved = await updateOfertaAcademicaContent(payload)
-      const merged = mergeOfertaAcademicaContent(DEFAULT_OFERTA_ACADEMICA_CONTENT, saved || {})
-      setForm(cloneContent(merged))
-      setContentUpdatedAt(saved?.updatedAt || null)
-      setToast({ variant: 'success', message: 'Se guardaron los cambios de Oferta académica.' })
+      await persistContent()
     } catch (e) {
-      if (isConcurrencyConflictError(e)) setConflictOpen(true)
+      if (handleConflict(e)) return
       const msg = e.message || 'No se pudo guardar.'
       setError(msg)
       setToast({ variant: 'error', message: msg })
     } finally {
       setSaving(false)
     }
-  }, [apiAvailable, contentUpdatedAt, form])
+  }, [apiAvailable, form.categories, handleConflict, persistContent])
 
   return (
     <>
-      <ConfirmDialog
-        open={conflictOpen}
-        onClose={() => setConflictOpen(false)}
-        title="Cambios desactualizados"
-        description="Otro usuario guardó cambios antes que vos. Recargá la última versión y reintentá."
-        confirmLabel="Recargar última versión y reintentar"
-        cancelLabel="Cerrar"
-        loading={false}
-        onConfirm={() => window.location.reload()}
-      />
+      {conflictDialog}
 
       {toast ? (
         <Toast

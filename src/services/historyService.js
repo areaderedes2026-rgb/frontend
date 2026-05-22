@@ -1,5 +1,6 @@
 import { getApiBase } from '../utils/apiConfig.js'
 import { jsonAuthHeaders, notifyUnauthorizedIfNeeded } from '../utils/authStorage.js'
+import { errorFromApiResponse } from '../utils/concurrencyConflict.js'
 
 async function apiErrorMessage(res) {
   const data = await res.json().catch(() => ({}))
@@ -31,7 +32,7 @@ export async function updateHistoryContent(payload) {
   })
   notifyUnauthorizedIfNeeded(res)
   if (!res.ok) {
-    throw new Error((await apiErrorMessage(res)) || 'No se pudo guardar la historia.')
+    throw await errorFromApiResponse(res, 'No se pudo guardar la historia.')
   }
   const data = await res.json().catch(() => ({}))
   return data.content || null

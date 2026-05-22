@@ -47,10 +47,30 @@ function commissionToDraft(commission) {
     kind: commission.kind === 'coordinating' ? 'coordinating' : 'standard',
     presidenteName: commission.presidente?.name || '',
     presidenteRole: commission.presidente?.role || '',
-    vicepresidente1Name: commission.vicepresidente1?.name || '',
-    vicepresidente1Role: commission.vicepresidente1?.role || '',
-    vicepresidente2Name: commission.vicepresidente2?.name || '',
-    vicepresidente2Role: commission.vicepresidente2?.role || '',
+    vicepresidente1Name:
+      commission.vicepresidente1?.name ||
+      commission.vocal1?.name ||
+      commission.vicepresidente1Name ||
+      commission.vocal1Name ||
+      '',
+    vicepresidente1Role:
+      commission.vicepresidente1?.role ||
+      commission.vocal1?.role ||
+      commission.vicepresidente1Role ||
+      commission.vocal1Role ||
+      '',
+    vicepresidente2Name:
+      commission.vicepresidente2?.name ||
+      commission.vocal2?.name ||
+      commission.vicepresidente2Name ||
+      commission.vocal2Name ||
+      '',
+    vicepresidente2Role:
+      commission.vicepresidente2?.role ||
+      commission.vocal2?.role ||
+      commission.vicepresidente2Role ||
+      commission.vocal2Role ||
+      '',
   }
 }
 
@@ -257,15 +277,21 @@ export function AdminConcejoCommissionsPanel({ form, setForm, saving }) {
       setCommissionError('Completá al menos el nombre de la comisión.')
       return
     }
-    const list = [...(commissions.items || [])]
-    if (commissionModal === 'new') {
-      list.push(built)
-    } else {
-      const idx = list.findIndex((c) => c.id === commissionModal)
-      if (idx >= 0) list[idx] = built
-      else list.push(built)
-    }
-    updateCommissions({ ...commissions, items: list })
+    setForm((prev) => {
+      const current = normalizeCommissions(prev.commissions)
+      const list = [...(current.items || [])]
+      if (commissionModal === 'new') {
+        list.push(built)
+      } else {
+        const idx = list.findIndex((c) => c.id === commissionModal)
+        if (idx >= 0) list[idx] = built
+        else list.push(built)
+      }
+      return {
+        ...prev,
+        commissions: normalizeCommissions({ ...current, items: list }, current),
+      }
+    })
     setCommissionModal(null)
     setCommissionError('')
   }

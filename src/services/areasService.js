@@ -1,6 +1,7 @@
 import { MUNICIPAL_AREAS } from '../data/areas.js'
 import { getApiBase, isApiConfigured } from '../utils/apiConfig.js'
 import { getAuthHeaders, jsonAuthHeaders, notifyUnauthorizedIfNeeded } from '../utils/authStorage.js'
+import { errorFromApiResponse } from '../utils/concurrencyConflict.js'
 
 function mapArea(area) {
   if (!area) return null
@@ -98,7 +99,7 @@ export async function updateArea(id, payload) {
     body: JSON.stringify(payload),
   })
   notifyUnauthorizedIfNeeded(res)
-  if (!res.ok) throw new Error((await apiErrorMessage(res)) || 'No se pudo actualizar el área.')
+  if (!res.ok) throw await errorFromApiResponse(res, 'No se pudo actualizar el área.')
   const data = await res.json().catch(() => ({}))
   return mapArea(data.area)
 }

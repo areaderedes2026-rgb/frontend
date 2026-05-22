@@ -1,5 +1,6 @@
 import { getApiBase } from '../utils/apiConfig.js'
 import { jsonAuthHeaders, notifyUnauthorizedIfNeeded } from '../utils/authStorage.js'
+import { errorFromApiResponse } from '../utils/concurrencyConflict.js'
 
 function base() {
   return getApiBase().trim()
@@ -31,7 +32,7 @@ export async function updateSitePageBanner(pageKey, payload) {
   })
   notifyUnauthorizedIfNeeded(res)
   if (!res.ok) {
-    throw new Error((await apiErrorMessage(res)) || 'No se pudo guardar la portada.')
+    throw await errorFromApiResponse(res, 'No se pudo guardar la portada.')
   }
   const data = await res.json().catch(() => ({}))
   return data.content || null

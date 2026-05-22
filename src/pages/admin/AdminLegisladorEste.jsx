@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
 import { SingleImageUploadField } from '../../components/admin/SingleImageUploadField.jsx'
 import { Button } from '../../components/ui/Button.jsx'
-import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
 import {
   formErrorClass,
@@ -14,12 +13,12 @@ import {
   DEFAULT_LEGISLADOR_ESTE_CONTENT,
   mergeLegisladorEsteContent,
 } from '../../data/legisladorEsteContent.js'
+import { useContentEditorConcurrencyConflict } from '../../hooks/useContentEditorConcurrencyConflict.jsx'
 import {
   fetchLegisladorEsteContent,
   updateLegisladorEsteContent,
 } from '../../services/legisladorEsteService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
-import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
 import { ROUTES } from '../../utils/constants.js'
 
 function mapToForm(content) {
@@ -71,9 +70,19 @@ export function AdminLegisladorEste() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [conflictOpen, setConflictOpen] = useState(false)
   const [toast, setToast] = useState(null)
   const dismissToast = useCallback(() => setToast(null), [])
+
+  const loadFromServer = useCallback(async () => {
+    const remote = await fetchLegisladorEsteContent()
+    const merged = mergeLegisladorEsteContent(
+      DEFAULT_LEGISLADOR_ESTE_CONTENT,
+      remote || {},
+    )
+    setForm(mapToForm(merged))
+    setContentUpdatedAt(remote?.updatedAt || null)
+    setError('')
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -85,15 +94,7 @@ export function AdminLegisladorEste() {
         return
       }
       try {
-        const remote = await fetchLegisladorEsteContent()
-        const merged = mergeLegisladorEsteContent(
-          DEFAULT_LEGISLADOR_ESTE_CONTENT,
-          remote || {},
-        )
-        if (!cancelled) {
-          setForm(mapToForm(merged))
-          setContentUpdatedAt(remote?.updatedAt || null)
-        }
+        await loadFromServer()
       } catch (e) {
         if (!cancelled) setError(e.message || 'No se pudo cargar Legislador por el Este.')
       } finally {
@@ -104,7 +105,74 @@ export function AdminLegisladorEste() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [loadFromServer])
+
+  const buildPayload = useCallback(
+    (forceOverwrite = false) => ({
+      expectedUpdatedAt: contentUpdatedAt,
+      forceOverwrite,
+      heroEyebrow: form.heroEyebrow.trim(),
+      heroTitle: form.heroTitle.trim(),
+      heroSubtitle: form.heroSubtitle,
+      heroImageUrl: form.heroImageUrl.trim(),
+      legislatorName: form.legislatorName.trim(),
+      legislatorRole: form.legislatorRole.trim(),
+      legislatorBio: form.legislatorBio,
+      legislatorPhotoUrl: form.legislatorPhotoUrl.trim(),
+      contactEmail: form.contactEmail.trim(),
+      contactPhone: form.contactPhone.trim(),
+      officeHours: form.officeHours.trim(),
+      showLegislatorPhoto: Boolean(form.showLegislatorPhoto),
+      showLegislatorRole: Boolean(form.showLegislatorRole),
+      showLegislatorBio: Boolean(form.showLegislatorBio),
+      showContactPanel: Boolean(form.showContactPanel),
+      showContactEmail: Boolean(form.showContactEmail),
+      showContactPhone: Boolean(form.showContactPhone),
+      showOfficeHours: Boolean(form.showOfficeHours),
+      showContactNote: Boolean(form.showContactNote),
+      showManagementAxes: Boolean(form.showManagementAxes),
+    }),
+    [contentUpdatedAt, form],
+  )
+
+  const persistContent = useCallback(
+    async ({ forceOverwrite = false } = {}) => {
+      const saved = await updateLegisladorEsteContent(buildPayload(forceOverwrite))
+      const merged = mergeLegisladorEsteContent(
+        DEFAULT_LEGISLADOR_ESTE_CONTENT,
+        saved || {},
+      )
+      setForm(mapToForm(merged))
+      setContentUpdatedAt(saved?.updatedAt || null)
+      setError('')
+      setToast({
+        type: 'success',
+        message: 'Se guardaron los cambios de Legislador por el Este.',
+      })
+    },
+    [buildPayload],
+  )
+
+  const { conflictDialog, handleConflict } = useContentEditorConcurrencyConflict({
+    reloadFromServer: loadFromServer,
+    persistContent,
+    entityLabel: 'Legislador por el Este',
+    onReloadSuccess: () =>
+      setToast({
+        type: 'success',
+        message: 'Se cargó la última versión del servidor.',
+      }),
+    onReloadError: (e) =>
+      setToast({
+        type: 'error',
+        message: e.message || 'No se pudo recargar el contenido.',
+      }),
+    onForceSaveError: (e) => {
+      const msg = e.message || 'No se pudo guardar Legislador por el Este.'
+      setError(msg)
+      setToast({ type: 'error', message: msg })
+    },
+  })
 
   function setFlag(key, value) {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -122,42 +190,9 @@ export function AdminLegisladorEste() {
     }
     setSaving(true)
     try {
-      const payload = {
-        expectedUpdatedAt: contentUpdatedAt,
-        heroEyebrow: form.heroEyebrow.trim(),
-        heroTitle: form.heroTitle.trim(),
-        heroSubtitle: form.heroSubtitle,
-        heroImageUrl: form.heroImageUrl.trim(),
-        legislatorName: form.legislatorName.trim(),
-        legislatorRole: form.legislatorRole.trim(),
-        legislatorBio: form.legislatorBio,
-        legislatorPhotoUrl: form.legislatorPhotoUrl.trim(),
-        contactEmail: form.contactEmail.trim(),
-        contactPhone: form.contactPhone.trim(),
-        officeHours: form.officeHours.trim(),
-        showLegislatorPhoto: Boolean(form.showLegislatorPhoto),
-        showLegislatorRole: Boolean(form.showLegislatorRole),
-        showLegislatorBio: Boolean(form.showLegislatorBio),
-        showContactPanel: Boolean(form.showContactPanel),
-        showContactEmail: Boolean(form.showContactEmail),
-        showContactPhone: Boolean(form.showContactPhone),
-        showOfficeHours: Boolean(form.showOfficeHours),
-        showContactNote: Boolean(form.showContactNote),
-        showManagementAxes: Boolean(form.showManagementAxes),
-      }
-      const saved = await updateLegisladorEsteContent(payload)
-      const merged = mergeLegisladorEsteContent(
-        DEFAULT_LEGISLADOR_ESTE_CONTENT,
-        saved || {},
-      )
-      setForm(mapToForm(merged))
-      setContentUpdatedAt(saved?.updatedAt || null)
-      setToast({
-        type: 'success',
-        message: 'Se guardaron los cambios de Legislador por el Este.',
-      })
+      await persistContent()
     } catch (e) {
-      if (isConcurrencyConflictError(e)) setConflictOpen(true)
+      if (handleConflict(e)) return
       setError(e.message || 'No se pudo guardar Legislador por el Este.')
       setToast({
         type: 'error',
@@ -170,15 +205,7 @@ export function AdminLegisladorEste() {
 
   return (
     <>
-      <ConfirmDialog
-        open={conflictOpen}
-        onClose={() => setConflictOpen(false)}
-        title="Cambios desactualizados"
-        description="Otro usuario guardó cambios antes que vos. Recargá la última versión y reintentá."
-        confirmLabel="Recargar última versión y reintentar"
-        cancelLabel="Cerrar"
-        onConfirm={() => window.location.reload()}
-      />
+      {conflictDialog}
       {toast ? <Toast variant={toast.type} message={toast.message} onDismiss={dismissToast} /> : null}
       <AdminPageShell
         backTo={ROUTES.adminSettings}

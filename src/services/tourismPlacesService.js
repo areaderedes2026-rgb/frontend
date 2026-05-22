@@ -1,6 +1,7 @@
 import { DEFAULT_TOURISM_PLACES } from '../data/tourismPlaces.js'
 import { getApiBase } from '../utils/apiConfig.js'
 import { jsonAuthHeaders, notifyUnauthorizedIfNeeded } from '../utils/authStorage.js'
+import { errorFromApiResponse } from '../utils/concurrencyConflict.js'
 
 async function apiErrorMessage(res) {
   const data = await res.json().catch(() => ({}))
@@ -92,7 +93,7 @@ export async function updateTourismPlace(id, payload) {
     body: JSON.stringify(payload),
   })
   notifyUnauthorizedIfNeeded(res)
-  if (!res.ok) throw new Error((await apiErrorMessage(res)) || 'No se pudo editar el lugar turístico.')
+  if (!res.ok) throw await errorFromApiResponse(res, 'No se pudo editar el lugar turístico.')
   const data = await res.json().catch(() => ({}))
   return data.place ? mapPlace(data.place) : null
 }

@@ -1,18 +1,18 @@
 import { useCallback, useEffect, useState } from 'react'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
 import { AdminConcejoDeliberanteEditorPreview } from '../../components/admin/AdminConcejoDeliberanteEditorPreview.jsx'
-import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
 import {
   DEFAULT_CONCEJO_DELIBERANTE_CONTENT,
   mergeConcejoDeliberanteContent,
 } from '../../data/concejoDeliberanteContent.js'
+import { serializeCommissionsForSave } from '../../data/concejoCommissionsContent.js'
+import { useContentEditorConcurrencyConflict } from '../../hooks/useContentEditorConcurrencyConflict.jsx'
 import {
   fetchConcejoDeliberanteContent,
   updateConcejoDeliberanteContent,
 } from '../../services/concejoDeliberanteService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
-import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
 
 function cloneContent(c) {
   return JSON.parse(JSON.stringify(c))
@@ -24,11 +24,21 @@ export function AdminConcejoDeliberante() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [conflictOpen, setConflictOpen] = useState(false)
   const [toast, setToast] = useState(null)
   const dismissToast = useCallback(() => setToast(null), [])
 
   const apiAvailable = isApiConfigured()
+
+  const loadFromServer = useCallback(async () => {
+    const remote = await fetchConcejoDeliberanteContent()
+    const merged = mergeConcejoDeliberanteContent(
+      DEFAULT_CONCEJO_DELIBERANTE_CONTENT,
+      remote || {},
+    )
+    setForm(cloneContent(merged))
+    setContentUpdatedAt(remote?.updatedAt || null)
+    setError('')
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -40,15 +50,7 @@ export function AdminConcejoDeliberante() {
         return
       }
       try {
-        const remote = await fetchConcejoDeliberanteContent()
-        const merged = mergeConcejoDeliberanteContent(
-          DEFAULT_CONCEJO_DELIBERANTE_CONTENT,
-          remote || {},
-        )
-        if (!cancelled) {
-          setForm(cloneContent(merged))
-          setContentUpdatedAt(remote?.updatedAt || null)
-        }
+        await loadFromServer()
       } catch (e) {
         if (!cancelled) setError(e.message || 'No se pudo cargar el Concejo Deliberante.')
       } finally {
@@ -59,7 +61,78 @@ export function AdminConcejoDeliberante() {
     return () => {
       cancelled = true
     }
-  }, [apiAvailable])
+  }, [apiAvailable, loadFromServer])
+
+  const buildPayload = useCallback(
+    (forceOverwrite = false) => ({
+      expectedUpdatedAt: contentUpdatedAt,
+      forceOverwrite,
+      heroEyebrow: form.heroEyebrow.trim(),
+      heroTitle: form.heroTitle.trim(),
+      heroSubtitle: form.heroSubtitle,
+      heroImageUrl: form.heroImageUrl.trim(),
+      introTitle: form.introTitle.trim(),
+      introLogoUrl: form.introLogoUrl.trim(),
+      introParagraphs: (form.introParagraphs || [])
+        .map((p) => String(p || '').trim())
+        .filter(Boolean),
+      presidentName: form.presidentName.trim(),
+      presidentRole: form.presidentRole.trim(),
+      presidentBio: form.presidentBio,
+      presidentPhotoUrl: form.presidentPhotoUrl.trim(),
+      sessionsTitle: form.sessionsTitle.trim(),
+      sessionsSchedule: form.sessionsSchedule.trim(),
+      sessionsLocation: form.sessionsLocation.trim(),
+      sessionsNote: form.sessionsNote,
+      commissionsSchedule: form.commissionsSchedule.trim(),
+      contactSectionTitle: form.contactSectionTitle.trim(),
+      contactSectionSubtitle: form.contactSectionSubtitle.trim(),
+      contactEmail: form.contactEmail.trim(),
+      contactPhone: form.contactPhone.trim(),
+      contactAddress: form.contactAddress.trim(),
+      contactHours: form.contactHours.trim(),
+      members: form.members || [],
+      mainFunctions: form.mainFunctions || {},
+      commissions: serializeCommissionsForSave(form.commissions || {}),
+    }),
+    [contentUpdatedAt, form],
+  )
+
+  const persistContent = useCallback(
+    async ({ forceOverwrite = false } = {}) => {
+      const saved = await updateConcejoDeliberanteContent(buildPayload(forceOverwrite))
+      const merged = mergeConcejoDeliberanteContent(
+        DEFAULT_CONCEJO_DELIBERANTE_CONTENT,
+        saved || {},
+      )
+      setForm(cloneContent(merged))
+      setContentUpdatedAt(saved?.updatedAt || null)
+      setError('')
+      setToast({ variant: 'success', message: 'Se guardó el Concejo Deliberante.' })
+    },
+    [buildPayload],
+  )
+
+  const { conflictDialog, handleConflict } = useContentEditorConcurrencyConflict({
+    reloadFromServer: loadFromServer,
+    persistContent,
+    entityLabel: 'el Concejo Deliberante',
+    onReloadSuccess: () =>
+      setToast({
+        variant: 'success',
+        message: 'Se cargó la última versión del servidor.',
+      }),
+    onReloadError: (e) =>
+      setToast({
+        variant: 'error',
+        message: e.message || 'No se pudo recargar el contenido.',
+      }),
+    onForceSaveError: (e) => {
+      const msg = e.message || 'No se pudo guardar el Concejo Deliberante.'
+      setError(msg)
+      setToast({ variant: 'error', message: msg })
+    },
+  })
 
   const handleSubmit = useCallback(async () => {
     setError('')
@@ -69,66 +142,20 @@ export function AdminConcejoDeliberante() {
     }
     setSaving(true)
     try {
-      const payload = {
-        expectedUpdatedAt: contentUpdatedAt,
-        heroEyebrow: form.heroEyebrow.trim(),
-        heroTitle: form.heroTitle.trim(),
-        heroSubtitle: form.heroSubtitle,
-        heroImageUrl: form.heroImageUrl.trim(),
-        introTitle: form.introTitle.trim(),
-        introLogoUrl: form.introLogoUrl.trim(),
-        introParagraphs: (form.introParagraphs || [])
-          .map((p) => String(p || '').trim())
-          .filter(Boolean),
-        presidentName: form.presidentName.trim(),
-        presidentRole: form.presidentRole.trim(),
-        presidentBio: form.presidentBio,
-        presidentPhotoUrl: form.presidentPhotoUrl.trim(),
-        sessionsTitle: form.sessionsTitle.trim(),
-        sessionsSchedule: form.sessionsSchedule.trim(),
-        sessionsLocation: form.sessionsLocation.trim(),
-        sessionsNote: form.sessionsNote,
-        commissionsSchedule: form.commissionsSchedule.trim(),
-        contactSectionTitle: form.contactSectionTitle.trim(),
-        contactSectionSubtitle: form.contactSectionSubtitle.trim(),
-        contactEmail: form.contactEmail.trim(),
-        contactPhone: form.contactPhone.trim(),
-        contactAddress: form.contactAddress.trim(),
-        contactHours: form.contactHours.trim(),
-        members: form.members || [],
-        mainFunctions: form.mainFunctions || {},
-        commissions: form.commissions || {},
-      }
-      const saved = await updateConcejoDeliberanteContent(payload)
-      const merged = mergeConcejoDeliberanteContent(
-        DEFAULT_CONCEJO_DELIBERANTE_CONTENT,
-        saved || {},
-      )
-      setForm(cloneContent(merged))
-      setContentUpdatedAt(saved?.updatedAt || null)
-      setToast({ variant: 'success', message: 'Se guardó el Concejo Deliberante.' })
+      await persistContent()
     } catch (e) {
-      if (isConcurrencyConflictError(e)) setConflictOpen(true)
+      if (handleConflict(e)) return
       const msg = e.message || 'No se pudo guardar.'
       setError(msg)
       setToast({ variant: 'error', message: msg })
     } finally {
       setSaving(false)
     }
-  }, [apiAvailable, contentUpdatedAt, form])
+  }, [apiAvailable, handleConflict, persistContent])
 
   return (
     <>
-      <ConfirmDialog
-        open={conflictOpen}
-        onClose={() => setConflictOpen(false)}
-        title="Cambios desactualizados"
-        description="Otro usuario guardó cambios antes que vos. Recargá la última versión y reintentá."
-        confirmLabel="Recargar última versión y reintentar"
-        cancelLabel="Cerrar"
-        loading={false}
-        onConfirm={() => window.location.reload()}
-      />
+      {conflictDialog}
 
       {toast ? (
         <Toast variant={toast.variant} message={toast.message} onDismiss={dismissToast} />

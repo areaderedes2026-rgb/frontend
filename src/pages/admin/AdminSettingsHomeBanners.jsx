@@ -10,7 +10,7 @@ import { formErrorClass, inputClass, labelClass, textareaClass } from '../../com
 import { DEFAULT_HOME_HERO_CONTENT, mergeHomeHeroContent } from '../../data/homeHeroContent.js'
 import { fetchHomeHeroContent, updateHomeHeroContent } from '../../services/homeHeroService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
-import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
+import { useContentEditorConcurrencyConflict } from '../../hooks/useContentEditorConcurrencyConflict.jsx'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
 import { ROUTES } from '../../utils/constants.js'
 
@@ -122,7 +122,7 @@ function normalizeSlideForSave(slide, index) {
   }
 }
 
-function buildPayload(form, expectedUpdatedAt = null) {
+function buildPayload(form, expectedUpdatedAt = null, forceOverwrite = false) {
   const slides = stripRowIds(form.slides || []).map((slide, idx) => normalizeSlideForSave(slide, idx))
   const activeSlideId = slides.some((slide) => slide.id === form.activeSlideId)
     ? form.activeSlideId
@@ -130,6 +130,7 @@ function buildPayload(form, expectedUpdatedAt = null) {
 
   return {
     expectedUpdatedAt,
+    forceOverwrite,
     displayMode: form.displayMode === 'carousel' ? 'carousel' : 'single',
     activeSlideId,
     autoplayEnabled: form.autoplayEnabled !== false,
@@ -168,7 +169,6 @@ export function AdminSettingsHomeBanners() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [toast, setToast] = useState(null)
-  const [conflictOpen, setConflictOpen] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [editingRowId, setEditingRowId] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
@@ -281,6 +281,37 @@ export function AdminSettingsHomeBanners() {
     })
   }
 
+  const persistContent = useCallback(
+    async ({ forceOverwrite = false } = {}) => {
+      const saved = await updateHomeHeroContent(
+        buildPayload(form, contentUpdatedAt, forceOverwrite),
+      )
+      const merged = mergeHomeHeroContent(DEFAULT_HOME_HERO_CONTENT, saved || {})
+      const nextForm = withRowIds(merged)
+      setForm(nextForm)
+      setSavedSnapshot(snapshotFromForm(nextForm))
+      setContentUpdatedAt(saved?.updatedAt || null)
+      setError('')
+      setToast({ type: 'success', message: 'Banners de Inicio actualizados.' })
+    },
+    [contentUpdatedAt, form],
+  )
+
+  const { conflictDialog, handleConflict } = useContentEditorConcurrencyConflict({
+    reloadFromServer: load,
+    persistContent,
+    entityLabel: 'los banners de Inicio',
+    onReloadSuccess: () =>
+      setToast({ type: 'success', message: 'Se cargó la última versión del servidor.' }),
+    onReloadError: (e) =>
+      setToast({ type: 'error', message: e.message || 'No se pudo recargar el contenido.' }),
+    onForceSaveError: (e) => {
+      const message = e.message || 'No se pudieron guardar los banners de Inicio.'
+      setError(message)
+      setToast({ type: 'error', message })
+    },
+  })
+
   async function handleSubmit(event) {
     event?.preventDefault?.()
     if (!isApiConfigured()) {
@@ -290,16 +321,9 @@ export function AdminSettingsHomeBanners() {
     setSaving(true)
     setError('')
     try {
-      const payload = buildPayload(form, contentUpdatedAt)
-      const saved = await updateHomeHeroContent(payload)
-      const merged = mergeHomeHeroContent(DEFAULT_HOME_HERO_CONTENT, saved || {})
-      const nextForm = withRowIds(merged)
-      setForm(nextForm)
-      setSavedSnapshot(snapshotFromForm(nextForm))
-      setContentUpdatedAt(saved?.updatedAt || null)
-      setToast({ type: 'success', message: 'Banners de Inicio actualizados.' })
+      await persistContent()
     } catch (e) {
-      if (isConcurrencyConflictError(e)) setConflictOpen(true)
+      if (handleConflict(e)) return
       const message = e.message || 'No se pudieron guardar los banners de Inicio.'
       setError(message)
       setToast({ type: 'error', message })
@@ -311,16 +335,7 @@ export function AdminSettingsHomeBanners() {
   return (
     <>
       {toast ? <Toast variant={toast.type} message={toast.message} onDismiss={dismissToast} /> : null}
-      <ConfirmDialog
-        open={conflictOpen}
-        onClose={() => setConflictOpen(false)}
-        title="Cambios desactualizados"
-        description="Otro usuario guardó cambios antes que vos. Recargá la última versión y reintentá."
-        confirmLabel="Recargar última versión y reintentar"
-        cancelLabel="Cerrar"
-        loading={false}
-        onConfirm={() => window.location.reload()}
-      />
+      {conflictDialog}
       <ConfirmDialog
         open={deleteTarget != null}
         onClose={() => {

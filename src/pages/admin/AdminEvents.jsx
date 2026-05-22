@@ -10,6 +10,7 @@ import {
   labelClass,
   textareaClass,
 } from '../../components/ui/formStyles.js'
+import { useContentEditorConcurrencyConflict } from '../../hooks/useContentEditorConcurrencyConflict.jsx'
 import {
   createEvent,
   deleteEvent,
@@ -21,7 +22,6 @@ import {
   updateSitePageBanner,
 } from '../../services/sitePageBannerService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
-import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
 
 const PAGE_SIZE = 20
 
@@ -137,7 +137,6 @@ export function AdminEvents() {
   const [draft, setDraft] = useState(emptyDraft())
   const [formError, setFormError] = useState('')
   const [saving, setSaving] = useState(false)
-  const [conflictOpen, setConflictOpen] = useState(false)
 
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
@@ -146,7 +145,6 @@ export function AdminEvents() {
   const [bannerSaving, setBannerSaving] = useState(false)
   const [bannerImageUrl, setBannerImageUrl] = useState('')
   const [bannerUpdatedAt, setBannerUpdatedAt] = useState(null)
-  const [bannerConflictOpen, setBannerConflictOpen] = useState(false)
 
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('Todos')
@@ -156,6 +154,122 @@ export function AdminEvents() {
   const [flash, setFlash] = useState('')
   const [toast, setToast] = useState(null)
   const dismissToast = useCallback(() => setToast(null), [])
+
+  const loadFromServer = useCallback(async () => {
+    const data = await fetchAdminEvents()
+    const nextItems = Array.isArray(data) ? data : []
+    setItems(nextItems)
+    if (editing?.id) {
+      const fresh = nextItems.find((item) => item.id === editing.id)
+      if (fresh) {
+        setEditing(fresh)
+        setDraft({
+          ...emptyDraft(),
+          ...fresh,
+          eventDate: fresh.eventDate
+            ? new Date(fresh.eventDate).toISOString().slice(0, 16)
+            : '',
+        })
+      }
+    }
+  }, [editing?.id])
+
+  const loadBannerFromServer = useCallback(async () => {
+    const content = await fetchSitePageBanner('events')
+    setBannerImageUrl(String(content?.heroImageUrl || ''))
+    setBannerUpdatedAt(content?.updatedAt || null)
+  }, [])
+
+  const persistEvent = useCallback(
+    async ({ forceOverwrite = false } = {}) => {
+      const payload = {
+        title: draft.title.trim(),
+        place: draft.place.trim(),
+        eventDate: new Date(draft.eventDate).toISOString(),
+        summary: draft.summary.trim(),
+        flyerUrl: draft.flyerUrl.trim(),
+        sortOrder: Number(draft.sortOrder) || 0,
+        isActive: draft.isActive !== false,
+        forceOverwrite,
+      }
+      if (editing) {
+        await updateEvent(editing.id, {
+          ...payload,
+          expectedUpdatedAt: editing.updatedAt || null,
+        })
+      } else {
+        await createEvent(payload)
+      }
+      setModalOpen(false)
+      setFlash(editing ? 'Evento actualizado correctamente.' : 'Evento creado correctamente.')
+      setToast({
+        type: 'success',
+        message: editing ? 'Evento actualizado.' : 'Evento creado.',
+      })
+      await loadFromServer()
+    },
+    [draft, editing, loadFromServer],
+  )
+
+  const persistBanner = useCallback(
+    async ({ forceOverwrite = false } = {}) => {
+      const saved = await updateSitePageBanner('events', {
+        heroImageUrl: bannerImageUrl.trim(),
+        expectedUpdatedAt: bannerUpdatedAt,
+        forceOverwrite,
+      })
+      setBannerImageUrl(String(saved?.heroImageUrl || ''))
+      setBannerUpdatedAt(saved?.updatedAt || null)
+      setBannerOpen(false)
+      setFlash('Se actualizó la portada de Eventos.')
+      setToast({ type: 'success', message: 'Portada actualizada.' })
+    },
+    [bannerImageUrl, bannerUpdatedAt],
+  )
+
+  const { conflictDialog: eventConflictDialog, handleConflict: handleEventConflict } =
+    useContentEditorConcurrencyConflict({
+      reloadFromServer: loadFromServer,
+      persistContent: persistEvent,
+      entityLabel: 'este evento',
+      onReloadSuccess: () =>
+        setToast({
+          type: 'success',
+          message: 'Se cargó la última versión del servidor.',
+        }),
+      onReloadError: (e) =>
+        setToast({
+          type: 'error',
+          message: e.message || 'No se pudo recargar los eventos.',
+        }),
+      onForceSaveError: (e) => {
+        const msg = e.message || 'No se pudo guardar el evento.'
+        setFormError(msg)
+        setToast({ type: 'error', message: msg })
+      },
+    })
+
+  const { conflictDialog: bannerConflictDialog, handleConflict: handleBannerConflict } =
+    useContentEditorConcurrencyConflict({
+      reloadFromServer: loadBannerFromServer,
+      persistContent: persistBanner,
+      entityLabel: 'la portada de Eventos',
+      onReloadSuccess: () =>
+        setToast({
+          type: 'success',
+          message: 'Se cargó la última versión de la portada.',
+        }),
+      onReloadError: (e) =>
+        setToast({
+          type: 'error',
+          message: e.message || 'No se pudo recargar la portada.',
+        }),
+      onForceSaveError: (e) =>
+        setToast({
+          type: 'error',
+          message: e.message || 'No se pudo guardar la portada de Eventos.',
+        }),
+    })
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -299,32 +413,9 @@ export function AdminEvents() {
       message: editing ? 'Guardando cambios…' : 'Creando evento…',
     })
     try {
-      const payload = {
-        title: draft.title.trim(),
-        place: draft.place.trim(),
-        eventDate: new Date(draft.eventDate).toISOString(),
-        summary: draft.summary.trim(),
-        flyerUrl: draft.flyerUrl.trim(),
-        sortOrder: Number(draft.sortOrder) || 0,
-        isActive: draft.isActive !== false,
-      }
-      if (editing) {
-        await updateEvent(editing.id, {
-          ...payload,
-          expectedUpdatedAt: editing.updatedAt || null,
-        })
-      } else {
-        await createEvent(payload)
-      }
-      setModalOpen(false)
-      setFlash(editing ? 'Evento actualizado correctamente.' : 'Evento creado correctamente.')
-      setToast({
-        type: 'success',
-        message: editing ? 'Evento actualizado.' : 'Evento creado.',
-      })
-      await load()
+      await persistEvent()
     } catch (e) {
-      if (isConcurrencyConflictError(e)) setConflictOpen(true)
+      if (handleEventConflict(e)) return
       const msg = e.message || 'No se pudo guardar el evento.'
       setFormError(msg)
       setToast({ type: 'error', message: msg })
@@ -358,17 +449,9 @@ export function AdminEvents() {
     }
     setBannerSaving(true)
     try {
-      const saved = await updateSitePageBanner('events', {
-        heroImageUrl: bannerImageUrl.trim(),
-        expectedUpdatedAt: bannerUpdatedAt,
-      })
-      setBannerImageUrl(String(saved?.heroImageUrl || ''))
-      setBannerUpdatedAt(saved?.updatedAt || null)
-      setBannerOpen(false)
-      setFlash('Se actualizó la portada de Eventos.')
-      setToast({ type: 'success', message: 'Portada actualizada.' })
+      await persistBanner()
     } catch (e) {
-      if (isConcurrencyConflictError(e)) setBannerConflictOpen(true)
+      if (handleBannerConflict(e)) return
       const msg = e.message || 'No se pudo guardar la portada de Eventos.'
       setToast({ type: 'error', message: msg })
     } finally {
@@ -385,24 +468,8 @@ export function AdminEvents() {
         <Toast variant={toast.type} message={toast.message} onDismiss={dismissToast} />
       ) : null}
 
-      <ConfirmDialog
-        open={conflictOpen}
-        onClose={() => setConflictOpen(false)}
-        title="Cambios desactualizados"
-        description="Otro usuario guardó cambios antes que vos. Recargá la última versión y reintentá."
-        confirmLabel="Recargar última versión y reintentar"
-        cancelLabel="Cerrar"
-        onConfirm={() => window.location.reload()}
-      />
-      <ConfirmDialog
-        open={bannerConflictOpen}
-        onClose={() => setBannerConflictOpen(false)}
-        title="Cambios desactualizados"
-        description="Otro usuario guardó cambios antes que vos. Recargá la última versión y reintentá."
-        confirmLabel="Recargar última versión y reintentar"
-        cancelLabel="Cerrar"
-        onConfirm={() => window.location.reload()}
-      />
+      {eventConflictDialog}
+      {bannerConflictDialog}
       <HeroImageModal
         open={bannerOpen}
         title="Portada de Eventos"

@@ -4,6 +4,7 @@ import {
   jsonAuthHeaders,
   notifyUnauthorizedIfNeeded,
 } from '../utils/authStorage.js'
+import { errorFromApiResponse } from '../utils/concurrencyConflict.js'
 
 async function apiErrorMessage(res) {
   const data = await res.json().catch(() => ({}))
@@ -60,7 +61,7 @@ export async function updateUser(id, payload) {
   })
   notifyUnauthorizedIfNeeded(res)
   if (!res.ok) {
-    throw new Error((await apiErrorMessage(res)) || 'No se pudo actualizar el usuario.')
+    throw await errorFromApiResponse(res, 'No se pudo actualizar el usuario.')
   }
   return res.json()
 }

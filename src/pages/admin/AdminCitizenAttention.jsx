@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { AdminCitizenAttentionEditorPreview } from '../../components/admin/AdminCitizenAttentionEditorPreview.jsx'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
-import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
+import { useContentEditorConcurrencyConflict } from '../../hooks/useContentEditorConcurrencyConflict.jsx'
 import {
   DEFAULT_CITIZEN_ATTENTION_CONTENT,
   mergeCitizenAttentionContent,
@@ -12,7 +12,6 @@ import {
   updateCitizenAttentionContent,
 } from '../../services/citizenAttentionService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
-import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
 
 function mapContentToForm(content) {
   return {
@@ -60,7 +59,6 @@ export function AdminCitizenAttention() {
   const [contentError, setContentError] = useState('')
 
   const [toast, setToast] = useState(null)
-  const [conflictOpen, setConflictOpen] = useState(false)
   const dismissToast = useCallback(() => setToast(null), [])
 
   const loadContent = useCallback(async () => {
@@ -86,17 +84,11 @@ export function AdminCitizenAttention() {
     void loadContent()
   }, [loadContent])
 
-  const handleSaveContent = useCallback(async () => {
-    if (!isApiConfigured()) {
-      setToast({ variant: 'error', message: 'No hay conexión disponible con el backend.' })
-      return
-    }
-    setContentSaving(true)
-    setContentError('')
-    try {
-      const payload = {
-        expectedUpdatedAt: contentUpdatedAt,
-        heroEyebrow: contentForm.heroEyebrow.trim(),
+  const buildPayload = useCallback(
+    (forceOverwrite = false) => ({
+      expectedUpdatedAt: contentUpdatedAt,
+      forceOverwrite,
+      heroEyebrow: contentForm.heroEyebrow.trim(),
         heroTitle: contentForm.heroTitle.trim(),
         heroSubtitle: contentForm.heroSubtitle,
         heroImageUrl: contentForm.heroImageUrl.trim(),
@@ -134,34 +126,58 @@ export function AdminCitizenAttention() {
           if (!value && !label) return null
           return { value, label }
         }),
-        formIntroText: contentForm.formIntroText,
-      }
-      const saved = await updateCitizenAttentionContent(payload)
+      formIntroText: contentForm.formIntroText,
+    }),
+    [contentForm, contentUpdatedAt],
+  )
+
+  const persistContent = useCallback(
+    async ({ forceOverwrite = false } = {}) => {
+      const saved = await updateCitizenAttentionContent(buildPayload(forceOverwrite))
       const merged = mergeCitizenAttentionContent(DEFAULT_CITIZEN_ATTENTION_CONTENT, saved || {})
       setContentForm(mapContentToForm(merged))
       setContentUpdatedAt(saved?.updatedAt || null)
+      setContentError('')
       setToast({ variant: 'success', message: 'Se guardó Atención al ciudadano.' })
+    },
+    [buildPayload],
+  )
+
+  const { conflictDialog, handleConflict } = useContentEditorConcurrencyConflict({
+    reloadFromServer: loadContent,
+    persistContent,
+    entityLabel: 'Atención al ciudadano',
+    onReloadSuccess: () =>
+      setToast({ variant: 'success', message: 'Se cargó la última versión del servidor.' }),
+    onReloadError: (e) =>
+      setToast({ variant: 'error', message: e.message || 'No se pudo recargar el contenido.' }),
+    onForceSaveError: (e) => {
+      setContentError(e.message || 'No se pudo guardar Atención al ciudadano.')
+      setToast({ variant: 'error', message: e.message || 'No se pudo guardar Atención al ciudadano.' })
+    },
+  })
+
+  const handleSaveContent = useCallback(async () => {
+    if (!isApiConfigured()) {
+      setToast({ variant: 'error', message: 'No hay conexión disponible con el backend.' })
+      return
+    }
+    setContentSaving(true)
+    setContentError('')
+    try {
+      await persistContent()
     } catch (e) {
-      if (isConcurrencyConflictError(e)) setConflictOpen(true)
+      if (handleConflict(e)) return
       setContentError(e.message || 'No se pudo guardar Atención al ciudadano.')
       setToast({ variant: 'error', message: e.message || 'No se pudo guardar Atención al ciudadano.' })
     } finally {
       setContentSaving(false)
     }
-  }, [contentUpdatedAt, contentForm])
+  }, [handleConflict, persistContent])
 
   return (
     <>
-      <ConfirmDialog
-        open={conflictOpen}
-        onClose={() => setConflictOpen(false)}
-        title="Cambios desactualizados"
-        description="Otro usuario guardó cambios antes que vos. Recargá la última versión y reintentá."
-        confirmLabel="Recargar última versión y reintentar"
-        cancelLabel="Cerrar"
-        loading={false}
-        onConfirm={() => window.location.reload()}
-      />
+      {conflictDialog}
       {toast ? <Toast variant={toast.variant} message={toast.message} onDismiss={dismissToast} /> : null}
 
       <AdminPageShell

@@ -7,6 +7,7 @@ import {
   jsonAuthHeaders,
   notifyUnauthorizedIfNeeded,
 } from '../utils/authStorage.js'
+import { errorFromApiResponse } from '../utils/concurrencyConflict.js'
 
 const API_BASE = getApiBase()
 
@@ -339,8 +340,7 @@ export async function updateNews(id, payload) {
     })
     notifyUnauthorizedIfNeeded(res)
     if (!res.ok) {
-      const msg = await apiErrorMessage(res)
-      throw new Error(msg || 'No se pudo actualizar la noticia')
+      throw await errorFromApiResponse(res, 'No se pudo actualizar la noticia')
     }
     return res.json()
   }

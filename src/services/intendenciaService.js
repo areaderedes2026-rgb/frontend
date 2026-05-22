@@ -1,6 +1,7 @@
 import { DEFAULT_INTENDENCIA_CONTENT } from '../data/intendenciaContent.js'
 import { getApiBase } from '../utils/apiConfig.js'
 import { jsonAuthHeaders, notifyUnauthorizedIfNeeded } from '../utils/authStorage.js'
+import { errorFromApiResponse } from '../utils/concurrencyConflict.js'
 
 function base() {
   return getApiBase().trim()
@@ -32,7 +33,7 @@ export async function updateIntendenciaContent(payload) {
   })
   notifyUnauthorizedIfNeeded(res)
   if (!res.ok) {
-    throw new Error((await apiErrorMessage(res)) || 'No se pudo guardar Intendencia.')
+    throw await errorFromApiResponse(res, 'No se pudo guardar Intendencia.')
   }
   const data = await res.json().catch(() => ({}))
   return data.content || null

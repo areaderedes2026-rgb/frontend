@@ -9,6 +9,7 @@ import {
   inputClass,
   labelClass,
 } from '../../components/ui/formStyles.js'
+import { useContentEditorConcurrencyConflict } from '../../hooks/useContentEditorConcurrencyConflict.jsx'
 import {
   createCategory,
   deleteCategory,
@@ -16,7 +17,6 @@ import {
   updateCategory,
 } from '../../services/categoriesService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
-import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
 
 export function AdminCategories() {
   const [items, setItems] = useState([])
@@ -24,7 +24,6 @@ export function AdminCategories() {
   const [error, setError] = useState('')
 
   const [toast, setToast] = useState(null)
-  const [conflictOpen, setConflictOpen] = useState(false)
   const dismissToast = useCallback(() => setToast(null), [])
 
   const [modal, setModal] = useState(null)
@@ -37,7 +36,7 @@ export function AdminCategories() {
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
 
-  const load = useCallback(async () => {
+  const loadFromServer = useCallback(async () => {
     if (!isApiConfigured()) return
     setError('')
     setLoading(true)
@@ -56,9 +55,47 @@ export function AdminCategories() {
     }
   }, [])
 
+  const persistContent = useCallback(
+    async ({ forceOverwrite = false } = {}) => {
+      if (modal?.mode !== 'edit') return
+      const name = cName.trim()
+      if (!name) {
+        throw new Error('El nombre es obligatorio.')
+      }
+      const existing = items.find((x) => Number(x.id) === Number(modal.id))
+      const payload = { name, forceOverwrite }
+      const slug = cSlug.trim()
+      if (slug) payload.slug = slug
+      payload.expectedUpdatedAt = existing?.updatedAt || null
+      await updateCategory(modal.id, payload)
+      setModal(null)
+      await loadFromServer()
+      setToast({ type: 'success', message: 'Categoría actualizada.' })
+    },
+    [cName, cSlug, items, loadFromServer, modal],
+  )
+
+  const { conflictDialog, handleConflict } = useContentEditorConcurrencyConflict({
+    reloadFromServer: loadFromServer,
+    persistContent,
+    entityLabel: 'esta categoría',
+    onReloadSuccess: () =>
+      setToast({
+        type: 'success',
+        message: 'Se cargó la última versión del servidor.',
+      }),
+    onReloadError: (e) =>
+      setToast({
+        type: 'error',
+        message: e.message || 'No se pudo recargar las categorías.',
+      }),
+    onForceSaveError: (e) =>
+      setToast({ type: 'error', message: e.message || 'No se pudo guardar.' }),
+  })
+
   useEffect(() => {
-    load()
-  }, [load])
+    loadFromServer()
+  }, [loadFromServer])
 
   function openCreate() {
     setFormError('')
@@ -95,7 +132,7 @@ export function AdminCategories() {
       if (slug) payload.slug = slug
       await createCategory(payload)
       setModal(null)
-      await load()
+      await loadFromServer()
       setToast({ type: 'success', message: 'Categoría creada correctamente.' })
     } catch (e) {
       setToast({ type: 'error', message: e.message || 'No se pudo crear.' })
@@ -115,17 +152,9 @@ export function AdminCategories() {
     }
     setModalBusy(true)
     try {
-      const existing = items.find((x) => Number(x.id) === Number(modal.id))
-      const payload = { name }
-      const slug = cSlug.trim()
-      if (slug) payload.slug = slug
-      payload.expectedUpdatedAt = existing?.updatedAt || null
-      await updateCategory(modal.id, payload)
-      setModal(null)
-      await load()
-      setToast({ type: 'success', message: 'Categoría actualizada.' })
+      await persistContent()
     } catch (e) {
-      if (isConcurrencyConflictError(e)) setConflictOpen(true)
+      if (handleConflict(e)) return
       setToast({ type: 'error', message: e.message || 'No se pudo guardar.' })
     } finally {
       setModalBusy(false)
@@ -138,7 +167,7 @@ export function AdminCategories() {
     try {
       await deleteCategory(deleteTarget.id)
       setDeleteTarget(null)
-      await load()
+      await loadFromServer()
       setToast({ type: 'success', message: 'Categoría eliminada.' })
     } catch (e) {
       setToast({
@@ -171,17 +200,7 @@ export function AdminCategories() {
       {toast ? (
         <Toast variant={toast.type} message={toast.message} onDismiss={dismissToast} />
       ) : null}
-      <ConfirmDialog
-        open={conflictOpen}
-        onClose={() => setConflictOpen(false)}
-        title="Cambios desactualizados"
-        description="Otro usuario guardó cambios antes que vos. Recargá la última versión y reintentá."
-        confirmLabel="Recargar última versión y reintentar"
-        cancelLabel="Cerrar"
-        loading={false}
-        onConfirm={() => window.location.reload()}
-      />
-
+      {conflictDialog}
       <ConfirmDialog
         open={deleteTarget != null}
         onClose={() => {

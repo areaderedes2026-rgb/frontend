@@ -5,10 +5,10 @@ import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
 import { Modal } from '../../components/ui/Modal.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
 import { formErrorClass, inputClass, labelClass } from '../../components/ui/formStyles.js'
+import { useContentEditorConcurrencyConflict } from '../../hooks/useContentEditorConcurrencyConflict.jsx'
 import { DEFAULT_HOME_MAP_CONTENT, mergeHomeMapContent } from '../../data/homeMapContent.js'
 import { fetchHomeMapContent, updateHomeMapContent } from '../../services/homeMapService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
-import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
 
 function cleanText(value) {
   return String(value || '').trim()
@@ -47,7 +47,6 @@ export function AdminSettingsHomeMap() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [toast, setToast] = useState(null)
-  const [conflictOpen, setConflictOpen] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [editingRowId, setEditingRowId] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
@@ -68,27 +67,92 @@ export function AdminSettingsHomeMap() {
   const dismissToast = useCallback(() => setToast(null), [])
   const isEditing = Boolean(editingRowId)
 
-  const load = useCallback(async () => {
-    setLoading(true)
+  const loadFromServer = useCallback(async () => {
+    const remote = await fetchHomeMapContent()
+    setForm(withRowIds(mergeHomeMapContent(DEFAULT_HOME_MAP_CONTENT, remote || {})))
+    setContentUpdatedAt(remote?.updatedAt || null)
     setError('')
-    try {
-      const remote = await fetchHomeMapContent()
-      setForm(withRowIds(mergeHomeMapContent(DEFAULT_HOME_MAP_CONTENT, remote || {})))
-      setContentUpdatedAt(remote?.updatedAt || null)
-    } catch (e) {
-      setError(e.message || 'No se pudo cargar la configuración del mapa.')
-    } finally {
-      setLoading(false)
-    }
   }, [])
+
+  const buildPayload = useCallback(
+    (forceOverwrite = false) => ({
+      expectedUpdatedAt: contentUpdatedAt,
+      forceOverwrite,
+      center: {
+        lat: Number(form.center.lat) || -26.2312,
+        lng: Number(form.center.lng) || -65.2818,
+      },
+      zoom: Math.min(18, Math.max(10, Math.round(Number(form.zoom) || 14))),
+      points: stripRowIds(form.points)
+        .map((point, idx) => ({
+          id: cleanText(point.id) || `punto-${idx + 1}`,
+          title: cleanText(point.title),
+          subtitle: cleanText(point.subtitle),
+          address: cleanText(point.address),
+          lat: Number(point.lat),
+          lng: Number(point.lng),
+          isActive: point.isActive !== false,
+          sortOrder: Math.max(0, Math.round(Number(point.sortOrder) || idx * 10)),
+        }))
+        .filter((point) => point.title || point.address || point.subtitle),
+    }),
+    [contentUpdatedAt, form],
+  )
+
+  const persistContent = useCallback(
+    async ({ forceOverwrite = false } = {}) => {
+      const saved = await updateHomeMapContent(buildPayload(forceOverwrite))
+      setForm(withRowIds(mergeHomeMapContent(DEFAULT_HOME_MAP_CONTENT, saved || {})))
+      setContentUpdatedAt(saved?.updatedAt || null)
+      setError('')
+      setToast({ type: 'success', message: 'Mapa de Inicio actualizado.' })
+    },
+    [buildPayload],
+  )
+
+  const { conflictDialog, handleConflict } = useContentEditorConcurrencyConflict({
+    reloadFromServer: loadFromServer,
+    persistContent,
+    entityLabel: 'el mapa de Inicio',
+    onReloadSuccess: () =>
+      setToast({
+        type: 'success',
+        message: 'Se cargó la última versión del servidor.',
+      }),
+    onReloadError: (e) =>
+      setToast({
+        type: 'error',
+        message: e.message || 'No se pudo recargar el contenido.',
+      }),
+    onForceSaveError: (e) => {
+      const message = e.message || 'No se pudo guardar el mapa de Inicio.'
+      setError(message)
+      setToast({ type: 'error', message })
+    },
+  })
 
   useEffect(() => {
     if (!isApiConfigured()) {
       setLoading(false)
       return
     }
+    let cancelled = false
+    async function load() {
+      setLoading(true)
+      setError('')
+      try {
+        await loadFromServer()
+      } catch (e) {
+        if (!cancelled) setError(e.message || 'No se pudo cargar la configuración del mapa.')
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
     void load()
-  }, [load])
+    return () => {
+      cancelled = true
+    }
+  }, [loadFromServer])
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -99,32 +163,9 @@ export function AdminSettingsHomeMap() {
     setSaving(true)
     setError('')
     try {
-      const payload = {
-        expectedUpdatedAt: contentUpdatedAt,
-        center: {
-          lat: Number(form.center.lat) || -26.2312,
-          lng: Number(form.center.lng) || -65.2818,
-        },
-        zoom: Math.min(18, Math.max(10, Math.round(Number(form.zoom) || 14))),
-        points: stripRowIds(form.points)
-          .map((point, idx) => ({
-            id: cleanText(point.id) || `punto-${idx + 1}`,
-            title: cleanText(point.title),
-            subtitle: cleanText(point.subtitle),
-            address: cleanText(point.address),
-            lat: Number(point.lat),
-            lng: Number(point.lng),
-            isActive: point.isActive !== false,
-            sortOrder: Math.max(0, Math.round(Number(point.sortOrder) || idx * 10)),
-          }))
-          .filter((point) => point.title || point.address || point.subtitle),
-      }
-      const saved = await updateHomeMapContent(payload)
-      setForm(withRowIds(mergeHomeMapContent(DEFAULT_HOME_MAP_CONTENT, saved || {})))
-      setContentUpdatedAt(saved?.updatedAt || null)
-      setToast({ type: 'success', message: 'Mapa de Inicio actualizado.' })
+      await persistContent()
     } catch (e) {
-      if (isConcurrencyConflictError(e)) setConflictOpen(true)
+      if (handleConflict(e)) return
       const message = e.message || 'No se pudo guardar el mapa de Inicio.'
       setError(message)
       setToast({ type: 'error', message })
@@ -250,16 +291,7 @@ export function AdminSettingsHomeMap() {
   return (
     <>
       {toast ? <Toast variant={toast.type} message={toast.message} onDismiss={dismissToast} /> : null}
-      <ConfirmDialog
-        open={conflictOpen}
-        onClose={() => setConflictOpen(false)}
-        title="Cambios desactualizados"
-        description="Otro usuario guardó cambios antes que vos. Recargá la última versión y reintentá."
-        confirmLabel="Recargar última versión y reintentar"
-        cancelLabel="Cerrar"
-        loading={false}
-        onConfirm={() => window.location.reload()}
-      />
+      {conflictDialog}
       <ConfirmDialog
         open={deleteTarget != null}
         onClose={() => {

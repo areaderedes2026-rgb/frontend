@@ -2,19 +2,18 @@ import { useCallback, useEffect, useState } from 'react'
 import { AdminHistoryEditorPreview } from '../../components/admin/AdminHistoryEditorPreview.jsx'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
 import { HeroImageModal } from '../../components/admin/HeroImageModal.jsx'
-import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
 import {
   DEFAULT_HISTORY_CONTENT,
   mergeHistoryContent,
 } from '../../data/historyContent.js'
+import { useContentEditorConcurrencyConflict } from '../../hooks/useContentEditorConcurrencyConflict.jsx'
 import {
   fetchHistoryContent,
   updateHistoryContent,
 } from '../../services/historyService.js'
 import { fetchTourismPlacesAdmin } from '../../services/tourismPlacesService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
-import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
 
 function mapToForm(content) {
   return {
@@ -55,28 +54,29 @@ export function AdminHistory() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [conflictOpen, setConflictOpen] = useState(false)
   const [heroImageOpen, setHeroImageOpen] = useState(false)
   const [toast, setToast] = useState(null)
   const dismissToast = useCallback(() => setToast(null), [])
+
+  const loadFromServer = useCallback(async () => {
+    const remote = await fetchHistoryContent()
+    const merged = remote ? mergeHistoryContent(DEFAULT_HISTORY_CONTENT, remote) : DEFAULT_HISTORY_CONTENT
+    setForm(mapToForm(merged))
+    setContentUpdatedAt(remote?.updatedAt || null)
+    setError('')
+  }, [])
 
   useEffect(() => {
     let cancelled = false
     async function loadContent() {
       setError('')
       setLoading(true)
-      const base = DEFAULT_HISTORY_CONTENT
       if (!isApiConfigured()) {
         if (!cancelled) setLoading(false)
         return
       }
       try {
-        const remote = await fetchHistoryContent()
-        const merged = remote ? mergeHistoryContent(base, remote) : base
-        if (!cancelled) {
-          setForm(mapToForm(merged))
-          setContentUpdatedAt(remote?.updatedAt || null)
-        }
+        await loadFromServer()
       } catch (e) {
         if (!cancelled) setError(e.message || 'No se pudo cargar la historia.')
       } finally {
@@ -87,7 +87,7 @@ export function AdminHistory() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [loadFromServer])
 
   useEffect(() => {
     let cancelled = false
@@ -105,6 +105,61 @@ export function AdminHistory() {
     }
   }, [])
 
+  const buildPayload = useCallback(
+    (forceOverwrite = false) => ({
+      expectedUpdatedAt: contentUpdatedAt,
+      forceOverwrite,
+      heroBadge: form.heroBadge.trim(),
+      heroTitle: form.heroTitle.trim(),
+      heroSubtitle: form.heroSubtitle.trim(),
+      heroImageUrl: form.heroImageUrl.trim(),
+      introStory: form.introStory,
+      ctaPrimaryLabel: form.ctaPrimaryLabel.trim(),
+      ctaPrimaryHref: form.ctaPrimaryHref.trim(),
+      ctaSecondaryLabel: form.ctaSecondaryLabel.trim(),
+      ctaSecondaryHref: form.ctaSecondaryHref.trim(),
+      legacyItems: cleanRows(form.legacyItems, ['title', 'text']),
+      closingTitle: form.closingTitle.trim(),
+      closingText: form.closingText,
+    }),
+    [contentUpdatedAt, form],
+  )
+
+  const persistContent = useCallback(
+    async ({ forceOverwrite = false } = {}) => {
+      const saved = await updateHistoryContent(buildPayload(forceOverwrite))
+      if (saved) {
+        const merged = mergeHistoryContent(DEFAULT_HISTORY_CONTENT, saved)
+        setForm(mapToForm(merged))
+        setContentUpdatedAt(saved?.updatedAt || null)
+      }
+      setError('')
+      setToast({ type: 'success', message: 'Se guardaron los cambios de Historia.' })
+    },
+    [buildPayload],
+  )
+
+  const { conflictDialog, handleConflict } = useContentEditorConcurrencyConflict({
+    reloadFromServer: loadFromServer,
+    persistContent,
+    entityLabel: 'Historia',
+    onReloadSuccess: () =>
+      setToast({
+        type: 'success',
+        message: 'Se cargó la última versión del servidor.',
+      }),
+    onReloadError: (e) =>
+      setToast({
+        type: 'error',
+        message: e.message || 'No se pudo recargar el contenido.',
+      }),
+    onForceSaveError: (e) => {
+      const msg = e.message || 'No se pudo guardar la historia.'
+      setError(msg)
+      setToast({ type: 'error', message: msg })
+    },
+  })
+
   const handleSubmit = useCallback(async () => {
     setError('')
     if (!isApiConfigured()) {
@@ -116,48 +171,19 @@ export function AdminHistory() {
     }
     setSaving(true)
     try {
-      const payload = {
-        expectedUpdatedAt: contentUpdatedAt,
-        heroBadge: form.heroBadge.trim(),
-        heroTitle: form.heroTitle.trim(),
-        heroSubtitle: form.heroSubtitle.trim(),
-        heroImageUrl: form.heroImageUrl.trim(),
-        introStory: form.introStory,
-        ctaPrimaryLabel: form.ctaPrimaryLabel.trim(),
-        ctaPrimaryHref: form.ctaPrimaryHref.trim(),
-        ctaSecondaryLabel: form.ctaSecondaryLabel.trim(),
-        ctaSecondaryHref: form.ctaSecondaryHref.trim(),
-        legacyItems: cleanRows(form.legacyItems, ['title', 'text']),
-        closingTitle: form.closingTitle.trim(),
-        closingText: form.closingText,
-      }
-      const saved = await updateHistoryContent(payload)
-      if (saved) {
-        const merged = mergeHistoryContent(DEFAULT_HISTORY_CONTENT, saved)
-        setForm(mapToForm(merged))
-        setContentUpdatedAt(saved?.updatedAt || null)
-      }
-      setToast({ type: 'success', message: 'Se guardaron los cambios de Historia.' })
+      await persistContent()
     } catch (e) {
-      if (isConcurrencyConflictError(e)) setConflictOpen(true)
+      if (handleConflict(e)) return
       setError(e.message || 'No se pudo guardar la historia.')
       setToast({ type: 'error', message: e.message || 'No se pudo guardar la historia.' })
     } finally {
       setSaving(false)
     }
-  }, [contentUpdatedAt, form])
+  }, [handleConflict, persistContent])
 
   return (
     <>
-      <ConfirmDialog
-        open={conflictOpen}
-        onClose={() => setConflictOpen(false)}
-        title="Cambios desactualizados"
-        description="Otro usuario guardó cambios antes que vos. Recargá la última versión y reintentá."
-        confirmLabel="Recargar última versión y reintentar"
-        cancelLabel="Cerrar"
-        onConfirm={() => window.location.reload()}
-      />
+      {conflictDialog}
       <HeroImageModal
         open={heroImageOpen}
         title="Portada de Historia"

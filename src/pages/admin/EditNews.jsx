@@ -4,6 +4,7 @@ import { AdminFormSection } from '../../components/admin/AdminFormSection.jsx'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
+import { useContentEditorConcurrencyConflict } from '../../hooks/useContentEditorConcurrencyConflict.jsx'
 import {
   deleteNews,
   fetchNewsById,
@@ -17,7 +18,6 @@ import {
 import { NewsImageFields } from '../../components/admin/NewsImageFields.jsx'
 import { NewsCategoryField } from '../../components/admin/NewsCategoryField.jsx'
 import { isApiConfigured } from '../../utils/apiConfig.js'
-import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
 import { ROUTES } from '../../utils/constants.js'
 
 const ACTION_BTN_BASE =
@@ -61,29 +61,84 @@ function EditNewsForm({ id }) {
   const [newsUpdatedAt, setNewsUpdatedAt] = useState(null)
   const [deleting, setDeleting] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [conflictOpen, setConflictOpen] = useState(false)
   const [toast, setToast] = useState(null)
   const dismissToast = useCallback(() => setToast(null), [])
 
+  const loadFromServer = useCallback(async () => {
+    const data = await fetchNewsById(id)
+    if (!data) {
+      setError('noticias.no_encontrada')
+      return
+    }
+    setError('')
+    setTitle(data.title || '')
+    setSummary(data.summary || '')
+    setBody(data.body || '')
+    setCategoryId(data.categoryId ? String(data.categoryId) : '')
+    setMockCategoryName(data.category || 'General')
+    setImageUrl(data.imageUrl ?? null)
+    setGalleryUrls(Array.isArray(data.galleryUrls) ? data.galleryUrls : [])
+    setNewsUpdatedAt(data.updatedAt || null)
+  }, [id])
+
+  const buildPayload = useCallback(
+    (forceOverwrite = false) => {
+      const payload = {
+        expectedUpdatedAt: newsUpdatedAt,
+        forceOverwrite,
+        title: title.trim(),
+        summary: summary.trim(),
+        body: body.trim(),
+        imageUrl,
+        galleryUrls,
+      }
+      if (isApiConfigured()) {
+        if (categoryId) payload.categoryId = Number(categoryId)
+      } else {
+        payload.category = mockCategoryName || 'General'
+      }
+      return payload
+    },
+    [body, categoryId, galleryUrls, imageUrl, mockCategoryName, newsUpdatedAt, summary, title],
+  )
+
+  const persistContent = useCallback(
+    async ({ forceOverwrite = false } = {}) => {
+      await updateNews(id, buildPayload(forceOverwrite))
+      navigate(ROUTES.adminNews, {
+        replace: true,
+        state: { flash: 'Cambios guardados correctamente.' },
+      })
+    },
+    [buildPayload, id, navigate],
+  )
+
+  const { conflictDialog, handleConflict } = useContentEditorConcurrencyConflict({
+    reloadFromServer: loadFromServer,
+    persistContent,
+    entityLabel: 'esta noticia',
+    onReloadSuccess: () =>
+      setToast({
+        type: 'success',
+        message: 'Se cargó la última versión del servidor.',
+      }),
+    onReloadError: (e) =>
+      setToast({
+        type: 'error',
+        message: e.message || 'No se pudo recargar la noticia.',
+      }),
+    onForceSaveError: (e) => {
+      const msg = e.message || 'No se pudo guardar.'
+      setError(msg)
+      setToast({ type: 'error', message: msg })
+      setSaving(false)
+    },
+  })
+
   useEffect(() => {
     let cancelled = false
-    fetchNewsById(id)
-      .then((data) => {
-        if (cancelled) return
-        if (!data) {
-          setError('noticias.no_encontrada')
-          return
-        }
-        setError('')
-        setTitle(data.title || '')
-        setSummary(data.summary || '')
-        setBody(data.body || '')
-        setCategoryId(data.categoryId ? String(data.categoryId) : '')
-        setMockCategoryName(data.category || 'General')
-        setImageUrl(data.imageUrl ?? null)
-        setGalleryUrls(Array.isArray(data.galleryUrls) ? data.galleryUrls : [])
-        setNewsUpdatedAt(data.updatedAt || null)
-      })
+    setLoading(true)
+    loadFromServer()
       .catch((e) => {
         if (!cancelled) setError(e.message || 'Error al cargar')
       })
@@ -93,7 +148,7 @@ function EditNewsForm({ id }) {
     return () => {
       cancelled = true
     }
-  }, [id])
+  }, [loadFromServer])
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -109,26 +164,9 @@ function EditNewsForm({ id }) {
     setSaving(true)
     setToast({ type: 'success', message: 'Guardando cambios…' })
     try {
-      const payload = {
-        expectedUpdatedAt: newsUpdatedAt,
-        title: title.trim(),
-        summary: summary.trim(),
-        body: body.trim(),
-        imageUrl,
-        galleryUrls,
-      }
-      if (isApiConfigured()) {
-        if (categoryId) payload.categoryId = Number(categoryId)
-      } else {
-        payload.category = mockCategoryName || 'General'
-      }
-      await updateNews(id, payload)
-      navigate(ROUTES.adminNews, {
-        replace: true,
-        state: { flash: 'Cambios guardados correctamente.' },
-      })
+      await persistContent()
     } catch (err) {
-      if (isConcurrencyConflictError(err)) setConflictOpen(true)
+      if (handleConflict(err)) return
       const msg = err.message || 'No se pudo guardar.'
       setError(msg)
       setToast({ type: 'error', message: msg })
@@ -242,16 +280,7 @@ function EditNewsForm({ id }) {
         </div>
       ) : null}
 
-      <ConfirmDialog
-        open={conflictOpen}
-        onClose={() => setConflictOpen(false)}
-        title="Cambios desactualizados"
-        description="Otro usuario guardó cambios antes que vos. Recargá la última versión y reintentá."
-        confirmLabel="Recargar última versión y reintentar"
-        cancelLabel="Cerrar"
-        loading={false}
-        onConfirm={() => window.location.reload()}
-      />
+      {conflictDialog}
       <ConfirmDialog
         open={deleteDialogOpen}
         onClose={() => {

@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
 import { HeroImageModal } from '../../components/admin/HeroImageModal.jsx'
 import { Button } from '../../components/ui/Button.jsx'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
+import { useContentEditorConcurrencyConflict } from '../../hooks/useContentEditorConcurrencyConflict.jsx'
 import { useNewsList } from '../../hooks/useNewsList.js'
 import { deleteNews } from '../../services/newsService.js'
 import {
@@ -13,7 +14,6 @@ import {
 import { formatDate } from '../../utils/formatDate.js'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
-import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
 import { ROUTES } from '../../utils/constants.js'
 import { inputClass, labelClass } from '../../components/ui/formStyles.js'
 
@@ -99,7 +99,37 @@ export function AdminNews() {
   const [bannerSaving, setBannerSaving] = useState(false)
   const [bannerImageUrl, setBannerImageUrl] = useState('')
   const [bannerUpdatedAt, setBannerUpdatedAt] = useState(null)
-  const [bannerConflictOpen, setBannerConflictOpen] = useState(false)
+
+  const loadBannerFromServer = useCallback(async () => {
+    const content = await fetchSitePageBanner('news')
+    setBannerImageUrl(String(content?.heroImageUrl || ''))
+    setBannerUpdatedAt(content?.updatedAt || null)
+  }, [])
+
+  const persistBanner = useCallback(
+    async ({ forceOverwrite = false } = {}) => {
+      const saved = await updateSitePageBanner('news', {
+        heroImageUrl: bannerImageUrl.trim(),
+        expectedUpdatedAt: bannerUpdatedAt,
+        forceOverwrite,
+      })
+      setBannerImageUrl(String(saved?.heroImageUrl || ''))
+      setBannerUpdatedAt(saved?.updatedAt || null)
+      setBannerOpen(false)
+      setFlash('Se actualizó la portada de Noticias.')
+    },
+    [bannerImageUrl, bannerUpdatedAt],
+  )
+
+  const { conflictDialog: bannerConflictDialog, handleConflict: handleBannerConflict } =
+    useContentEditorConcurrencyConflict({
+      reloadFromServer: loadBannerFromServer,
+      persistContent: persistBanner,
+      entityLabel: 'la portada de Noticias',
+      onReloadSuccess: () => setFlash('Se cargó la última versión de la portada.'),
+      onReloadError: (e) => setFlash(e.message || 'No se pudo recargar la portada.'),
+      onForceSaveError: (e) => setFlash(e.message || 'No se pudo guardar la portada de Noticias.'),
+    })
 
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('Todas')
@@ -221,16 +251,9 @@ export function AdminNews() {
     }
     setBannerSaving(true)
     try {
-      const saved = await updateSitePageBanner('news', {
-        heroImageUrl: bannerImageUrl.trim(),
-        expectedUpdatedAt: bannerUpdatedAt,
-      })
-      setBannerImageUrl(String(saved?.heroImageUrl || ''))
-      setBannerUpdatedAt(saved?.updatedAt || null)
-      setBannerOpen(false)
-      setFlash('Se actualizó la portada de Noticias.')
+      await persistBanner()
     } catch (e) {
-      if (isConcurrencyConflictError(e)) setBannerConflictOpen(true)
+      if (handleBannerConflict(e)) return
       setFlash(e.message || 'No se pudo guardar la portada de Noticias.')
     } finally {
       setBannerSaving(false)
@@ -242,15 +265,7 @@ export function AdminNews() {
 
   return (
     <>
-      <ConfirmDialog
-        open={bannerConflictOpen}
-        onClose={() => setBannerConflictOpen(false)}
-        title="Cambios desactualizados"
-        description="Otro usuario guardó cambios antes que vos. Recargá la última versión y reintentá."
-        confirmLabel="Recargar última versión y reintentar"
-        cancelLabel="Cerrar"
-        onConfirm={() => window.location.reload()}
-      />
+      {bannerConflictDialog}
       <HeroImageModal
         open={bannerOpen}
         title="Portada de Noticias"

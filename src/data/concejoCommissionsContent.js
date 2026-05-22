@@ -19,12 +19,41 @@ function normalizeRoleHolder(raw) {
   }
 }
 
-/** Compatibilidad con datos guardados como vocal1 / vocal2. */
+/** Compatibilidad con vocal1/vocal2 y campos planos heredados del borrador. */
 function normalizeVicepresidenteHolder(raw, slot) {
   if (!raw || typeof raw !== 'object') return { name: '', role: '' }
-  const modern = slot === 1 ? raw.vicepresidente1 : raw.vicepresidente2
-  const legacy = slot === 1 ? raw.vocal1 : raw.vocal2
-  return normalizeRoleHolder(modern ?? legacy)
+  const nestedModern = slot === 1 ? raw.vicepresidente1 : raw.vicepresidente2
+  const nestedLegacy = slot === 1 ? raw.vocal1 : raw.vocal2
+  const fromNested = normalizeRoleHolder(nestedModern ?? nestedLegacy)
+  if (fromNested.name || fromNested.role) return fromNested
+
+  const flatName =
+    slot === 1
+      ? raw.vicepresidente1Name ?? raw.vocal1Name
+      : raw.vicepresidente2Name ?? raw.vocal2Name
+  const flatRole =
+    slot === 1
+      ? raw.vicepresidente1Role ?? raw.vocal1Role
+      : raw.vicepresidente2Role ?? raw.vocal2Role
+  return normalizeRoleHolder({ name: flatName, role: flatRole })
+}
+
+/** Objeto listo para persistir (sin claves legacy ni campos planos del modal). */
+export function serializeCommissionForSave(commission) {
+  const normalized = normalizeCommission(commission)
+  if (!normalized) return null
+  const { vocal1: _v1, vocal2: _v2, ...rest } = normalized
+  return rest
+}
+
+export function serializeCommissionsForSave(raw) {
+  const normalized = normalizeCommissions(raw)
+  return {
+    ...normalized,
+    items: (normalized.items || [])
+      .map((item) => serializeCommissionForSave(item))
+      .filter(Boolean),
+  }
 }
 
 function normalizeCommission(raw, index = 0) {

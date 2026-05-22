@@ -1,14 +1,10 @@
 import { DEFAULT_CONCEJO_DELIBERANTE_CONTENT } from '../data/concejoDeliberanteContent.js'
 import { getApiBase } from '../utils/apiConfig.js'
 import { jsonAuthHeaders, notifyUnauthorizedIfNeeded } from '../utils/authStorage.js'
+import { errorFromApiResponse } from '../utils/concurrencyConflict.js'
 
 function base() {
   return getApiBase().trim()
-}
-
-async function apiErrorMessage(res) {
-  const data = await res.json().catch(() => ({}))
-  return typeof data.error === 'string' ? data.error : null
 }
 
 export async function fetchConcejoDeliberanteContent() {
@@ -16,9 +12,9 @@ export async function fetchConcejoDeliberanteContent() {
   if (!b) return DEFAULT_CONCEJO_DELIBERANTE_CONTENT
   const res = await fetch(`${b}/api/concejo-deliberante`)
   if (!res.ok) {
-    throw new Error(
-      (await apiErrorMessage(res)) ||
-        'No se pudo cargar la sección del Concejo Deliberante.',
+    throw await errorFromApiResponse(
+      res,
+      'No se pudo cargar la sección del Concejo Deliberante.',
     )
   }
   const data = await res.json().catch(() => ({}))
@@ -35,9 +31,7 @@ export async function updateConcejoDeliberanteContent(payload) {
   })
   notifyUnauthorizedIfNeeded(res)
   if (!res.ok) {
-    throw new Error(
-      (await apiErrorMessage(res)) || 'No se pudo guardar el Concejo Deliberante.',
-    )
+    throw await errorFromApiResponse(res, 'No se pudo guardar el Concejo Deliberante.')
   }
   const data = await res.json().catch(() => ({}))
   return data.content || null

@@ -3,6 +3,7 @@ import {
   DEFAULT_SERVICES_PAGE_CONTENT,
 } from '../data/servicesPageContent.js'
 import { getApiBase } from '../utils/apiConfig.js'
+import { errorFromApiResponse } from '../utils/concurrencyConflict.js'
 import { jsonAuthHeaders, notifyUnauthorizedIfNeeded } from '../utils/authStorage.js'
 
 async function apiErrorMessage(res) {
@@ -88,10 +89,7 @@ export async function updateServicesPageContent(payload) {
   })
   notifyUnauthorizedIfNeeded(res)
   if (!res.ok) {
-    const msg = await apiErrorMessage(res)
-    const err = new Error(msg || 'No se pudo guardar la página de servicios.')
-    if (res.status === 409) err.code = 'CONCURRENCY_CONFLICT'
-    throw err
+    throw await errorFromApiResponse(res, 'No se pudo guardar la página de servicios.')
   }
   const data = await res.json().catch(() => ({}))
   return mapContent(data.content || {})

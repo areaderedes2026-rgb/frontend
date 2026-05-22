@@ -19,7 +19,7 @@ import {
   updateServicesPageContent,
 } from '../../services/municipalServicesService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
-import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
+import { useContentEditorConcurrencyConflict } from '../../hooks/useContentEditorConcurrencyConflict.jsx'
 import { ROUTES } from '../../utils/constants.js'
 
 const ACTION_BTN_BASE =
@@ -95,7 +95,6 @@ export function AdminServices() {
   const [itemsError, setItemsError] = useState('')
 
   const [toast, setToast] = useState(null)
-  const [conflictOpen, setConflictOpen] = useState(false)
   const [heroImageOpen, setHeroImageOpen] = useState(false)
   const dismissToast = useCallback(() => setToast(null), [])
 
@@ -147,6 +146,41 @@ export function AdminServices() {
     void loadItems()
   }, [apiAvailable, loadContent, loadItems])
 
+  const buildPayload = useCallback(
+    (forceOverwrite = false) => ({
+      expectedUpdatedAt: contentUpdatedAt,
+      forceOverwrite,
+      ...contentForm,
+    }),
+    [contentForm, contentUpdatedAt],
+  )
+
+  const persistContent = useCallback(
+    async ({ forceOverwrite = false } = {}) => {
+      const saved = await updateServicesPageContent(buildPayload(forceOverwrite))
+      const merged = mergeServicesPageContent(DEFAULT_SERVICES_PAGE_CONTENT, saved || {})
+      setContentForm(mapContentToForm(merged))
+      setContentUpdatedAt(saved?.updatedAt || null)
+      setContentError('')
+      setToast({ variant: 'success', message: 'Contenido de servicios guardado.' })
+    },
+    [buildPayload],
+  )
+
+  const { conflictDialog, handleConflict } = useContentEditorConcurrencyConflict({
+    reloadFromServer: loadContent,
+    persistContent,
+    entityLabel: 'Servicios al vecino',
+    onReloadSuccess: () =>
+      setToast({ variant: 'success', message: 'Se cargó la última versión del servidor.' }),
+    onReloadError: (e) =>
+      setToast({ variant: 'error', message: e.message || 'No se pudo recargar el contenido.' }),
+    onForceSaveError: (e) => {
+      setContentError(e.message || 'No se pudo guardar.')
+      setToast({ variant: 'error', message: e.message || 'No se pudo guardar.' })
+    },
+  })
+
   const handleSaveContent = useCallback(async () => {
     if (!apiAvailable) {
       setToast({ variant: 'error', message: 'No hay conexión con el backend.' })
@@ -155,22 +189,15 @@ export function AdminServices() {
     setContentSaving(true)
     setContentError('')
     try {
-      const saved = await updateServicesPageContent({
-        expectedUpdatedAt: contentUpdatedAt,
-        ...contentForm,
-      })
-      const merged = mergeServicesPageContent(DEFAULT_SERVICES_PAGE_CONTENT, saved || {})
-      setContentForm(mapContentToForm(merged))
-      setContentUpdatedAt(saved?.updatedAt || null)
-      setToast({ variant: 'success', message: 'Contenido de servicios guardado.' })
+      await persistContent()
     } catch (e) {
-      if (isConcurrencyConflictError(e)) setConflictOpen(true)
+      if (handleConflict(e)) return
       setContentError(e.message || 'No se pudo guardar.')
       setToast({ variant: 'error', message: e.message || 'No se pudo guardar.' })
     } finally {
       setContentSaving(false)
     }
-  }, [apiAvailable, contentForm, contentUpdatedAt])
+  }, [apiAvailable, handleConflict, persistContent])
 
   function openCreateService() {
     setEditingService(null)
@@ -248,16 +275,7 @@ export function AdminServices() {
 
   return (
     <>
-      <ConfirmDialog
-        open={conflictOpen}
-        onClose={() => setConflictOpen(false)}
-        title="Contenido desactualizado"
-        description="Otro usuario guardó cambios antes que vos. Recargá la última versión y reintentá."
-        confirmLabel="Recargar"
-        cancelLabel="Cerrar"
-        loading={false}
-        onConfirm={() => window.location.reload()}
-      />
+      {conflictDialog}
       <ConfirmDialog
         open={Boolean(deleteTarget)}
         onClose={() => !deleting && setDeleteTarget(null)}

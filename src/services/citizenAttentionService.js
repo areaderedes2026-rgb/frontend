@@ -1,6 +1,7 @@
 import { DEFAULT_CITIZEN_ATTENTION_CONTENT } from '../data/citizenAttentionContent.js'
 import { getApiBase } from '../utils/apiConfig.js'
 import { jsonAuthHeaders, notifyUnauthorizedIfNeeded } from '../utils/authStorage.js'
+import { errorFromApiResponse } from '../utils/concurrencyConflict.js'
 
 function base() {
   return getApiBase().trim()
@@ -48,7 +49,7 @@ export async function updateCitizenAttentionContent(payload) {
   })
   notifyUnauthorizedIfNeeded(res)
   if (!res.ok) {
-    throw new Error((await apiErrorMessage(res)) || 'No se pudo guardar Atención al ciudadano.')
+    throw await errorFromApiResponse(res, 'No se pudo guardar Atención al ciudadano.')
   }
   const data = await res.json().catch(() => ({}))
   return data.content || null
