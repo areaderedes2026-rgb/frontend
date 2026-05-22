@@ -136,7 +136,7 @@ function delay(ms = 200) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-/** Sube una imagen al servidor (requiere API y sesión staff). Devuelve URL pública estable. */
+/** Sube una imagen al servidor (staff o editor de servicio de área). Devuelve URL pública estable. */
 export async function uploadNewsImage(file, kind = 'gallery') {
   if (!API_BASE) {
     throw new Error('Configurá VITE_API_URL para subir imágenes.')
