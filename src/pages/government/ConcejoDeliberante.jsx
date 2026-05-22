@@ -8,6 +8,7 @@ import {
   DEFAULT_CONCEJO_DELIBERANTE_CONTENT,
   getInitialsFromName,
   mergeConcejoDeliberanteContent,
+  sortConcejoMembers,
 } from '../../data/concejoDeliberanteContent.js'
 import { fetchConcejoDeliberanteContent } from '../../services/concejoDeliberanteService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
@@ -146,7 +147,10 @@ export function ConcejoDeliberante() {
     }
   }, [apiEnabled])
 
-  const membersList = useMemo(() => content.members || [], [content.members])
+  const membersList = useMemo(
+    () => sortConcejoMembers(content.members || []),
+    [content.members],
+  )
   const totalMembers = membersList.length
 
   const resolvedHeroImage = useMemo(() => {

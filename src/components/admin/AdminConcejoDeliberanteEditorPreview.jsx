@@ -9,7 +9,12 @@ import {
   labelClass,
   textareaClass,
 } from '../ui/formStyles.js'
-import { getInitialsFromName } from '../../data/concejoDeliberanteContent.js'
+import {
+  cleanMemberSortOrder,
+  getInitialsFromName,
+  nextConcejoMemberPriority,
+  sortConcejoMembers,
+} from '../../data/concejoDeliberanteContent.js'
 
 const ACTION_BTN_BASE =
   'inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto'
@@ -92,6 +97,21 @@ function AddChip({ label = 'Agregar', onClick, disabled = false }) {
   )
 }
 
+function OrderChip({ label, onClick, disabled = false }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-sm font-bold text-slate-600 shadow-sm transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-800 disabled:cursor-not-allowed disabled:opacity-50"
+      aria-label={label}
+      title={label}
+    >
+      {label === 'Subir' ? '↑' : '↓'}
+    </button>
+  )
+}
+
 function DeleteChip({ label = 'Quitar', onClick, disabled = false }) {
   return (
     <button
@@ -167,7 +187,7 @@ function MemberAvatar({ name, photoUrl, color }) {
   )
 }
 
-function emptyMemberDraft() {
+function emptyMemberDraft(sortOrder = 0) {
   return {
     id: makeId('concejal'),
     name: '',
@@ -177,6 +197,7 @@ function emptyMemberDraft() {
     email: '',
     phone: '',
     period: '',
+    sortOrder,
   }
 }
 
@@ -190,6 +211,7 @@ function memberToDraft(member) {
     email: String(member?.email || ''),
     phone: String(member?.phone || ''),
     period: String(member?.period || ''),
+    sortOrder: cleanMemberSortOrder(member?.sortOrder, 0),
   }
 }
 
@@ -203,6 +225,7 @@ function draftToMember(draft) {
     email: String(draft.email || '').trim().toLowerCase(),
     phone: String(draft.phone || '').trim(),
     period: String(draft.period || '').trim(),
+    sortOrder: cleanMemberSortOrder(draft.sortOrder, 0),
   }
 }
 
@@ -220,7 +243,7 @@ export function AdminConcejoDeliberanteEditorPreview({
   const [memberDialog, setMemberDialog] = useState(null)
   const [memberDraft, setMemberDraft] = useState(() => emptyMemberDraft())
   const [memberFormError, setMemberFormError] = useState('')
-  const [removeMemberIndex, setRemoveMemberIndex] = useState(null)
+  const [removeMemberId, setRemoveMemberId] = useState(null)
   const [removeParagraphIndex, setRemoveParagraphIndex] = useState(null)
 
   const heroUrl = (form.heroImageUrl || '').trim()
@@ -243,18 +266,39 @@ export function AdminConcejoDeliberanteEditorPreview({
     setMemberFormError('')
   }
 
+  const sortedMembers = useMemo(
+    () => sortConcejoMembers(form.members || []),
+    [form.members],
+  )
+
   function openNewMember() {
-    setMemberDraft(emptyMemberDraft())
+    setMemberDraft(emptyMemberDraft(nextConcejoMemberPriority(form.members)))
     setMemberFormError('')
     setMemberDialog('new')
   }
 
-  function openEditMember(index) {
-    const row = form.members?.[index]
+  function openEditMember(memberId) {
+    const row = (form.members || []).find((m) => m.id === memberId)
     if (!row) return
     setMemberDraft(memberToDraft(row))
     setMemberFormError('')
-    setMemberDialog(index)
+    setMemberDialog(memberId)
+  }
+
+  function moveMember(memberId, direction) {
+    setForm((prev) => {
+      const list = sortConcejoMembers(prev.members || [])
+      const index = list.findIndex((m) => m.id === memberId)
+      if (index < 0) return prev
+      const target = index + direction
+      if (target < 0 || target >= list.length) return prev
+      const next = [...list]
+      const currentOrder = cleanMemberSortOrder(next[index].sortOrder, (index + 1) * 10)
+      const swapOrder = cleanMemberSortOrder(next[target].sortOrder, (target + 1) * 10)
+      next[index] = { ...next[index], sortOrder: swapOrder }
+      next[target] = { ...next[target], sortOrder: currentOrder }
+      return { ...prev, members: next }
+    })
   }
 
   function handleSaveMember() {
@@ -268,12 +312,11 @@ export function AdminConcejoDeliberanteEditorPreview({
         ...prev,
         members: [...(prev.members || []), built],
       }))
-    } else if (typeof memberDialog === 'number') {
-      setForm((prev) => {
-        const next = [...(prev.members || [])]
-        next[memberDialog] = built
-        return { ...prev, members: next }
-      })
+    } else if (typeof memberDialog === 'string' && memberDialog !== 'new') {
+      setForm((prev) => ({
+        ...prev,
+        members: (prev.members || []).map((m) => (m.id === memberDialog ? built : m)),
+      }))
     }
     closeMemberModal()
   }
@@ -407,9 +450,9 @@ export function AdminConcejoDeliberanteEditorPreview({
   return (
     <>
       <ConfirmDialog
-        open={removeMemberIndex !== null}
+        open={removeMemberId !== null}
         onClose={() => {
-          if (!saving) setRemoveMemberIndex(null)
+          if (!saving) setRemoveMemberId(null)
         }}
         title="¿Quitar este concejal?"
         description="Se eliminará de la lista. Guardá el formulario para persistir los cambios."
@@ -417,13 +460,13 @@ export function AdminConcejoDeliberanteEditorPreview({
         cancelLabel="Cancelar"
         loading={false}
         onConfirm={() => {
-          if (removeMemberIndex !== null) {
+          if (removeMemberId) {
             setForm((prev) => ({
               ...prev,
-              members: (prev.members || []).filter((_, i) => i !== removeMemberIndex),
+              members: (prev.members || []).filter((m) => m.id !== removeMemberId),
             }))
           }
-          setRemoveMemberIndex(null)
+          setRemoveMemberId(null)
         }}
         variant="danger"
       />
@@ -494,6 +537,21 @@ export function AdminConcejoDeliberanteEditorPreview({
               disabled={saving}
               placeholder="Ej. 2024 — 2028"
             />
+          </label>
+          <label className={labelClass}>
+            Prioridad de visualización
+            <input
+              type="number"
+              min={0}
+              step={1}
+              className={inputClass}
+              value={memberDraft.sortOrder ?? 0}
+              onChange={(e) => setMemberDraft((d) => ({ ...d, sortOrder: e.target.value }))}
+              disabled={saving}
+            />
+            <span className="mt-1 block text-xs font-normal text-slate-500">
+              Número más bajo = aparece primero en el portal (ej. 10, 20, 30).
+            </span>
           </label>
           <div className="sm:col-span-2">
             <SingleImageUploadField
@@ -796,7 +854,7 @@ export function AdminConcejoDeliberanteEditorPreview({
             <SectionCard
               id="concejales-admin"
               title="Cuerpo de Concejales"
-              description="Misma grilla que en el portal: editá cada ficha desde los íconos."
+              description="Definí el orden con prioridad (número más bajo = primero). Podés usar las flechas o el campo al editar."
               variant="plain"
               rightSlot={
                 <AddChip label="Nuevo concejal" onClick={openNewMember} disabled={saving} />
@@ -808,16 +866,32 @@ export function AdminConcejoDeliberanteEditorPreview({
                 </EmptyHint>
               ) : (
                 <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {(form.members || []).map((m, idx) => {
+                  {sortedMembers.map((m, idx) => {
                     const color = '#0369a1'
+                    const priority = cleanMemberSortOrder(m.sortOrder, (idx + 1) * 10)
                     return (
                       <li
                         key={m.id || `${m.name}-${idx}`}
                         className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm"
                       >
-                        <div className="absolute right-2 top-2 z-10 flex gap-1">
-                          <EditChip label="Editar" onClick={() => openEditMember(idx)} disabled={saving} />
-                          <DeleteChip label="Quitar" onClick={() => setRemoveMemberIndex(idx)} disabled={saving} />
+                        <div className="absolute left-2 top-2 z-10">
+                          <span className="inline-flex rounded-full bg-slate-900/85 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white backdrop-blur-sm">
+                            P.{priority}
+                          </span>
+                        </div>
+                        <div className="absolute right-2 top-2 z-10 flex flex-wrap justify-end gap-1">
+                          <OrderChip
+                            label="Subir"
+                            onClick={() => moveMember(m.id, -1)}
+                            disabled={saving || idx === 0}
+                          />
+                          <OrderChip
+                            label="Bajar"
+                            onClick={() => moveMember(m.id, 1)}
+                            disabled={saving || idx === sortedMembers.length - 1}
+                          />
+                          <EditChip label="Editar" onClick={() => openEditMember(m.id)} disabled={saving} />
+                          <DeleteChip label="Quitar" onClick={() => setRemoveMemberId(m.id)} disabled={saving} />
                         </div>
                         <div className="relative aspect-4/5 w-full overflow-hidden bg-slate-100">
                           <MemberAvatar name={m.name} photoUrl={m.photoUrl} color={color} />

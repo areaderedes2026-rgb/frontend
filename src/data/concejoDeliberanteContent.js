@@ -6,7 +6,33 @@ function makeId(prefix) {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}`
 }
 
-function normalizeMember(remote) {
+export function cleanMemberSortOrder(value, fallback = 0) {
+  const n = Number(value)
+  if (!Number.isFinite(n)) return Math.max(0, Math.round(fallback))
+  return Math.max(0, Math.round(n))
+}
+
+/** Orden público y admin: número más bajo = aparece primero. */
+export function sortConcejoMembers(members) {
+  return [...(Array.isArray(members) ? members : [])].sort((a, b) => {
+    const oa = cleanMemberSortOrder(a?.sortOrder, 0)
+    const ob = cleanMemberSortOrder(b?.sortOrder, 0)
+    if (oa !== ob) return oa - ob
+    return String(a?.name || '').localeCompare(String(b?.name || ''), 'es', {
+      sensitivity: 'base',
+    })
+  })
+}
+
+export function nextConcejoMemberPriority(members) {
+  const max = (Array.isArray(members) ? members : []).reduce(
+    (acc, item) => Math.max(acc, cleanMemberSortOrder(item?.sortOrder, 0)),
+    0,
+  )
+  return max + 10
+}
+
+function normalizeMember(remote, index = 0) {
   if (!remote || typeof remote !== 'object') return null
   const name = String(remote.name || '').trim()
   if (!name) return null
@@ -26,6 +52,10 @@ function normalizeMember(remote) {
     email: String(remote.email || '').trim().toLowerCase(),
     phone: String(remote.phone || '').trim(),
     period: String(remote.period || '').trim(),
+    sortOrder:
+      remote?.sortOrder == null || remote?.sortOrder === ''
+        ? (index + 1) * 10
+        : cleanMemberSortOrder(remote.sortOrder, (index + 1) * 10),
   }
 }
 
@@ -65,6 +95,7 @@ export const DEFAULT_CONCEJO_DELIBERANTE_CONTENT = {
       email: 'mgonzalez@trancas.gob.ar',
       phone: '+54 381 4XX-XXXX',
       period: '2024 — 2028',
+      sortOrder: 10,
     },
     {
       id: 'concejal-2',
@@ -75,6 +106,7 @@ export const DEFAULT_CONCEJO_DELIBERANTE_CONTENT = {
       email: 'jperez@trancas.gob.ar',
       phone: '+54 381 4XX-XXXX',
       period: '2024 — 2028',
+      sortOrder: 20,
     },
     {
       id: 'concejal-3',
@@ -85,6 +117,7 @@ export const DEFAULT_CONCEJO_DELIBERANTE_CONTENT = {
       email: 'crivero@trancas.gob.ar',
       phone: '+54 381 4XX-XXXX',
       period: '2024 — 2028',
+      sortOrder: 30,
     },
     {
       id: 'concejal-4',
@@ -95,6 +128,7 @@ export const DEFAULT_CONCEJO_DELIBERANTE_CONTENT = {
       email: 'psanchez@trancas.gob.ar',
       phone: '+54 381 4XX-XXXX',
       period: '2024 — 2028',
+      sortOrder: 40,
     },
     {
       id: 'concejal-5',
@@ -105,6 +139,7 @@ export const DEFAULT_CONCEJO_DELIBERANTE_CONTENT = {
       email: 'lromero@trancas.gob.ar',
       phone: '+54 381 4XX-XXXX',
       period: '2024 — 2028',
+      sortOrder: 50,
     },
     {
       id: 'concejal-6',
@@ -115,6 +150,7 @@ export const DEFAULT_CONCEJO_DELIBERANTE_CONTENT = {
       email: 'dfunes@trancas.gob.ar',
       phone: '+54 381 4XX-XXXX',
       period: '2024 — 2028',
+      sortOrder: 60,
     },
   ],
 }
@@ -127,9 +163,11 @@ export function mergeConcejoDeliberanteContent(base, remote) {
     }
   }
 
-  const members = Array.isArray(remote.members)
-    ? remote.members.map(normalizeMember).filter(Boolean)
-    : (base.members || []).map(normalizeMember).filter(Boolean)
+  const members = sortConcejoMembers(
+    Array.isArray(remote.members)
+      ? remote.members.map((m, idx) => normalizeMember(m, idx)).filter(Boolean)
+      : (base.members || []).map((m, idx) => normalizeMember(m, idx)).filter(Boolean),
+  )
 
   return {
     ...base,
