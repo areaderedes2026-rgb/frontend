@@ -142,7 +142,7 @@ function ExpandableFunctionCard({ section, index, isOpen, onToggle }) {
   return (
     <article
       id={section.id ? `funcion-${section.id}` : undefined}
-      className={`scroll-mt-[calc(var(--navbar-h,5rem)+var(--concejo-subnav-h,3.25rem)+1rem)] flex h-full flex-col overflow-hidden rounded-2xl border bg-[#fcfcfa] shadow-sm transition-[border-color,box-shadow] duration-300 ${
+      className={`scroll-mt-[calc(var(--navbar-h,5rem)+var(--concejo-subnav-h,3.25rem)+1rem)] flex w-full flex-col overflow-hidden rounded-2xl border bg-[#fcfcfa] shadow-sm transition-[border-color,box-shadow] duration-300 ${
         isOpen
           ? 'border-sky-200/90 shadow-[0_12px_40px_-28px_rgba(14,116,144,0.22)]'
           : 'border-[#ddd7ca] hover:border-[#d4cec0] hover:shadow-md'
@@ -150,12 +150,12 @@ function ExpandableFunctionCard({ section, index, isOpen, onToggle }) {
     >
       <button
         type="button"
-        className="flex w-full flex-1 flex-col text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
+        className="flex w-full shrink-0 flex-col text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
         aria-expanded={isOpen}
         aria-controls={panelId}
         onClick={onToggle}
       >
-        <div className="flex min-h-30 flex-1 flex-col justify-between gap-4 p-5 sm:min-h-32 sm:p-6">
+        <div className="flex flex-col gap-4 p-5 sm:p-6">
           <div className="flex items-start gap-3">
             <span
               className={`inline-flex h-9 min-w-9 shrink-0 items-center justify-center rounded-xl px-2 text-sm font-bold tabular-nums transition-colors ${
@@ -181,16 +181,14 @@ function ExpandableFunctionCard({ section, index, isOpen, onToggle }) {
         id={panelId}
         role="region"
         aria-label={`Detalle: ${title}`}
-        className={`grid transition-[grid-template-rows] duration-300 ease-out ${
-          isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
-        }`}
-        aria-hidden={!isOpen}
+        hidden={!isOpen}
+        className={
+          isOpen
+            ? 'border-t border-[#e8e4dc] px-5 pb-5 pt-4 sm:px-6 sm:pb-6'
+            : undefined
+        }
       >
-        <div className="overflow-hidden">
-          <div className="border-t border-[#e8e4dc] px-5 pb-5 pt-4 sm:px-6 sm:pb-6">
-            <FunctionSectionBody section={section} />
-          </div>
-        </div>
+        {isOpen ? <FunctionSectionBody section={section} /> : null}
       </div>
     </article>
   )
@@ -233,9 +231,9 @@ export function ConcejoMainFunctionsSection({ mainFunctions }) {
         </p>
       </div>
 
-      <ul className="mt-8 grid list-none grid-cols-1 gap-4 p-0 md:grid-cols-2 md:gap-5 lg:grid-cols-3 lg:gap-5">
+      <ul className="mt-8 grid list-none grid-cols-1 items-start gap-4 p-0 md:grid-cols-2 md:gap-5 lg:grid-cols-3 lg:gap-5">
         {sections.map((section, index) => (
-          <li key={section.id} className="min-w-0">
+          <li key={section.id} className="min-w-0 self-start">
             <ExpandableFunctionCard
               section={section}
               index={index}
