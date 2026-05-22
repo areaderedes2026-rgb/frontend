@@ -14,6 +14,7 @@ import { fetchConcejoDeliberanteContent } from '../../services/concejoDeliberant
 import { isApiConfigured } from '../../utils/apiConfig.js'
 import { ROUTES } from '../../utils/constants.js'
 import { ConcejoMainFunctionsSection } from '../../components/concejo/ConcejoMainFunctionsSection.jsx'
+import { ConcejoCommissionsSection } from '../../components/concejo/ConcejoCommissionsSection.jsx'
 
 const MEMBER_AVATAR_COLOR = '#0369a1'
 
@@ -122,6 +123,7 @@ export function ConcejoDeliberante() {
           contactHours: '',
           members: [],
           mainFunctions: { enabled: true, title: '', sections: [] },
+          commissions: { enabled: true, title: '', subtitle: '', items: [] },
         }
       : DEFAULT_CONCEJO_DELIBERANTE_CONTENT,
   )
@@ -214,6 +216,12 @@ export function ConcejoDeliberante() {
                 className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/40 bg-white/10 px-5 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white/70 hover:bg-white/15"
               >
                 Ver concejales
+              </a>
+              <a
+                href="#comisiones-trabajo"
+                className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/40 bg-white/10 px-5 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white/70 hover:bg-white/15"
+              >
+                Comisiones
               </a>
             </div>
           </div>
@@ -309,6 +317,10 @@ export function ConcejoDeliberante() {
                     ))}
             </div>
           </section>
+        </RevealOnScroll>
+
+        <RevealOnScroll variant="newsCardSlow" delayMs={120}>
+          <ConcejoCommissionsSection commissions={content.commissions} />
         </RevealOnScroll>
       </Container>
     </section>

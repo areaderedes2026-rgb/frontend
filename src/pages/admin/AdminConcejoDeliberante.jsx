@@ -95,6 +95,7 @@ export function AdminConcejoDeliberante() {
         contactHours: form.contactHours.trim(),
         members: form.members || [],
         mainFunctions: form.mainFunctions || {},
+        commissions: form.commissions || {},
       }
       const saved = await updateConcejoDeliberanteContent(payload)
       const merged = mergeConcejoDeliberanteContent(

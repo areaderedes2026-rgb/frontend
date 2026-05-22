@@ -16,6 +16,7 @@ import {
   sortConcejoMembers,
 } from '../../data/concejoDeliberanteContent.js'
 import { AdminConcejoMainFunctionsPanel } from './concejo/AdminConcejoMainFunctionsPanel.jsx'
+import { AdminConcejoCommissionsPanel } from './concejo/AdminConcejoCommissionsPanel.jsx'
 
 const ACTION_BTN_BASE =
   'inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto'
@@ -926,6 +927,15 @@ export function AdminConcejoDeliberanteEditorPreview({
               <p className="mt-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">
                 {totalMembers} {totalMembers === 1 ? 'concejal' : 'concejales'}
               </p>
+            </SectionCard>
+
+            <SectionCard
+              id="comisiones-admin"
+              title="Comisiones de Trabajo"
+              description="Presidente y vocales por comisión. La comisión coordinadora (8) muestra además los presidentes de las demás."
+              variant="plain"
+            >
+              <AdminConcejoCommissionsPanel form={form} setForm={setForm} saving={saving} />
             </SectionCard>
 
             <SectionCard

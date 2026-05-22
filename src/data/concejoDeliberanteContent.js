@@ -3,6 +3,10 @@
  */
 
 import {
+  DEFAULT_CONCEJO_COMMISSIONS,
+  normalizeCommissions,
+} from './concejoCommissionsContent.js'
+import {
   DEFAULT_CONCEJO_MAIN_FUNCTIONS,
   normalizeMainFunctions,
 } from './concejoMainFunctionsContent.js'
@@ -77,6 +81,7 @@ export const DEFAULT_CONCEJO_DELIBERANTE_CONTENT = {
     'Su misión es legislar para el bien común, fiscalizar el uso de los recursos públicos y canalizar las demandas de la ciudadanía con transparencia y cercanía institucional.',
   ],
   mainFunctions: DEFAULT_CONCEJO_MAIN_FUNCTIONS,
+  commissions: DEFAULT_CONCEJO_COMMISSIONS,
   presidentName: 'Nombre del Presidente',
   presidentRole: 'Presidente del Concejo Deliberante',
   presidentBio:
@@ -167,6 +172,7 @@ export function mergeConcejoDeliberanteContent(base, remote) {
       ...base,
       members: [...(base.members || [])],
       mainFunctions: normalizeMainFunctions(base.mainFunctions, DEFAULT_CONCEJO_MAIN_FUNCTIONS),
+      commissions: normalizeCommissions(base.commissions, DEFAULT_CONCEJO_COMMISSIONS),
     }
   }
 
@@ -202,6 +208,10 @@ export function mergeConcejoDeliberanteContent(base, remote) {
     mainFunctions: normalizeMainFunctions(
       remote.mainFunctions ?? remote.blocks,
       base.mainFunctions || DEFAULT_CONCEJO_MAIN_FUNCTIONS,
+    ),
+    commissions: normalizeCommissions(
+      remote.commissions,
+      base.commissions || DEFAULT_CONCEJO_COMMISSIONS,
     ),
   }
 }
