@@ -7,6 +7,7 @@ import { fetchAreaProfile } from '../../services/areaProfilesService.js'
 import { fetchAreaPublicBySlug } from '../../services/areasService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
 import { ROUTES } from '../../utils/constants.js'
+import { resolveMediaUrl } from '../../utils/imageUrl.js'
 import { ServiceContactSection } from '../../components/areas/ServiceContactSection.jsx'
 import { isServiceContactSectionVisible } from '../../utils/serviceContacts.js'
 
