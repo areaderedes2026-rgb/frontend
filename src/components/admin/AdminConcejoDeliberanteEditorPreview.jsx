@@ -18,6 +18,8 @@ import {
 import { AdminConcejoMainFunctionsPanel } from './concejo/AdminConcejoMainFunctionsPanel.jsx'
 import { AdminConcejoCommissionsPanel } from './concejo/AdminConcejoCommissionsPanel.jsx'
 import { ConcejoContactInfoSection } from '../concejo/ConcejoContactInfoSection.jsx'
+import { ConcejoPageNav } from '../concejo/ConcejoPageNav.jsx'
+import { buildConcejoNavSections } from '../concejo/concejoPageSections.js'
 
 const ACTION_BTN_BASE =
   'inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto'
@@ -238,7 +240,6 @@ export function AdminConcejoDeliberanteEditorPreview({
   loading,
   saving,
   error,
-  onChangeCover,
   onSubmit,
   apiAvailable,
 }) {
@@ -249,7 +250,14 @@ export function AdminConcejoDeliberanteEditorPreview({
   const [removeMemberId, setRemoveMemberId] = useState(null)
   const [removeParagraphIndex, setRemoveParagraphIndex] = useState(null)
 
-  const heroUrl = (form.heroImageUrl || '').trim()
+  const pageTitle = (form.heroTitle || '').trim() || 'Concejo Deliberante'
+  const hasPresidencia = Boolean(
+    form.presidentName || form.presidentRole || form.presidentBio,
+  )
+  const navSections = useMemo(
+    () => buildConcejoNavSections({ hasPresidencia }),
+    [hasPresidencia],
+  )
 
   function openEditor(kind, index = null, draft = null) {
     setEditor({ kind, index, draft })
@@ -327,10 +335,7 @@ export function AdminConcejoDeliberanteEditorPreview({
   function applyIdentity(draft) {
     setForm((prev) => ({
       ...prev,
-      heroEyebrow: String(draft.heroEyebrow || '').trim(),
       heroTitle: String(draft.heroTitle || '').trim(),
-      heroSubtitle: String(draft.heroSubtitle || ''),
-      heroImageUrl: String(draft.heroImageUrl || '').trim(),
     }))
   }
 
@@ -435,7 +440,7 @@ export function AdminConcejoDeliberanteEditorPreview({
     if (!editor) return ''
     switch (editor.kind) {
       case 'identity':
-        return 'Editar portada (textos e imagen)'
+        return 'Editar título de la página'
       case 'introTitle':
         return 'Editar título de la introducción'
       case 'paragraph':
@@ -457,8 +462,7 @@ export function AdminConcejoDeliberanteEditorPreview({
 
   const editorWide =
     editor &&
-    (editor.kind === 'identity' ||
-      editor.kind === 'president' ||
+    (editor.kind === 'president' ||
       editor.kind === 'sessions' ||
       editor.kind === 'contact' ||
       editor.kind === 'concejoInfo')
@@ -662,14 +666,6 @@ export function AdminConcejoDeliberanteEditorPreview({
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={onChangeCover}
-              disabled={saving || !apiAvailable}
-              className={ACTION_BTN_NEUTRAL}
-            >
-              Cambiar portada
-            </button>
-            <button
-              type="button"
               onClick={() => void onSubmit()}
               disabled={saving || loading || !apiAvailable}
               className={ACTION_BTN_PRIMARY}
@@ -696,62 +692,26 @@ export function AdminConcejoDeliberanteEditorPreview({
         ) : null}
 
         <article className="overflow-hidden rounded-3xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm">
-          <header className="relative overflow-hidden">
-            {heroUrl ? (
-              <img
-                src={heroUrl}
-                alt=""
-                className="h-56 w-full object-cover object-[center_35%] sm:h-64 lg:h-80"
-              />
-            ) : (
-              <div className="flex h-56 w-full items-center justify-center bg-linear-to-br from-slate-700 to-slate-900 text-sm text-slate-300 sm:h-64 lg:h-80">
-                Sin imagen de portada
-              </div>
-            )}
-            <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-slate-950 via-slate-900/75 to-slate-900/35" />
-            <div className="absolute right-4 top-4 z-20 sm:right-6 sm:top-6">
+          <div className="relative border-b border-[#e8e4dc] bg-[#f7f7f5] px-5 py-4 sm:px-7 sm:py-5">
+            <div className="absolute right-4 top-4 z-10 sm:right-6 sm:top-5">
               <EditChip
-                tone="overlay"
-                label="Editar portada"
+                label="Editar título"
                 onClick={() =>
                   openEditor('identity', null, {
-                    heroEyebrow: form.heroEyebrow || '',
                     heroTitle: form.heroTitle || '',
-                    heroSubtitle: form.heroSubtitle || '',
-                    heroImageUrl: form.heroImageUrl || '',
                   })
                 }
                 disabled={saving}
               />
             </div>
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 p-6 sm:p-8 lg:p-10">
-              {form.heroEyebrow ? (
-                <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-sky-200 sm:text-xs">
-                  {form.heroEyebrow}
-                </p>
-              ) : null}
-              <h1 className="mt-2 max-w-3xl font-serif text-3xl font-bold leading-tight tracking-tight text-white drop-shadow-sm sm:text-4xl lg:text-[2.75rem]">
-                {form.heroTitle || 'Sin título'}
-              </h1>
-              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-100 sm:text-base">
-                {form.heroSubtitle || <span className="italic text-slate-300">(Sin subtítulo)</span>}
-              </p>
-              <div className="mt-5 flex flex-wrap gap-3">
-                <span className="inline-flex min-h-11 items-center justify-center rounded-xl bg-white px-5 text-sm font-semibold text-[#171b22] shadow-sm">
-                  Atención al vecino
-                </span>
-                <span className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/45 bg-white/10 px-5 text-sm font-semibold text-white backdrop-blur-sm">
-                  Ver concejales
-                </span>
-              </div>
-            </div>
-          </header>
+            <ConcejoPageNav title={pageTitle} sections={navSections} />
+          </div>
 
           <div className="space-y-10 p-5 sm:p-7 lg:p-10">
             <SectionCard
               id="intro-concejo"
               title="Órgano Legislativo y de Control Municipal"
-              description="Bloque introductorio centrado debajo del hero en la página pública."
+              description="Primera sección de contenido, debajo de la navegación minimalista."
               variant="plain"
               rightSlot={
                 <div className="flex flex-wrap gap-2">
@@ -772,7 +732,10 @@ export function AdminConcejoDeliberanteEditorPreview({
                 </div>
               }
             >
-              <div className="rounded-3xl border border-[#ddd7ca] bg-[#f8f7f3] p-6 text-center sm:p-8">
+              <div
+                id="intro-concejo"
+                className="rounded-3xl border border-[#ddd7ca] bg-[#f8f7f3] p-6 text-center sm:p-8"
+              >
                 <h2 className="font-serif text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
                   {form.introTitle || <span className="italic text-slate-400">(Sin título)</span>}
                 </h2>
@@ -1022,45 +985,19 @@ function EditorConcejoBody({ editor, draft, setDraftField, saving }) {
   switch (editor.kind) {
     case 'identity':
       return (
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className={labelClass}>
-            Etiqueta superior (eyebrow)
-            <input
-              className={inputClass}
-              value={draft.heroEyebrow || ''}
-              onChange={(e) => setDraftField('heroEyebrow', e.target.value)}
-              disabled={saving}
-            />
-          </label>
-          <label className={labelClass}>
-            Título principal
-            <input
-              className={inputClass}
-              value={draft.heroTitle || ''}
-              onChange={(e) => setDraftField('heroTitle', e.target.value)}
-              disabled={saving}
-            />
-          </label>
-          <label className={`${labelClass} sm:col-span-2`}>
-            Subtítulo
-            <textarea
-              className={`${textareaClass} min-h-24`}
-              value={draft.heroSubtitle || ''}
-              onChange={(e) => setDraftField('heroSubtitle', e.target.value)}
-              disabled={saving}
-            />
-          </label>
-          <div className="sm:col-span-2">
-            <SingleImageUploadField
-              label="Imagen de portada"
-              helpText="Podés cambiarla también con «Cambiar portada» en la barra superior."
-              value={draft.heroImageUrl || ''}
-              onChange={(value) => setDraftField('heroImageUrl', value)}
-              kind="cover"
-              disabled={saving}
-            />
-          </div>
-        </div>
+        <label className={labelClass}>
+          Título de la página
+          <input
+            className={inputClass}
+            value={draft.heroTitle || ''}
+            onChange={(e) => setDraftField('heroTitle', e.target.value)}
+            disabled={saving}
+            placeholder="Concejo Deliberante"
+          />
+          <span className="mt-1 block text-xs font-normal text-slate-500">
+            Se muestra arriba junto a la barra de navegación por secciones.
+          </span>
+        </label>
       )
     case 'introTitle':
       return (

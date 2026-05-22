@@ -69,12 +69,10 @@ function normalizeMember(remote, index = 0) {
 }
 
 export const DEFAULT_CONCEJO_DELIBERANTE_CONTENT = {
-  heroEyebrow: 'Gobierno municipal',
+  heroEyebrow: '',
   heroTitle: 'Concejo Deliberante',
-  heroSubtitle:
-    'Cuerpo legislativo de la ciudad. Conocé a las concejalas y concejales que representan a la comunidad de Trancas.',
-  heroImageUrl:
-    'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1600&q=80',
+  heroSubtitle: '',
+  heroImageUrl: '',
   introTitle: 'Órgano Legislativo y de Control Municipal',
   introParagraphs: [
     'El Honorable Concejo Deliberante es el órgano representativo de la voluntad popular en el ámbito municipal. Integra el Poder Legislativo local junto con la función de control de la gestión del Ejecutivo.',

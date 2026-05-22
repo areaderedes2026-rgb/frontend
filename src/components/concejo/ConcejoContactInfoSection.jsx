@@ -86,7 +86,7 @@ export function ConcejoContactInfoSection({ content }) {
   return (
     <section
       id="contacto-concejo"
-      className="mt-8 scroll-mt-28 overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm"
+      className="scroll-mt-[calc(var(--navbar-h,5rem)+var(--concejo-subnav-h,3.25rem)+1rem)] mt-8 overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm"
       aria-labelledby="contacto-concejo-heading"
     >
       <div className="border-b border-[#e8e4dc] bg-linear-to-r from-[#171b22] via-[#1e2430] to-[#171b22] px-5 py-6 sm:px-7 sm:py-8">

@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { Container } from '../../components/ui/Container.jsx'
 import { RevealOnScroll } from '../../components/home/RevealOnScroll.jsx'
-import { LinkButton } from '../../components/ui/LinkButton.jsx'
-import { HydrationHeroDarkBackdrop } from '../../components/skeleton/PageHydrationSkeleton.jsx'
+import { ConcejoPageNav } from '../../components/concejo/ConcejoPageNav.jsx'
+import { buildConcejoNavSections } from '../../components/concejo/concejoPageSections.js'
 import {
   DEFAULT_CONCEJO_DELIBERANTE_CONTENT,
   getInitialsFromName,
@@ -158,86 +157,30 @@ export function ConcejoDeliberante() {
   )
   const totalMembers = membersList.length
 
-  const resolvedHeroImage = useMemo(() => {
-    const u = String(content.heroImageUrl || '').trim()
-    if (u) return u
-    return String(DEFAULT_CONCEJO_DELIBERANTE_CONTENT.heroImageUrl || '').trim()
-  }, [content.heroImageUrl])
-
-  const showHeroBackdrop = apiEnabled && loading && !String(content.heroImageUrl || '').trim()
+  const pageTitle = content.heroTitle?.trim() || 'Concejo Deliberante'
+  const hasPresidencia = Boolean(
+    content.presidentName || content.presidentRole || content.presidentBio,
+  )
+  const navSections = useMemo(
+    () => buildConcejoNavSections({ hasPresidencia }),
+    [hasPresidencia],
+  )
 
   return (
-    <section className="relative -mt-[calc(var(--navbar-h,5rem)+1.5rem)] overflow-hidden bg-linear-to-b from-[#f1eee8] via-[#f7f7f5] to-[#fcfcfa] pb-10 sm:-mt-[calc(var(--navbar-h,5rem)+2rem)] sm:pb-14">
+    <section className="relative bg-[#f7f7f5] pb-10 pt-[calc(var(--navbar-h,5rem)+0.75rem)] sm:pb-14 sm:pt-[calc(var(--navbar-h,5rem)+1rem)]">
       <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_85%_45%_at_20%_-10%,rgba(56,189,248,0.12),transparent_60%)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(56,189,248,0.06),transparent_55%)]"
         aria-hidden
       />
-      <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_55%_45%_at_100%_10%,rgba(15,23,42,0.12),transparent_70%)]"
-        aria-hidden
-      />
-
-      <div className="relative min-h-[52dvh] overflow-hidden border-b border-white/10 bg-[#171b22] sm:min-h-[56dvh] lg:min-h-[58dvh]">
-        {showHeroBackdrop ? (
-          <HydrationHeroDarkBackdrop />
-        ) : (
-          <img
-            src={resolvedHeroImage}
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover object-center"
-          />
-        )}
-        <div className="absolute inset-0 bg-linear-to-t from-black/76 via-black/62 to-black/36" />
-        <Container className="relative z-10 flex min-h-[52dvh] flex-col justify-center pt-[calc(var(--navbar-h,5rem)+1rem)] pb-8 sm:min-h-[56dvh] sm:pt-[calc(var(--navbar-h,5rem)+1.5rem)] sm:pb-10 lg:min-h-[58dvh] lg:pb-12">
-          <p className="mb-5 text-sm">
-            <Link to={ROUTES.home} className="font-medium text-white/85 transition hover:text-white">
-              ← Volver al inicio
-            </Link>
-          </p>
-          <div className="max-w-4xl">
-            <p className="hero-enter-eyebrow text-[11px] font-bold uppercase tracking-[0.28em] text-sky-200/95 sm:text-xs sm:tracking-[0.32em]">
-              {content.heroEyebrow || 'Gobierno municipal'}
-            </p>
-            <h1 className="hero-enter-title mt-2 max-w-3xl font-serif text-3xl font-bold leading-tight text-white sm:text-4xl lg:text-[2.85rem]">
-              {content.heroTitle || 'Concejo Deliberante'}
-            </h1>
-            <p className="hero-enter-subtitle mt-3 max-w-2xl text-sm leading-relaxed text-slate-100 sm:text-base">
-              {content.heroSubtitle}
-            </p>
-            <div className="hero-enter-actions mt-6 flex flex-wrap items-center gap-3">
-              <LinkButton to={ROUTES.atencionCiudadano}>Atención al vecino</LinkButton>
-              <a
-                href="#funciones-principales"
-                className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/40 bg-white/10 px-5 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white/70 hover:bg-white/15"
-              >
-                Funciones del HCD
-              </a>
-              <a
-                href="#concejales"
-                className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/40 bg-white/10 px-5 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white/70 hover:bg-white/15"
-              >
-                Ver concejales
-              </a>
-              <a
-                href="#comisiones-trabajo"
-                className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/40 bg-white/10 px-5 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white/70 hover:bg-white/15"
-              >
-                Comisiones
-              </a>
-              <a
-                href="#contacto-concejo"
-                className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/40 bg-white/10 px-5 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white/70 hover:bg-white/15"
-              >
-                Contacto
-              </a>
-            </div>
-          </div>
-        </Container>
-      </div>
 
       <Container className="relative max-w-[min(100%,96rem)]!">
+        <ConcejoPageNav title={pageTitle} sections={navSections} />
+
         <RevealOnScroll variant="slow">
-          <section className="mt-8 rounded-2xl border border-[#e8e4dc] bg-[#fcfcfa] p-6 text-center shadow-[0_1px_0_rgba(255,255,255,0.85)_inset,0_12px_40px_-28px_rgba(15,23,42,0.12)] sm:p-8 lg:p-10">
+          <section
+            id="intro-concejo"
+            className="scroll-mt-[calc(var(--navbar-h,5rem)+var(--concejo-subnav-h,3.25rem)+1rem)] rounded-2xl border border-[#e8e4dc] bg-[#fcfcfa] p-6 text-center shadow-[0_1px_0_rgba(255,255,255,0.85)_inset,0_12px_40px_-28px_rgba(15,23,42,0.08)] sm:p-8 lg:p-10"
+          >
             <div className="mx-auto max-w-4xl">
               <h2 className="font-serif text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
                 {content.introTitle}
@@ -259,7 +202,7 @@ export function ConcejoDeliberante() {
           <RevealOnScroll variant="newsCardSlow" delayMs={80}>
             <section
               id="presidencia"
-              className="mt-8 overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm"
+              className="scroll-mt-[calc(var(--navbar-h,5rem)+var(--concejo-subnav-h,3.25rem)+1rem)] mt-8 overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm"
             >
               <div className="grid gap-0 sm:grid-cols-12">
                 <div className="relative aspect-square w-full overflow-hidden bg-[#ece8df] sm:col-span-4 sm:aspect-auto sm:min-h-[220px]">
@@ -289,7 +232,7 @@ export function ConcejoDeliberante() {
         <RevealOnScroll variant="newsCardSlow" delayMs={100}>
           <section
             id="concejales"
-            className="mt-8 rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-5 shadow-sm sm:p-6 lg:p-8"
+            className="scroll-mt-[calc(var(--navbar-h,5rem)+var(--concejo-subnav-h,3.25rem)+1rem)] mt-8 rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-5 shadow-sm sm:p-6 lg:p-8"
           >
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>

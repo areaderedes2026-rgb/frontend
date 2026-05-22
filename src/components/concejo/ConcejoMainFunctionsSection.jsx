@@ -131,7 +131,7 @@ export function ConcejoMainFunctionsSection({ mainFunctions }) {
   return (
     <section
       id="funciones-principales"
-      className="mt-8 scroll-mt-28 rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-5 shadow-sm sm:p-6 lg:p-8"
+      className="scroll-mt-[calc(var(--navbar-h,5rem)+var(--concejo-subnav-h,3.25rem)+1rem)] mt-8 rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-5 shadow-sm sm:p-6 lg:p-8"
       aria-labelledby="funciones-principales-heading"
     >
       <div className="max-w-3xl">

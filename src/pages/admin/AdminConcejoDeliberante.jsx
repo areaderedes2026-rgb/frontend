@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
 import { AdminConcejoDeliberanteEditorPreview } from '../../components/admin/AdminConcejoDeliberanteEditorPreview.jsx'
-import { HeroImageModal } from '../../components/admin/HeroImageModal.jsx'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
 import {
@@ -26,7 +25,6 @@ export function AdminConcejoDeliberante() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [conflictOpen, setConflictOpen] = useState(false)
-  const [heroImageOpen, setHeroImageOpen] = useState(false)
   const [toast, setToast] = useState(null)
   const dismissToast = useCallback(() => setToast(null), [])
 
@@ -135,24 +133,6 @@ export function AdminConcejoDeliberante() {
         <Toast variant={toast.variant} message={toast.message} onDismiss={dismissToast} />
       ) : null}
 
-      <HeroImageModal
-        open={heroImageOpen}
-        title="Portada del Concejo Deliberante"
-        value={form.heroImageUrl}
-        onChange={(value) => setForm((prev) => ({ ...prev, heroImageUrl: value }))}
-        onClose={() => setHeroImageOpen(false)}
-        onSave={() => {
-          setHeroImageOpen(false)
-          setToast({
-            variant: 'success',
-            message: 'Portada actualizada en el borrador. Guardá los cambios para publicarla.',
-          })
-        }}
-        saving={saving}
-        disabled={loading || saving}
-        saveLabel="Aplicar al borrador"
-      />
-
       <AdminPageShell
         showBackLink={false}
         eyebrow=""
@@ -182,7 +162,6 @@ export function AdminConcejoDeliberante() {
             loading={loading}
             saving={saving}
             error={error}
-            onChangeCover={() => setHeroImageOpen(true)}
             onSubmit={() => void handleSubmit()}
             apiAvailable={apiAvailable}
           />
