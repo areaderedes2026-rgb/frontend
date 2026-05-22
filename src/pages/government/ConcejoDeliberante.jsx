@@ -15,6 +15,7 @@ import { ROUTES } from '../../utils/constants.js'
 import { ConcejoMainFunctionsSection } from '../../components/concejo/ConcejoMainFunctionsSection.jsx'
 import { ConcejoCommissionsSection } from '../../components/concejo/ConcejoCommissionsSection.jsx'
 import { ConcejoContactInfoSection } from '../../components/concejo/ConcejoContactInfoSection.jsx'
+import { ConcejoIntroSection } from '../../components/concejo/ConcejoIntroSection.jsx'
 
 const MEMBER_AVATAR_COLOR = '#0369a1'
 
@@ -113,6 +114,7 @@ export function ConcejoDeliberante() {
       ? {
           ...DEFAULT_CONCEJO_DELIBERANTE_CONTENT,
           heroImageUrl: '',
+          introLogoUrl: '',
           presidentPhotoUrl: '',
           presidentName: '',
           presidentRole: '',
@@ -179,18 +181,13 @@ export function ConcejoDeliberante() {
         <RevealOnScroll variant="slow">
           <section
             id="intro-concejo"
-            className="scroll-mt-[calc(var(--navbar-h,5rem)+var(--concejo-subnav-h,3.25rem)+1rem)] rounded-2xl border border-[#e8e4dc] bg-[#fcfcfa] p-6 text-center shadow-[0_1px_0_rgba(255,255,255,0.85)_inset,0_12px_40px_-28px_rgba(15,23,42,0.08)] sm:p-8 lg:p-10"
+            className="scroll-mt-[calc(var(--navbar-h,5rem)+var(--concejo-subnav-h,3.25rem)+1rem)] rounded-2xl border border-[#e8e4dc] bg-[#fcfcfa] p-6 shadow-[0_1px_0_rgba(255,255,255,0.85)_inset,0_12px_40px_-28px_rgba(15,23,42,0.08)] sm:p-8 lg:p-10"
           >
-            <div className="mx-auto max-w-4xl">
-              <h2 className="font-serif text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
-                {content.introTitle}
-              </h2>
-              <div className="mt-5 space-y-4 text-sm leading-relaxed text-[#4b505a] sm:text-base">
-                {(content.introParagraphs || []).map((p, i) => (
-                  <p key={`intro-p-${i}`}>{p}</p>
-                ))}
-              </div>
-            </div>
+            <ConcejoIntroSection
+              introTitle={content.introTitle}
+              introLogoUrl={content.introLogoUrl}
+              introParagraphs={content.introParagraphs}
+            />
           </section>
         </RevealOnScroll>
 

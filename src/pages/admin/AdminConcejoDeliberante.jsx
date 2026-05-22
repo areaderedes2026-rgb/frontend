@@ -76,6 +76,7 @@ export function AdminConcejoDeliberante() {
         heroSubtitle: form.heroSubtitle,
         heroImageUrl: form.heroImageUrl.trim(),
         introTitle: form.introTitle.trim(),
+        introLogoUrl: form.introLogoUrl.trim(),
         introParagraphs: (form.introParagraphs || [])
           .map((p) => String(p || '').trim())
           .filter(Boolean),

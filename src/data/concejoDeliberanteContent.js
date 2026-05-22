@@ -74,6 +74,7 @@ export const DEFAULT_CONCEJO_DELIBERANTE_CONTENT = {
   heroSubtitle: '',
   heroImageUrl: '',
   introTitle: 'Órgano Legislativo y de Control Municipal',
+  introLogoUrl: '',
   introParagraphs: [
     'El Honorable Concejo Deliberante es el órgano representativo de la voluntad popular en el ámbito municipal. Integra el Poder Legislativo local junto con la función de control de la gestión del Ejecutivo.',
     'Su misión es legislar para el bien común, fiscalizar el uso de los recursos públicos y canalizar las demandas de la ciudadanía con transparencia y cercanía institucional.',
@@ -191,6 +192,7 @@ export function mergeConcejoDeliberanteContent(base, remote) {
     heroSubtitle: String(remote.heroSubtitle ?? base.heroSubtitle ?? ''),
     heroImageUrl: String(remote.heroImageUrl ?? base.heroImageUrl ?? ''),
     introTitle: String(remote.introTitle ?? base.introTitle ?? ''),
+    introLogoUrl: String(remote.introLogoUrl ?? base.introLogoUrl ?? ''),
     introParagraphs: Array.isArray(remote.introParagraphs)
       ? remote.introParagraphs.map((p) => String(p || '').trim()).filter(Boolean)
       : [...(base.introParagraphs || [])],

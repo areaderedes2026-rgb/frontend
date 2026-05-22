@@ -18,6 +18,7 @@ import {
 import { AdminConcejoMainFunctionsPanel } from './concejo/AdminConcejoMainFunctionsPanel.jsx'
 import { AdminConcejoCommissionsPanel } from './concejo/AdminConcejoCommissionsPanel.jsx'
 import { ConcejoContactInfoSection } from '../concejo/ConcejoContactInfoSection.jsx'
+import { ConcejoIntroSection } from '../concejo/ConcejoIntroSection.jsx'
 import { ConcejoPageNav } from '../concejo/ConcejoPageNav.jsx'
 import { buildConcejoNavSections } from '../concejo/concejoPageSections.js'
 
@@ -346,6 +347,14 @@ export function AdminConcejoDeliberanteEditorPreview({
     }))
   }
 
+  function applyIntroSection(draft) {
+    setForm((prev) => ({
+      ...prev,
+      introTitle: String(draft.introTitle || '').trim(),
+      introLogoUrl: String(draft.introLogoUrl || '').trim(),
+    }))
+  }
+
   function applyParagraph(draft, index) {
     const value = String(draft.text ?? '')
     setForm((prev) => {
@@ -415,6 +424,9 @@ export function AdminConcejoDeliberanteEditorPreview({
       case 'introTitle':
         applyIntroTitle(draft)
         break
+      case 'introSection':
+        applyIntroSection(draft)
+        break
       case 'paragraph':
         applyParagraph(draft, index)
         break
@@ -443,6 +455,8 @@ export function AdminConcejoDeliberanteEditorPreview({
         return 'Editar título de la página'
       case 'introTitle':
         return 'Editar título de la introducción'
+      case 'introSection':
+        return 'Órgano legislativo — título y logo'
       case 'paragraph':
         return editor.index === null || editor.index === undefined
           ? 'Agregar párrafo'
@@ -465,7 +479,8 @@ export function AdminConcejoDeliberanteEditorPreview({
     (editor.kind === 'president' ||
       editor.kind === 'sessions' ||
       editor.kind === 'contact' ||
-      editor.kind === 'concejoInfo')
+      editor.kind === 'concejoInfo' ||
+      editor.kind === 'introSection')
 
   const draft = editor?.draft || null
   const totalMembers = (form.members || []).length
@@ -716,10 +731,11 @@ export function AdminConcejoDeliberanteEditorPreview({
               rightSlot={
                 <div className="flex flex-wrap gap-2">
                   <EditChip
-                    label="Editar título"
+                    label="Editar encabezado"
                     onClick={() =>
-                      openEditor('introTitle', null, {
+                      openEditor('introSection', null, {
                         introTitle: form.introTitle || '',
+                        introLogoUrl: form.introLogoUrl || '',
                       })
                     }
                     disabled={saving}
@@ -734,13 +750,15 @@ export function AdminConcejoDeliberanteEditorPreview({
             >
               <div
                 id="intro-concejo"
-                className="rounded-3xl border border-[#ddd7ca] bg-[#f8f7f3] p-6 text-center sm:p-8"
+                className="rounded-3xl border border-[#ddd7ca] bg-[#f8f7f3] p-6 sm:p-8"
               >
-                <h2 className="font-serif text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
-                  {form.introTitle || <span className="italic text-slate-400">(Sin título)</span>}
-                </h2>
+                <ConcejoIntroSection
+                  introTitle={form.introTitle}
+                  introLogoUrl={form.introLogoUrl}
+                  introParagraphs={form.introParagraphs}
+                />
                 {(form.introParagraphs || []).length === 0 ? (
-                  <div className="mt-4">
+                  <div className="mt-4 border-t border-[#e8e4dc] pt-4">
                     <EmptyHint
                       onAdd={() => openEditor('paragraph', null, { text: '' })}
                       addLabel="Agregar párrafo"
@@ -749,11 +767,11 @@ export function AdminConcejoDeliberanteEditorPreview({
                     </EmptyHint>
                   </div>
                 ) : (
-                  <ul className="mx-auto mt-4 max-w-4xl space-y-3 text-left">
+                  <ul className="mt-6 space-y-3 border-t border-[#e8e4dc] pt-6">
                     {(form.introParagraphs || []).map((p, idx) => (
                       <li
                         key={`p-${idx}`}
-                        className="group relative rounded-2xl border border-transparent bg-white/60 p-3 text-sm leading-relaxed text-[#4b505a] sm:text-base"
+                        className="group relative rounded-2xl border border-transparent bg-white/70 p-3 text-sm leading-relaxed text-[#4b505a] sm:text-base"
                       >
                         <div className="absolute right-2 top-2 flex gap-1.5">
                           <EditChip
@@ -1010,6 +1028,31 @@ function EditorConcejoBody({ editor, draft, setDraftField, saving }) {
             disabled={saving}
           />
         </label>
+      )
+    case 'introSection':
+      return (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className={`${labelClass} sm:col-span-2`}>
+            Título
+            <input
+              className={inputClass}
+              value={draft.introTitle || ''}
+              onChange={(e) => setDraftField('introTitle', e.target.value)}
+              disabled={saving}
+              placeholder="Órgano Legislativo y de Control Municipal"
+            />
+          </label>
+          <div className="sm:col-span-2">
+            <SingleImageUploadField
+              label="Logo institucional"
+              helpText="PNG con fondo transparente recomendado · JPEG, WebP o GIF · máx. 10 MB."
+              value={draft.introLogoUrl || ''}
+              onChange={(value) => setDraftField('introLogoUrl', value)}
+              kind="cover"
+              disabled={saving}
+            />
+          </div>
+        </div>
       )
     case 'paragraph':
       return (
