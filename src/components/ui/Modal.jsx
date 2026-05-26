@@ -10,10 +10,16 @@ const SIZE_PANEL_CLASS = {
   xlarge: 'max-h-[min(94dvh,920px)] w-full max-w-[min(95vw,80rem)]',
 }
 
+const LAYER_CLASS = {
+  base: 'z-[110]',
+  stacked: 'z-[120]',
+}
+
 /**
  * Modal centrado (admin): overlay, Escape, scroll bloqueado, foco inicial en cerrar.
  *
  * @param {'default'|'wide'|'xlarge'} [props.size] — ancho máximo del panel.
+ * @param {'base'|'stacked'} [props.layer] — capa z-index (stacked para modales anidados).
  */
 export function Modal({
   open,
@@ -23,8 +29,11 @@ export function Modal({
   children,
   loading = false,
   size = 'default',
+  layer = 'base',
   /** Clases extra en el cuerpo (p. ej. overflow-hidden para layout con pie fijo). */
   bodyClassName = '',
+  /** Pie fijo debajo del cuerpo con scroll (botones de acción). */
+  footer,
 }) {
   const titleId = useId()
   const descId = useId()
@@ -56,8 +65,10 @@ export function Modal({
 
   if (!open) return null
 
+  const layerClass = LAYER_CLASS[layer] ?? LAYER_CLASS.base
+
   return createPortal(
-    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6">
+    <div className={`fixed inset-0 ${layerClass} flex items-center justify-center p-3 sm:p-5`}>
       <button
         type="button"
         className="absolute inset-0 bg-slate-900/45 backdrop-blur-[2px] transition-opacity"
@@ -105,6 +116,11 @@ export function Modal({
         >
           {children}
         </div>
+        {footer ? (
+          <div className="shrink-0 border-t border-slate-100 bg-slate-50/80 px-5 py-3 sm:px-6 sm:py-4">
+            {footer}
+          </div>
+        ) : null}
       </div>
     </div>,
     document.body,

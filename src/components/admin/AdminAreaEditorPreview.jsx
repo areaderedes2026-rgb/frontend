@@ -3,10 +3,7 @@ import { Modal } from '../ui/Modal.jsx'
 import { ConfirmDialog } from '../ui/ConfirmDialog.jsx'
 import { AdminAreaOfficesPanel } from './AdminAreaOfficesPanel.jsx'
 import { SingleImageUploadField } from './SingleImageUploadField.jsx'
-import { ServiceAuthoritiesEditor } from './ServiceAuthoritiesEditor.jsx'
-import { ServiceContactsEditor } from './ServiceContactsEditor.jsx'
-import { ServiceGalleryEditor } from './ServiceGalleryEditor.jsx'
-import { ServiceProjectsEditor } from './ServiceProjectsEditor.jsx'
+import { ServiceEditorWorkspace } from './ServiceEditorWorkspace.jsx'
 import { inputClass, labelClass, textareaClass } from '../ui/formStyles.js'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
 import { normalizeServiceProjects } from '../../utils/serviceProjects.js'
@@ -548,9 +545,11 @@ export function AdminAreaEditorPreview({
         onClose={closeEditor}
         loading={saving}
         size={
-          editor?.kind === 'school' || editor?.kind === 'identity' || editor?.kind === 'service'
-            ? 'wide'
-            : 'default'
+          editor?.kind === 'service'
+            ? 'xlarge'
+            : editor?.kind === 'school' || editor?.kind === 'identity'
+              ? 'wide'
+              : 'default'
         }
         title={editorTitle}
         description="Los cambios quedarán pendientes hasta que toques «Guardar cambios» en el pie de la página."
@@ -1444,105 +1443,13 @@ function DirectorForm({ draft, setDraftField, saving }) {
 
 function ServiceForm({ draft, setDraftField, saving, canManageServicePriority }) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      <label className={labelClass}>
-        Título
-        <input
-          className={inputClass}
-          value={draft.title || ''}
-          onChange={(e) => setDraftField('title', e.target.value)}
-          disabled={saving}
-          placeholder="Ej. Atención al vecino"
-        />
-      </label>
-      <label className={labelClass}>
-        Modalidad
-        <input
-          className={inputClass}
-          value={draft.mode || ''}
-          onChange={(e) => setDraftField('mode', e.target.value)}
-          disabled={saving}
-          placeholder="Ej. Presencial · Virtual"
-        />
-      </label>
-      {canManageServicePriority ? (
-        <label className={labelClass}>
-          Prioridad de visualización
-          <input
-            type="number"
-            min={0}
-            step={1}
-            className={inputClass}
-            value={draft.sortOrder ?? 0}
-            onChange={(e) => setDraftField('sortOrder', e.target.value)}
-            disabled={saving}
-          />
-          <span className="mt-1 block text-xs font-normal text-slate-500">
-            Número más bajo = aparece antes en el portal público.
-          </span>
-        </label>
-      ) : null}
-      <div className="sm:col-span-2">
-        <SingleImageUploadField
-          label="Imagen del servicio"
-          helpText="Se muestra en la tarjeta del portal y en el detalle ampliado."
-          value={draft.imageUrl || ''}
-          onChange={(value) => setDraftField('imageUrl', value)}
-          kind="gallery"
-          disabled={saving}
-        />
-      </div>
-      <label className={`${labelClass} sm:col-span-2`}>
-        Quien está a cargo
-        <input
-          className={inputClass}
-          value={draft.personInCharge || ''}
-          onChange={(e) => setDraftField('personInCharge', e.target.value)}
-          disabled={saving}
-          placeholder="Nombre o equipo responsable (se muestra en el detalle)"
-        />
-      </label>
-      <label className={`${labelClass} sm:col-span-2`}>
-        Objetivo general
-        <textarea
-          className={`${textareaClass} min-h-24`}
-          value={draft.generalObjective || ''}
-          onChange={(e) => setDraftField('generalObjective', e.target.value)}
-          disabled={saving}
-          placeholder="Resumen del propósito del servicio (detalle ampliado)"
-        />
-      </label>
-      <label className={`${labelClass} sm:col-span-2`}>
-        Descripción
-        <textarea
-          className={`${textareaClass} min-h-28`}
-          value={draft.description || ''}
-          onChange={(e) => setDraftField('description', e.target.value)}
-          disabled={saving}
-          placeholder="Texto en la tarjeta y en el detalle del portal"
-        />
-      </label>
-      <ServiceProjectsEditor
-        projects={draft.projects}
-        onChange={(projects) => setDraftField('projects', projects)}
-        saving={saving}
-      />
-      <ServiceContactsEditor
-        contactSection={draft.contactSection}
-        onChange={(contactSection) => setDraftField('contactSection', contactSection)}
-        saving={saving}
-      />
-      <ServiceGalleryEditor
-        gallerySection={draft.gallerySection}
-        onChange={(gallerySection) => setDraftField('gallerySection', gallerySection)}
-        saving={saving}
-      />
-      <ServiceAuthoritiesEditor
-        authoritySection={draft.authoritySection}
-        onChange={(authoritySection) => setDraftField('authoritySection', authoritySection)}
-        saving={saving}
-      />
-    </div>
+    <ServiceEditorWorkspace
+      draft={draft}
+      setDraftField={setDraftField}
+      saving={saving}
+      canManageServicePriority={canManageServicePriority}
+      projectImageKind="gallery"
+    />
   )
 }
 

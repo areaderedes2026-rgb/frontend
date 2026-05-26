@@ -18,6 +18,7 @@ export function ServiceContactsEditor({
   onChange,
   saving = false,
   className = '',
+  hideHeader = false,
 }) {
   const section = normalizeServiceContactSection(contactSection)
 
@@ -59,27 +60,29 @@ export function ServiceContactsEditor({
     <div
       className={`space-y-4 rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4 sm:col-span-2 ${className}`.trim()}
     >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <p className="text-sm font-bold text-slate-900">Contactos del servicio</p>
-          <p className="mt-1 text-xs leading-relaxed text-slate-600">
-            Opcional. Teléfonos, emails, WhatsApp o enlaces que se muestran en la página pública del
-            servicio.
-          </p>
+      {!hideHeader ? (
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-sm font-bold text-slate-900">Contactos del servicio</p>
+            <p className="mt-1 text-xs leading-relaxed text-slate-600">
+              Opcional. Teléfonos, emails, WhatsApp o enlaces que se muestran en la página pública del
+              servicio.
+            </p>
+          </div>
+          <label className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-xl border border-emerald-200 bg-white px-3 py-2 text-sm font-semibold text-emerald-900 shadow-sm">
+            <input
+              type="checkbox"
+              className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+              checked={section.enabled}
+              onChange={(e) => updateSection({ enabled: e.target.checked })}
+              disabled={saving}
+            />
+            Mostrar en el portal
+          </label>
         </div>
-        <label className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-xl border border-emerald-200 bg-white px-3 py-2 text-sm font-semibold text-emerald-900 shadow-sm">
-          <input
-            type="checkbox"
-            className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-            checked={section.enabled}
-            onChange={(e) => updateSection({ enabled: e.target.checked })}
-            disabled={saving}
-          />
-          Mostrar en el portal
-        </label>
-      </div>
+      ) : null}
 
-      {section.enabled ? (
+      {hideHeader || section.enabled ? (
         <>
           <label className={labelClass}>
             Título de la sección

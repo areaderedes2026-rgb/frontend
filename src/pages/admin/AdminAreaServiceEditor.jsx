@@ -1,26 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
-import { SingleImageUploadField } from '../../components/admin/SingleImageUploadField.jsx'
-import { ServiceAuthoritiesEditor } from '../../components/admin/ServiceAuthoritiesEditor.jsx'
-import { ServiceContactsEditor } from '../../components/admin/ServiceContactsEditor.jsx'
-import { ServiceGalleryEditor } from '../../components/admin/ServiceGalleryEditor.jsx'
-import { ServiceProjectsEditor } from '../../components/admin/ServiceProjectsEditor.jsx'
+import { ServiceEditorWorkspace } from '../../components/admin/ServiceEditorWorkspace.jsx'
 import { Button } from '../../components/ui/Button.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
-import {
-  formErrorClass,
-  inputClass,
-  labelClass,
-  textareaClass,
-} from '../../components/ui/formStyles.js'
+import { formErrorClass } from '../../components/ui/formStyles.js'
 import {
   fetchAreaProfileService,
   updateAreaProfileService,
 } from '../../services/areaProfilesService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
 import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
-import { resolveMediaUrl } from '../../utils/imageUrl.js'
 import {
   isServiceAuthoritySectionVisible,
   normalizeServiceAuthoritySection,
@@ -62,6 +52,20 @@ function snapshot(service) {
     gallerySection: normalizeServiceGallerySection(service.gallerySection),
     authoritySection: normalizeServiceAuthoritySection(service.authoritySection),
   })
+}
+
+function StatusPill({ label, active }) {
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ring-1 ${
+        active
+          ? 'bg-emerald-50 text-emerald-800 ring-emerald-200'
+          : 'bg-slate-100 text-slate-500 ring-slate-200'
+      }`}
+    >
+      {label}
+    </span>
+  )
 }
 
 export function AdminAreaServiceEditor() {
@@ -163,34 +167,46 @@ export function AdminAreaServiceEditor() {
     }
   }
 
+  const projectCount = normalizeServiceProjects(service.projects).length
+
   return (
     <AdminPageShell
-      eyebrow="Editor limitado"
+      eyebrow="Editor de servicio"
       title={service.title || 'Servicio de área'}
       subtitle={
         area?.title
-          ? `Área: ${area.title}. Solo podés editar este servicio asignado.`
-          : 'Solo podés editar el servicio asignado por un administrador.'
+          ? `${area.title} · Editá el contenido por pestañas y guardá cuando termines.`
+          : 'Editá el servicio asignado por pestañas.'
       }
       showBackLink={false}
-      actions={
-        <Link
-          to="/admin/my-area-services"
-          className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
-        >
-          Mis servicios
-        </Link>
-      }
-      maxWidthClass="max-w-6xl"
+      maxWidthClass="max-w-[min(96vw,88rem)]"
       variant="plain"
+      contentClassName="!mt-4"
+      actions={
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            to="/admin/my-area-services"
+            className="inline-flex min-h-10 items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+          >
+            ← Mis servicios
+          </Link>
+          <StatusPill
+            label={`${projectCount} proyecto${projectCount === 1 ? '' : 's'}`}
+            active={projectCount > 0}
+          />
+          <StatusPill label="Contactos" active={isServiceContactSectionVisible(service.contactSection)} />
+          <StatusPill label="Galería" active={isServiceGallerySectionVisible(service.gallerySection)} />
+          <StatusPill
+            label="Autoridades"
+            active={isServiceAuthoritySectionVisible(service.authoritySection)}
+          />
+        </div>
+      }
     >
       {toast ? (
-        <Toast
-          variant={toast.type}
-          message={toast.message}
-          onDismiss={() => setToast(null)}
-        />
+        <Toast variant={toast.type} message={toast.message} onDismiss={() => setToast(null)} />
       ) : null}
+
       {loading ? (
         <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm">
           Cargando servicio...
@@ -200,213 +216,40 @@ export function AdminAreaServiceEditor() {
           {error}
         </div>
       ) : (
-        <>
-          <form className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]" onSubmit={handleSubmit}>
-            <div className="space-y-5 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-              {formError ? (
-                <p className={formErrorClass} role="alert">
-                  {formError}
-                </p>
-              ) : null}
-              <label className={labelClass}>
-                Título del servicio
-                <input
-                  className={inputClass}
-                  value={service.title}
-                  onChange={(e) => updateField('title', e.target.value)}
-                  disabled={saving}
-                  maxLength={180}
-                  required
-                />
-              </label>
-              <label className={labelClass}>
-                Responsable
-                <input
-                  className={inputClass}
-                  value={service.personInCharge}
-                  onChange={(e) => updateField('personInCharge', e.target.value)}
-                  disabled={saving}
-                  maxLength={200}
-                />
-              </label>
-              <label className={labelClass}>
-                Modalidad, días u horarios
-                <input
-                  className={inputClass}
-                  value={service.mode}
-                  onChange={(e) => updateField('mode', e.target.value)}
-                  disabled={saving}
-                  maxLength={140}
-                />
-              </label>
-              <label className={labelClass}>
-                Descripción
-                <textarea
-                  className={textareaClass}
-                  value={service.description}
-                  onChange={(e) => updateField('description', e.target.value)}
-                  disabled={saving}
-                  maxLength={2200}
-                />
-              </label>
-              <label className={labelClass}>
-                Objetivo general
-                <textarea
-                  className={textareaClass}
-                  value={service.generalObjective}
-                  onChange={(e) => updateField('generalObjective', e.target.value)}
-                  disabled={saving}
-                  maxLength={3000}
-                />
-              </label>
-              <SingleImageUploadField
-                label="Imagen del servicio"
-                value={service.imageUrl}
-                onChange={(value) => updateField('imageUrl', value)}
-                disabled={saving}
-                kind="cover"
-              />
-              <ServiceProjectsEditor
-                projects={service.projects}
-                onChange={(projects) => updateField('projects', projects)}
-                saving={saving}
-                imageKind="cover"
-              />
-              <ServiceContactsEditor
-                contactSection={service.contactSection}
-                onChange={(contactSection) => updateField('contactSection', contactSection)}
-                saving={saving}
-              />
-              <ServiceGalleryEditor
-                gallerySection={service.gallerySection}
-                onChange={(gallerySection) => updateField('gallerySection', gallerySection)}
-                saving={saving}
-              />
-              <ServiceAuthoritiesEditor
-                authoritySection={service.authoritySection}
-                onChange={(authoritySection) => updateField('authoritySection', authoritySection)}
-                saving={saving}
-              />
-              <div className="flex flex-wrap gap-3 pt-2">
-                <Button type="submit" disabled={saving || !hasChanges}>
-                  {saving ? 'Guardando...' : 'Guardar cambios'}
-                </Button>
-              </div>
-            </div>
-            <aside className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-sky-700">
-                Vista previa
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="sticky top-[calc(var(--navbar-h,4rem)+0.5rem)] z-20 flex flex-col gap-3 rounded-2xl border border-slate-200/90 bg-white/95 px-4 py-3 shadow-md backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-bold text-slate-900">
+                {service.title || 'Sin título'}
               </p>
-              {service.imageUrl ? (
-                <img
-                  src={resolveMediaUrl(service.imageUrl)}
-                  alt=""
-                  className="mt-4 aspect-4/3 w-full rounded-2xl object-cover"
-                />
-              ) : (
-                <div className="mt-4 flex aspect-4/3 items-center justify-center rounded-2xl bg-slate-100 text-sm text-slate-500">
-                  Sin imagen
-                </div>
-              )}
-              <h2 className="mt-4 text-xl font-bold text-slate-900">{service.title}</h2>
-              {service.personInCharge ? (
-                <p className="mt-2 text-sm font-semibold text-sky-700">
-                  {service.personInCharge}
-                </p>
-              ) : null}
-              {service.mode ? (
-                <p className="mt-2 rounded-xl bg-slate-100 px-3 py-2 text-sm text-slate-700">
-                  {service.mode}
-                </p>
-              ) : null}
-              {service.description ? (
-                <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-slate-600">
-                  {service.description}
-                </p>
-              ) : null}
-              {normalizeServiceProjects(service.projects).length ? (
-                <div className="mt-5 rounded-2xl border border-sky-100 bg-sky-50/70 p-3">
-                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-700">
-                    Proyectos
-                  </p>
-                  <div className="mt-3 space-y-2">
-                    {normalizeServiceProjects(service.projects).map((project) => (
-                      <div
-                        key={project.id || project.title}
-                        className="rounded-xl bg-white px-3 py-2 text-sm shadow-sm"
-                      >
-                        <p className="font-semibold text-slate-900">
-                          {project.title || 'Proyecto sin título'}
-                        </p>
-                        {project.status ? (
-                          <p className="mt-0.5 text-xs font-semibold text-sky-700">
-                            {project.status}
-                          </p>
-                        ) : null}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-              {isServiceContactSectionVisible(service.contactSection) ? (
-                <div className="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50/70 p-3">
-                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-800">
-                    {normalizeServiceContactSection(service.contactSection).title}
-                  </p>
-                  <div className="mt-3 space-y-2">
-                    {normalizeServiceContactSection(service.contactSection).items.map((item) => (
-                      <div
-                        key={item.id || item.label}
-                        className="rounded-xl bg-white px-3 py-2 text-sm shadow-sm"
-                      >
-                        <p className="font-semibold text-slate-900">{item.label || item.value}</p>
-                        {item.value && item.label ? (
-                          <p className="mt-0.5 text-slate-600">{item.value}</p>
-                        ) : null}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-              {isServiceGallerySectionVisible(service.gallerySection) ? (
-                <div className="mt-5 rounded-2xl border border-violet-100 bg-violet-50/70 p-3">
-                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-violet-800">
-                    {normalizeServiceGallerySection(service.gallerySection).title}
-                  </p>
-                  <p className="mt-2 text-xs font-semibold text-violet-900">
-                    {normalizeServiceGallerySection(service.gallerySection).images.filter((i) => i.imageUrl).length}{' '}
-                    foto(s)
-                  </p>
-                </div>
-              ) : null}
-              {isServiceAuthoritySectionVisible(service.authoritySection) ? (
-                <div className="mt-5 rounded-2xl border border-amber-100 bg-amber-50/70 p-3">
-                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-900">
-                    {normalizeServiceAuthoritySection(service.authoritySection).title}
-                  </p>
-                  <div className="mt-3 space-y-2">
-                    {normalizeServiceAuthoritySection(service.authoritySection).people.map((person) => (
-                      <div
-                        key={person.id || person.name}
-                        className="rounded-xl bg-white px-3 py-2 text-sm shadow-sm"
-                      >
-                        <p className="font-semibold text-slate-900">{person.name || 'Sin nombre'}</p>
-                        {person.role ? (
-                          <p className="mt-0.5 text-xs font-semibold text-amber-800">{person.role}</p>
-                        ) : null}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-              {hasChanges ? (
-                <p className="mt-5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">
-                  Hay cambios sin guardar.
-                </p>
-              ) : null}
-            </aside>
-          </form>
-        </>
+              <p className="text-xs text-slate-500">
+                {hasChanges ? (
+                  <span className="font-semibold text-amber-800">Cambios sin guardar</span>
+                ) : (
+                  'Todo guardado'
+                )}
+              </p>
+            </div>
+            <Button type="submit" disabled={saving || !hasChanges} className="shrink-0">
+              {saving ? 'Guardando...' : 'Guardar cambios'}
+            </Button>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+            {formError ? (
+              <p className={`${formErrorClass} mb-4`} role="alert">
+                {formError}
+              </p>
+            ) : null}
+            <ServiceEditorWorkspace
+              draft={service}
+              setDraftField={updateField}
+              saving={saving}
+              canManageServicePriority={false}
+              projectImageKind="cover"
+            />
+          </div>
+        </form>
       )}
     </AdminPageShell>
   )

@@ -18,6 +18,7 @@ export function ServiceAuthoritiesEditor({
   onChange,
   saving = false,
   className = '',
+  hideHeader = false,
 }) {
   const section = normalizeServiceAuthoritySection(authoritySection)
 
@@ -48,26 +49,28 @@ export function ServiceAuthoritiesEditor({
     <div
       className={`space-y-4 rounded-2xl border border-amber-100 bg-amber-50/50 p-4 sm:col-span-2 ${className}`.trim()}
     >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <p className="text-sm font-bold text-slate-900">Autoridades a cargo</p>
-          <p className="mt-1 text-xs leading-relaxed text-slate-600">
-            Opcional. Personas responsables del servicio con foto y mini biografía.
-          </p>
+      {!hideHeader ? (
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-sm font-bold text-slate-900">Autoridades a cargo</p>
+            <p className="mt-1 text-xs leading-relaxed text-slate-600">
+              Opcional. Personas responsables del servicio con foto y mini biografía.
+            </p>
+          </div>
+          <label className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm font-semibold text-amber-950 shadow-sm">
+            <input
+              type="checkbox"
+              className="h-4 w-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500"
+              checked={section.enabled}
+              onChange={(e) => updateSection({ enabled: e.target.checked })}
+              disabled={saving}
+            />
+            Mostrar en el portal
+          </label>
         </div>
-        <label className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm font-semibold text-amber-950 shadow-sm">
-          <input
-            type="checkbox"
-            className="h-4 w-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500"
-            checked={section.enabled}
-            onChange={(e) => updateSection({ enabled: e.target.checked })}
-            disabled={saving}
-          />
-          Mostrar en el portal
-        </label>
-      </div>
+      ) : null}
 
-      {section.enabled ? (
+      {hideHeader || section.enabled ? (
         <>
           <label className={labelClass}>
             Título de la sección
