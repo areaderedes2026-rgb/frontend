@@ -216,7 +216,7 @@ export function AdminAreaServiceEditor() {
           {error}
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="min-w-0 space-y-4 overflow-x-hidden">
           <div className="sticky top-[calc(var(--navbar-h,4rem)+0.5rem)] z-20 flex flex-col gap-3 rounded-2xl border border-slate-200/90 bg-white/95 px-4 py-3 shadow-md backdrop-blur sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
               <p className="truncate text-sm font-bold text-slate-900">
@@ -235,7 +235,7 @@ export function AdminAreaServiceEditor() {
             </Button>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+          <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
             {formError ? (
               <p className={`${formErrorClass} mb-4`} role="alert">
                 {formError}

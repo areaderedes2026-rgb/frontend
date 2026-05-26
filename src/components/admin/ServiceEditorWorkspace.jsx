@@ -5,7 +5,6 @@ import { ServiceContactsEditor } from './ServiceContactsEditor.jsx'
 import { ServiceGalleryEditor } from './ServiceGalleryEditor.jsx'
 import { ServiceProjectsEditor } from './ServiceProjectsEditor.jsx'
 import { inputClass, labelClass, textareaClass } from '../ui/formStyles.js'
-import { resolveMediaUrl } from '../../utils/imageUrl.js'
 import {
   isServiceAuthoritySectionVisible,
   normalizeServiceAuthoritySection,
@@ -116,7 +115,7 @@ export function ServiceEditorWorkspace({
   const authority = normalizeServiceAuthoritySection(draft?.authoritySection)
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 max-w-full space-y-4 overflow-x-hidden">
       <div className="flex flex-wrap gap-1 rounded-xl border border-slate-200 bg-slate-50/80 p-1">
         {TABS.map((item) => (
           <TabButton
@@ -136,8 +135,8 @@ export function ServiceEditorWorkspace({
       </div>
 
       {tab === 'general' ? (
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(220px,300px)]">
-          <div className="grid gap-3 sm:grid-cols-2">
+        <div className="min-w-0 space-y-4">
+          <div className="grid min-w-0 gap-3 sm:grid-cols-2">
             <label className={`${labelClass} sm:col-span-2`}>
               Título del servicio
               <input
@@ -190,7 +189,7 @@ export function ServiceEditorWorkspace({
             <label className={`${labelClass} sm:col-span-2`}>
               Descripción
               <textarea
-                className={`${textareaClass} min-h-28`}
+                className={`${textareaClass} min-h-32`}
                 value={draft.description || ''}
                 onChange={(e) => setDraftField('description', e.target.value)}
                 disabled={saving}
@@ -200,7 +199,7 @@ export function ServiceEditorWorkspace({
             <label className={`${labelClass} sm:col-span-2`}>
               Objetivo general
               <textarea
-                className={`${textareaClass} min-h-24`}
+                className={`${textareaClass} min-h-28`}
                 value={draft.generalObjective || ''}
                 onChange={(e) => setDraftField('generalObjective', e.target.value)}
                 disabled={saving}
@@ -209,25 +208,24 @@ export function ServiceEditorWorkspace({
             </label>
           </div>
 
-          <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/50 p-3">
+          <section className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-50/50 p-3 sm:p-4">
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-800">
               Imagen principal
             </p>
-            <SingleImageUploadField
-              label=""
-              value={draft.imageUrl || ''}
-              onChange={(value) => setDraftField('imageUrl', value)}
-              kind="cover"
-              disabled={saving}
-            />
-            {draft.imageUrl ? (
-              <img
-                src={resolveMediaUrl(draft.imageUrl)}
-                alt=""
-                className="aspect-video w-full rounded-lg border border-slate-200 object-cover"
+            <p className="mt-1 text-xs text-slate-600">
+              Portada del servicio en el portal. La vista previa usa el ancho completo del formulario.
+            </p>
+            <div className="mt-3 min-w-0">
+              <SingleImageUploadField
+                label="Subir o importar imagen"
+                value={draft.imageUrl || ''}
+                onChange={(value) => setDraftField('imageUrl', value)}
+                kind="cover"
+                disabled={saving}
+                compact
               />
-            ) : null}
-          </div>
+            </div>
+          </section>
         </div>
       ) : null}
 

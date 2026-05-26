@@ -16,6 +16,19 @@ const FIELD_BTN_PRIMARY = `${FIELD_BTN_BASE} bg-sky-700 text-white hover:bg-sky-
 const FIELD_BTN_NEUTRAL = `${FIELD_BTN_BASE} border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50`
 const FIELD_BTN_DANGER = `${FIELD_BTN_BASE} border border-rose-200 bg-white text-rose-700 hover:bg-rose-50`
 
+function shortImageLabel(url) {
+  const raw = String(url || '').trim()
+  if (!raw) return ''
+  try {
+    const parsed = new URL(raw)
+    const segment = parsed.pathname.split('/').filter(Boolean).pop()
+    if (segment) return decodeURIComponent(segment)
+    return parsed.hostname
+  } catch {
+    return raw.length > 56 ? `${raw.slice(0, 53)}…` : raw
+  }
+}
+
 function Spinner({ size = 'md', tone = 'sky', className = '' }) {
   const dim = size === 'sm' ? 'h-4 w-4 border-2' : 'h-5 w-5 border-2'
   const color =
@@ -47,6 +60,8 @@ export function SingleImageUploadField({
   onChange,
   kind = 'cover',
   disabled = false,
+  /** En columnas estrechas: apila preview y oculta la URL completa. */
+  compact = false,
 }) {
   const inputId = useId()
   const fileRef = useRef(null)
@@ -143,7 +158,7 @@ export function SingleImageUploadField({
   ].join(' ')
 
   return (
-    <div>
+    <div className="min-w-0 max-w-full overflow-hidden">
       {toast ? (
         <Toast variant={toast.variant} message={toast.message} onDismiss={dismissToast} />
       ) : null}
@@ -209,12 +224,12 @@ export function SingleImageUploadField({
         }}
       />
 
-      <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-stretch">
+      <div className="mt-3 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-stretch">
         <input
           type="url"
           inputMode="url"
           placeholder="https://ejemplo.com/imagen.jpg"
-          className={inputClass}
+          className={`${inputClass} min-w-0 sm:flex-1`}
           value={remoteUrl}
           disabled={!isInteractive}
           onChange={(e) => setRemoteUrl(e.target.value)}
@@ -223,7 +238,7 @@ export function SingleImageUploadField({
           type="button"
           disabled={!isInteractive || !remoteUrl.trim()}
           onClick={() => void handleImport()}
-          className={FIELD_BTN_PRIMARY}
+          className={`${FIELD_BTN_PRIMARY} shrink-0`}
         >
           {busy ? (
             <>
@@ -237,12 +252,16 @@ export function SingleImageUploadField({
       </div>
 
       {value ? (
-        <div className="mt-4 flex flex-wrap items-start gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-          <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+        <div
+          className={`mt-4 min-w-0 max-w-full overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 shadow-sm ${
+            compact ? 'flex flex-col gap-3' : 'flex flex-col gap-3 sm:flex-row sm:items-start'
+          }`}
+        >
+          <div className="relative mx-auto w-full max-w-[280px] shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 sm:mx-0">
             <img
               src={resolveMediaUrl(value)}
               alt=""
-              className="block max-h-44 max-w-[260px] object-contain"
+              className="block max-h-44 w-full object-contain"
             />
             {busy ? (
               <div className="absolute inset-0 grid place-items-center bg-white/70 backdrop-blur-sm">
@@ -254,7 +273,20 @@ export function SingleImageUploadField({
             <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
               ✓ Imagen cargada
             </p>
-            <p className="break-all text-xs text-slate-500">{value}</p>
+            <p
+              className="truncate text-sm font-medium text-slate-800"
+              title={shortImageLabel(value)}
+            >
+              {shortImageLabel(value)}
+            </p>
+            {!compact ? (
+              <p
+                className="max-h-10 overflow-hidden text-xs leading-snug text-slate-500 line-clamp-2 break-all"
+                title={value}
+              >
+                {value}
+              </p>
+            ) : null}
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"

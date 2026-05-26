@@ -553,6 +553,7 @@ export function AdminAreaEditorPreview({
         }
         title={editorTitle}
         description="Los cambios quedarán pendientes hasta que toques «Guardar cambios» en el pie de la página."
+        bodyClassName="min-w-0 overflow-x-hidden"
       >
         <EditorBody
           editor={editor}

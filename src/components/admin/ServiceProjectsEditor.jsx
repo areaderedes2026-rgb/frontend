@@ -201,7 +201,7 @@ export function ServiceProjectsEditor({
   }
 
   return (
-    <div className={`space-y-3 ${className}`.trim()}>
+    <div className={`min-w-0 max-w-full space-y-3 overflow-x-hidden ${className}`.trim()}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm font-bold text-slate-900">Proyectos vinculados</p>
@@ -217,7 +217,7 @@ export function ServiceProjectsEditor({
       </div>
 
       {list.length ? (
-        <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <ul className="min-w-0 divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
           {list.map((project, index) => {
             const title = projectSummary(project)
             const status = String(project.status || '').trim()
