@@ -14,6 +14,8 @@ export function AdminPageShell({
   children,
   maxWidthClass = 'max-w-3xl',
   variant = 'card',
+  /** 'default' | 'compact' — menos margen y título más chico. */
+  headerSize = 'default',
   /** Clases extra en el envoltorio del contenido principal */
   contentClassName = '',
 }) {
@@ -30,8 +32,10 @@ export function AdminPageShell({
 
   const hasHeader = Boolean(title || eyebrow || subtitle)
   const showHeader = hasHeader
-  const actionsTopMargin = showBackLink || showHeader ? 'mt-6' : ''
-  const bodyTopMargin = showBackLink || showHeader || actions ? 'mt-8 sm:mt-10' : ''
+  const compact = headerSize === 'compact'
+  const actionsTopMargin = showBackLink || showHeader ? (compact ? 'mt-3' : 'mt-6') : ''
+  const bodyTopMargin =
+    showBackLink || showHeader || actions ? (compact ? 'mt-4' : 'mt-8 sm:mt-10') : ''
 
   return (
     <div className={`mx-auto w-full ${maxWidthClass}`}>
@@ -55,12 +59,24 @@ export function AdminPageShell({
             </p>
           ) : null}
           {title ? (
-            <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+            <h1
+              className={
+                compact
+                  ? 'mt-1 line-clamp-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl'
+                  : 'mt-2 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl'
+              }
+            >
               {title}
             </h1>
           ) : null}
           {subtitle ? (
-            <p className="mt-3 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
+            <p
+              className={
+                compact
+                  ? 'mt-1 max-w-3xl text-sm text-slate-600'
+                  : 'mt-3 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg'
+              }
+            >
               {subtitle}
             </p>
           ) : null}

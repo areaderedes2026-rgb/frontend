@@ -19,7 +19,7 @@ import {
 } from '../../utils/serviceGallery.js'
 import { normalizeServiceProjects } from '../../utils/serviceProjects.js'
 
-const TABS = [
+export const SERVICE_EDITOR_TABS = [
   { id: 'general', label: 'Información' },
   { id: 'projects', label: 'Proyectos' },
   { id: 'blocks', label: 'Secciones opcionales' },
@@ -30,10 +30,10 @@ function TabButton({ active, onClick, label, badge }) {
     <button
       type="button"
       onClick={onClick}
-      className={`shrink-0 inline-flex min-h-9 items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold whitespace-nowrap transition ${
+      className={`inline-flex min-h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-xl border px-4 py-2 text-sm font-semibold transition ${
         active
-          ? 'bg-sky-700 text-white shadow-sm'
-          : 'text-slate-600 hover:bg-white hover:text-slate-900'
+          ? 'border-sky-700 bg-sky-700 text-white shadow-md'
+          : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-sky-200 hover:bg-sky-50 hover:text-sky-900'
       }`}
     >
       {label}
@@ -104,46 +104,65 @@ function OptionalBlockShell({ title, subtitle, enabled, onToggle, disabled, chil
   )
 }
 
-export function ServiceEditorWorkspace({
-  draft,
-  setDraftField,
-  saving = false,
-  canManageServicePriority = false,
-  projectImageKind = 'gallery',
-}) {
-  const [tab, setTab] = useState('general')
-
+export function ServiceEditorTabBar({ draft, activeTab, onTabChange, className = '' }) {
   const projectCount = normalizeServiceProjects(draft?.projects).length
   const blocksCount =
     (isServiceContactSectionVisible(draft?.contactSection) ? 1 : 0) +
     (isServiceGallerySectionVisible(draft?.gallerySection) ? 1 : 0) +
     (isServiceAuthoritySectionVisible(draft?.authoritySection) ? 1 : 0)
 
+  return (
+    <div
+      className={`overflow-x-auto ${className}`.trim()}
+      role="tablist"
+      aria-label="Secciones del servicio"
+    >
+      <div className="flex min-w-max gap-1.5 p-1">
+        {SERVICE_EDITOR_TABS.map((item) => (
+          <TabButton
+            key={item.id}
+            active={activeTab === item.id}
+            onClick={() => onTabChange(item.id)}
+            label={item.label}
+            badge={
+              item.id === 'projects'
+                ? projectCount
+                : item.id === 'blocks'
+                  ? blocksCount
+                  : undefined
+            }
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+export function ServiceEditorWorkspace({
+  draft,
+  setDraftField,
+  saving = false,
+  canManageServicePriority = false,
+  projectImageKind = 'gallery',
+  activeTab: activeTabProp,
+  onTabChange,
+  showTabBar = true,
+}) {
+  const [internalTab, setInternalTab] = useState('general')
+  const tab = activeTabProp ?? internalTab
+  const setTab = onTabChange ?? setInternalTab
+
   const contact = normalizeServiceContactSection(draft?.contactSection)
   const gallery = normalizeServiceGallerySection(draft?.gallerySection)
   const authority = normalizeServiceAuthoritySection(draft?.authoritySection)
 
   return (
-    <div className="min-w-0 max-w-full space-y-4 overflow-x-hidden">
-      <div className="-mx-1 overflow-x-auto pb-0.5">
-        <div className="flex min-w-max gap-1 rounded-xl border border-slate-200 bg-slate-50/90 p-1 px-1">
-          {TABS.map((item) => (
-            <TabButton
-              key={item.id}
-              active={tab === item.id}
-              onClick={() => setTab(item.id)}
-              label={item.label}
-              badge={
-                item.id === 'projects'
-                  ? projectCount
-                  : item.id === 'blocks'
-                    ? blocksCount
-                    : undefined
-              }
-            />
-          ))}
+    <div className="min-w-0 max-w-full overflow-x-hidden">
+      {showTabBar ? (
+        <div className="mb-4 border-b border-slate-200 pb-3">
+          <ServiceEditorTabBar draft={draft} activeTab={tab} onTabChange={setTab} />
         </div>
-      </div>
+      ) : null}
 
       {tab === 'general' ? (
         <div className="min-w-0 space-y-6">

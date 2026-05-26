@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
-import { ServiceEditorWorkspace } from '../../components/admin/ServiceEditorWorkspace.jsx'
+import {
+  ServiceEditorTabBar,
+  ServiceEditorWorkspace,
+} from '../../components/admin/ServiceEditorWorkspace.jsx'
 import { Button } from '../../components/ui/Button.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
 import { formErrorClass } from '../../components/ui/formStyles.js'
@@ -68,6 +71,45 @@ function StatusPill({ label, active }) {
   )
 }
 
+function FloatingSaveBar({ hasChanges, saving, serviceTitle }) {
+  return (
+    <div
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center px-3 pb-3 pt-2 sm:px-4 sm:pb-4"
+      aria-live="polite"
+    >
+      <div
+        className={`pointer-events-auto flex w-full max-w-[min(96vw,88rem)] items-center gap-3 rounded-2xl border px-4 py-3 shadow-[0_-10px_40px_-8px_rgba(15,23,42,0.25)] backdrop-blur-md sm:gap-4 sm:px-5 sm:py-3.5 ${
+          hasChanges
+            ? 'border-amber-300/90 bg-amber-50/95 ring-2 ring-amber-400/30'
+            : 'border-slate-200/90 bg-white/95'
+        }`}
+      >
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-bold text-slate-900">
+            {serviceTitle || 'Servicio'}
+          </p>
+          <p className="text-xs text-slate-600">
+            {hasChanges ? (
+              <span className="font-semibold text-amber-900">
+                Tenés cambios sin guardar — recordá guardar antes de salir
+              </span>
+            ) : (
+              <span className="text-emerald-800">✓ Todo guardado en el servidor</span>
+            )}
+          </p>
+        </div>
+        <Button
+          type="submit"
+          disabled={saving || !hasChanges}
+          className="shrink-0 px-5 shadow-md sm:px-6"
+        >
+          {saving ? 'Guardando…' : 'Guardar cambios'}
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 export function AdminAreaServiceEditor() {
   const { areaSlug, serviceId } = useParams()
   const [area, setArea] = useState(null)
@@ -79,6 +121,7 @@ export function AdminAreaServiceEditor() {
   const [error, setError] = useState('')
   const [formError, setFormError] = useState('')
   const [toast, setToast] = useState(null)
+  const [tab, setTab] = useState('general')
 
   const hasChanges = useMemo(
     () => snapshot(service) !== savedSnapshot,
@@ -130,6 +173,7 @@ export function AdminAreaServiceEditor() {
     setFormError('')
     if (!service.title.trim()) {
       setFormError('El título del servicio es obligatorio.')
+      setTab('general')
       return
     }
     setSaving(true)
@@ -171,36 +215,21 @@ export function AdminAreaServiceEditor() {
 
   return (
     <AdminPageShell
-      eyebrow="Editor de servicio"
-      title={service.title || 'Servicio de área'}
-      subtitle={
-        area?.title
-          ? `${area.title} · Editá el contenido por pestañas y guardá cuando termines.`
-          : 'Editá el servicio asignado por pestañas.'
-      }
+      eyebrow={area?.title || 'Área municipal'}
+      title={service.title || 'Editar servicio'}
+      subtitle={null}
+      headerSize="compact"
       showBackLink={false}
       maxWidthClass="max-w-[min(96vw,88rem)]"
       variant="plain"
-      contentClassName="!mt-4"
+      contentClassName="!mt-0 space-y-3"
       actions={
-        <div className="flex flex-wrap items-center gap-2">
-          <Link
-            to="/admin/my-area-services"
-            className="inline-flex min-h-10 items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
-          >
-            ← Mis servicios
-          </Link>
-          <StatusPill
-            label={`${projectCount} proyecto${projectCount === 1 ? '' : 's'}`}
-            active={projectCount > 0}
-          />
-          <StatusPill label="Contactos" active={isServiceContactSectionVisible(service.contactSection)} />
-          <StatusPill label="Galería" active={isServiceGallerySectionVisible(service.gallerySection)} />
-          <StatusPill
-            label="Autoridades"
-            active={isServiceAuthoritySectionVisible(service.authoritySection)}
-          />
-        </div>
+        <Link
+          to="/admin/my-area-services"
+          className="inline-flex min-h-9 items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+        >
+          ← Mis servicios
+        </Link>
       }
     >
       {toast ? (
@@ -216,23 +245,31 @@ export function AdminAreaServiceEditor() {
           {error}
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="min-w-0 space-y-4 overflow-x-hidden">
-          <div className="sticky top-[calc(var(--navbar-h,4rem)+0.5rem)] z-20 flex flex-col gap-3 rounded-2xl border border-slate-200/90 bg-white/95 px-4 py-3 shadow-md backdrop-blur sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <p className="truncate text-sm font-bold text-slate-900">
-                {service.title || 'Sin título'}
-              </p>
-              <p className="text-xs text-slate-500">
-                {hasChanges ? (
-                  <span className="font-semibold text-amber-800">Cambios sin guardar</span>
-                ) : (
-                  'Todo guardado'
-                )}
-              </p>
+        <form onSubmit={handleSubmit} className="min-w-0 pb-28">
+          <div className="sticky top-0 z-30 -mx-1 space-y-2 rounded-2xl border border-slate-200 bg-white px-3 py-3 shadow-md sm:px-4">
+            <ServiceEditorTabBar
+              draft={service}
+              activeTab={tab}
+              onTabChange={setTab}
+            />
+            <div className="flex flex-wrap gap-1.5 border-t border-slate-100 pt-2">
+              <StatusPill
+                label={`${projectCount} proyecto${projectCount === 1 ? '' : 's'}`}
+                active={projectCount > 0}
+              />
+              <StatusPill
+                label="Contactos"
+                active={isServiceContactSectionVisible(service.contactSection)}
+              />
+              <StatusPill
+                label="Galería"
+                active={isServiceGallerySectionVisible(service.gallerySection)}
+              />
+              <StatusPill
+                label="Autoridades"
+                active={isServiceAuthoritySectionVisible(service.authoritySection)}
+              />
             </div>
-            <Button type="submit" disabled={saving || !hasChanges} className="shrink-0">
-              {saving ? 'Guardando...' : 'Guardar cambios'}
-            </Button>
           </div>
 
           <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
@@ -247,8 +284,17 @@ export function AdminAreaServiceEditor() {
               saving={saving}
               canManageServicePriority={false}
               projectImageKind="cover"
+              activeTab={tab}
+              onTabChange={setTab}
+              showTabBar={false}
             />
           </div>
+
+          <FloatingSaveBar
+            hasChanges={hasChanges}
+            saving={saving}
+            serviceTitle={service.title}
+          />
         </form>
       )}
     </AdminPageShell>
