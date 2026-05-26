@@ -58,7 +58,7 @@ export function ServiceContactsEditor({
 
   return (
     <div
-      className={`space-y-4 rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4 sm:col-span-2 ${className}`.trim()}
+      className={`min-w-0 max-w-full space-y-4 overflow-hidden rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4 sm:col-span-2 ${className}`.trim()}
     >
       {!hideHeader ? (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">

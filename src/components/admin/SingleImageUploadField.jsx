@@ -11,7 +11,7 @@ import { formErrorClass, inputClass, labelClass } from '../ui/formStyles.js'
 const ACCEPT = 'image/jpeg,image/png,image/webp,image/gif'
 
 const FIELD_BTN_BASE =
-  'inline-flex min-h-10 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition shadow-sm disabled:cursor-not-allowed disabled:opacity-60'
+  'inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition shadow-sm disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-10 sm:px-4 sm:text-sm'
 const FIELD_BTN_PRIMARY = `${FIELD_BTN_BASE} bg-sky-700 text-white hover:bg-sky-800`
 const FIELD_BTN_NEUTRAL = `${FIELD_BTN_BASE} border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50`
 const FIELD_BTN_DANGER = `${FIELD_BTN_BASE} border border-rose-200 bg-white text-rose-700 hover:bg-rose-50`
@@ -25,7 +25,7 @@ function shortImageLabel(url) {
     if (segment) return decodeURIComponent(segment)
     return parsed.hostname
   } catch {
-    return raw.length > 56 ? `${raw.slice(0, 53)}…` : raw
+    return raw.length > 48 ? `${raw.slice(0, 45)}…` : raw
   }
 }
 
@@ -44,14 +44,7 @@ function Spinner({ size = 'md', tone = 'sky', className = '' }) {
 }
 
 /**
- * Carga de una sola imagen (portadas, fotos de autoridad, etc.) con:
- * - drag & drop + click sobre dropzone para elegir archivo,
- * - importación por URL,
- * - spinner durante upload/import,
- * - toast de éxito/error,
- * - preview con botón de quitar.
- *
- * Mantiene la API existente: { label, helpText, value, onChange, kind, disabled }.
+ * Carga de una sola imagen (portadas, fotos de autoridad, etc.).
  */
 export function SingleImageUploadField({
   label,
@@ -60,7 +53,7 @@ export function SingleImageUploadField({
   onChange,
   kind = 'cover',
   disabled = false,
-  /** En columnas estrechas: apila preview y oculta la URL completa. */
+  /** Menos padding y sin URL completa (columnas estrechas). */
   compact = false,
 }) {
   const inputId = useId()
@@ -70,6 +63,7 @@ export function SingleImageUploadField({
   const [error, setError] = useState('')
   const [remoteUrl, setRemoteUrl] = useState('')
   const [toast, setToast] = useState(null)
+  const [showUrl, setShowUrl] = useState(false)
   const dismissToast = useCallback(() => setToast(null), [])
   const api = isApiConfigured()
 
@@ -116,6 +110,7 @@ export function SingleImageUploadField({
     if (busy) return
     onChange('')
     setError('')
+    setShowUrl(false)
     setToast({ variant: 'success', message: 'Imagen quitada.' })
   }
 
@@ -147,8 +142,19 @@ export function SingleImageUploadField({
     if (file) void handleFile(file)
   }
 
+  async function copyUrl() {
+    if (!value || !navigator.clipboard) return
+    try {
+      await navigator.clipboard.writeText(value)
+      setToast({ variant: 'success', message: 'Enlace copiado.' })
+    } catch {
+      setToast({ variant: 'error', message: 'No se pudo copiar el enlace.' })
+    }
+  }
+
   const dropzoneClass = [
-    'relative flex w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-5 py-7 text-center transition',
+    'relative flex w-full max-w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed text-center transition',
+    compact ? 'px-3 py-5' : 'px-5 py-7',
     isInteractive
       ? dragOver
         ? 'border-sky-500 bg-sky-50/80 text-sky-800'
@@ -158,18 +164,22 @@ export function SingleImageUploadField({
   ].join(' ')
 
   return (
-    <div className="min-w-0 max-w-full overflow-hidden">
+    <div className="min-w-0 max-w-full">
       {toast ? (
         <Toast variant={toast.variant} message={toast.message} onDismiss={dismissToast} />
       ) : null}
 
-      <label className={labelClass} htmlFor={inputId}>
-        {label}
-      </label>
-      <p className="mb-2 text-xs text-slate-500">{helpText}</p>
+      {label ? (
+        <label className={labelClass} htmlFor={inputId}>
+          {label}
+        </label>
+      ) : null}
+      {helpText ? (
+        <p className={`text-xs text-slate-500 ${label ? 'mb-2' : 'mb-2'}`}>{helpText}</p>
+      ) : null}
 
       {error ? (
-        <p className={`${formErrorClass} mb-2`} role="alert">
+        <p className={`${formErrorClass} mb-2 break-words`} role="alert">
           {error}
         </p>
       ) : null}
@@ -190,22 +200,23 @@ export function SingleImageUploadField({
           <>
             <Spinner />
             <span className="text-sm font-semibold text-sky-800">Subiendo imagen…</span>
-            <span className="text-xs text-sky-700/80">No cierres esta ventana hasta que termine.</span>
           </>
         ) : (
           <>
             <span
               aria-hidden
-              className="grid h-10 w-10 place-items-center rounded-full bg-white text-sky-700 ring-1 ring-slate-200"
+              className="grid h-9 w-9 place-items-center rounded-full bg-white text-sky-700 ring-1 ring-slate-200"
             >
               ↑
             </span>
-            <span className="text-sm font-semibold">
-              {value ? 'Reemplazar imagen' : 'Soltá una imagen acá o tocá para elegir'}
+            <span className="max-w-full px-2 text-sm font-semibold">
+              {value ? 'Reemplazar imagen' : 'Soltá una imagen o tocá para elegir'}
             </span>
-            <span id={`${inputId}-help`} className="text-xs text-slate-500">
-              También podés importarla desde una URL más abajo.
-            </span>
+            {!compact ? (
+              <span id={`${inputId}-help`} className="max-w-full px-2 text-xs text-slate-500">
+                También podés importarla desde una URL.
+              </span>
+            ) : null}
           </>
         )}
       </button>
@@ -224,12 +235,12 @@ export function SingleImageUploadField({
         }}
       />
 
-      <div className="mt-3 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-stretch">
+      <div className="mt-3 grid min-w-0 max-w-full gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
         <input
           type="url"
           inputMode="url"
           placeholder="https://ejemplo.com/imagen.jpg"
-          className={`${inputClass} min-w-0 sm:flex-1`}
+          className={`${inputClass} min-w-0`}
           value={remoteUrl}
           disabled={!isInteractive}
           onChange={(e) => setRemoteUrl(e.target.value)}
@@ -238,79 +249,90 @@ export function SingleImageUploadField({
           type="button"
           disabled={!isInteractive || !remoteUrl.trim()}
           onClick={() => void handleImport()}
-          className={`${FIELD_BTN_PRIMARY} shrink-0`}
+          className={`${FIELD_BTN_PRIMARY} w-full sm:w-auto`}
         >
           {busy ? (
             <>
               <Spinner size="sm" tone="white" />
-              Procesando…
+              …
             </>
           ) : (
-            'Importar URL'
+            'Importar'
           )}
         </button>
       </div>
 
       {value ? (
-        <div
-          className={`mt-4 min-w-0 max-w-full overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 shadow-sm ${
-            compact ? 'flex flex-col gap-3' : 'flex flex-col gap-3 sm:flex-row sm:items-start'
-          }`}
-        >
-          <div className="relative mx-auto w-full max-w-[280px] shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 sm:mx-0">
-            <img
-              src={resolveMediaUrl(value)}
-              alt=""
-              className="block max-h-44 w-full object-contain"
-            />
-            {busy ? (
-              <div className="absolute inset-0 grid place-items-center bg-white/70 backdrop-blur-sm">
-                <Spinner />
-              </div>
-            ) : null}
-          </div>
-          <div className="flex min-w-0 flex-1 flex-col gap-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
-              ✓ Imagen cargada
-            </p>
-            <p
-              className="truncate text-sm font-medium text-slate-800"
-              title={shortImageLabel(value)}
-            >
-              {shortImageLabel(value)}
-            </p>
-            {!compact ? (
-              <p
-                className="max-h-10 overflow-hidden text-xs leading-snug text-slate-500 line-clamp-2 break-all"
-                title={value}
-              >
-                {value}
+        <div className="mt-4 min-w-0 max-w-full overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+          <div className="flex min-w-0 flex-col gap-3">
+            <div className="relative mx-auto w-full max-w-xs overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+              <img
+                src={resolveMediaUrl(value)}
+                alt=""
+                className="mx-auto block max-h-40 w-full object-contain"
+              />
+              {busy ? (
+                <div className="absolute inset-0 grid place-items-center bg-white/70 backdrop-blur-sm">
+                  <Spinner />
+                </div>
+              ) : null}
+            </div>
+
+            <div className="min-w-0 max-w-full space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                ✓ Imagen cargada
               </p>
-            ) : null}
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={openFilePicker}
-                disabled={!isInteractive}
-                className={FIELD_BTN_NEUTRAL}
-              >
-                Reemplazar
-              </button>
-              <button
-                type="button"
-                onClick={removeImage}
-                disabled={!api || disabled || busy}
-                className={FIELD_BTN_DANGER}
-              >
-                Quitar
-              </button>
+              <p className="truncate text-sm font-medium text-slate-800" title={shortImageLabel(value)}>
+                {shortImageLabel(value)}
+              </p>
+
+              {!compact ? (
+                <div className="min-w-0 max-w-full">
+                  <button
+                    type="button"
+                    onClick={() => setShowUrl((v) => !v)}
+                    className="text-xs font-semibold text-sky-700 hover:text-sky-900"
+                  >
+                    {showUrl ? 'Ocultar enlace' : 'Ver enlace completo'}
+                  </button>
+                  {showUrl ? (
+                    <div className="mt-1.5 max-w-full overflow-x-auto rounded-lg border border-slate-100 bg-slate-50 px-2 py-1.5">
+                      <p className="break-all text-[11px] leading-snug text-slate-600">{value}</p>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
+              <div className="flex min-w-0 flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={openFilePicker}
+                  disabled={!isInteractive}
+                  className={FIELD_BTN_NEUTRAL}
+                >
+                  Reemplazar
+                </button>
+                {value && navigator.clipboard ? (
+                  <button type="button" onClick={() => void copyUrl()} className={FIELD_BTN_NEUTRAL}>
+                    Copiar enlace
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={removeImage}
+                  disabled={!api || disabled || busy}
+                  className={FIELD_BTN_DANGER}
+                >
+                  Quitar
+                </button>
+              </div>
             </div>
           </div>
         </div>
       ) : null}
 
       {!api ? (
-        <p className="mt-2 text-xs text-amber-700">
+        <p className="mt-2 break-words text-xs text-amber-700">
           La carga de imágenes requiere conexión activa con el backend.
         </p>
       ) : null}
