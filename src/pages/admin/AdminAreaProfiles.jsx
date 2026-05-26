@@ -26,6 +26,14 @@ import { isApiConfigured } from '../../utils/apiConfig.js'
 import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
 import {
+  isServiceAuthoritySectionVisible,
+  normalizeServiceAuthoritySection,
+} from '../../utils/serviceAuthority.js'
+import {
+  isServiceGallerySectionVisible,
+  normalizeServiceGallerySection,
+} from '../../utils/serviceGallery.js'
+import {
   isServiceContactSectionVisible,
   normalizeServiceContactSection,
 } from '../../utils/serviceContacts.js'
@@ -115,6 +123,8 @@ function mapServiceToForm(service, idx = 0) {
         : Math.max(0, Math.round(Number(rawOrder)) || 0),
     projects: mapServiceProjects(service?.projects),
     contactSection: normalizeServiceContactSection(service?.contactSection),
+    gallerySection: normalizeServiceGallerySection(service?.gallerySection),
+    authoritySection: normalizeServiceAuthoritySection(service?.authoritySection),
   }
 }
 
@@ -131,6 +141,8 @@ function buildServicesPayload(services) {
       sortOrder: Math.max(0, Math.round(Number(service?.sortOrder)) || 0),
       projects: normalizeServiceProjects(service?.projects),
       contactSection: normalizeServiceContactSection(service?.contactSection),
+      gallerySection: normalizeServiceGallerySection(service?.gallerySection),
+      authoritySection: normalizeServiceAuthoritySection(service?.authoritySection),
     }))
     .filter((service) =>
       Boolean(
@@ -142,7 +154,9 @@ function buildServicesPayload(services) {
           service.personInCharge ||
           service.generalObjective ||
           service.projects.length ||
-          isServiceContactSectionVisible(service.contactSection),
+          isServiceContactSectionVisible(service.contactSection) ||
+          isServiceGallerySectionVisible(service.gallerySection) ||
+          isServiceAuthoritySectionVisible(service.authoritySection),
       ),
     )
 }

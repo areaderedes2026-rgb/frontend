@@ -1,5 +1,7 @@
 import { getAreaBySlug } from './areas.js'
+import { normalizeServiceAuthoritySection } from '../utils/serviceAuthority.js'
 import { normalizeServiceContactSection } from '../utils/serviceContacts.js'
+import { normalizeServiceGallerySection } from '../utils/serviceGallery.js'
 import { normalizeServiceProjects } from '../utils/serviceProjects.js'
 
 const DEFAULT_MAP_EMBED =
@@ -389,6 +391,8 @@ export function mergeAreaProfile(baseProfile, custom = {}) {
           : Math.max(0, Math.round(Number(service.sortOrder)) || 0),
       projects: normalizeServiceProjects(service?.projects),
       contactSection: normalizeServiceContactSection(service?.contactSection),
+      gallerySection: normalizeServiceGallerySection(service?.gallerySection),
+      authoritySection: normalizeServiceAuthoritySection(service?.authoritySection),
     })),
     initiatives: [],
     contactCards: custom.contactCards || baseProfile.contactCards || [],

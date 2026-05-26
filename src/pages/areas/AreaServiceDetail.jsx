@@ -8,8 +8,12 @@ import { fetchAreaPublicBySlug } from '../../services/areasService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
 import { ROUTES } from '../../utils/constants.js'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
+import { ServiceAuthoritySection } from '../../components/areas/ServiceAuthoritySection.jsx'
 import { ServiceContactSection } from '../../components/areas/ServiceContactSection.jsx'
+import { ServiceGallerySection } from '../../components/areas/ServiceGallerySection.jsx'
+import { isServiceAuthoritySectionVisible } from '../../utils/serviceAuthority.js'
 import { isServiceContactSectionVisible } from '../../utils/serviceContacts.js'
+import { isServiceGallerySectionVisible } from '../../utils/serviceGallery.js'
 
 function ServiceDetailSkeleton() {
   return (
@@ -227,6 +231,8 @@ export function AreaServiceDetail() {
     : []
   const hasMeta = Boolean(personInCharge || generalObjective)
   const showContacts = isServiceContactSectionVisible(service.contactSection)
+  const showAuthorities = isServiceAuthoritySectionVisible(service.authoritySection)
+  const showGallery = isServiceGallerySectionVisible(service.gallerySection)
   const showSidebar = hasMeta || showContacts
 
   return (
@@ -312,6 +318,12 @@ export function AreaServiceDetail() {
                   </section>
                 </RevealOnScroll>
 
+                {showAuthorities ? (
+                  <RevealOnScroll variant="newsCardSlow" delayMs={60}>
+                    <ServiceAuthoritySection authoritySection={service.authoritySection} />
+                  </RevealOnScroll>
+                ) : null}
+
                 {projects.length > 0 ? (
                   <RevealOnScroll variant="newsCardSlow" delayMs={90}>
                     <section>
@@ -336,6 +348,12 @@ export function AreaServiceDetail() {
                         ))}
                       </ul>
                     </section>
+                  </RevealOnScroll>
+                ) : null}
+
+                {showGallery ? (
+                  <RevealOnScroll variant="newsCardSlow" delayMs={120}>
+                    <ServiceGallerySection gallerySection={service.gallerySection} />
                   </RevealOnScroll>
                 ) : null}
               </div>

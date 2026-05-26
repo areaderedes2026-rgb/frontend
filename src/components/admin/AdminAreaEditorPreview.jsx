@@ -3,15 +3,25 @@ import { Modal } from '../ui/Modal.jsx'
 import { ConfirmDialog } from '../ui/ConfirmDialog.jsx'
 import { AdminAreaOfficesPanel } from './AdminAreaOfficesPanel.jsx'
 import { SingleImageUploadField } from './SingleImageUploadField.jsx'
+import { ServiceAuthoritiesEditor } from './ServiceAuthoritiesEditor.jsx'
 import { ServiceContactsEditor } from './ServiceContactsEditor.jsx'
+import { ServiceGalleryEditor } from './ServiceGalleryEditor.jsx'
 import { ServiceProjectsEditor } from './ServiceProjectsEditor.jsx'
 import { inputClass, labelClass, textareaClass } from '../ui/formStyles.js'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
 import { normalizeServiceProjects } from '../../utils/serviceProjects.js'
 import {
+  isServiceAuthoritySectionVisible,
+  normalizeServiceAuthoritySection,
+} from '../../utils/serviceAuthority.js'
+import {
   isServiceContactSectionVisible,
   normalizeServiceContactSection,
 } from '../../utils/serviceContacts.js'
+import {
+  isServiceGallerySectionVisible,
+  normalizeServiceGallerySection,
+} from '../../utils/serviceGallery.js'
 
 function newClientServiceId() {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -148,6 +158,8 @@ const EMPTY_SERVICE = {
   sortOrder: 0,
   projects: [],
   contactSection: { enabled: false, title: 'Contacto', items: [] },
+  gallerySection: { enabled: false, title: 'Galería de fotos', images: [] },
+  authoritySection: { enabled: false, title: 'Autoridades a cargo', intro: '', people: [] },
 }
 const EMPTY_CONTACT = { label: '', value: '', note: '' }
 const EMPTY_SCHOOL = {
@@ -391,6 +403,8 @@ export function AdminAreaEditorPreview({
           sortOrder: Math.max(0, Math.round(Number(draft.sortOrder)) || 0),
           projects: normalizeServiceProjects(draft.projects),
           contactSection: normalizeServiceContactSection(draft.contactSection),
+          gallerySection: normalizeServiceGallerySection(draft.gallerySection),
+          authoritySection: normalizeServiceAuthoritySection(draft.authoritySection),
         })
         break
       }
@@ -832,6 +846,8 @@ export function AdminAreaEditorPreview({
                                   ...service,
                                   projects: normalizeServiceProjects(service.projects),
                                   contactSection: normalizeServiceContactSection(service.contactSection),
+                                  gallerySection: normalizeServiceGallerySection(service.gallerySection),
+                                  authoritySection: normalizeServiceAuthoritySection(service.authoritySection),
                                 })
                               }
                               disabled={saving}
@@ -911,6 +927,16 @@ export function AdminAreaEditorPreview({
                             {isServiceContactSectionVisible(service.contactSection) ? (
                               <p className="mt-2 inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-emerald-800 ring-1 ring-emerald-100">
                                 Contactos activos
+                              </p>
+                            ) : null}
+                            {isServiceGallerySectionVisible(service.gallerySection) ? (
+                              <p className="mt-2 inline-flex rounded-full bg-violet-50 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-violet-800 ring-1 ring-violet-100">
+                                Galería activa
+                              </p>
+                            ) : null}
+                            {isServiceAuthoritySectionVisible(service.authoritySection) ? (
+                              <p className="mt-2 inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-amber-900 ring-1 ring-amber-100">
+                                Autoridades activas
                               </p>
                             ) : null}
                           </div>
@@ -1504,6 +1530,16 @@ function ServiceForm({ draft, setDraftField, saving, canManageServicePriority })
       <ServiceContactsEditor
         contactSection={draft.contactSection}
         onChange={(contactSection) => setDraftField('contactSection', contactSection)}
+        saving={saving}
+      />
+      <ServiceGalleryEditor
+        gallerySection={draft.gallerySection}
+        onChange={(gallerySection) => setDraftField('gallerySection', gallerySection)}
+        saving={saving}
+      />
+      <ServiceAuthoritiesEditor
+        authoritySection={draft.authoritySection}
+        onChange={(authoritySection) => setDraftField('authoritySection', authoritySection)}
         saving={saving}
       />
     </div>

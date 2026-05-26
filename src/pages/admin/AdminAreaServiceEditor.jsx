@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
 import { SingleImageUploadField } from '../../components/admin/SingleImageUploadField.jsx'
+import { ServiceAuthoritiesEditor } from '../../components/admin/ServiceAuthoritiesEditor.jsx'
 import { ServiceContactsEditor } from '../../components/admin/ServiceContactsEditor.jsx'
+import { ServiceGalleryEditor } from '../../components/admin/ServiceGalleryEditor.jsx'
 import { ServiceProjectsEditor } from '../../components/admin/ServiceProjectsEditor.jsx'
 import { Button } from '../../components/ui/Button.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
@@ -19,7 +21,18 @@ import {
 import { isApiConfigured } from '../../utils/apiConfig.js'
 import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
-import { isServiceContactSectionVisible, normalizeServiceContactSection } from '../../utils/serviceContacts.js'
+import {
+  isServiceAuthoritySectionVisible,
+  normalizeServiceAuthoritySection,
+} from '../../utils/serviceAuthority.js'
+import {
+  isServiceContactSectionVisible,
+  normalizeServiceContactSection,
+} from '../../utils/serviceContacts.js'
+import {
+  isServiceGallerySectionVisible,
+  normalizeServiceGallerySection,
+} from '../../utils/serviceGallery.js'
 import { normalizeServiceProjects } from '../../utils/serviceProjects.js'
 
 const EMPTY_SERVICE = {
@@ -32,6 +45,8 @@ const EMPTY_SERVICE = {
   generalObjective: '',
   projects: [],
   contactSection: { enabled: false, title: 'Contacto', items: [] },
+  gallerySection: { enabled: false, title: 'Galería de fotos', images: [] },
+  authoritySection: { enabled: false, title: 'Autoridades a cargo', intro: '', people: [] },
 }
 
 function snapshot(service) {
@@ -44,6 +59,8 @@ function snapshot(service) {
     generalObjective: service.generalObjective || '',
     projects: normalizeServiceProjects(service.projects),
     contactSection: normalizeServiceContactSection(service.contactSection),
+    gallerySection: normalizeServiceGallerySection(service.gallerySection),
+    authoritySection: normalizeServiceAuthoritySection(service.authoritySection),
   })
 }
 
@@ -78,6 +95,8 @@ export function AdminAreaServiceEditor() {
           ...(data?.service || {}),
           projects: normalizeServiceProjects(data?.service?.projects),
           contactSection: normalizeServiceContactSection(data?.service?.contactSection),
+          gallerySection: normalizeServiceGallerySection(data?.service?.gallerySection),
+          authoritySection: normalizeServiceAuthoritySection(data?.service?.authoritySection),
         }
         setArea(data?.area || null)
         setService(next)
@@ -117,6 +136,8 @@ export function AdminAreaServiceEditor() {
           ...service,
           projects: normalizeServiceProjects(service.projects),
           contactSection: normalizeServiceContactSection(service.contactSection),
+          gallerySection: normalizeServiceGallerySection(service.gallerySection),
+          authoritySection: normalizeServiceAuthoritySection(service.authoritySection),
         },
       })
       const next = {
@@ -124,6 +145,8 @@ export function AdminAreaServiceEditor() {
         ...(data?.service || {}),
         projects: normalizeServiceProjects(data?.service?.projects),
         contactSection: normalizeServiceContactSection(data?.service?.contactSection),
+        gallerySection: normalizeServiceGallerySection(data?.service?.gallerySection),
+        authoritySection: normalizeServiceAuthoritySection(data?.service?.authoritySection),
       }
       setArea(data?.area || area)
       setService(next)
@@ -254,6 +277,16 @@ export function AdminAreaServiceEditor() {
                 onChange={(contactSection) => updateField('contactSection', contactSection)}
                 saving={saving}
               />
+              <ServiceGalleryEditor
+                gallerySection={service.gallerySection}
+                onChange={(gallerySection) => updateField('gallerySection', gallerySection)}
+                saving={saving}
+              />
+              <ServiceAuthoritiesEditor
+                authoritySection={service.authoritySection}
+                onChange={(authoritySection) => updateField('authoritySection', authoritySection)}
+                saving={saving}
+              />
               <div className="flex flex-wrap gap-3 pt-2">
                 <Button type="submit" disabled={saving || !hasChanges}>
                   {saving ? 'Guardando...' : 'Guardar cambios'}
@@ -329,6 +362,37 @@ export function AdminAreaServiceEditor() {
                         <p className="font-semibold text-slate-900">{item.label || item.value}</p>
                         {item.value && item.label ? (
                           <p className="mt-0.5 text-slate-600">{item.value}</p>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              {isServiceGallerySectionVisible(service.gallerySection) ? (
+                <div className="mt-5 rounded-2xl border border-violet-100 bg-violet-50/70 p-3">
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-violet-800">
+                    {normalizeServiceGallerySection(service.gallerySection).title}
+                  </p>
+                  <p className="mt-2 text-xs font-semibold text-violet-900">
+                    {normalizeServiceGallerySection(service.gallerySection).images.filter((i) => i.imageUrl).length}{' '}
+                    foto(s)
+                  </p>
+                </div>
+              ) : null}
+              {isServiceAuthoritySectionVisible(service.authoritySection) ? (
+                <div className="mt-5 rounded-2xl border border-amber-100 bg-amber-50/70 p-3">
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-900">
+                    {normalizeServiceAuthoritySection(service.authoritySection).title}
+                  </p>
+                  <div className="mt-3 space-y-2">
+                    {normalizeServiceAuthoritySection(service.authoritySection).people.map((person) => (
+                      <div
+                        key={person.id || person.name}
+                        className="rounded-xl bg-white px-3 py-2 text-sm shadow-sm"
+                      >
+                        <p className="font-semibold text-slate-900">{person.name || 'Sin nombre'}</p>
+                        {person.role ? (
+                          <p className="mt-0.5 text-xs font-semibold text-amber-800">{person.role}</p>
                         ) : null}
                       </div>
                     ))}
