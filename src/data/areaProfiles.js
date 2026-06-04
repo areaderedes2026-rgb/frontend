@@ -1,6 +1,7 @@
 import { getAreaBySlug } from './areas.js'
 import { normalizeServiceAuthoritySection } from '../utils/serviceAuthority.js'
 import { normalizeProceduresSection } from '../utils/areaProcedures.js'
+import { normalizeAnnouncementsSection } from '../utils/areaAnnouncements.js'
 import { normalizeServiceContactSection } from '../utils/serviceContacts.js'
 import { normalizeServiceGallerySection } from '../utils/serviceGallery.js'
 import { normalizeServiceProjects } from '../utils/serviceProjects.js'
@@ -407,6 +408,12 @@ export function mergeAreaProfile(baseProfile, custom = {}) {
         ? normalizeProceduresSection(custom.proceduresSection)
         : baseProfile.proceduresSection
           ? normalizeProceduresSection(baseProfile.proceduresSection)
+          : null,
+    announcementsSection:
+      'announcementsSection' in custom
+        ? normalizeAnnouncementsSection(custom.announcementsSection)
+        : baseProfile.announcementsSection
+          ? normalizeAnnouncementsSection(baseProfile.announcementsSection)
           : null,
   }
 }

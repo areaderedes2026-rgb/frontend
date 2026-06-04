@@ -25,6 +25,12 @@ import {
   normalizeProcedureItem,
   parseProcedureStepsText,
 } from '../../utils/areaProcedures.js'
+import {
+  ANNOUNCEMENT_VARIANTS,
+  isAnnouncementsSectionVisible,
+  normalizeAnnouncementDisplayMode,
+  normalizeAnnouncementItem,
+} from '../../utils/areaAnnouncements.js'
 
 function newClientServiceId() {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -192,6 +198,27 @@ const DEFAULT_PROCEDURES_SECTION = {
   title: '',
   intro: '',
   items: [],
+}
+const EMPTY_ANNOUNCEMENT = {
+  id: '',
+  title: '',
+  message: '',
+  linkUrl: '',
+  linkLabel: '',
+  variant: 'info',
+  dismissible: true,
+}
+const DEFAULT_ANNOUNCEMENTS_SECTION = {
+  enabled: false,
+  displayMode: 'inline',
+  items: [],
+}
+
+const ANNOUNCEMENT_VARIANT_LABELS = {
+  info: 'Información',
+  warning: 'Aviso',
+  success: 'Confirmación',
+  urgent: 'Urgente',
 }
 
 function SectionCard({
@@ -474,6 +501,65 @@ export function AdminAreaEditorPreview({
     })
   }
 
+  function setAnnouncementsEnabled(enabled) {
+    setForm((prev) => ({
+      ...prev,
+      announcementsSection: {
+        ...(prev.announcementsSection || DEFAULT_ANNOUNCEMENTS_SECTION),
+        enabled,
+      },
+    }))
+  }
+
+  function setAnnouncementsDisplayMode(displayMode) {
+    setForm((prev) => ({
+      ...prev,
+      announcementsSection: {
+        ...(prev.announcementsSection || DEFAULT_ANNOUNCEMENTS_SECTION),
+        displayMode: normalizeAnnouncementDisplayMode(displayMode),
+      },
+    }))
+  }
+
+  function upsertAnnouncementItem(index, draft) {
+    const nextItem = normalizeAnnouncementItem(draft)
+    if (!nextItem) return
+    setForm((prev) => {
+      const items = Array.isArray(prev.announcementsSection?.items)
+        ? [...prev.announcementsSection.items]
+        : []
+      if (index === null || index === undefined) {
+        items.push(nextItem)
+      } else {
+        items[index] = { ...items[index], ...nextItem }
+      }
+      return {
+        ...prev,
+        announcementsSection: {
+          ...(prev.announcementsSection || DEFAULT_ANNOUNCEMENTS_SECTION),
+          enabled: true,
+          items,
+        },
+      }
+    })
+  }
+
+  function removeAnnouncementItem(index) {
+    setForm((prev) => {
+      const items = Array.isArray(prev.announcementsSection?.items)
+        ? [...prev.announcementsSection.items]
+        : []
+      items.splice(index, 1)
+      return {
+        ...prev,
+        announcementsSection: {
+          ...(prev.announcementsSection || DEFAULT_ANNOUNCEMENTS_SECTION),
+          items,
+        },
+      }
+    })
+  }
+
   function handleSaveEditor() {
     if (!editor) return
     const draft = editor.draft || {}
@@ -535,6 +621,9 @@ export function AdminAreaEditorPreview({
       case 'procedure':
         upsertProcedureItem(editor.index, draft)
         break
+      case 'announcement':
+        upsertAnnouncementItem(editor.index, draft)
+        break
       default:
         break
     }
@@ -549,15 +638,23 @@ export function AdminAreaEditorPreview({
     else if (kind === 'notice') removeListItem('notices', index)
     else if (kind === 'school') removeSchoolItem(index)
     else if (kind === 'procedure') removeProcedureItem(index)
+    else if (kind === 'announcement') removeAnnouncementItem(index)
     setConfirmRemove(null)
   }
 
   const navLinks = useMemo(() => {
-    const arr = [
+    const arr = []
+    if (
+      isAnnouncementsSectionVisible(form.announcementsSection) &&
+      normalizeAnnouncementDisplayMode(form.announcementsSection?.displayMode) === 'inline'
+    ) {
+      arr.push(['#anuncios-area', 'Anuncios'])
+    }
+    arr.push(
       ['#director-area', 'Dirección'],
       ['#oficinas-admin-area', 'Oficinas'],
       ['#servicios-area', 'Servicios'],
-    ]
+    )
     if ((form.schoolsSection?.items || []).length > 0)
       arr.push(['#escuelas-area', form.schoolsSection?.navLabel || 'Escuelas'])
     if (isProceduresSectionVisible(form.proceduresSection))
@@ -567,6 +664,7 @@ export function AdminAreaEditorPreview({
     arr.push(['#ubicacion-area', 'Ubicación'])
     return arr
   }, [
+    form.announcementsSection,
     form.schoolsSection?.items,
     form.schoolsSection?.navLabel,
     form.proceduresSection,
@@ -586,6 +684,7 @@ export function AdminAreaEditorPreview({
       school: editor.index === null ? 'Nueva escuela o taller' : 'Editar escuela o taller',
       'procedures-section': 'Editar textos de la sección Trámites',
       procedure: editor.index === null ? 'Nuevo trámite' : 'Editar trámite',
+      announcement: editor.index === null ? 'Nuevo anuncio' : 'Editar anuncio',
     }
     return labels[editor.kind] || 'Editar'
   }, [editor])
@@ -658,7 +757,9 @@ export function AdminAreaEditorPreview({
         onClose={closeEditor}
         loading={saving}
         size={
-          editor?.kind === 'service' || editor?.kind === 'procedure'
+          editor?.kind === 'service' ||
+          editor?.kind === 'procedure' ||
+          editor?.kind === 'announcement'
             ? 'xlarge'
             : editor?.kind === 'school' || editor?.kind === 'identity'
               ? 'wide'
@@ -890,6 +991,179 @@ export function AdminAreaEditorPreview({
                   </div>
                 ) : null}
                 </>
+              </SectionCard>
+
+              {/* Anuncios */}
+              <SectionCard
+                id="anuncios-admin-area"
+                title="Anuncios del área"
+                description="Mensajes destacados al inicio de la página o flotantes siempre visibles. Opcional por área."
+                variant="plain"
+                rightSlot={
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-amber-200 bg-amber-50/90 px-3 py-2 text-xs font-semibold text-amber-950">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-slate-300 text-amber-600"
+                        checked={Boolean(form.announcementsSection?.enabled)}
+                        onChange={(e) => setAnnouncementsEnabled(e.target.checked)}
+                        disabled={saving}
+                      />
+                      Mostrar en el portal
+                    </label>
+                    <AddChip
+                      label="Agregar anuncio"
+                      onClick={() =>
+                        openEditor('announcement', null, {
+                          ...EMPTY_ANNOUNCEMENT,
+                          linkLabel: 'Más información',
+                        })
+                      }
+                      disabled={saving || !form.announcementsSection?.enabled}
+                    />
+                  </div>
+                }
+              >
+                {!form.announcementsSection?.enabled ? (
+                  <p className="rounded-xl border border-dashed border-amber-200 bg-amber-50/50 px-4 py-6 text-center text-sm text-slate-600">
+                    Activá «Mostrar en el portal» para publicar anuncios en esta área.
+                  </p>
+                ) : (
+                  <>
+                    <fieldset className="mb-4 rounded-xl border border-[#ddd7ca] bg-[#f8f7f3] p-4">
+                      <legend className="px-1 text-xs font-bold uppercase tracking-[0.14em] text-amber-900">
+                        Forma de mostrar
+                      </legend>
+                      <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:gap-4">
+                        <label className="inline-flex cursor-pointer items-start gap-2 rounded-lg border border-white bg-white px-3 py-2.5 text-sm shadow-sm">
+                          <input
+                            type="radio"
+                            name="announcements-display-mode"
+                            className="mt-0.5"
+                            checked={
+                              normalizeAnnouncementDisplayMode(
+                                form.announcementsSection?.displayMode,
+                              ) === 'inline'
+                            }
+                            onChange={() => setAnnouncementsDisplayMode('inline')}
+                            disabled={saving}
+                          />
+                          <span>
+                            <span className="font-semibold text-[#171b22]">
+                              Destacado al inicio
+                            </span>
+                            <span className="mt-0.5 block text-xs text-slate-500">
+                              Aparece primero en el contenido, antes de la dirección.
+                            </span>
+                          </span>
+                        </label>
+                        <label className="inline-flex cursor-pointer items-start gap-2 rounded-lg border border-white bg-white px-3 py-2.5 text-sm shadow-sm">
+                          <input
+                            type="radio"
+                            name="announcements-display-mode"
+                            className="mt-0.5"
+                            checked={
+                              normalizeAnnouncementDisplayMode(
+                                form.announcementsSection?.displayMode,
+                              ) === 'floating'
+                            }
+                            onChange={() => setAnnouncementsDisplayMode('floating')}
+                            disabled={saving}
+                          />
+                          <span>
+                            <span className="font-semibold text-[#171b22]">
+                              Flotante siempre visible
+                            </span>
+                            <span className="mt-0.5 block text-xs text-slate-500">
+                              Fijo abajo a la derecha mientras el vecino navega la página.
+                            </span>
+                          </span>
+                        </label>
+                      </div>
+                    </fieldset>
+
+                    {(form.announcementsSection?.items || []).length === 0 ? (
+                      <EmptyHint
+                        onAdd={() =>
+                          openEditor('announcement', null, {
+                            ...EMPTY_ANNOUNCEMENT,
+                            linkLabel: 'Más información',
+                          })
+                        }
+                        addLabel="Agregar anuncio"
+                      >
+                        Agregá al menos un anuncio para que la sección sea visible.
+                      </EmptyHint>
+                    ) : (
+                      <ul className="space-y-3">
+                        {form.announcementsSection.items.map((announcement, idx) => (
+                          <li
+                            key={announcement.id || `ann-${idx}`}
+                            className="rounded-2xl border border-[#ddd7ca] bg-white p-4 shadow-sm"
+                          >
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                              <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <h3 className="text-base font-bold text-[#171b22]">
+                                    {announcement.title || 'Sin título'}
+                                  </h3>
+                                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-900">
+                                    {ANNOUNCEMENT_VARIANT_LABELS[announcement.variant] ||
+                                      'Información'}
+                                  </span>
+                                </div>
+                                {announcement.message ? (
+                                  <p className="mt-1 line-clamp-2 text-sm text-[#4b505a]">
+                                    {announcement.message}
+                                  </p>
+                                ) : null}
+                                <p className="mt-2 text-xs text-slate-500">
+                                  {announcement.linkUrl ? 'Con enlace · ' : ''}
+                                  {announcement.dismissible !== false
+                                    ? 'Se puede cerrar'
+                                    : 'Sin botón cerrar'}
+                                </p>
+                              </div>
+                              <div className="flex shrink-0 gap-1.5">
+                                <EditChip
+                                  label="Editar"
+                                  onClick={() =>
+                                    openEditor('announcement', idx, {
+                                      ...announcement,
+                                      linkLabel:
+                                        announcement.linkLabel || 'Más información',
+                                    })
+                                  }
+                                  disabled={saving}
+                                />
+                                <DeleteChip
+                                  label="Quitar"
+                                  onClick={() =>
+                                    setConfirmRemove({
+                                      kind: 'announcement',
+                                      index: idx,
+                                      title: '¿Quitar este anuncio?',
+                                      description: (
+                                        <>
+                                          Vas a quitar{' '}
+                                          <span className="font-semibold">
+                                            «{announcement.title || 'sin título'}»
+                                          </span>{' '}
+                                          del borrador.
+                                        </>
+                                      ),
+                                    })
+                                  }
+                                  disabled={saving}
+                                />
+                              </div>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </>
+                )}
               </SectionCard>
 
               <SectionCard
@@ -1564,9 +1838,97 @@ function EditorBody({ editor, draft, setDraftField, saving, canManageServicePrio
       )
     case 'procedure':
       return <ProcedureForm draft={draft} setDraftField={setDraftField} saving={saving} />
+    case 'announcement':
+      return <AnnouncementForm draft={draft} setDraftField={setDraftField} saving={saving} />
     default:
       return null
   }
+}
+
+function AnnouncementForm({ draft, setDraftField, saving }) {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <label className={labelClass}>
+        Identificador interno (opcional)
+        <input
+          className={inputClass}
+          value={draft.id || ''}
+          onChange={(e) => setDraftField('id', e.target.value)}
+          disabled={saving}
+          placeholder="ej. cierre-rentas"
+        />
+      </label>
+      <label className={labelClass}>
+        Título del anuncio
+        <input
+          className={inputClass}
+          value={draft.title || ''}
+          onChange={(e) => setDraftField('title', e.target.value)}
+          disabled={saving}
+          maxLength={200}
+          required
+        />
+      </label>
+      <label className={`${labelClass} sm:col-span-2`}>
+        Mensaje
+        <textarea
+          className={`${textareaClass} min-h-28`}
+          value={draft.message || ''}
+          onChange={(e) => setDraftField('message', e.target.value)}
+          disabled={saving}
+          maxLength={1200}
+          placeholder="Texto visible para el vecino..."
+        />
+      </label>
+      <label className={labelClass}>
+        Tipo de aviso
+        <select
+          className={inputClass}
+          value={draft.variant || 'info'}
+          onChange={(e) => setDraftField('variant', e.target.value)}
+          disabled={saving}
+        >
+          {ANNOUNCEMENT_VARIANTS.map((v) => (
+            <option key={v} value={v}>
+              {ANNOUNCEMENT_VARIANT_LABELS[v]}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className={`${labelClass} flex items-end gap-2 pb-2`}>
+        <input
+          type="checkbox"
+          className="h-4 w-4 rounded border-slate-300 text-amber-600"
+          checked={draft.dismissible !== false}
+          onChange={(e) => setDraftField('dismissible', e.target.checked)}
+          disabled={saving}
+        />
+        <span className="text-sm font-medium text-slate-700">
+          Permitir que el vecino cierre el anuncio
+        </span>
+      </label>
+      <label className={labelClass}>
+        Enlace (opcional)
+        <input
+          className={inputClass}
+          value={draft.linkUrl || ''}
+          onChange={(e) => setDraftField('linkUrl', e.target.value)}
+          disabled={saving}
+          placeholder="https://..."
+        />
+      </label>
+      <label className={labelClass}>
+        Texto del enlace
+        <input
+          className={inputClass}
+          value={draft.linkLabel || ''}
+          onChange={(e) => setDraftField('linkLabel', e.target.value)}
+          disabled={saving}
+          placeholder="Más información"
+        />
+      </label>
+    </div>
+  )
 }
 
 function IdentityForm({ draft, setDraftField, saving }) {

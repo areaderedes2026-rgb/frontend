@@ -1,4 +1,8 @@
 import { isProceduresSectionVisible } from './areaProcedures.js'
+import {
+  isAnnouncementsSectionVisible,
+  normalizeAnnouncementsSection,
+} from './areaAnnouncements.js'
 
 /**
  * Enlaces del índice lateral del detalle de área. Algunas áreas declaran bloques extra
@@ -8,6 +12,13 @@ import { isProceduresSectionVisible } from './areaProcedures.js'
 export function getAreaDetailNavLinks(profile, { showOffices = false } = {}) {
   if (!profile) return []
   const extras = []
+  const announcements = profile.announcementsSection
+  if (
+    isAnnouncementsSectionVisible(announcements) &&
+    normalizeAnnouncementsSection(announcements).displayMode === 'inline'
+  ) {
+    extras.push(['#anuncios-area', 'Anuncios'])
+  }
   if (profile.schoolsSection?.items?.length > 0) {
     extras.push(['#escuelas-area', profile.schoolsSection.navLabel || 'Escuelas'])
   }

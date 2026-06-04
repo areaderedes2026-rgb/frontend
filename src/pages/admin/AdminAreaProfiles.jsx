@@ -43,6 +43,10 @@ import {
   normalizeProceduresSection,
 } from '../../utils/areaProcedures.js'
 import {
+  normalizeAnnouncementItem,
+  normalizeAnnouncementsSection,
+} from '../../utils/areaAnnouncements.js'
+import {
   fetchAreasPageContent,
   updateAreasPageContent,
 } from '../../services/areasPageService.js'
@@ -101,6 +105,50 @@ function buildProceduresPayload(section) {
     title: String(section.title || '').trim(),
     intro: String(section.intro || '').trim(),
     items,
+  }
+}
+
+function mapAnnouncementsToForm(profile) {
+  const as = profile.announcementsSection
+  if (as && typeof as === 'object') {
+    const normalized = normalizeAnnouncementsSection(as)
+    return {
+      enabled: normalized.enabled,
+      displayMode: normalized.displayMode,
+      items: normalized.items.map((x) => ({
+        id: String(x?.id || '').trim(),
+        title: String(x?.title || '').trim(),
+        message: String(x?.message || '').trim(),
+        linkUrl: String(x?.linkUrl || '').trim(),
+        linkLabel: String(x?.linkLabel || '').trim(),
+        variant: String(x?.variant || 'info').trim(),
+        dismissible: x?.dismissible !== false,
+      })),
+    }
+  }
+  return {
+    enabled: false,
+    displayMode: 'inline',
+    items: [],
+  }
+}
+
+function buildAnnouncementsPayload(section) {
+  if (!section || typeof section !== 'object') return null
+  if (!Boolean(section.enabled)) return null
+  const items = (Array.isArray(section.items) ? section.items : [])
+    .map((row) => normalizeAnnouncementItem(row))
+    .filter(Boolean)
+  if (!items.length) return null
+  const normalized = normalizeAnnouncementsSection({
+    enabled: true,
+    displayMode: section.displayMode,
+    items,
+  })
+  return {
+    enabled: true,
+    displayMode: normalized.displayMode,
+    items: normalized.items,
   }
 }
 
@@ -247,6 +295,7 @@ function mapProfileToForm(profile) {
     },
     schoolsSection: mapSchoolsToForm(profile),
     proceduresSection: mapProceduresToForm(profile),
+    announcementsSection: mapAnnouncementsToForm(profile),
   }
 }
 
@@ -570,6 +619,7 @@ export function AdminAreaProfiles() {
         },
         schoolsSection: buildSchoolsPayload(form.schoolsSection),
         proceduresSection: buildProceduresPayload(form.proceduresSection),
+        announcementsSection: buildAnnouncementsPayload(form.announcementsSection),
       }
       const profileSlug = updatedArea?.slug || selectedSlug
       const saved = await updateAreaProfile(profileSlug, payload)

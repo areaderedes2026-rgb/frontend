@@ -17,6 +17,11 @@ import {
 import { AreaSchoolsSection } from '../../components/areas/AreaSchoolsSection.jsx'
 import { AreaProceduresSection } from '../../components/areas/AreaProceduresSection.jsx'
 import { isProceduresSectionVisible } from '../../utils/areaProcedures.js'
+import { AreaAnnouncements } from '../../components/areas/AreaAnnouncements.jsx'
+import {
+  isAnnouncementsSectionVisible,
+  normalizeAnnouncementsSection,
+} from '../../utils/areaAnnouncements.js'
 import { AreaServicesSection } from '../../components/areas/AreaServicesSection.jsx'
 import { getAreaDetailNavLinks } from '../../utils/areaDetailNav.js'
 import { ROUTES } from '../../utils/constants.js'
@@ -74,6 +79,11 @@ export function AreaDetail() {
   const showOfficesSection =
     officesLoading || showOffices || (officesHydratedForSlug && Boolean(officesState.error))
   const showServices = (profile?.serviceBlocks || []).length > 0
+  const announcementsSection = profile?.announcementsSection
+  const showAnnouncements = isAnnouncementsSectionVisible(announcementsSection)
+  const announcementsDisplayMode = showAnnouncements
+    ? normalizeAnnouncementsSection(announcementsSection).displayMode
+    : null
   const navLinks = useMemo(() => getAreaDetailNavLinks(profile, { showOffices }), [profile, showOffices])
 
   useEffect(() => {
@@ -291,6 +301,16 @@ export function AreaDetail() {
             </aside>
 
             <div className="space-y-10 lg:col-span-8">
+              {showAnnouncements && announcementsDisplayMode === 'inline' ? (
+                <RevealOnScroll variant="slow">
+                  <AreaAnnouncements
+                    announcementsSection={announcementsSection}
+                    areaSlug={slug}
+                    displayModeOverride="inline"
+                  />
+                </RevealOnScroll>
+              ) : null}
+
               <RevealOnScroll variant="newsCardSlow" delayMs={90}>
                 <section id="director-area" className="rounded-3xl border border-[#ddd7ca] bg-[#fcfcfa] p-5 shadow-sm sm:p-6">
                 <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
@@ -451,6 +471,15 @@ export function AreaDetail() {
             </div>
           </div>
         </article>
+
+        {showAnnouncements && announcementsDisplayMode === 'floating' ? (
+          <AreaAnnouncements
+            announcementsSection={announcementsSection}
+            areaSlug={slug}
+            displayModeOverride="floating"
+          />
+        ) : null}
+
         <div className="mt-6 rounded-2xl border border-sky-100 bg-linear-to-r from-sky-50 via-white to-sky-50/70 p-5 text-sm leading-relaxed text-slate-600 sm:p-6 sm:text-base">
           Todas las áreas comparten la misma base de navegación y secciones principales.
           Algunas pueden mostrar bloques extra (por ejemplo, escuelas en Cultura). Hasta que no
