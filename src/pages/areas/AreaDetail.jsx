@@ -15,6 +15,8 @@ import {
   HydrationHeroLightTextBlock,
 } from '../../components/skeleton/PageHydrationSkeleton.jsx'
 import { AreaSchoolsSection } from '../../components/areas/AreaSchoolsSection.jsx'
+import { AreaProceduresSection } from '../../components/areas/AreaProceduresSection.jsx'
+import { isProceduresSectionVisible } from '../../utils/areaProcedures.js'
 import { AreaServicesSection } from '../../components/areas/AreaServicesSection.jsx'
 import { getAreaDetailNavLinks } from '../../utils/areaDetailNav.js'
 import { ROUTES } from '../../utils/constants.js'
@@ -395,6 +397,10 @@ export function AreaDetail() {
 
               {profile.schoolsSection?.items?.length ? (
                 <AreaSchoolsSection schoolsSection={profile.schoolsSection} />
+              ) : null}
+
+              {isProceduresSectionVisible(profile.proceduresSection) ? (
+                <AreaProceduresSection proceduresSection={profile.proceduresSection} />
               ) : null}
 
               <RevealOnScroll variant="newsCardSlow" delayMs={120}>

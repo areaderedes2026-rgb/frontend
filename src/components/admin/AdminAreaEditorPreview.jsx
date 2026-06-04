@@ -19,6 +19,12 @@ import {
   isServiceGallerySectionVisible,
   normalizeServiceGallerySection,
 } from '../../utils/serviceGallery.js'
+import {
+  formatProcedureStepsText,
+  isProceduresSectionVisible,
+  normalizeProcedureItem,
+  parseProcedureStepsText,
+} from '../../utils/areaProcedures.js'
 
 function newClientServiceId() {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -167,6 +173,25 @@ const EMPTY_SCHOOL = {
   venue: '',
   description: '',
   imageUrl: '',
+}
+const EMPTY_PROCEDURE = {
+  id: '',
+  name: '',
+  description: '',
+  stepsText: '',
+  linkUrl: '',
+  linkLabel: '',
+  contactPhone: '',
+  contactEmail: '',
+  contactNote: '',
+}
+const DEFAULT_PROCEDURES_SECTION = {
+  enabled: false,
+  navLabel: 'Trámites',
+  eyebrow: '',
+  title: '',
+  intro: '',
+  items: [],
 }
 
 function SectionCard({
@@ -377,6 +402,78 @@ export function AdminAreaEditorPreview({
     })
   }
 
+  function setProceduresEnabled(enabled) {
+    setForm((prev) => ({
+      ...prev,
+      proceduresSection: {
+        ...(prev.proceduresSection || DEFAULT_PROCEDURES_SECTION),
+        enabled,
+      },
+    }))
+  }
+
+  function applyProceduresSection(draft) {
+    setForm((prev) => ({
+      ...prev,
+      proceduresSection: {
+        ...(prev.proceduresSection || DEFAULT_PROCEDURES_SECTION),
+        navLabel: String(draft.navLabel || 'Trámites').trim(),
+        eyebrow: String(draft.eyebrow || '').trim(),
+        title: String(draft.title || '').trim(),
+        intro: String(draft.intro || '').trim(),
+      },
+    }))
+  }
+
+  function upsertProcedureItem(index, draft) {
+    const nextItem = normalizeProcedureItem({
+      id: String(draft.id || '').trim(),
+      name: String(draft.name || '').trim(),
+      description: String(draft.description || '').trim(),
+      steps: parseProcedureStepsText(draft.stepsText),
+      linkUrl: String(draft.linkUrl || '').trim(),
+      linkLabel: String(draft.linkLabel || '').trim(),
+      contactPhone: String(draft.contactPhone || '').trim(),
+      contactEmail: String(draft.contactEmail || '').trim(),
+      contactNote: String(draft.contactNote || '').trim(),
+    })
+    if (!nextItem) return
+    setForm((prev) => {
+      const items = Array.isArray(prev.proceduresSection?.items)
+        ? [...prev.proceduresSection.items]
+        : []
+      if (index === null || index === undefined) {
+        items.push(nextItem)
+      } else {
+        items[index] = { ...items[index], ...nextItem }
+      }
+      return {
+        ...prev,
+        proceduresSection: {
+          ...(prev.proceduresSection || DEFAULT_PROCEDURES_SECTION),
+          enabled: true,
+          items,
+        },
+      }
+    })
+  }
+
+  function removeProcedureItem(index) {
+    setForm((prev) => {
+      const items = Array.isArray(prev.proceduresSection?.items)
+        ? [...prev.proceduresSection.items]
+        : []
+      items.splice(index, 1)
+      return {
+        ...prev,
+        proceduresSection: {
+          ...(prev.proceduresSection || DEFAULT_PROCEDURES_SECTION),
+          items,
+        },
+      }
+    })
+  }
+
   function handleSaveEditor() {
     if (!editor) return
     const draft = editor.draft || {}
@@ -432,6 +529,12 @@ export function AdminAreaEditorPreview({
           imageUrl: String(draft.imageUrl || '').trim(),
         })
         break
+      case 'procedures-section':
+        applyProceduresSection(draft)
+        break
+      case 'procedure':
+        upsertProcedureItem(editor.index, draft)
+        break
       default:
         break
     }
@@ -445,6 +548,7 @@ export function AdminAreaEditorPreview({
     else if (kind === 'contact') removeListItem('contactCards', index)
     else if (kind === 'notice') removeListItem('notices', index)
     else if (kind === 'school') removeSchoolItem(index)
+    else if (kind === 'procedure') removeProcedureItem(index)
     setConfirmRemove(null)
   }
 
@@ -456,11 +560,18 @@ export function AdminAreaEditorPreview({
     ]
     if ((form.schoolsSection?.items || []).length > 0)
       arr.push(['#escuelas-area', form.schoolsSection?.navLabel || 'Escuelas'])
+    if (isProceduresSectionVisible(form.proceduresSection))
+      arr.push(['#tramites-area', form.proceduresSection?.navLabel || 'Trámites'])
     arr.push(['#contactos-area', 'Contactos'])
     if ((form.notices || []).length > 0) arr.push(['#avisos-area', 'Avisos'])
     arr.push(['#ubicacion-area', 'Ubicación'])
     return arr
-  }, [form.schoolsSection?.items, form.schoolsSection?.navLabel, form.notices])
+  }, [
+    form.schoolsSection?.items,
+    form.schoolsSection?.navLabel,
+    form.proceduresSection,
+    form.notices,
+  ])
 
   const editorTitle = useMemo(() => {
     if (!editor) return ''
@@ -473,6 +584,8 @@ export function AdminAreaEditorPreview({
       location: 'Editar ubicación',
       'schools-section': 'Editar textos de la sección Escuelas',
       school: editor.index === null ? 'Nueva escuela o taller' : 'Editar escuela o taller',
+      'procedures-section': 'Editar textos de la sección Trámites',
+      procedure: editor.index === null ? 'Nuevo trámite' : 'Editar trámite',
     }
     return labels[editor.kind] || 'Editar'
   }, [editor])
@@ -545,7 +658,7 @@ export function AdminAreaEditorPreview({
         onClose={closeEditor}
         loading={saving}
         size={
-          editor?.kind === 'service'
+          editor?.kind === 'service' || editor?.kind === 'procedure'
             ? 'xlarge'
             : editor?.kind === 'school' || editor?.kind === 'identity'
               ? 'wide'
@@ -1072,6 +1185,140 @@ export function AdminAreaEditorPreview({
                 )}
               </SectionCard>
 
+              {/* Trámites */}
+              <SectionCard
+                id="tramites-area"
+                title={
+                  form.proceduresSection?.title ||
+                  form.proceduresSection?.navLabel ||
+                  'Trámites'
+                }
+                description={
+                  form.proceduresSection?.intro ||
+                  'Listá los trámites del área con pasos y datos de contacto.'
+                }
+                rightSlot={
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50/80 px-3 py-2 text-xs font-semibold text-indigo-950">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-slate-300 text-indigo-600"
+                        checked={Boolean(form.proceduresSection?.enabled)}
+                        onChange={(e) => setProceduresEnabled(e.target.checked)}
+                        disabled={saving}
+                      />
+                      Mostrar en el portal
+                    </label>
+                    <EditChip
+                      label="Textos"
+                      onClick={() =>
+                        openEditor('procedures-section', null, {
+                          navLabel: form.proceduresSection?.navLabel || 'Trámites',
+                          eyebrow: form.proceduresSection?.eyebrow || '',
+                          title: form.proceduresSection?.title || '',
+                          intro: form.proceduresSection?.intro || '',
+                        })
+                      }
+                      disabled={saving}
+                    />
+                    <AddChip
+                      label="Agregar trámite"
+                      onClick={() =>
+                        openEditor('procedure', null, {
+                          ...EMPTY_PROCEDURE,
+                          linkLabel: 'Ver trámite en línea',
+                        })
+                      }
+                      disabled={saving || !form.proceduresSection?.enabled}
+                    />
+                  </div>
+                }
+              >
+                {!form.proceduresSection?.enabled ? (
+                  <p className="rounded-xl border border-dashed border-indigo-200 bg-indigo-50/40 px-4 py-6 text-center text-sm text-slate-600">
+                    Activá «Mostrar en el portal» para cargar trámites y publicar esta sección.
+                  </p>
+                ) : (form.proceduresSection?.items || []).length === 0 ? (
+                  <EmptyHint
+                    onAdd={() =>
+                      openEditor('procedure', null, {
+                        ...EMPTY_PROCEDURE,
+                        linkLabel: 'Ver trámite en línea',
+                      })
+                    }
+                    addLabel="Agregar trámite"
+                  >
+                    Agregá al menos un trámite para que la sección sea visible en el portal.
+                  </EmptyHint>
+                ) : (
+                  <ul className="space-y-3">
+                    {form.proceduresSection.items.map((procedure, idx) => (
+                      <li
+                        key={procedure.id || `proc-${idx}`}
+                        className="rounded-2xl border border-[#ddd7ca] bg-white p-4 shadow-sm"
+                      >
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="min-w-0 flex-1">
+                            <h3 className="text-base font-bold text-[#171b22]">
+                              {procedure.name || 'Sin nombre'}
+                            </h3>
+                            {procedure.description ? (
+                              <p className="mt-1 line-clamp-2 text-sm text-[#4b505a]">
+                                {procedure.description}
+                              </p>
+                            ) : null}
+                            <p className="mt-2 text-xs text-slate-500">
+                              {(procedure.steps || []).length
+                                ? `${procedure.steps.length} paso(s)`
+                                : 'Sin pasos'}{' '}
+                              ·{' '}
+                              {procedure.contactPhone || procedure.contactEmail
+                                ? 'Con contacto'
+                                : 'Sin contacto'}
+                              {procedure.linkUrl ? ' · Con enlace' : ''}
+                            </p>
+                          </div>
+                          <div className="flex shrink-0 gap-1.5">
+                            <EditChip
+                              label="Editar"
+                              onClick={() =>
+                                openEditor('procedure', idx, {
+                                  ...procedure,
+                                  stepsText: formatProcedureStepsText(procedure.steps),
+                                  linkLabel:
+                                    procedure.linkLabel || 'Ver trámite en línea',
+                                })
+                              }
+                              disabled={saving}
+                            />
+                            <DeleteChip
+                              label="Quitar"
+                              onClick={() =>
+                                setConfirmRemove({
+                                  kind: 'procedure',
+                                  index: idx,
+                                  title: '¿Quitar este trámite?',
+                                  description: (
+                                    <>
+                                      Vas a quitar{' '}
+                                      <span className="font-semibold">
+                                        «{procedure.name || 'sin nombre'}»
+                                      </span>{' '}
+                                      del borrador.
+                                    </>
+                                  ),
+                                })
+                              }
+                              disabled={saving}
+                            />
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </SectionCard>
+
               {/* Contactos */}
               <SectionCard
                 id="contactos-area"
@@ -1311,6 +1558,12 @@ function EditorBody({ editor, draft, setDraftField, saving, canManageServicePrio
       )
     case 'school':
       return <SchoolForm draft={draft} setDraftField={setDraftField} saving={saving} />
+    case 'procedures-section':
+      return (
+        <ProceduresSectionForm draft={draft} setDraftField={setDraftField} saving={saving} />
+      )
+    case 'procedure':
+      return <ProcedureForm draft={draft} setDraftField={setDraftField} saving={saving} />
     default:
       return null
   }
@@ -1547,6 +1800,149 @@ function LocationForm({ draft, setDraftField, saving }) {
           onChange={(e) => setDraftField('mapExternalUrl', e.target.value)}
           disabled={saving}
           placeholder="https://maps.app.goo.gl/..."
+        />
+      </label>
+    </div>
+  )
+}
+
+function ProceduresSectionForm({ draft, setDraftField, saving }) {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <label className={labelClass}>
+        Texto del enlace en el menú
+        <input
+          className={inputClass}
+          value={draft.navLabel || ''}
+          onChange={(e) => setDraftField('navLabel', e.target.value)}
+          disabled={saving}
+          placeholder="Trámites"
+        />
+      </label>
+      <label className={labelClass}>
+        Eyebrow (etiqueta superior)
+        <input
+          className={inputClass}
+          value={draft.eyebrow || ''}
+          onChange={(e) => setDraftField('eyebrow', e.target.value)}
+          disabled={saving}
+          placeholder="Gestión y documentación"
+        />
+      </label>
+      <label className={`${labelClass} sm:col-span-2`}>
+        Título visible
+        <input
+          className={inputClass}
+          value={draft.title || ''}
+          onChange={(e) => setDraftField('title', e.target.value)}
+          disabled={saving}
+        />
+      </label>
+      <label className={`${labelClass} sm:col-span-2`}>
+        Introducción
+        <textarea
+          className={`${textareaClass} min-h-24`}
+          value={draft.intro || ''}
+          onChange={(e) => setDraftField('intro', e.target.value)}
+          disabled={saving}
+        />
+      </label>
+    </div>
+  )
+}
+
+function ProcedureForm({ draft, setDraftField, saving }) {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <label className={labelClass}>
+        Identificador interno (opcional)
+        <input
+          className={inputClass}
+          value={draft.id || ''}
+          onChange={(e) => setDraftField('id', e.target.value)}
+          disabled={saving}
+          placeholder="ej. inscripcion-programa"
+        />
+      </label>
+      <label className={labelClass}>
+        Nombre del trámite
+        <input
+          className={inputClass}
+          value={draft.name || ''}
+          onChange={(e) => setDraftField('name', e.target.value)}
+          disabled={saving}
+          maxLength={200}
+          required
+        />
+      </label>
+      <label className={`${labelClass} sm:col-span-2`}>
+        Descripción (opcional)
+        <textarea
+          className={`${textareaClass} min-h-20`}
+          value={draft.description || ''}
+          onChange={(e) => setDraftField('description', e.target.value)}
+          disabled={saving}
+          maxLength={2400}
+        />
+      </label>
+      <label className={`${labelClass} sm:col-span-2`}>
+        Pasos a seguir (uno por línea)
+        <textarea
+          className={`${textareaClass} min-h-36 font-mono text-sm`}
+          value={draft.stepsText || ''}
+          onChange={(e) => setDraftField('stepsText', e.target.value)}
+          disabled={saving}
+          placeholder={'1. Completar formulario\n2. Presentar DNI\n3. Retirar constancia'}
+        />
+      </label>
+      <label className={labelClass}>
+        Enlace (opcional)
+        <input
+          className={inputClass}
+          value={draft.linkUrl || ''}
+          onChange={(e) => setDraftField('linkUrl', e.target.value)}
+          disabled={saving}
+          placeholder="https://..."
+        />
+      </label>
+      <label className={labelClass}>
+        Texto del botón de enlace
+        <input
+          className={inputClass}
+          value={draft.linkLabel || ''}
+          onChange={(e) => setDraftField('linkLabel', e.target.value)}
+          disabled={saving}
+          placeholder="Ver trámite en línea"
+        />
+      </label>
+      <label className={labelClass}>
+        Teléfono de contacto
+        <input
+          className={inputClass}
+          value={draft.contactPhone || ''}
+          onChange={(e) => setDraftField('contactPhone', e.target.value)}
+          disabled={saving}
+          placeholder="+54 381 ..."
+        />
+      </label>
+      <label className={labelClass}>
+        Email de contacto
+        <input
+          className={inputClass}
+          type="email"
+          value={draft.contactEmail || ''}
+          onChange={(e) => setDraftField('contactEmail', e.target.value)}
+          disabled={saving}
+        />
+      </label>
+      <label className={`${labelClass} sm:col-span-2`}>
+        Nota de contacto (opcional)
+        <input
+          className={inputClass}
+          value={draft.contactNote || ''}
+          onChange={(e) => setDraftField('contactNote', e.target.value)}
+          disabled={saving}
+          placeholder="Ej. Lunes a viernes de 8 a 13 hs"
         />
       </label>
     </div>

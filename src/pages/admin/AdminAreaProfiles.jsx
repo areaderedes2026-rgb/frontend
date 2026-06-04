@@ -39,6 +39,10 @@ import {
 } from '../../utils/serviceContacts.js'
 import { normalizeServiceProjects } from '../../utils/serviceProjects.js'
 import {
+  normalizeProcedureItem,
+  normalizeProceduresSection,
+} from '../../utils/areaProcedures.js'
+import {
   fetchAreasPageContent,
   updateAreasPageContent,
 } from '../../services/areasPageService.js'
@@ -48,6 +52,57 @@ const ACTION_BTN_BASE =
   'inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto'
 const ACTION_BTN_NEUTRAL = `${ACTION_BTN_BASE} border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50`
 const ACTION_BTN_PRIMARY = `${ACTION_BTN_BASE} bg-sky-700 text-white hover:bg-sky-800`
+
+function mapProceduresToForm(profile) {
+  const ps = profile.proceduresSection
+  if (ps && typeof ps === 'object') {
+    const normalized = normalizeProceduresSection(ps)
+    return {
+      enabled: normalized.enabled,
+      navLabel: normalized.navLabel || 'Trámites',
+      eyebrow: normalized.eyebrow || '',
+      title: normalized.title || '',
+      intro: normalized.intro || '',
+      items: normalized.items.map((x) => ({
+        id: String(x?.id || '').trim(),
+        name: String(x?.name || '').trim(),
+        description: String(x?.description || '').trim(),
+        steps: Array.isArray(x?.steps) ? x.steps : [],
+        linkUrl: String(x?.linkUrl || '').trim(),
+        linkLabel: String(x?.linkLabel || '').trim(),
+        contactPhone: String(x?.contactPhone || '').trim(),
+        contactEmail: String(x?.contactEmail || '').trim(),
+        contactNote: String(x?.contactNote || '').trim(),
+      })),
+    }
+  }
+  return {
+    enabled: false,
+    navLabel: 'Trámites',
+    eyebrow: '',
+    title: '',
+    intro: '',
+    items: [],
+  }
+}
+
+function buildProceduresPayload(section) {
+  if (!section || typeof section !== 'object') return null
+  const enabled = Boolean(section.enabled)
+  if (!enabled) return null
+  const items = (Array.isArray(section.items) ? section.items : [])
+    .map((row) => normalizeProcedureItem(row))
+    .filter(Boolean)
+  if (!items.length) return null
+  return {
+    enabled: true,
+    navLabel: String(section.navLabel || '').trim() || 'Trámites',
+    eyebrow: String(section.eyebrow || '').trim(),
+    title: String(section.title || '').trim(),
+    intro: String(section.intro || '').trim(),
+    items,
+  }
+}
 
 function mapSchoolsToForm(profile) {
   const ss = profile.schoolsSection
@@ -191,6 +246,7 @@ function mapProfileToForm(profile) {
       mapExternalUrl: profile.location?.mapExternalUrl || '',
     },
     schoolsSection: mapSchoolsToForm(profile),
+    proceduresSection: mapProceduresToForm(profile),
   }
 }
 
@@ -513,6 +569,7 @@ export function AdminAreaProfiles() {
           mapExternalUrl: form.location.mapExternalUrl.trim(),
         },
         schoolsSection: buildSchoolsPayload(form.schoolsSection),
+        proceduresSection: buildProceduresPayload(form.proceduresSection),
       }
       const profileSlug = updatedArea?.slug || selectedSlug
       const saved = await updateAreaProfile(profileSlug, payload)

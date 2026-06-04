@@ -36,6 +36,36 @@ const TOGGLEABLE_HANDLERS = [
   'keyboard',
 ]
 
+/** Ajusta el tamaño del mapa al montar y al redimensionar (p. ej. dentro de RevealOnScroll). */
+function MapResizeController() {
+  const map = useMap()
+  useEffect(() => {
+    if (!map) return
+    const container = map.getContainer()
+    const run = () => {
+      map.invalidateSize({ animate: false })
+    }
+    run()
+    const t1 = window.setTimeout(run, 120)
+    const t2 = window.setTimeout(run, 480)
+    const ro =
+      typeof ResizeObserver !== 'undefined'
+        ? new ResizeObserver(() => run())
+        : null
+    if (ro && container?.parentElement) {
+      ro.observe(container.parentElement)
+    }
+    window.addEventListener('resize', run)
+    return () => {
+      window.clearTimeout(t1)
+      window.clearTimeout(t2)
+      ro?.disconnect()
+      window.removeEventListener('resize', run)
+    }
+  }, [map])
+  return null
+}
+
 function MapInteractivityController({ interactive }) {
   const map = useMap()
   useEffect(() => {
@@ -298,7 +328,7 @@ export function HomeInteractiveMap({ content }) {
         </div>
       </div>
 
-      <div className="relative h-88 w-full bg-[#171b22] sm:h-104 lg:h-120">
+      <div className="home-interactive-map relative h-88 w-full bg-slate-200 sm:h-104 lg:h-120">
         <MapContainer
           center={center}
           zoom={zoom}
@@ -309,11 +339,12 @@ export function HomeInteractiveMap({ content }) {
           boxZoom={false}
           keyboard={false}
           tap={false}
-          className="h-full w-full"
+          className="z-0 h-full w-full"
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}/tile.openstreetmap.org/{z}/{x}/{y}.png"
+            url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+            maxZoom={19}
           />
           {visiblePoints.map((point) => (
             <Marker
@@ -337,6 +368,7 @@ export function HomeInteractiveMap({ content }) {
               </Popup>
             </Marker>
           ))}
+          <MapResizeController />
           <MapInteractivityController interactive={interactive} />
           <MapFocusController
             point={isSearching && visiblePoints.length > 1 ? null : selectedPoint}

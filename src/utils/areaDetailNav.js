@@ -1,3 +1,5 @@
+import { isProceduresSectionVisible } from './areaProcedures.js'
+
 /**
  * Enlaces del índice lateral del detalle de área. Algunas áreas declaran bloques extra
  * (p. ej. escuelas en Cultura) vía `profile.schoolsSection`.
@@ -5,10 +7,16 @@
  */
 export function getAreaDetailNavLinks(profile, { showOffices = false } = {}) {
   if (!profile) return []
-  const extras =
-    profile.schoolsSection?.items?.length > 0
-      ? [['#escuelas-area', profile.schoolsSection.navLabel || 'Escuelas']]
-      : []
+  const extras = []
+  if (profile.schoolsSection?.items?.length > 0) {
+    extras.push(['#escuelas-area', profile.schoolsSection.navLabel || 'Escuelas'])
+  }
+  if (isProceduresSectionVisible(profile.proceduresSection)) {
+    extras.push([
+      '#tramites-area',
+      profile.proceduresSection.navLabel || 'Trámites',
+    ])
+  }
   const afterDirector = showOffices ? [['#oficinas-area', 'Oficinas']] : []
   const servicesLink =
     (profile.serviceBlocks || []).length > 0 ? [['#servicios-area', 'Servicios']] : []
