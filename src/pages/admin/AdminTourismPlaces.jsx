@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
-import { NewsImageFields } from '../../components/admin/NewsImageFields.jsx'
+import { GalleryImageUploadField } from '../../components/admin/GalleryImageUploadField.jsx'
+import { SingleImageUploadField } from '../../components/admin/SingleImageUploadField.jsx'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
 import { Modal } from '../../components/ui/Modal.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
@@ -147,6 +148,23 @@ export function AdminTourismPlaces() {
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
   const [formError, setFormError] = useState('')
+  const [mediaUploadBusy, setMediaUploadBusy] = useState(false)
+  const mediaBusyCountRef = useRef(0)
+
+  const handleMediaNotify = useCallback(({ variant, message }) => {
+    if (message) {
+      setToast({ type: variant === 'error' ? 'error' : 'success', message })
+    }
+  }, [])
+
+  const handleMediaBusy = useCallback((busy) => {
+    if (busy) {
+      mediaBusyCountRef.current += 1
+    } else {
+      mediaBusyCountRef.current = Math.max(0, mediaBusyCountRef.current - 1)
+    }
+    setMediaUploadBusy(mediaBusyCountRef.current > 0)
+  }, [])
 
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleting, setDeleting] = useState(false)
@@ -332,6 +350,8 @@ export function AdminTourismPlaces() {
     setEditingPlace(null)
     setForm(EMPTY_FORM)
     setFormError('')
+    mediaBusyCountRef.current = 0
+    setMediaUploadBusy(false)
     setModalOpen(true)
   }
 
@@ -339,6 +359,8 @@ export function AdminTourismPlaces() {
     setEditingPlace(place)
     setForm(toForm(place))
     setFormError('')
+    mediaBusyCountRef.current = 0
+    setMediaUploadBusy(false)
     setModalOpen(true)
   }
 
@@ -435,23 +457,47 @@ export function AdminTourismPlaces() {
               {formError}
             </p>
           ) : null}
+          {mediaUploadBusy ? (
+            <p
+              className="flex items-center gap-2 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-medium text-sky-900"
+              role="status"
+              aria-live="polite"
+            >
+              <Spinner size="sm" />
+              Subiendo imagen… esperá a que termine antes de guardar.
+            </p>
+          ) : null}
           <div className="grid gap-6 lg:grid-cols-12 lg:gap-8">
-            <aside className="space-y-1 lg:col-span-4 lg:sticky lg:top-0 lg:self-start">
-              <p className="text-sm font-semibold text-slate-900">Medios</p>
-              <p className="text-xs leading-relaxed text-slate-500">
-                Portada y galería opcionales. Podés subir archivos o importar desde una URL pública.
-              </p>
-              <div className="mt-2 rounded-2xl border border-slate-200/90 bg-slate-50/80 p-4">
-                <NewsImageFields
-                  coverLabel="Imagen principal"
-                  coverHelp="Opcional. JPEG, PNG, WebP o GIF (máx. 5 MB)."
-                  galleryLabel="Galería"
-                  galleryHelpText="Hasta 18 imágenes adicionales. Se muestran en la ficha pública del lugar."
-                  maxGallery={18}
-                  imageUrl={form.imageUrl || null}
-                  onImageUrlChange={(url) => updateField('imageUrl', url ?? '')}
-                  galleryUrls={form.galleryUrls}
-                  onGalleryUrlsChange={(urls) => updateField('galleryUrls', urls)}
+            <aside className="space-y-5 lg:col-span-4 lg:sticky lg:top-0 lg:self-start">
+              <div>
+                <p className="text-sm font-semibold text-slate-900">Medios</p>
+                <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                  Portada y galería opcionales. Las imágenes se suben al servidor al seleccionarlas;
+                  después tocá «Guardar cambios» para publicarlas en el lugar.
+                </p>
+              </div>
+              <div className="space-y-6 rounded-2xl border border-slate-200/90 bg-slate-50/80 p-4">
+                <SingleImageUploadField
+                  key={`cover-${editingPlace?.id ?? 'new'}`}
+                  label="Imagen principal"
+                  helpText="Opcional. JPEG, PNG, WebP o GIF (máx. 5 MB)."
+                  value={form.imageUrl || ''}
+                  onChange={(url) => updateField('imageUrl', url || '')}
+                  kind="cover"
+                  disabled={saving}
+                  onNotify={handleMediaNotify}
+                  onBusyChange={handleMediaBusy}
+                />
+                <GalleryImageUploadField
+                  key={`gallery-${editingPlace?.id ?? 'new'}`}
+                  label="Galería"
+                  helpText="Hasta 18 imágenes adicionales. Se muestran en la ficha pública del lugar."
+                  urls={form.galleryUrls || []}
+                  onChange={(urls) => updateField('galleryUrls', urls)}
+                  maxItems={18}
+                  disabled={saving}
+                  onNotify={handleMediaNotify}
+                  onBusyChange={handleMediaBusy}
                 />
               </div>
             </aside>
@@ -616,11 +662,16 @@ export function AdminTourismPlaces() {
             >
               Cancelar
             </button>
-            <button type="submit" disabled={saving} className={ACTION_BTN_PRIMARY}>
+            <button type="submit" disabled={saving || mediaUploadBusy} className={ACTION_BTN_PRIMARY}>
               {saving ? (
                 <>
                   <Spinner tone="white" size="sm" />
                   Guardando…
+                </>
+              ) : mediaUploadBusy ? (
+                <>
+                  <Spinner tone="white" size="sm" />
+                  Esperá la subida…
                 </>
               ) : editingPlace ? (
                 'Guardar cambios'

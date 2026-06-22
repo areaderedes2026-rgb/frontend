@@ -1,8 +1,8 @@
 import { useCallback, useId, useRef, useState } from 'react'
 import {
-  importNewsImageFromUrl,
-  uploadNewsImage,
-} from '../../services/newsService.js'
+  importMediaImageFromUrl,
+  uploadMediaImage,
+} from '../../services/mediaUploadService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
 import { Toast } from '../ui/Toast.jsx'
@@ -53,6 +53,10 @@ export function SingleImageUploadField({
   onChange,
   kind = 'cover',
   disabled = false,
+  /** Notifica al padre (toast global fuera del campo). */
+  onNotify,
+  /** `true` mientras sube o importa. */
+  onBusyChange,
   /** Menos padding y sin URL completa (columnas estrechas). */
   compact = false,
 }) {
@@ -70,39 +74,61 @@ export function SingleImageUploadField({
   const uploadKind = kind === 'gallery' ? 'gallery' : 'cover'
   const isInteractive = api && !disabled && !busy
 
+  function notify(variant, message) {
+    setToast({ variant, message })
+    onNotify?.({ variant, message })
+  }
+
+  function setBusyState(next) {
+    setBusy(next)
+    onBusyChange?.(next)
+  }
+
   async function handleFile(file) {
-    if (!file || !api) return
+    if (!file) return
+    if (!api) {
+      const msg = 'No hay conexión con el backend para subir imágenes.'
+      setError(msg)
+      notify('error', msg)
+      return
+    }
     setError('')
-    setBusy(true)
+    setBusyState(true)
     try {
-      const next = await uploadNewsImage(file, uploadKind)
+      const next = await uploadMediaImage(file, uploadKind)
       onChange(next)
-      setToast({ variant: 'success', message: 'Imagen cargada correctamente.' })
+      notify('success', 'Imagen cargada correctamente.')
     } catch (e) {
       const msg = e.message || 'No se pudo subir la imagen.'
       setError(msg)
-      setToast({ variant: 'error', message: msg })
+      notify('error', msg)
     } finally {
-      setBusy(false)
+      setBusyState(false)
     }
   }
 
   async function handleImport() {
     const remote = remoteUrl.trim()
-    if (!remote || !api) return
+    if (!remote) return
+    if (!api) {
+      const msg = 'No hay conexión con el backend para importar imágenes.'
+      setError(msg)
+      notify('error', msg)
+      return
+    }
     setError('')
-    setBusy(true)
+    setBusyState(true)
     try {
-      const next = await importNewsImageFromUrl(remote, uploadKind)
+      const next = await importMediaImageFromUrl(remote, uploadKind)
       onChange(next)
       setRemoteUrl('')
-      setToast({ variant: 'success', message: 'Imagen importada correctamente.' })
+      notify('success', 'Imagen importada correctamente.')
     } catch (e) {
       const msg = e.message || 'No se pudo importar la imagen.'
       setError(msg)
-      setToast({ variant: 'error', message: msg })
+      notify('error', msg)
     } finally {
-      setBusy(false)
+      setBusyState(false)
     }
   }
 
@@ -111,7 +137,7 @@ export function SingleImageUploadField({
     onChange('')
     setError('')
     setShowUrl(false)
-    setToast({ variant: 'success', message: 'Imagen quitada.' })
+    notify('success', 'Imagen quitada.')
   }
 
   function openFilePicker() {

@@ -8,6 +8,10 @@ import {
   notifyUnauthorizedIfNeeded,
 } from '../utils/authStorage.js'
 import { errorFromApiResponse } from '../utils/concurrencyConflict.js'
+import {
+  importMediaImageFromUrl,
+  uploadMediaImage,
+} from './mediaUploadService.js'
 
 const API_BASE = getApiBase()
 
@@ -138,52 +142,12 @@ function delay(ms = 200) {
 
 /** Sube una imagen al servidor (staff o editor de servicio de área). Devuelve URL pública estable. */
 export async function uploadNewsImage(file, kind = 'gallery') {
-  if (!API_BASE) {
-    throw new Error('Configurá VITE_API_URL para subir imágenes.')
-  }
-  const form = new FormData()
-  form.append('file', file)
-  form.append('kind', kind === 'cover' ? 'cover' : 'gallery')
-  const res = await fetch(`${API_BASE}/api/upload`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: form,
-  })
-  notifyUnauthorizedIfNeeded(res)
-  if (!res.ok) {
-    const msg = await apiErrorMessage(res)
-    throw new Error(msg || 'No se pudo subir la imagen.')
-  }
-  const data = await res.json().catch(() => ({}))
-  if (!data.url) {
-    throw new Error('Respuesta inválida del servidor.')
-  }
-  return data.url
+  return uploadMediaImage(file, kind)
 }
 
 /** Importa una imagen desde una URL remota y la guarda en storage propio. */
 export async function importNewsImageFromUrl(url, kind = 'gallery') {
-  if (!API_BASE) {
-    throw new Error('Configurá VITE_API_URL para importar imágenes por URL.')
-  }
-  const res = await fetch(`${API_BASE}/api/upload/from-url`, {
-    method: 'POST',
-    headers: jsonAuthHeaders(),
-    body: JSON.stringify({
-      url,
-      kind: kind === 'cover' ? 'cover' : 'gallery',
-    }),
-  })
-  notifyUnauthorizedIfNeeded(res)
-  if (!res.ok) {
-    const msg = await apiErrorMessage(res)
-    throw new Error(msg || 'No se pudo importar la imagen desde URL.')
-  }
-  const data = await res.json().catch(() => ({}))
-  if (!data.url) {
-    throw new Error('Respuesta inválida del servidor.')
-  }
-  return data.url
+  return importMediaImageFromUrl(url, kind)
 }
 
 export async function fetchNewsList() {
