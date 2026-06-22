@@ -68,10 +68,10 @@ export function Modal({
   const layerClass = LAYER_CLASS[layer] ?? LAYER_CLASS.base
 
   return createPortal(
-    <div className={`fixed inset-0 ${layerClass} flex items-center justify-center p-3 sm:p-5`}>
+    <div className={`fixed inset-0 ${layerClass} pointer-events-none flex items-center justify-center p-3 sm:p-5`}>
       <button
         type="button"
-        className="absolute inset-0 bg-slate-900/45 backdrop-blur-[2px] transition-opacity"
+        className="pointer-events-auto absolute inset-0 bg-slate-900/45 backdrop-blur-[2px] transition-opacity"
         aria-label="Cerrar"
         disabled={loading}
         onClick={() => !loading && onClose()}
@@ -81,7 +81,7 @@ export function Modal({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={description ? descId : undefined}
-        className={`relative flex flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xl ${SIZE_PANEL_CLASS[size] ?? SIZE_PANEL_CLASS.default}`}
+        className={`pointer-events-auto relative flex flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xl ${SIZE_PANEL_CLASS[size] ?? SIZE_PANEL_CLASS.default}`}
       >
         <div className="h-1 shrink-0 bg-linear-to-r from-sky-500 to-sky-600" />
         <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-100 px-5 pb-3 pt-4 sm:px-6 sm:pb-4 sm:pt-5">

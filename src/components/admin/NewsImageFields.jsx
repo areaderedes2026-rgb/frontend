@@ -1,3 +1,4 @@
+import { useCallback, useRef } from 'react'
 import {
   GalleryImageUploadField,
 } from './GalleryImageUploadField.jsx'
@@ -23,11 +24,35 @@ export function NewsImageFields({
   disabled = false,
   /** Propaga toasts al padre (p. ej. modal de lugares turísticos). */
   onNotify,
+  /** `true` mientras sube o importa (portada o galería). */
+  onBusyChange,
 }) {
   const galleryCap = Math.min(Math.max(1, Number(maxGallery) || MAX_GALLERY), 40)
   const galleryHelp =
     galleryHelpText ??
     `Hasta ${galleryCap} imágenes adicionales. Aparecen debajo del texto en la noticia pública.`
+
+  const busyRef = useRef({ cover: false, gallery: false })
+
+  const syncBusy = useCallback(() => {
+    onBusyChange?.(busyRef.current.cover || busyRef.current.gallery)
+  }, [onBusyChange])
+
+  const handleCoverBusy = useCallback(
+    (busy) => {
+      busyRef.current.cover = busy
+      syncBusy()
+    },
+    [syncBusy],
+  )
+
+  const handleGalleryBusy = useCallback(
+    (busy) => {
+      busyRef.current.gallery = busy
+      syncBusy()
+    },
+    [syncBusy],
+  )
 
   return (
     <div className={`space-y-7 ${className}`.trim()}>
@@ -39,6 +64,7 @@ export function NewsImageFields({
         kind="cover"
         disabled={disabled}
         onNotify={onNotify}
+        onBusyChange={handleCoverBusy}
       />
       <GalleryImageUploadField
         label={galleryLabel}
@@ -48,6 +74,7 @@ export function NewsImageFields({
         maxItems={galleryCap}
         disabled={disabled}
         onNotify={onNotify}
+        onBusyChange={handleGalleryBusy}
       />
     </div>
   )

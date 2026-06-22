@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
-import { GalleryImageUploadField } from '../../components/admin/GalleryImageUploadField.jsx'
-import { SingleImageUploadField } from '../../components/admin/SingleImageUploadField.jsx'
+import { NewsImageFields } from '../../components/admin/NewsImageFields.jsx'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
 import { Modal } from '../../components/ui/Modal.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
@@ -35,8 +34,6 @@ const EMPTY_FORM = {
   category: '',
   shortDescription: '',
   fullDescription: '',
-  imageUrl: '',
-  galleryUrls: [],
   address: '',
   howToGet: '',
   mapEmbedUrl: '',
@@ -49,6 +46,8 @@ const EMPTY_FORM = {
   isActive: true,
 }
 
+const TOURISM_PLACE_FORM_ID = 'tourism-place-editor-form'
+
 function toForm(place) {
   if (!place) return EMPTY_FORM
   return {
@@ -57,8 +56,6 @@ function toForm(place) {
     category: place.category || '',
     shortDescription: place.shortDescription || '',
     fullDescription: place.fullDescription || '',
-    imageUrl: place.imageUrl || '',
-    galleryUrls: Array.isArray(place.gallery) ? [...place.gallery] : [],
     address: place.address || '',
     howToGet: place.howToGet || '',
     mapEmbedUrl: place.mapEmbedUrl || '',
@@ -69,6 +66,16 @@ function toForm(place) {
     visitingHours: place.visitingHours || '',
     sortOrder: Number(place.sortOrder) || 0,
     isActive: place.isActive !== false,
+  }
+}
+
+function mediaFromPlace(place) {
+  if (!place) {
+    return { imageUrl: null, galleryUrls: [] }
+  }
+  return {
+    imageUrl: place.imageUrl ? String(place.imageUrl) : null,
+    galleryUrls: Array.isArray(place.gallery) ? [...place.gallery] : [],
   }
 }
 
@@ -147,9 +154,10 @@ export function AdminTourismPlaces() {
   const [editingPlace, setEditingPlace] = useState(null)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
+  const [imageUrl, setImageUrl] = useState(null)
+  const [galleryUrls, setGalleryUrls] = useState([])
   const [formError, setFormError] = useState('')
   const [mediaUploadBusy, setMediaUploadBusy] = useState(false)
-  const mediaBusyCountRef = useRef(0)
 
   const handleMediaNotify = useCallback(({ variant, message }) => {
     if (message) {
@@ -158,12 +166,7 @@ export function AdminTourismPlaces() {
   }, [])
 
   const handleMediaBusy = useCallback((busy) => {
-    if (busy) {
-      mediaBusyCountRef.current += 1
-    } else {
-      mediaBusyCountRef.current = Math.max(0, mediaBusyCountRef.current - 1)
-    }
-    setMediaUploadBusy(mediaBusyCountRef.current > 0)
+    setMediaUploadBusy(Boolean(busy))
   }, [])
 
   const [deleteTarget, setDeleteTarget] = useState(null)
@@ -184,6 +187,9 @@ export function AdminTourismPlaces() {
       if (fresh) {
         setEditingPlace(fresh)
         setForm(toForm(fresh))
+        const media = mediaFromPlace(fresh)
+        setImageUrl(media.imageUrl)
+        setGalleryUrls(media.galleryUrls)
       }
     }
   }, [editingPlace?.id])
@@ -195,8 +201,8 @@ export function AdminTourismPlaces() {
       category: form.category.trim(),
       shortDescription: form.shortDescription,
       fullDescription: form.fullDescription,
-      imageUrl: form.imageUrl.trim(),
-      gallery: form.galleryUrls.filter((x) => typeof x === 'string' && x.trim()),
+      imageUrl: imageUrl ? String(imageUrl).trim() : '',
+      gallery: galleryUrls.filter((x) => typeof x === 'string' && x.trim()),
       address: form.address.trim(),
       howToGet: form.howToGet,
       mapEmbedUrl: form.mapEmbedUrl.trim(),
@@ -208,7 +214,7 @@ export function AdminTourismPlaces() {
       sortOrder: Number(form.sortOrder) || 0,
       isActive: Boolean(form.isActive),
     }),
-    [form],
+    [form, imageUrl, galleryUrls],
   )
 
   const persistContent = useCallback(
@@ -349,8 +355,9 @@ export function AdminTourismPlaces() {
   function openCreateModal() {
     setEditingPlace(null)
     setForm(EMPTY_FORM)
+    setImageUrl(null)
+    setGalleryUrls([])
     setFormError('')
-    mediaBusyCountRef.current = 0
     setMediaUploadBusy(false)
     setModalOpen(true)
   }
@@ -358,8 +365,10 @@ export function AdminTourismPlaces() {
   function openEditModal(place) {
     setEditingPlace(place)
     setForm(toForm(place))
+    const media = mediaFromPlace(place)
+    setImageUrl(media.imageUrl)
+    setGalleryUrls(media.galleryUrls)
     setFormError('')
-    mediaBusyCountRef.current = 0
     setMediaUploadBusy(false)
     setModalOpen(true)
   }
@@ -448,7 +457,7 @@ export function AdminTourismPlaces() {
         title={editingPlace ? 'Editar lugar turístico' : 'Nuevo lugar turístico'}
         description="Completá la información que se mostrará en el detalle público. Las imágenes se suben igual que en noticias."
       >
-        <form className="flex flex-col gap-6" onSubmit={handleSave}>
+        <div className="flex flex-col gap-6">
           {formError ? (
             <p
               className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
@@ -468,7 +477,7 @@ export function AdminTourismPlaces() {
             </p>
           ) : null}
           <div className="grid gap-6 lg:grid-cols-12 lg:gap-8">
-            <aside className="space-y-5 lg:col-span-4 lg:sticky lg:top-0 lg:self-start">
+            <aside className="min-w-0 space-y-3 lg:col-span-4 lg:sticky lg:top-0 lg:self-start">
               <div>
                 <p className="text-sm font-semibold text-slate-900">Medios</p>
                 <p className="mt-1 text-xs leading-relaxed text-slate-500">
@@ -476,25 +485,17 @@ export function AdminTourismPlaces() {
                   después tocá «Guardar cambios» para publicarlas en el lugar.
                 </p>
               </div>
-              <div className="space-y-6 rounded-2xl border border-slate-200/90 bg-slate-50/80 p-4">
-                <SingleImageUploadField
-                  key={`cover-${editingPlace?.id ?? 'new'}`}
-                  label="Imagen principal"
-                  helpText="Opcional. JPEG, PNG, WebP o GIF (máx. 5 MB)."
-                  value={form.imageUrl || ''}
-                  onChange={(url) => updateField('imageUrl', url || '')}
-                  kind="cover"
-                  disabled={saving}
-                  onNotify={handleMediaNotify}
-                  onBusyChange={handleMediaBusy}
-                />
-                <GalleryImageUploadField
-                  key={`gallery-${editingPlace?.id ?? 'new'}`}
-                  label="Galería"
-                  helpText="Hasta 18 imágenes adicionales. Se muestran en la ficha pública del lugar."
-                  urls={form.galleryUrls || []}
-                  onChange={(urls) => updateField('galleryUrls', urls)}
-                  maxItems={18}
+              <div className="rounded-2xl border border-slate-200/90 bg-slate-50/80 p-4">
+                <NewsImageFields
+                  imageUrl={imageUrl}
+                  onImageUrlChange={setImageUrl}
+                  galleryUrls={galleryUrls}
+                  onGalleryUrlsChange={setGalleryUrls}
+                  coverLabel="Imagen principal"
+                  coverHelp="Opcional. JPEG, PNG, WebP o GIF (máx. 5 MB)."
+                  galleryLabel="Galería"
+                  galleryHelpText="Hasta 18 imágenes adicionales. Se muestran en la ficha pública del lugar."
+                  maxGallery={18}
                   disabled={saving}
                   onNotify={handleMediaNotify}
                   onBusyChange={handleMediaBusy}
@@ -502,7 +503,11 @@ export function AdminTourismPlaces() {
               </div>
             </aside>
 
-            <div className="min-w-0 space-y-4 lg:col-span-8">
+            <form
+              id={TOURISM_PLACE_FORM_ID}
+              className="min-w-0 space-y-4 lg:col-span-8"
+              onSubmit={handleSave}
+            >
               <p className="text-sm font-semibold text-slate-900">Datos del lugar</p>
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 <label className={labelClass}>
@@ -650,7 +655,7 @@ export function AdminTourismPlaces() {
                   />
                 </label>
               </div>
-            </div>
+            </form>
           </div>
 
           <div className="flex flex-col-reverse gap-2 border-t border-slate-200/80 pt-4 sm:flex-row sm:justify-end">
@@ -662,7 +667,12 @@ export function AdminTourismPlaces() {
             >
               Cancelar
             </button>
-            <button type="submit" disabled={saving || mediaUploadBusy} className={ACTION_BTN_PRIMARY}>
+            <button
+              type="submit"
+              form={TOURISM_PLACE_FORM_ID}
+              disabled={saving || mediaUploadBusy}
+              className={ACTION_BTN_PRIMARY}
+            >
               {saving ? (
                 <>
                   <Spinner tone="white" size="sm" />
@@ -680,7 +690,7 @@ export function AdminTourismPlaces() {
               )}
             </button>
           </div>
-        </form>
+        </div>
       </Modal>
 
       <AdminPageShell

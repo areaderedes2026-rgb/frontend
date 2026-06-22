@@ -306,14 +306,12 @@ export function GalleryImageUploadField({
                 if (files?.length) void uploadFiles(files)
               }}
             />
-            <button
-              type="button"
-              className={`${FIELD_BTN_NEUTRAL} mt-1`}
-              disabled={!isInteractive || isFull}
-              onClick={openFilePicker}
+            <label
+              htmlFor={inputId}
+              className={`${FIELD_BTN_NEUTRAL} mt-1 ${!isInteractive || isFull ? 'pointer-events-none opacity-60' : 'cursor-pointer'}`}
             >
               Elegir imágenes
-            </button>
+            </label>
           </div>
         )}
       </div>
