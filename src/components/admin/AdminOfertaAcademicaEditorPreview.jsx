@@ -3,6 +3,11 @@ import { Modal } from '../ui/Modal.jsx'
 import { ConfirmDialog } from '../ui/ConfirmDialog.jsx'
 import { SingleImageUploadField } from './SingleImageUploadField.jsx'
 import { inputClass, labelClass, textareaClass } from '../ui/formStyles.js'
+import {
+  OFERTA_OFFER_DETAIL_MAX,
+  OFERTA_OFFER_INSCRIPTION_MAX,
+  OFERTA_OFFER_SUMMARY_MAX,
+} from '../../utils/ofertaAcademicaLimits.js'
 
 const ACTION_BTN_BASE =
   'inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto'
@@ -209,10 +214,10 @@ function draftToOffer(draft) {
     modality: String(draft.modality || '').trim(),
     duration: String(draft.duration || '').trim(),
     location: String(draft.location || '').trim(),
-    summary: String(draft.summary || '').trim(),
-    details,
+    summary: String(draft.summary || '').trim().slice(0, OFERTA_OFFER_SUMMARY_MAX),
+    details: details.map((line) => line.slice(0, OFERTA_OFFER_DETAIL_MAX)),
     requirements,
-    inscription: String(draft.inscription || '').trim(),
+    inscription: String(draft.inscription || '').trim().slice(0, OFERTA_OFFER_INSCRIPTION_MAX),
     tags,
     link,
   }
@@ -1211,11 +1216,17 @@ function OfferForm({ draft, setDraftField, saving, categoryOptions }) {
       <label className={`${labelClass} sm:col-span-2`}>
         Resumen
         <textarea
-          className={`${textareaClass} min-h-20`}
+          className={`${textareaClass} min-h-32`}
           value={draft.summary || ''}
           onChange={(e) => setDraftField('summary', e.target.value)}
           disabled={saving}
+          maxLength={OFERTA_OFFER_SUMMARY_MAX}
+          rows={6}
         />
+        <span className="mt-1 block text-xs text-slate-500">
+          {(draft.summary || '').length}/{OFERTA_OFFER_SUMMARY_MAX} caracteres · visible en la ficha antes de
+          expandir.
+        </span>
       </label>
       <label className={labelClass}>
         Detalles (uno por línea)
@@ -1224,7 +1235,11 @@ function OfferForm({ draft, setDraftField, saving, categoryOptions }) {
           value={draft.detailsText || ''}
           onChange={(e) => setDraftField('detailsText', e.target.value)}
           disabled={saving}
+          maxLength={OFERTA_OFFER_DETAIL_MAX * 14}
         />
+        <span className="mt-1 block text-xs text-slate-500">
+          Hasta {OFERTA_OFFER_DETAIL_MAX} caracteres por línea.
+        </span>
       </label>
       <label className={labelClass}>
         Requisitos (uno por línea)
@@ -1242,6 +1257,7 @@ function OfferForm({ draft, setDraftField, saving, categoryOptions }) {
           value={draft.inscription || ''}
           onChange={(e) => setDraftField('inscription', e.target.value)}
           disabled={saving}
+          maxLength={OFERTA_OFFER_INSCRIPTION_MAX}
         />
       </label>
       <label className={labelClass}>

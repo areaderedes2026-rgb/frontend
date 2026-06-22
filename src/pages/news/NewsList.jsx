@@ -32,7 +32,7 @@ function NewsCategorySelect({ id, value, options, onChange }) {
   }, [open])
 
   return (
-    <div ref={rootRef} className="relative min-w-0">
+    <div ref={rootRef} className={`relative min-w-0 ${open ? 'z-[60]' : ''}`}>
       <button
         type="button"
         id={id}
@@ -66,7 +66,7 @@ function NewsCategorySelect({ id, value, options, onChange }) {
           id={listId}
           role="listbox"
           aria-labelledby={id}
-          className="absolute left-0 right-0 z-50 mt-1 max-h-[min(22.5rem,calc(100vh-10rem))] overflow-y-auto overscroll-contain rounded-lg border border-[#d8d5cd] bg-white py-1 shadow-lg [scrollbar-gutter:stable]"
+          className="absolute left-0 right-0 z-[70] mt-1 max-h-[min(22.5rem,calc(100vh-10rem))] overflow-y-auto overscroll-contain rounded-lg border border-[#d8d5cd] bg-white py-1 shadow-lg [scrollbar-gutter:stable]"
         >
           {options.map((opt) => (
             <li key={opt} role="presentation">
@@ -158,7 +158,10 @@ const NEWS_LIST_DEFAULT_HERO_IMAGE = '/images/news-hero-bg.jpg'
  */
 function NewsCategoryBandCard({ n }) {
   return (
-    <article className="group flex h-full flex-col overflow-hidden rounded-xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm ring-1 ring-[#1a1d24]/5 transition-all duration-300 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-md hover:shadow-sky-500/8">
+    <Link
+      to={`/news/${n.id}`}
+      className="group flex h-full flex-col overflow-hidden rounded-xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm ring-1 ring-[#1a1d24]/5 transition-all duration-300 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-md hover:shadow-sky-500/8 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
+    >
       <NewsCoverMedia
         imageUrl={n.imageUrl}
         className="aspect-4/3 w-full shrink-0"
@@ -173,30 +176,28 @@ function NewsCategoryBandCard({ n }) {
         >
           {formatShortDate(n.publishedAt)}
         </time>
-        <h3 className="mt-1.5 line-clamp-2 font-serif text-sm font-semibold leading-snug tracking-tight text-[#171b22]">
-          <Link to={`/news/${n.id}`} className="hover:text-[#0f1319]">
-            {n.title}
-          </Link>
+        <h3 className="mt-1.5 line-clamp-2 font-serif text-sm font-semibold leading-snug tracking-tight text-[#171b22] group-hover:text-[#0f1319]">
+          {n.title}
         </h3>
         <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-slate-600">
           {excerptWords(n.summary, 9)}
         </p>
-        <Link
-          to={`/news/${n.id}`}
-          className="mt-auto inline-flex items-center gap-0.5 pt-2 text-[11px] font-semibold text-sky-800 transition-all group-hover:gap-1 hover:text-[#0f1319] sm:text-xs"
-        >
+        <span className="mt-auto inline-flex items-center gap-0.5 pt-2 text-[11px] font-semibold text-sky-800 transition-all group-hover:gap-1 group-hover:text-[#0f1319] sm:text-xs">
           Leer nota
           <span aria-hidden>→</span>
-        </Link>
+        </span>
       </div>
-    </article>
+    </Link>
   )
 }
 
 /** Tarjeta estilo “Más cobertura” (grid 2–3 columnas). */
 function NewsCoverageCard({ n }) {
   return (
-    <article className="group overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm ring-1 ring-[#1a1d24]/5 transition-all duration-300 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-lg hover:shadow-sky-500/8">
+    <Link
+      to={`/news/${n.id}`}
+      className="group block overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm ring-1 ring-[#1a1d24]/5 transition-all duration-300 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-lg hover:shadow-sky-500/8 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
+    >
       <NewsCoverMedia
         imageUrl={n.imageUrl}
         className="aspect-16/10 w-full"
@@ -216,23 +217,18 @@ function NewsCoverageCard({ n }) {
             {formatShortDate(n.publishedAt)}
           </time>
         </p>
-        <h3 className="mt-3 line-clamp-2 font-serif text-lg font-semibold leading-snug tracking-tight text-[#171b22] sm:text-xl">
-          <Link to={`/news/${n.id}`} className="hover:text-[#0f1319]">
-            {n.title}
-          </Link>
+        <h3 className="mt-3 line-clamp-2 font-serif text-lg font-semibold leading-snug tracking-tight text-[#171b22] group-hover:text-[#0f1319] sm:text-xl">
+          {n.title}
         </h3>
         <p className="mt-2 text-sm leading-relaxed text-slate-600">
           {excerptWords(n.summary, 16)}
         </p>
-        <Link
-          to={`/news/${n.id}`}
-          className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-sky-800 transition-all group-hover:gap-2 hover:text-[#0f1319]"
-        >
+        <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-sky-800 transition-all group-hover:gap-2 group-hover:text-[#0f1319]">
           Leer nota
           <span aria-hidden>→</span>
-        </Link>
+        </span>
       </div>
-    </article>
+    </Link>
   )
 }
 
@@ -441,7 +437,7 @@ export function NewsList() {
       </RevealOnScroll>
 
       <Container className="relative">
-        <RevealOnScroll variant="slow" delayMs={120}>
+        <RevealOnScroll variant="slow" delayMs={120} className="relative z-30">
           <div className="mt-8 rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-4 shadow-sm sm:p-5">
           <div className="grid gap-3 lg:grid-cols-12">
             <div className="min-w-0 lg:col-span-5">
@@ -504,7 +500,10 @@ export function NewsList() {
                 <div className="lg:col-span-7">
                   {featured ? (
                     <RevealOnScroll variant="newsCardSlow">
-                      <article className="group overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-5 shadow-sm ring-1 ring-[#1a1d24]/5 transition-all duration-300 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-lg hover:shadow-sky-500/8 sm:p-6">
+                      <Link
+                        to={`/news/${featured.id}`}
+                        className="group block overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-5 shadow-sm ring-1 ring-[#1a1d24]/5 transition-all duration-300 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-lg hover:shadow-sky-500/8 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 sm:p-6"
+                      >
                         <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-500 sm:text-xs">
                           <span className="rounded-md bg-sky-100/70 px-2 py-0.5 font-semibold uppercase tracking-wide text-sky-900">
                             {featured.category}
@@ -516,10 +515,8 @@ export function NewsList() {
                             {formatShortDate(featured.publishedAt)}
                           </time>
                         </p>
-                        <h2 className="mt-3 font-serif text-2xl font-semibold leading-tight tracking-tight text-[#171b22] sm:text-[2rem]">
-                          <Link to={`/news/${featured.id}`} className="hover:text-[#0f1319]">
-                            {featured.title}
-                          </Link>
+                        <h2 className="mt-3 font-serif text-2xl font-semibold leading-tight tracking-tight text-[#171b22] group-hover:text-[#0f1319] sm:text-[2rem]">
+                          {featured.title}
                         </h2>
                         <p className="mt-3 text-sm leading-relaxed text-slate-600 sm:text-base">
                           {excerptWords(featured.summary, 28)}
@@ -531,14 +528,11 @@ export function NewsList() {
                           loading="eager"
                           iconScale="lg"
                         />
-                        <Link
-                          to={`/news/${featured.id}`}
-                          className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-sky-800 transition-all group-hover:gap-2 hover:text-[#0f1319]"
-                        >
+                        <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-sky-800 transition-all group-hover:gap-2 group-hover:text-[#0f1319]">
                           Leer nota
                           <span aria-hidden>→</span>
-                        </Link>
-                      </article>
+                        </span>
+                      </Link>
                     </RevealOnScroll>
                   ) : null}
                 </div>
@@ -546,8 +540,9 @@ export function NewsList() {
                 <div className="grid content-start gap-5 sm:grid-cols-2 lg:col-span-5 lg:grid-cols-2">
                   {sideHeadlines.map((n, i) => (
                     <RevealOnScroll key={n.id} variant="newsCardSlow" delayMs={90 + i * 80}>
-                      <article
-                        className="group overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm ring-1 ring-[#1a1d24]/5 transition-all duration-300 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-lg hover:shadow-sky-500/8"
+                      <Link
+                        to={`/news/${n.id}`}
+                        className="group block overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm ring-1 ring-[#1a1d24]/5 transition-all duration-300 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-lg hover:shadow-sky-500/8 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
                       >
                         <NewsCoverMedia
                           imageUrl={n.imageUrl}
@@ -568,23 +563,18 @@ export function NewsList() {
                               {formatShortDate(n.publishedAt)}
                             </time>
                           </p>
-                          <h3 className="mt-3 line-clamp-2 font-serif text-lg font-semibold leading-snug tracking-tight text-[#171b22] sm:text-xl">
-                            <Link to={`/news/${n.id}`} className="hover:text-[#0f1319]">
-                              {n.title}
-                            </Link>
+                          <h3 className="mt-3 line-clamp-2 font-serif text-lg font-semibold leading-snug tracking-tight text-[#171b22] group-hover:text-[#0f1319] sm:text-xl">
+                            {n.title}
                           </h3>
                           <p className="mt-2 text-sm leading-relaxed text-slate-600">
                             {excerptWords(n.summary, 15)}
                           </p>
-                          <Link
-                            to={`/news/${n.id}`}
-                            className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-sky-800 transition-all group-hover:gap-2 hover:text-[#0f1319]"
-                          >
+                          <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-sky-800 transition-all group-hover:gap-2 group-hover:text-[#0f1319]">
                             Leer nota
                             <span aria-hidden>→</span>
-                          </Link>
+                          </span>
                         </div>
-                      </article>
+                      </Link>
                     </RevealOnScroll>
                   ))}
                 </div>

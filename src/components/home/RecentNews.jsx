@@ -116,7 +116,10 @@ export function RecentNews() {
                     variant="newsCard"
                     delayMs={i * 95}
                   >
-                    <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/5 transition-all duration-300 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-lg hover:shadow-sky-500/8">
+                    <Link
+                      to={`/news/${n.id}`}
+                      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/5 transition-all duration-300 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-lg hover:shadow-sky-500/8 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
+                    >
                     <div className="relative shrink-0 overflow-hidden">
                       <NewsCoverMedia
                         imageUrl={n.imageUrl}
@@ -138,26 +141,18 @@ export function RecentNews() {
                           {formatShortDate(n.publishedAt)}
                         </time>
                       </div>
-                      <h3 className="mt-3 line-clamp-2 font-serif text-lg font-semibold leading-snug tracking-tight text-slate-900 sm:text-xl">
-                        <Link
-                          to={`/news/${n.id}`}
-                          className="transition-colors hover:text-sky-900"
-                        >
-                          {n.title}
-                        </Link>
+                      <h3 className="mt-3 line-clamp-2 font-serif text-lg font-semibold leading-snug tracking-tight text-slate-900 group-hover:text-sky-900 sm:text-xl">
+                        {n.title}
                       </h3>
                       <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-600">
                         {excerptWords(n.summary, 16)}
                       </p>
-                      <Link
-                        to={`/news/${n.id}`}
-                        className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-sky-800 transition-all group-hover:gap-2 hover:text-sky-950"
-                      >
+                      <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-sky-800 transition-all group-hover:gap-2 group-hover:text-sky-950">
                         Leer nota
                         <span aria-hidden>→</span>
-                      </Link>
+                      </span>
                     </div>
-                  </article>
+                    </Link>
                   </RevealOnScroll>
                 </li>
               ))}

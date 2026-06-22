@@ -2,6 +2,12 @@
  * Contenido público de Oferta académica (vista ciudadana + valores por defecto del panel).
  */
 
+import {
+  OFERTA_OFFER_DETAIL_MAX,
+  OFERTA_OFFER_INSCRIPTION_MAX,
+  OFERTA_OFFER_SUMMARY_MAX,
+} from '../utils/ofertaAcademicaLimits.js'
+
 export const OFERTA_ACADEMICA_CATEGORIES = [
   'Todos',
   'Terciaria y técnica',
@@ -30,14 +36,16 @@ function normalizeOffer(remote) {
     modality: String(remote.modality || '').trim(),
     duration: String(remote.duration || '').trim(),
     location: String(remote.location || '').trim(),
-    summary: String(remote.summary || '').trim(),
+    summary: String(remote.summary || '').trim().slice(0, OFERTA_OFFER_SUMMARY_MAX),
     details: Array.isArray(remote.details)
-      ? remote.details.map((d) => String(d || '').trim()).filter(Boolean)
+      ? remote.details
+          .map((d) => String(d || '').trim().slice(0, OFERTA_OFFER_DETAIL_MAX))
+          .filter(Boolean)
       : [],
     requirements: Array.isArray(remote.requirements)
       ? remote.requirements.map((r) => String(r || '').trim()).filter(Boolean)
       : [],
-    inscription: String(remote.inscription || '').trim(),
+    inscription: String(remote.inscription || '').trim().slice(0, OFERTA_OFFER_INSCRIPTION_MAX),
     tags: Array.isArray(remote.tags)
       ? remote.tags.map((t) => String(t || '').trim()).filter(Boolean)
       : [],

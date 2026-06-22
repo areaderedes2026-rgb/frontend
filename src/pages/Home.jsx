@@ -125,7 +125,10 @@ export function Home() {
         <div className="grid gap-6 lg:grid-cols-12">
           <RevealOnScroll className="lg:col-span-7" variant="slow">
             {featuredNews ? (
-              <article className="group overflow-hidden rounded-4xl border border-white/70 bg-white/72 shadow-[0_22px_70px_-38px_rgba(23,27,34,0.45)] ring-1 ring-[#171b22]/5 backdrop-blur transition-all duration-500 hover:-translate-y-1 hover:border-sky-200/80 hover:shadow-[0_28px_80px_-36px_rgba(2,132,199,0.35)]">
+              <Link
+                to={ROUTES.newsDetail(featuredNews.id)}
+                className="group block overflow-hidden rounded-4xl border border-white/70 bg-white/72 shadow-[0_22px_70px_-38px_rgba(23,27,34,0.45)] ring-1 ring-[#171b22]/5 backdrop-blur transition-all duration-500 hover:-translate-y-1 hover:border-sky-200/80 hover:shadow-[0_28px_80px_-36px_rgba(2,132,199,0.35)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
+              >
                 <div className="relative overflow-hidden">
                   <NewsCoverMedia
                     imageUrl={featuredNews.imageUrl}
@@ -140,16 +143,14 @@ export function Home() {
                   <p className="inline-flex rounded-full border border-sky-100 bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-sky-800">
                     {featuredNews.category} · {formatShortDate(featuredNews.publishedAt)}
                   </p>
-                  <h3 className="mt-2 font-serif text-2xl font-bold tracking-tight text-[#171b22]">
-                    <Link to={ROUTES.newsDetail(featuredNews.id)} className="transition-colors hover:text-[#0f1319]">
-                      {featuredNews.title}
-                    </Link>
+                  <h3 className="mt-2 font-serif text-2xl font-bold tracking-tight text-[#171b22] group-hover:text-[#0f1319]">
+                    {featuredNews.title}
                   </h3>
                   <p className="mt-2 text-sm leading-relaxed text-[#4b505a]">
                     {excerptWords(featuredNews.summary, 24)}
                   </p>
                 </div>
-              </article>
+              </Link>
             ) : (
               <article className="rounded-4xl border border-dashed border-[#d8d1c3] bg-white/65 p-6 text-sm text-[#4b505a] shadow-sm backdrop-blur">
                 Estamos preparando novedades destacadas.
@@ -161,20 +162,19 @@ export function Home() {
             <div className="grid auto-rows-fr gap-4 sm:grid-cols-2 lg:h-full lg:grid-cols-1">
               {secondaryNews.length > 0 ? (
                 secondaryNews.map((item) => (
-                  <article
+                  <Link
                     key={item.id}
-                    className="group flex h-full flex-col rounded-3xl border border-white/70 bg-white/70 p-4 shadow-[0_16px_50px_-34px_rgba(23,27,34,0.45)] ring-1 ring-[#171b22]/5 backdrop-blur transition-all duration-500 hover:-translate-y-1 hover:border-sky-200/80 hover:bg-white/85 hover:shadow-[0_22px_60px_-34px_rgba(2,132,199,0.35)] sm:p-5"
+                    to={ROUTES.newsDetail(item.id)}
+                    className="group flex h-full flex-col rounded-3xl border border-white/70 bg-white/70 p-4 shadow-[0_16px_50px_-34px_rgba(23,27,34,0.45)] ring-1 ring-[#171b22]/5 backdrop-blur transition-all duration-500 hover:-translate-y-1 hover:border-sky-200/80 hover:bg-white/85 hover:shadow-[0_22px_60px_-34px_rgba(2,132,199,0.35)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 sm:p-5"
                   >
                     <p className="text-xs font-semibold uppercase tracking-wide text-sky-800">{item.category}</p>
-                    <h4 className="mt-1 line-clamp-2 text-base font-semibold text-[#171b22]">
-                      <Link to={ROUTES.newsDetail(item.id)} className="transition-colors hover:text-[#0f1319]">
-                        {item.title}
-                      </Link>
+                    <h4 className="mt-1 line-clamp-2 text-base font-semibold text-[#171b22] group-hover:text-[#0f1319]">
+                      {item.title}
                     </h4>
                     <p className="mt-1 line-clamp-3 text-sm leading-relaxed text-[#4b505a] lg:line-clamp-2">
                       {excerptWords(item.summary, 12)}
                     </p>
-                  </article>
+                  </Link>
                 ))
               ) : (
                 <article className="rounded-3xl border border-dashed border-[#d8d1c3] bg-white/65 p-4 text-sm text-[#4b505a] sm:p-5">
