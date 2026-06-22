@@ -301,9 +301,9 @@ export function GalleryImageUploadField({
               className="sr-only"
               disabled={!isInteractive || isFull}
               onChange={(e) => {
-                const files = e.target.files
+                const picked = e.target.files ? Array.from(e.target.files) : []
                 e.target.value = ''
-                if (files?.length) void uploadFiles(files)
+                if (picked.length) void uploadFiles(picked)
               }}
             />
             <label

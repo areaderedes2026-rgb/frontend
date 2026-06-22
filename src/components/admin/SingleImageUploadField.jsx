@@ -255,9 +255,9 @@ export function SingleImageUploadField({
         className="sr-only"
         disabled={!isInteractive}
         onChange={(e) => {
-          const f = e.target.files?.[0]
+          const picked = e.target.files?.[0] ?? null
           e.target.value = ''
-          if (f) void handleFile(f)
+          if (picked) void handleFile(picked)
         }}
       />
 
