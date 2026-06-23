@@ -31,7 +31,7 @@ function CommissionFolio({ commission, index, isOpen, onToggle }) {
       }`}
     >
       <div
-        className="pointer-events-none absolute inset-y-0 left-0 w-1.5 bg-linear-to-b from-sky-600 via-sky-700 to-[#171b22]"
+        className="pointer-events-none absolute inset-y-0 left-0 w-1.5 bg-sky-700"
         aria-hidden
       />
       <button

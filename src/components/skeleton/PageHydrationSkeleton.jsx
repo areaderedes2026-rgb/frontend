@@ -151,6 +151,48 @@ export function HydrationCitizenChannelCard({ className = '' }) {
   )
 }
 
+/** Ficha legislador (retrato + bio) mientras hidrata la API. */
+export function HydrationLegisladorProfileCard({ className = '' }) {
+  return (
+    <article
+      className={`overflow-hidden rounded-[1.75rem] border border-[#ddd7ca] bg-white shadow-[0_24px_80px_-54px_rgba(15,23,42,0.35)] ${className}`.trim()}
+      aria-busy="true"
+      aria-label="Cargando información del legislador"
+    >
+      <div className="grid gap-0 lg:grid-cols-[300px_1fr] lg:items-stretch">
+        <div
+          className="aspect-square w-full animate-pulse bg-slate-200 lg:aspect-auto lg:min-h-[300px]"
+          aria-hidden
+        />
+        <div className="flex flex-col justify-center p-5 pb-8 sm:p-7 sm:pb-10 lg:p-8 lg:pb-12">
+          <div className="h-7 w-28 animate-pulse rounded-full bg-sky-100" aria-hidden />
+          <HydrationIntendenciaBioLines className="mt-4" />
+          <div className="mt-6 flex flex-wrap gap-2.5" aria-hidden>
+            <div className="h-11 w-40 animate-pulse rounded-xl bg-slate-100" />
+          </div>
+        </div>
+      </div>
+    </article>
+  )
+}
+
+/** Bloques de estadísticas de proyectos (contadores). */
+export function HydrationLegisladorProjectStats({ count = 3, className = '' }) {
+  return (
+    <div
+      className={`grid gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5 ${className}`.trim()}
+      aria-hidden
+    >
+      {Array.from({ length: count }).map((_, i) => (
+        <div
+          key={`leg-proj-sk-${i}`}
+          className="h-[11.5rem] animate-pulse rounded-2xl bg-slate-200 sm:h-44"
+        />
+      ))}
+    </div>
+  )
+}
+
 export function HydrationCitizenChannelGrid({ count = 4, className = '' }) {
   return (
     <div

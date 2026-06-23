@@ -3,7 +3,7 @@ import { RevealOnScroll } from '../home/RevealOnScroll.jsx'
 import { sortProjectStats } from '../../data/legisladorProjectsContent.js'
 
 function ProjectStatBlock({ stat, delayMs = 0 }) {
-  const { ref, value } = useCountUp(stat.count, { duration: 1800 })
+  const { ref, value } = useCountUp(stat.count, { duration: 3200 })
   return (
     <RevealOnScroll variant="newsCardSlow" delayMs={delayMs}>
       <div
