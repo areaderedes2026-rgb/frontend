@@ -1,3 +1,13 @@
+import {
+  DEFAULT_LEGISLATOR_COMMISSIONS,
+  normalizeLegislatorCommissions,
+} from './legisladorCommissionsContent.js'
+import { DEFAULT_LEGISLATOR_LAWS, normalizeLegislatorLaws } from './legisladorLawsContent.js'
+import {
+  DEFAULT_PRESENTED_PROJECTS,
+  normalizePresentedProjects,
+} from './legisladorProjectsContent.js'
+
 function toBoolFlag(value, fallback = true) {
   if (value === undefined || value === null) return fallback
   if (typeof value === 'boolean') return value
@@ -17,7 +27,7 @@ export const DEFAULT_LEGISLADOR_ESTE_CONTENT = {
     'Información institucional del legislador por el Este y su rol como representante de la región en la legislatura.',
   heroImageUrl:
     'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1200&q=80',
-  legislatorName: 'Nombre del Legislador',
+  legislatorName: 'D. Raúl Roberto Moreno',
   legislatorRole: 'Legislador por la Sección Electoral Este',
   legislatorBio:
     'Representa a los municipios de la región Este en la Legislatura, articulando proyectos, gestiones y reclamos de los vecinos para impulsar el desarrollo local.',
@@ -34,11 +44,25 @@ export const DEFAULT_LEGISLADOR_ESTE_CONTENT = {
   showContactPhone: true,
   showOfficeHours: true,
   showContactNote: true,
-  showManagementAxes: true,
+  presentedProjects: { ...DEFAULT_PRESENTED_PROJECTS },
+  commissions: { ...DEFAULT_LEGISLATOR_COMMISSIONS },
+  laws: { ...DEFAULT_LEGISLATOR_LAWS },
+  showPresentedProjects: true,
+  showCommissions: true,
+  showLaws: true,
 }
 
 export function mergeLegisladorEsteContent(base, remote) {
   if (!remote || typeof remote !== 'object') return { ...base }
+
+  const projectsRemote =
+    remote.presentedProjects && typeof remote.presentedProjects === 'object'
+      ? remote.presentedProjects
+      : null
+  const commissionsRemote =
+    remote.commissions && typeof remote.commissions === 'object' ? remote.commissions : null
+  const lawsRemote = remote.laws && typeof remote.laws === 'object' ? remote.laws : null
+
   return {
     ...base,
     heroEyebrow: String(remote.heroEyebrow || base.heroEyebrow || ''),
@@ -68,6 +92,20 @@ export function mergeLegisladorEsteContent(base, remote) {
     showContactPhone: toBoolFlag(remote.showContactPhone, base.showContactPhone),
     showOfficeHours: toBoolFlag(remote.showOfficeHours, base.showOfficeHours),
     showContactNote: toBoolFlag(remote.showContactNote, base.showContactNote),
-    showManagementAxes: toBoolFlag(remote.showManagementAxes, base.showManagementAxes),
+    presentedProjects: projectsRemote
+      ? normalizePresentedProjects(projectsRemote)
+      : normalizePresentedProjects(base.presentedProjects),
+    commissions: commissionsRemote
+      ? normalizeLegislatorCommissions(commissionsRemote)
+      : normalizeLegislatorCommissions(base.commissions),
+    laws: lawsRemote
+      ? normalizeLegislatorLaws(lawsRemote)
+      : normalizeLegislatorLaws(base.laws),
+    showPresentedProjects: toBoolFlag(
+      remote.showPresentedProjects,
+      base.showPresentedProjects,
+    ),
+    showCommissions: toBoolFlag(remote.showCommissions, base.showCommissions),
+    showLaws: toBoolFlag(remote.showLaws, base.showLaws),
   }
 }

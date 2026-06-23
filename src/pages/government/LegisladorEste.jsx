@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Container } from '../../components/ui/Container.jsx'
 import { RevealOnScroll } from '../../components/home/RevealOnScroll.jsx'
-import { StorySection } from '../../components/home/StorySection.jsx'
 import { LinkButton } from '../../components/ui/LinkButton.jsx'
+import { LegisladorCommissionsSection } from '../../components/legislador/LegisladorCommissionsSection.jsx'
+import { LegisladorLawsSection } from '../../components/legislador/LegisladorLawsSection.jsx'
+import { LegisladorProjectsSection } from '../../components/legislador/LegisladorProjectsSection.jsx'
 import {
   DEFAULT_LEGISLADOR_ESTE_CONTENT,
   mergeLegisladorEsteContent,
@@ -14,15 +16,6 @@ import {
   HydrationDarkPanelRows,
   HydrationIntendenciaBioLines,
 } from '../../components/skeleton/PageHydrationSkeleton.jsx'
-
-const MANAGEMENT_AXES = [
-  'Representación territorial de la sección Este',
-  'Acompañamiento a gestiones municipales',
-  'Promoción de proyectos de ley locales',
-  'Articulación con organismos provinciales',
-  'Cercanía y escucha activa a vecinos',
-  'Transparencia y rendición pública de cuentas',
-]
 
 function ContactCell({ label, value, href }) {
   const inner = (
@@ -98,7 +91,11 @@ export function LegisladorEste() {
   const showLegislatorPhoto = Boolean(content.showLegislatorPhoto)
   const showLegislatorRole = Boolean(content.showLegislatorRole)
   const showLegislatorBio = Boolean(content.showLegislatorBio)
-  const showManagementAxes = Boolean(content.showManagementAxes)
+  const showPresentedProjects =
+    Boolean(content.showPresentedProjects) && content.presentedProjects?.enabled !== false
+  const showCommissions =
+    Boolean(content.showCommissions) && content.commissions?.enabled !== false
+  const showLaws = Boolean(content.showLaws) && content.laws?.enabled !== false
 
   return (
     <section className="relative -mt-[calc(var(--navbar-h,5rem)+1.5rem)] bg-[#f7f7f5] pb-12 pt-[calc(var(--navbar-h,5rem)+0.5rem)] sm:-mt-[calc(var(--navbar-h,5rem)+2rem)] sm:pb-16 sm:pt-[calc(var(--navbar-h,5rem)+0.75rem)]">
@@ -223,34 +220,17 @@ export function LegisladorEste() {
             ) : null}
           </article>
         </RevealOnScroll>
-      </Container>
 
-      {showManagementAxes ? (
-        <StorySection
-          eyebrow="Gestión legislativa"
-          title="Ejes de gestión legislativa"
-          subtitle="Prioridades que orientan la representación de la región Este y el trabajo con la comunidad."
-          tone="light"
-          showWave={false}
-          showBorder={false}
-          className="pt-8 pb-12 sm:pt-10 sm:pb-16"
-        >
-          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {MANAGEMENT_AXES.map((item, index) => (
-              <RevealOnScroll key={item} variant="slow" delayMs={60 + index * 40}>
-                <li className="group flex h-full gap-3 rounded-2xl border border-[#ddd7ca] bg-white/80 px-4 py-4 shadow-sm transition hover:border-sky-200/80 hover:bg-white hover:shadow-md">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#171b22] text-xs font-bold text-white">
-                    {String(index + 1).padStart(2, '0')}
-                  </span>
-                  <p className="text-sm font-medium leading-snug text-[#3e434d] group-hover:text-[#171b22]">
-                    {item}
-                  </p>
-                </li>
-              </RevealOnScroll>
-            ))}
-          </ul>
-        </StorySection>
-      ) : null}
+        {showPresentedProjects ? (
+          <LegisladorProjectsSection section={content.presentedProjects} />
+        ) : null}
+
+        {showCommissions ? (
+          <LegisladorCommissionsSection section={content.commissions} />
+        ) : null}
+
+        {showLaws ? <LegisladorLawsSection section={content.laws} /> : null}
+      </Container>
     </section>
   )
 }
