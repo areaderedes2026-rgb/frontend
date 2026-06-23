@@ -50,6 +50,8 @@ export const DEFAULT_LEGISLADOR_ESTE_CONTENT = {
   showPresentedProjects: true,
   showCommissions: true,
   showLaws: true,
+  projectsPdfUrl: '',
+  showProjectsPdfButton: true,
 }
 
 export function mergeLegisladorEsteContent(base, remote) {
@@ -107,5 +109,10 @@ export function mergeLegisladorEsteContent(base, remote) {
     ),
     showCommissions: toBoolFlag(remote.showCommissions, base.showCommissions),
     showLaws: toBoolFlag(remote.showLaws, base.showLaws),
+    projectsPdfUrl: String(remote.projectsPdfUrl ?? base.projectsPdfUrl ?? '').trim(),
+    showProjectsPdfButton: toBoolFlag(
+      remote.showProjectsPdfButton,
+      base.showProjectsPdfButton,
+    ),
   }
 }

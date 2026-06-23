@@ -39,6 +39,34 @@ export async function uploadMediaImage(file, kind = 'gallery') {
   return data.url
 }
 
+/** Sube un PDF al servidor (staff). Devuelve URL pública estable. */
+export async function uploadMediaPdf(file) {
+  const base = getApiBase()
+  if (!base) {
+    throw new Error('Configurá VITE_API_URL para subir documentos.')
+  }
+  if (!file) {
+    throw new Error('No se seleccionó ningún archivo.')
+  }
+  const form = new FormData()
+  form.append('file', file)
+  const res = await fetch(`${base}/api/upload/pdf`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: form,
+  })
+  notifyUnauthorizedIfNeeded(res)
+  if (!res.ok) {
+    const msg = await parseApiError(res)
+    throw new Error(msg || 'No se pudo subir el PDF.')
+  }
+  const data = await res.json().catch(() => ({}))
+  if (!data.url) {
+    throw new Error('Respuesta inválida del servidor.')
+  }
+  return data.url
+}
+
 /** Importa una imagen desde URL remota y la guarda en storage propio. */
 export async function importMediaImageFromUrl(url, kind = 'gallery') {
   const base = getApiBase()

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Container } from '../../components/ui/Container.jsx'
 import { RevealOnScroll } from '../../components/home/RevealOnScroll.jsx'
-import { LinkButton } from '../../components/ui/LinkButton.jsx'
+import { buttonBase, buttonVariants } from '../../components/ui/buttonVariants.js'
 import { LegisladorCommissionsSection } from '../../components/legislador/LegisladorCommissionsSection.jsx'
 import { LegisladorLawsSection } from '../../components/legislador/LegisladorLawsSection.jsx'
 import { LegisladorProjectsSection } from '../../components/legislador/LegisladorProjectsSection.jsx'
@@ -11,7 +11,6 @@ import {
 } from '../../data/legisladorEsteContent.js'
 import { fetchLegisladorEsteContent } from '../../services/legisladorEsteService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
-import { ROUTES } from '../../utils/constants.js'
 import {
   HydrationLegisladorProfileCard,
 } from '../../components/skeleton/PageHydrationSkeleton.jsx'
@@ -87,6 +86,9 @@ export function LegisladorEste() {
   const showCommissions =
     Boolean(content.showCommissions) && content.commissions?.enabled !== false
   const showLaws = Boolean(content.showLaws) && content.laws?.enabled !== false
+  const projectsPdfUrl = String(content.projectsPdfUrl || '').trim()
+  const showProjectsPdfButton =
+    Boolean(content.showProjectsPdfButton) && Boolean(projectsPdfUrl)
 
   return (
     <section className="relative -mt-[calc(var(--navbar-h,5rem)+1.5rem)] bg-[#f7f7f5] pb-12 pt-[calc(var(--navbar-h,5rem)+0.5rem)] sm:-mt-[calc(var(--navbar-h,5rem)+2rem)] sm:pb-16 sm:pt-[calc(var(--navbar-h,5rem)+0.75rem)]">
@@ -142,9 +144,16 @@ export function LegisladorEste() {
                       </p>
                     ) : null}
                     <div className="mt-6 flex flex-wrap gap-2.5">
-                      <LinkButton to={ROUTES.areas} variant="secondary">
-                        Ver todas las áreas
-                      </LinkButton>
+                      {showProjectsPdfButton ? (
+                        <a
+                          href={projectsPdfUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`${buttonBase} ${buttonVariants.secondary}`}
+                        >
+                          Ver todos los proyectos
+                        </a>
+                      ) : null}
                       {showContactPanel ? (
                         <a
                           href="#contacto-legislador-este"

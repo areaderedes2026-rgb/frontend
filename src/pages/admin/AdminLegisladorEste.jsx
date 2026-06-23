@@ -92,6 +92,8 @@ export function AdminLegisladorEste() {
       showPresentedProjects: Boolean(form.showPresentedProjects),
       showCommissions: Boolean(form.showCommissions),
       showLaws: Boolean(form.showLaws),
+      projectsPdfUrl: String(form.projectsPdfUrl || '').trim(),
+      showProjectsPdfButton: Boolean(form.showProjectsPdfButton),
     }),
     [contentUpdatedAt, form],
   )

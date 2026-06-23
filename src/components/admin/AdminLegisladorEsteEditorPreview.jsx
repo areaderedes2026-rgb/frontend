@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Modal } from '../ui/Modal.jsx'
 import { ConfirmDialog } from '../ui/ConfirmDialog.jsx'
 import { SingleImageUploadField } from './SingleImageUploadField.jsx'
+import { PdfUploadField } from './PdfUploadField.jsx'
 import { LegisladorCommissionsSection } from '../legislador/LegisladorCommissionsSection.jsx'
 import { LegisladorLawsSection } from '../legislador/LegisladorLawsSection.jsx'
 import { LegisladorProjectsSection } from '../legislador/LegisladorProjectsSection.jsx'
@@ -239,6 +240,9 @@ export function AdminLegisladorEsteEditorPreview({
   }
 
   const projects = sortProjectStats(form.presentedProjects?.items || [])
+  const projectsPdfUrl = String(form.projectsPdfUrl || '').trim()
+  const showProjectsPdfPreview =
+    Boolean(form.showProjectsPdfButton) && Boolean(projectsPdfUrl)
   const commissions = sortLegislatorCommissions(form.commissions?.items || [])
   const laws = sortLegislatorLaws(form.laws?.items || [])
 
@@ -565,6 +569,11 @@ export function AdminLegisladorEsteEditorPreview({
                 {form.legislatorName || '—'}
               </p>
               <p className="text-sm text-slate-600">{form.legislatorRole}</p>
+              {showProjectsPdfPreview ? (
+                <p className="mt-3 inline-flex rounded-xl border border-[#2a313b] bg-[#171b22] px-4 py-2 text-sm font-semibold text-white">
+                  Ver todos los proyectos
+                </p>
+              ) : null}
             </div>
             {form.showPresentedProjects && form.presentedProjects?.enabled !== false ? (
               <div className="mt-6">
@@ -631,6 +640,30 @@ export function AdminLegisladorEsteEditorPreview({
               </li>
             ))}
           </ul>
+        </section>
+
+        <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+          <div>
+            <h2 className="text-base font-semibold text-slate-900">PDF de todos los proyectos</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              El botón «Ver todos los proyectos» en la ficha del legislador abre este documento en
+              una pestaña nueva del navegador.
+            </p>
+          </div>
+          <div className="mt-4">
+            <PdfUploadField
+              label="Archivo PDF"
+              value={form.projectsPdfUrl}
+              onChange={(url) =>
+                setForm((prev) => ({
+                  ...prev,
+                  projectsPdfUrl: url,
+                  ...(url ? {} : { showProjectsPdfButton: false }),
+                }))
+              }
+              disabled={loading || saving || !apiAvailable}
+            />
+          </div>
         </section>
 
         <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
@@ -750,6 +783,17 @@ export function AdminLegisladorEsteEditorPreview({
               checked={form.showPresentedProjects}
               onChange={(v) => setFlag('showPresentedProjects', v)}
               disabled={loading || saving}
+            />
+            <VisibilityToggle
+              label="Botón «Ver todos los proyectos» (PDF)"
+              hint={
+                projectsPdfUrl
+                  ? 'Requiere PDF cargado en la sección anterior.'
+                  : 'Sin PDF cargado, el botón no se muestra aunque esté activado.'
+              }
+              checked={form.showProjectsPdfButton}
+              onChange={(v) => setFlag('showProjectsPdfButton', v)}
+              disabled={loading || saving || !projectsPdfUrl}
             />
             <VisibilityToggle
               label="Comisiones del legislador"
