@@ -2,6 +2,11 @@ import { useMemo, useState } from 'react'
 import { Modal } from '../ui/Modal.jsx'
 import { ConfirmDialog } from '../ui/ConfirmDialog.jsx'
 import { SingleImageUploadField } from './SingleImageUploadField.jsx'
+import {
+  MunicipalServiceCard,
+  MunicipalServiceDetailModal,
+} from '../services/MunicipalServiceDirectory.jsx'
+import { normalizeMunicipalService } from '../../data/servicesPageContent.js'
 import { inputClass, labelClass, textareaClass } from '../ui/formStyles.js'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
 import { ROUTES } from '../../utils/constants.js'
@@ -152,13 +157,17 @@ export function AdminServicesEditorPreview({
 }) {
   const [editor, setEditor] = useState(null)
   const [confirmRemove, setConfirmRemove] = useState(null)
+  const [previewService, setPreviewService] = useState(null)
 
   const heroUrl = (form.heroImageUrl || '').trim()
     ? resolveMediaUrl(form.heroImageUrl) || form.heroImageUrl
     : ''
 
   const sortedServices = useMemo(
-    () => [...services].sort((a, b) => (Number(a.sortOrder) || 0) - (Number(b.sortOrder) || 0)),
+    () =>
+      [...services]
+        .map((item, index) => normalizeMunicipalService(item, index + 1))
+        .sort((a, b) => (Number(a.sortOrder) || 0) - (Number(b.sortOrder) || 0)),
     [services],
   )
 
@@ -340,6 +349,11 @@ export function AdminServicesEditorPreview({
 
   return (
     <>
+      <MunicipalServiceDetailModal
+        open={Boolean(previewService)}
+        service={previewService}
+        onClose={() => setPreviewService(null)}
+      />
       <ConfirmDialog
         open={confirmRemove != null}
         onClose={() => setConfirmRemove(null)}
@@ -753,7 +767,7 @@ export function AdminServicesEditorPreview({
             <SectionCard
               id="tramites-disponibles"
               title="Trámites del directorio"
-              description="Cada tarjeta se guarda al confirmar en el formulario. Los ocultos no aparecen en el portal."
+              description="Las tarjetas se ven igual que en el portal. «Ver más» abre el detalle; «Editar» modifica el trámite."
               rightSlot={
                 <AddChip
                   label="Nuevo trámite"
@@ -776,36 +790,30 @@ export function AdminServicesEditorPreview({
                   Todavía no hay trámites. Creá el primero para el directorio público.
                 </EmptyHint>
               ) : (
-                <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                <ul className="grid items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-3">
                   {sortedServices.map((item) => (
-                    <li key={item.id || item.slug}>
-                      <article
-                        className={`relative flex h-full flex-col rounded-2xl border border-[#ddd7ca] bg-white p-5 shadow-sm transition hover:border-sky-200/80 ${
-                          item.isActive === false ? 'opacity-60 ring-1 ring-dashed ring-slate-300' : ''
+                    <li key={item.id || item.slug} className="h-full">
+                      <div
+                        className={`relative h-full ${
+                          item.isActive === false ? 'opacity-60' : ''
                         }`}
                       >
-                        <div className="absolute right-3 top-3 flex gap-1.5">
+                        <div className="absolute right-3 top-3 z-10 flex gap-1.5">
                           <EditChip label="Editar" disabled={saving} onClick={() => onEditService(item)} />
                           <DeleteChip label="Quitar" disabled={saving} onClick={() => onDeleteService(item)} />
                         </div>
                         {item.isActive === false ? (
-                          <span className="mb-2 inline-flex w-fit rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-600">
+                          <span className="absolute left-3 top-3 z-10 inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-600">
                             Oculto
                           </span>
                         ) : null}
-                        <div className="flex flex-wrap gap-2 pr-16">
-                          <ServiceBadge>{item.category || '—'}</ServiceBadge>
-                          {item.mode ? <ServiceBadge>{item.mode}</ServiceBadge> : null}
-                        </div>
-                        <h3 className="mt-2 text-lg font-bold text-[#171b22]">{item.title || 'Sin título'}</h3>
-                        <p className="mt-2 line-clamp-3 flex-1 text-sm text-[#4b505a]">{item.summary || '—'}</p>
-                        {item.eta ? (
-                          <p className="mt-3 rounded-lg border border-sky-100 bg-sky-50/70 px-3 py-2 text-xs font-semibold text-sky-900">
-                            Tiempo estimado: {item.eta}
-                          </p>
-                        ) : null}
-                        <p className="mt-2 text-xs text-slate-500">Orden: {item.sortOrder ?? 0}</p>
-                      </article>
+                        <MunicipalServiceCard
+                          service={item}
+                          onVerMas={setPreviewService}
+                          className="h-full bg-white pr-2 pt-10"
+                        />
+                        <p className="mt-2 px-1 text-xs text-slate-500">Orden: {item.sortOrder ?? 0}</p>
+                      </div>
                     </li>
                   ))}
                 </ul>

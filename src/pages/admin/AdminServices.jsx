@@ -8,7 +8,10 @@ import { Toast } from '../../components/ui/Toast.jsx'
 import { inputClass, labelClass, textareaClass } from '../../components/ui/formStyles.js'
 import {
   DEFAULT_SERVICES_PAGE_CONTENT,
+  linesToList,
+  listToLines,
   mergeServicesPageContent,
+  normalizeMunicipalService,
 } from '../../data/servicesPageContent.js'
 import {
   createMunicipalService,
@@ -34,10 +37,33 @@ const EMPTY_SERVICE = {
   mode: '',
   eta: '',
   summary: '',
+  description: '',
+  requirementsText: '',
   docsText: '',
-  linkHref: ROUTES.atencionCiudadano,
+  linkUrl: '',
+  linkLabel: '',
   sortOrder: 0,
   isActive: true,
+}
+
+function serviceToForm(service) {
+  if (!service) return { ...EMPTY_SERVICE }
+  const normalized = normalizeMunicipalService(service)
+  return {
+    title: normalized.title || '',
+    slug: normalized.slug || '',
+    category: normalized.category || '',
+    mode: normalized.mode || '',
+    eta: normalized.eta || '',
+    summary: normalized.summary || '',
+    description: normalized.description || '',
+    requirementsText: listToLines(normalized.requirements),
+    docsText: listToLines(normalized.docs),
+    linkUrl: normalized.linkUrl || '',
+    linkLabel: normalized.linkLabel || '',
+    sortOrder: Number(normalized.sortOrder) || 0,
+    isActive: normalized.isActive !== false,
+  }
 }
 
 function mapContentToForm(content) {
@@ -64,22 +90,6 @@ function mapContentToForm(content) {
     finalPrimaryHref: content.finalPrimaryHref || '',
     finalSecondaryLabel: content.finalSecondaryLabel || '',
     finalSecondaryHref: content.finalSecondaryHref || '',
-  }
-}
-
-function serviceToForm(service) {
-  if (!service) return { ...EMPTY_SERVICE }
-  return {
-    title: service.title || '',
-    slug: service.slug || '',
-    category: service.category || '',
-    mode: service.mode || '',
-    eta: service.eta || '',
-    summary: service.summary || '',
-    docsText: Array.isArray(service.docs) ? service.docs.join('\n') : '',
-    linkHref: service.linkHref || ROUTES.atencionCiudadano,
-    sortOrder: Number(service.sortOrder) || 0,
-    isActive: service.isActive !== false,
   }
 }
 
@@ -216,12 +226,13 @@ export function AdminServices() {
   async function handleSaveService() {
     const title = serviceForm.title.trim()
     const summary = serviceForm.summary.trim()
+    const description = serviceForm.description.trim()
     if (!title) {
       setServiceFormError('El título es obligatorio.')
       return
     }
-    if (!summary) {
-      setServiceFormError('La descripción es obligatoria.')
+    if (!summary && !description) {
+      setServiceFormError('Completá al menos el resumen de tarjeta o la descripción detallada.')
       return
     }
     const payload = {
@@ -231,11 +242,11 @@ export function AdminServices() {
       mode: serviceForm.mode.trim(),
       eta: serviceForm.eta.trim(),
       summary,
-      docs: serviceForm.docsText
-        .split('\n')
-        .map((l) => l.trim())
-        .filter(Boolean),
-      linkHref: serviceForm.linkHref.trim() || ROUTES.atencionCiudadano,
+      description,
+      requirements: linesToList(serviceForm.requirementsText),
+      docs: linesToList(serviceForm.docsText),
+      linkUrl: serviceForm.linkUrl.trim(),
+      linkLabel: serviceForm.linkLabel.trim(),
       sortOrder: Number(serviceForm.sortOrder) || 0,
       isActive: serviceForm.isActive !== false,
     }
@@ -344,8 +355,9 @@ export function AdminServices() {
         open={modalOpen}
         onClose={() => !serviceSaving && setModalOpen(false)}
         loading={serviceSaving}
+        size="wide"
         title={editingService ? 'Editar trámite' : 'Nuevo trámite'}
-        description="Los datos del trámite se guardan al confirmar. El contenido de la página se publica con «Guardar cambios»."
+        description="Completá el detalle que verán los vecinos al tocar «Ver más». Los cambios del trámite se guardan al confirmar."
         footer={
           <div className="flex flex-wrap justify-end gap-2">
             <button type="button" disabled={serviceSaving} onClick={() => setModalOpen(false)} className={ACTION_BTN_NEUTRAL}>
@@ -398,17 +410,112 @@ export function AdminServices() {
             <input type="number" min={0} className={inputClass} value={serviceForm.sortOrder} onChange={(e) => setServiceForm((f) => ({ ...f, sortOrder: e.target.value }))} disabled={serviceSaving} />
           </label>
           <label className={`${labelClass} sm:col-span-2`}>
-            Descripción
-            <textarea className={`${textareaClass} min-h-24`} value={serviceForm.summary} onChange={(e) => setServiceForm((f) => ({ ...f, summary: e.target.value }))} disabled={serviceSaving} />
+            Resumen en tarjeta
+            <textarea
+              className={`${textareaClass} min-h-20`}
+              value={serviceForm.summary}
+              onChange={(e) => setServiceForm((f) => ({ ...f, summary: e.target.value }))}
+              disabled={serviceSaving}
+              placeholder="Texto breve visible en la tarjeta del directorio (2–3 líneas)."
+            />
           </label>
           <label className={`${labelClass} sm:col-span-2`}>
-            Documentación (una por línea)
-            <textarea className={`${textareaClass} min-h-24`} value={serviceForm.docsText} onChange={(e) => setServiceForm((f) => ({ ...f, docsText: e.target.value }))} disabled={serviceSaving} />
+            Descripción detallada
+            <textarea
+              className={`${textareaClass} min-h-28`}
+              value={serviceForm.description}
+              onChange={(e) => setServiceForm((f) => ({ ...f, description: e.target.value }))}
+              disabled={serviceSaving}
+              placeholder="Información completa que se muestra en el modal al tocar «Ver más»."
+            />
           </label>
           <label className={`${labelClass} sm:col-span-2`}>
-            Enlace al consultar
-            <input className={inputClass} value={serviceForm.linkHref} onChange={(e) => setServiceForm((f) => ({ ...f, linkHref: e.target.value }))} disabled={serviceSaving} placeholder="/atencion-ciudadano" />
+            Requisitos (uno por línea)
+            <textarea
+              className={`${textareaClass} min-h-24`}
+              value={serviceForm.requirementsText}
+              onChange={(e) => setServiceForm((f) => ({ ...f, requirementsText: e.target.value }))}
+              disabled={serviceSaving}
+              placeholder="Condiciones previas para iniciar el trámite."
+            />
           </label>
+          <label className={`${labelClass} sm:col-span-2`}>
+            Documentación requerida (una por línea)
+            <textarea
+              className={`${textareaClass} min-h-24`}
+              value={serviceForm.docsText}
+              onChange={(e) => setServiceForm((f) => ({ ...f, docsText: e.target.value }))}
+              disabled={serviceSaving}
+            />
+          </label>
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:col-span-2">
+            <p className="text-sm font-semibold text-slate-900">Enlace de interés (opcional)</p>
+            <p className="mt-1 text-xs text-slate-500">
+              WhatsApp, formulario externo u otro recurso. Se muestra como botón dentro del modal.
+            </p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <label className={labelClass}>
+                URL del enlace
+                <input
+                  className={inputClass}
+                  value={serviceForm.linkUrl}
+                  onChange={(e) => setServiceForm((f) => ({ ...f, linkUrl: e.target.value }))}
+                  disabled={serviceSaving}
+                  placeholder="https://wa.me/549381..."
+                />
+              </label>
+              <label className={labelClass}>
+                Texto del botón
+                <input
+                  className={inputClass}
+                  value={serviceForm.linkLabel}
+                  onChange={(e) => setServiceForm((f) => ({ ...f, linkLabel: e.target.value }))}
+                  disabled={serviceSaving}
+                  placeholder="Consultar por WhatsApp"
+                />
+              </label>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={serviceSaving}
+                onClick={() =>
+                  setServiceForm((f) => ({
+                    ...f,
+                    linkUrl: f.linkUrl || 'https://wa.me/',
+                    linkLabel: f.linkLabel || 'Consultar por WhatsApp',
+                  }))
+                }
+                className={ACTION_BTN_NEUTRAL}
+              >
+                Plantilla WhatsApp
+              </button>
+              <button
+                type="button"
+                disabled={serviceSaving}
+                onClick={() =>
+                  setServiceForm((f) => ({
+                    ...f,
+                    linkUrl: ROUTES.atencionCiudadano,
+                    linkLabel: f.linkLabel || 'Ir al formulario web',
+                  }))
+                }
+                className={ACTION_BTN_NEUTRAL}
+              >
+                Formulario web
+              </button>
+              {(serviceForm.linkUrl || serviceForm.linkLabel) && (
+                <button
+                  type="button"
+                  disabled={serviceSaving}
+                  onClick={() => setServiceForm((f) => ({ ...f, linkUrl: '', linkLabel: '' }))}
+                  className={ACTION_BTN_NEUTRAL}
+                >
+                  Quitar enlace
+                </button>
+              )}
+            </div>
+          </div>
           <label className={`${labelClass} flex items-center gap-2 sm:col-span-2`}>
             <input
               type="checkbox"

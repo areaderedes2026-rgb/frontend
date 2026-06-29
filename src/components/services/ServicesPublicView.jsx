@@ -3,17 +3,13 @@ import { Link } from 'react-router-dom'
 import { RevealOnScroll } from '../home/RevealOnScroll.jsx'
 import { Container } from '../ui/Container.jsx'
 import { LinkButton } from '../ui/LinkButton.jsx'
-import { buildServiceCategories } from '../../data/servicesPageContent.js'
+import {
+  MunicipalServiceCard,
+  MunicipalServiceDetailModal,
+} from './MunicipalServiceDirectory.jsx'
+import { buildServiceCategories, normalizeMunicipalService } from '../../data/servicesPageContent.js'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
 import { ROUTES } from '../../utils/constants.js'
-
-function ServiceBadge({ children }) {
-  return (
-    <span className="inline-flex rounded-full border border-[#d8d5cd] bg-[#f8f7f3] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-[#3e434d]">
-      {children}
-    </span>
-  )
-}
 
 function resolveHref(href) {
   const value = String(href || '').trim()
@@ -28,6 +24,7 @@ function isExternalHref(href) {
 
 export function ServicesPublicView({ content, services = [], previewMode = false }) {
   const [category, setCategory] = useState('Todos')
+  const [detailService, setDetailService] = useState(null)
   const faqList = Array.isArray(content?.faq) ? content.faq : []
   const [openFaq, setOpenFaq] = useState(faqList[0]?.id || '')
 
@@ -36,6 +33,7 @@ export function ServicesPublicView({ content, services = [], previewMode = false
     () =>
       [...services]
         .filter((item) => item.isActive !== false)
+        .map((item, index) => normalizeMunicipalService(item, index + 1))
         .sort((a, b) => (Number(a.sortOrder) || 0) - (Number(b.sortOrder) || 0)),
     [services],
   )
@@ -55,6 +53,11 @@ export function ServicesPublicView({ content, services = [], previewMode = false
           : '-mt-[calc(var(--navbar-h,5rem)+1.5rem)] pb-12 sm:-mt-[calc(var(--navbar-h,5rem)+2rem)] sm:pb-16'
       }`}
     >
+      <MunicipalServiceDetailModal
+        open={Boolean(detailService)}
+        service={detailService}
+        onClose={() => setDetailService(null)}
+      />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_45%_at_20%_-10%,rgba(56,189,248,0.12),transparent_65%)]" aria-hidden />
       <div
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_55%_45%_at_100%_10%,rgba(15,23,42,0.12),transparent_70%)]"
@@ -189,39 +192,15 @@ export function ServicesPublicView({ content, services = [], previewMode = false
               No hay trámites publicados en esta categoría.
             </p>
           ) : (
-            <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <ul className="grid items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {visible.map((item, idx) => (
-                <li key={item.id || item.slug}>
-                  <RevealOnScroll variant="newsCardSlow" delayMs={previewMode ? 0 : idx * 80}>
-                    <article className="group flex h-full flex-col rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-5 shadow-sm ring-1 ring-[#1a1d24]/5 transition duration-300 hover:-translate-y-1 hover:border-sky-200/80 hover:shadow-lg hover:shadow-sky-500/10">
-                      <div className="flex flex-wrap gap-2">
-                        <ServiceBadge>{item.category}</ServiceBadge>
-                        <ServiceBadge>{item.mode}</ServiceBadge>
-                      </div>
-                      <h3 className="mt-3 text-lg font-bold tracking-tight text-[#171b22]">
-                        {item.title}
-                      </h3>
-                      <p className="mt-2 text-sm leading-relaxed text-[#4b505a]">{item.summary}</p>
-                      <div className="mt-3 rounded-lg border border-sky-100 bg-sky-50/70 px-3 py-2 text-xs font-semibold text-sky-900">
-                        Tiempo estimado: {item.eta}
-                      </div>
-                      <div className="mt-4 space-y-1.5">
-                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
-                          Documentación base
-                        </p>
-                        {(item.docs || []).map((doc) => (
-                          <p key={doc} className="text-sm text-[#3e434d]">
-                            • {doc}
-                          </p>
-                        ))}
-                      </div>
-                      <Link
-                        to={resolveHref(item.linkHref)}
-                        className="mt-auto inline-flex pt-4 text-sm font-semibold text-sky-800 transition hover:text-[#0f1319]"
-                      >
-                        Consultar este trámite →
-                      </Link>
-                    </article>
+                <li key={item.id || item.slug} className="h-full">
+                  <RevealOnScroll variant="newsCardSlow" delayMs={previewMode ? 0 : idx * 80} className="h-full">
+                    <MunicipalServiceCard
+                      service={item}
+                      onVerMas={setDetailService}
+                      className="h-full"
+                    />
                   </RevealOnScroll>
                 </li>
               ))}

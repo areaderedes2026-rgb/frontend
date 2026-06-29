@@ -1,6 +1,7 @@
 import {
   DEFAULT_MUNICIPAL_SERVICES,
   DEFAULT_SERVICES_PAGE_CONTENT,
+  normalizeMunicipalService,
 } from '../data/servicesPageContent.js'
 import { getApiBase } from '../utils/apiConfig.js'
 import { errorFromApiResponse } from '../utils/concurrencyConflict.js'
@@ -52,20 +53,7 @@ function mapContent(value) {
 }
 
 function mapService(value, fallbackId = 0) {
-  return {
-    id: Number(value?.id) || fallbackId,
-    slug: String(value?.slug || ''),
-    title: String(value?.title || ''),
-    category: String(value?.category || ''),
-    mode: String(value?.mode || ''),
-    eta: String(value?.eta || ''),
-    summary: String(value?.summary || ''),
-    docs: Array.isArray(value?.docs) ? value.docs.map((x) => String(x || '')) : [],
-    linkHref: String(value?.linkHref || ''),
-    sortOrder: Number(value?.sortOrder) || 0,
-    isActive: value?.isActive !== false,
-    updatedAt: value?.updatedAt || value?.updated_at || null,
-  }
+  return normalizeMunicipalService(value, fallbackId)
 }
 
 export async function fetchServicesPageContent() {
