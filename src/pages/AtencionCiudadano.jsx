@@ -302,34 +302,12 @@ export function AtencionCiudadano() {
 
         <Container className="relative">
           <RevealOnScroll variant="slow">
-            {showContentSkeleton ? (
-              <HydrationCitizenChannelGrid className="mt-10" />
-            ) : (
-              <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
-                {content.channels.map((ch) => (
-                  <article
-                    key={ch.id}
-                    className="group relative flex flex-col overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-5 shadow-sm ring-1 ring-[#1a1d24]/5 transition duration-300 hover:-translate-y-1 hover:border-sky-200/80 hover:shadow-lg hover:shadow-sky-500/10 sm:p-6"
-                  >
-                    <div
-                      className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-[#2a313b] bg-[#171b22] text-sky-200 shadow-md transition group-hover:scale-105"
-                    >
-                      <ChannelIcon name={ch.icon} />
-                    </div>
-                    <h2 className="text-base font-bold text-[#171b22]">{ch.title}</h2>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-sky-700">{ch.subtitle}</p>
-                    <p className="mt-2 flex-1 text-sm leading-relaxed text-[#4b505a]">{ch.description}</p>
-                  </article>
-                ))}
-              </div>
-            )}
+            <div className="mt-10">
+              <FaqAccordion faq={content.faq} tips={content.tips} />
+            </div>
           </RevealOnScroll>
 
-          <RevealOnScroll variant="slow" delayMs={60} className="mt-12 lg:mt-16">
-            <FaqAccordion faq={content.faq} tips={content.tips} />
-          </RevealOnScroll>
-
-          <RevealOnScroll variant="newsCardSlow" delayMs={120}>
+          <RevealOnScroll variant="newsCardSlow" delayMs={60}>
             <div
             id="consulta-ciudadano"
             className="mt-12 scroll-mt-[calc(var(--navbar-h,5rem)+1rem)] rounded-3xl border border-[#ddd7ca] bg-[#fcfcfa] p-6 shadow-[0_20px_50px_-30px_rgba(15,23,42,0.18)] sm:mt-16 sm:p-8 lg:p-10"
@@ -457,6 +435,41 @@ export function AtencionCiudadano() {
               </form>
             </div>
           </div>
+          </RevealOnScroll>
+
+          <RevealOnScroll variant="slow" delayMs={120} className="mt-12 lg:mt-16">
+            {showContentSkeleton ? (
+              <HydrationCitizenChannelGrid />
+            ) : (
+              <div>
+                <div className="mb-5">
+                  <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-sky-800">
+                    Otros canales
+                  </h2>
+                  <p className="mt-2 font-serif text-2xl font-bold text-[#171b22]">
+                    También podés contactarnos por
+                  </p>
+                  <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[#4b505a]">
+                    Consulta web, redes sociales, WhatsApp y vías presenciales según el tipo de gestión.
+                  </p>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
+                  {content.channels.map((ch) => (
+                    <article
+                      key={ch.id}
+                      className="group relative flex flex-col overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-5 shadow-sm ring-1 ring-[#1a1d24]/5 transition duration-300 hover:-translate-y-1 hover:border-sky-200/80 hover:shadow-lg hover:shadow-sky-500/10 sm:p-6"
+                    >
+                      <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-[#2a313b] bg-[#171b22] text-sky-200 shadow-md transition group-hover:scale-105">
+                        <ChannelIcon name={ch.icon} />
+                      </div>
+                      <h2 className="text-base font-bold text-[#171b22]">{ch.title}</h2>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-sky-700">{ch.subtitle}</p>
+                      <p className="mt-2 flex-1 text-sm leading-relaxed text-[#4b505a]">{ch.description}</p>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            )}
           </RevealOnScroll>
 
         </Container>

@@ -423,81 +423,6 @@ export function AdminCitizenAttentionEditorPreview({
           </header>
 
           <div className="space-y-10 p-5 sm:p-7 lg:p-10">
-            <section id="canales-atencion">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-                    Canales de atención
-                  </h2>
-                  <p className="mt-1 text-sm text-slate-600">
-                    Tarjetas que orientan al vecino antes de completar el formulario.
-                  </p>
-                </div>
-                <AddChip
-                  label="Agregar canal"
-                  onClick={() => openEditor('channel', null, { ...EMPTY_CHANNEL })}
-                  disabled={saving}
-                />
-              </div>
-              {(form.channels || []).length === 0 ? (
-                <div className="mt-5">
-                  <EmptyHint
-                    onAdd={() => openEditor('channel', null, { ...EMPTY_CHANNEL })}
-                    addLabel="Agregar canal"
-                  >
-                    Aún no hay canales cargados.
-                  </EmptyHint>
-                </div>
-              ) : (
-                <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
-                  {form.channels.map((ch, idx) => (
-                    <article
-                      key={`${ch.id || 'canal'}-${idx}`}
-                      className="group relative flex flex-col overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-5 shadow-sm ring-1 ring-[#1a1d24]/5 transition hover:-translate-y-1 hover:border-sky-200/80 sm:p-6"
-                    >
-                      <div className="absolute right-3 top-3 flex gap-1.5">
-                        <EditChip
-                          label="Editar"
-                          onClick={() => openEditor('channel', idx, { ...ch })}
-                          disabled={saving}
-                        />
-                        <DeleteChip
-                          label="Quitar"
-                          onClick={() =>
-                            setConfirmRemove({
-                              kind: 'channel',
-                              index: idx,
-                              title: '¿Quitar este canal?',
-                              description: (
-                                <>
-                                  Vas a quitar{' '}
-                                  <span className="font-semibold">«{ch.title || 'sin título'}»</span>{' '}
-                                  del borrador.
-                                </>
-                              ),
-                            })
-                          }
-                          disabled={saving}
-                        />
-                      </div>
-                      <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-[#2a313b] bg-[#171b22] text-sky-200 shadow-md">
-                        <ChannelIcon name={ch.icon} />
-                      </div>
-                      <h3 className="pr-20 text-base font-bold text-[#171b22]">
-                        {ch.title || 'Sin título'}
-                      </h3>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-sky-700">
-                        {ch.subtitle || '—'}
-                      </p>
-                      <p className="mt-2 flex-1 text-sm leading-relaxed text-[#4b505a]">
-                        {ch.description || <span className="italic text-slate-400">(Sin descripción)</span>}
-                      </p>
-                    </article>
-                  ))}
-                </div>
-              )}
-            </section>
-
             <section id="faq-atencion" className="grid gap-8 lg:grid-cols-12 lg:gap-10">
               <div className="lg:col-span-5">
                 <div className="flex items-start justify-between gap-3">
@@ -688,6 +613,81 @@ export function AdminCitizenAttentionEditorPreview({
                   )}
                 </div>
               </div>
+            </section>
+
+            <section id="canales-atencion">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+                    Otros canales
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Tarjetas al final de la página: consulta web, redes, WhatsApp y vías presenciales.
+                  </p>
+                </div>
+                <AddChip
+                  label="Agregar canal"
+                  onClick={() => openEditor('channel', null, { ...EMPTY_CHANNEL })}
+                  disabled={saving}
+                />
+              </div>
+              {(form.channels || []).length === 0 ? (
+                <div className="mt-5">
+                  <EmptyHint
+                    onAdd={() => openEditor('channel', null, { ...EMPTY_CHANNEL })}
+                    addLabel="Agregar canal"
+                  >
+                    Aún no hay canales cargados.
+                  </EmptyHint>
+                </div>
+              ) : (
+                <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
+                  {form.channels.map((ch, idx) => (
+                    <article
+                      key={`${ch.id || 'canal'}-${idx}`}
+                      className="group relative flex flex-col overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-5 shadow-sm ring-1 ring-[#1a1d24]/5 transition hover:-translate-y-1 hover:border-sky-200/80 sm:p-6"
+                    >
+                      <div className="absolute right-3 top-3 flex gap-1.5">
+                        <EditChip
+                          label="Editar"
+                          onClick={() => openEditor('channel', idx, { ...ch })}
+                          disabled={saving}
+                        />
+                        <DeleteChip
+                          label="Quitar"
+                          onClick={() =>
+                            setConfirmRemove({
+                              kind: 'channel',
+                              index: idx,
+                              title: '¿Quitar este canal?',
+                              description: (
+                                <>
+                                  Vas a quitar{' '}
+                                  <span className="font-semibold">«{ch.title || 'sin título'}»</span>{' '}
+                                  del borrador.
+                                </>
+                              ),
+                            })
+                          }
+                          disabled={saving}
+                        />
+                      </div>
+                      <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-[#2a313b] bg-[#171b22] text-sky-200 shadow-md">
+                        <ChannelIcon name={ch.icon} />
+                      </div>
+                      <h3 className="pr-20 text-base font-bold text-[#171b22]">
+                        {ch.title || 'Sin título'}
+                      </h3>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-sky-700">
+                        {ch.subtitle || '—'}
+                      </p>
+                      <p className="mt-2 flex-1 text-sm leading-relaxed text-[#4b505a]">
+                        {ch.description || <span className="italic text-slate-400">(Sin descripción)</span>}
+                      </p>
+                    </article>
+                  ))}
+                </div>
+              )}
             </section>
           </div>
         </article>
