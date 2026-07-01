@@ -285,9 +285,9 @@ export function HistoryPublicView({
 
         {!isSearching || searchFilter.hasMatches ? (
           showPageIndex ? (
-            <div className="mt-6 grid grid-cols-1 gap-5 sm:mt-8 lg:grid-cols-[minmax(9.25rem,10.75rem)_minmax(0,1fr)] lg:items-start lg:gap-6 xl:gap-8">
+            <div className="mt-6 grid grid-cols-1 gap-5 sm:mt-8 lg:grid-cols-[minmax(13.5rem,16rem)_minmax(0,1fr)] lg:items-start lg:gap-6 xl:gap-7">
               <aside className="z-20 max-lg:sticky max-lg:top-[calc(var(--navbar-h,5rem)+0.5rem)] lg:sticky lg:top-[calc(var(--navbar-h,5rem)+1rem)] lg:self-start">
-                <HistoryPageIndex items={navItems} compact />
+                <HistoryPageIndex items={navItems} />
               </aside>
               <article className="min-w-0 rounded-3xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm">
                 <div className="space-y-10 p-4 sm:p-6 lg:p-7 xl:p-8">{mainBlocks}</div>
