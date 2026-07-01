@@ -15,8 +15,30 @@ export const SERVICE_CATEGORY_ICON_OPTIONS = [
   { value: 'license', label: 'Licencias' },
   { value: 'tax', label: 'Tasas' },
   { value: 'permit', label: 'Permisos' },
+  { value: 'cemetery', label: 'Cementerio' },
+  { value: 'food-safety', label: 'Bromatología' },
+  { value: 'cadastre', label: 'Catastro' },
+  { value: 'requests', label: 'Pedidos y solicitudes' },
+  { value: 'transport', label: 'Transporte' },
+  { value: 'water', label: 'Agua y saneamiento' },
+  { value: 'security', label: 'Seguridad' },
+  { value: 'justice', label: 'Justicia' },
+  { value: 'family', label: 'Familia' },
+  { value: 'agriculture', label: 'Agro y rural' },
+  { value: 'tourism', label: 'Turismo' },
+  { value: 'workshop', label: 'Talleres' },
+  { value: 'recycling', label: 'Reciclaje' },
+  { value: 'emergency', label: 'Emergencias' },
+  { value: 'parking', label: 'Estacionamiento' },
+  { value: 'registry', label: 'Registro civil' },
+  { value: 'planning', label: 'Planeamiento' },
   { value: 'default', label: 'General' },
 ]
+
+export function findServiceCategoryIconOption(value) {
+  const key = String(value || '').trim() || 'default'
+  return SERVICE_CATEGORY_ICON_OPTIONS.find((o) => o.value === key) || SERVICE_CATEGORY_ICON_OPTIONS.find((o) => o.value === 'default')
+}
 
 const LEGACY_NAME_ICON = {
   documentación: 'document',

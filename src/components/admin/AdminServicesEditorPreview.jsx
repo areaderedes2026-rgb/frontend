@@ -9,18 +9,18 @@ import {
   normalizeServicesSectionVisibility,
 } from '../../data/servicesPageContent.js'
 import {
-  SERVICE_CATEGORY_ICON_OPTIONS,
   countServicesInCategory,
   normalizeServiceCategories,
   slugifyServiceCategory,
+  SERVICE_CATEGORY_ICON_OPTIONS,
 } from '../../data/serviceCategoriesContent.js'
 import {
   MunicipalServiceCard,
   MunicipalServiceDetailModal,
 } from '../services/MunicipalServiceDirectory.jsx'
 import { ServiceCategoryGrid } from '../services/ServiceCategoryGrid.jsx'
-import { ServiceCategoryIconBadge } from '../services/ServiceCategoryIcons.jsx'
 import { AdminFloatingSaveBar } from './AdminFloatingSaveBar.jsx'
+import { ServiceCategoryIconPicker } from './ServiceCategoryIconPicker.jsx'
 import { inputClass, labelClass, textareaClass } from '../ui/formStyles.js'
 import { ROUTES } from '../../utils/constants.js'
 
@@ -577,30 +577,14 @@ export function AdminServicesEditorPreview({
                 Se usa en /services/categoria/<strong>slug</strong>. Si lo dejás vacío se genera del nombre.
               </span>
             </label>
-            <label className={labelClass}>
-              Ícono
-              <div className="mt-2 flex flex-wrap gap-2">
-                {SERVICE_CATEGORY_ICON_OPTIONS.map((option) => {
-                  const selected = (draft?.icon || 'default') === option.value
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      disabled={saving}
-                      onClick={() => setDraftField('icon', option.value)}
-                      className={`inline-flex flex-col items-center gap-1.5 rounded-xl border px-3 py-2 text-[11px] font-semibold transition ${
-                        selected
-                          ? 'border-sky-300 bg-sky-50 text-sky-900'
-                          : 'border-slate-200 bg-white text-slate-600 hover:border-sky-200'
-                      }`}
-                    >
-                      <ServiceCategoryIconBadge icon={option.value} className="h-10 w-10" />
-                      {option.label}
-                    </button>
-                  )
-                })}
-              </div>
-            </label>
+            <div>
+              <p className={labelClass}>Ícono</p>
+              <ServiceCategoryIconPicker
+                value={draft?.icon || 'default'}
+                onChange={(icon) => setDraftField('icon', icon)}
+                disabled={saving}
+              />
+            </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className={labelClass}>
                 Orden
