@@ -1,8 +1,23 @@
+export const DEFAULT_HISTORY_SECTION_VISIBILITY = {
+  introStory: true,
+  legacyCards: true,
+  documentary: true,
+  closing: true,
+}
+
+export const DEFAULT_HISTORY_DOCUMENTARY = {
+  title: 'Documental: Memoria de Trancas',
+  description:
+    'Serie audiovisual que recorre episodios de la historia local. Cada capítulo está disponible en el enlace de Google Drive.',
+  chapters: [],
+}
+
 export const DEFAULT_HISTORY_CONTENT = {
   heroBadge: 'Identidad tucumana',
   heroTitle: 'Historia de Trancas',
   heroSubtitle:
     'Un recorrido por los hechos, paisajes y protagonistas que construyeron la memoria histórica de Trancas y su proyección hacia el futuro.',
+  heroSearchPlaceholder: '¿Qué querés conocer de Trancas?',
   heroImageUrl:
     'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1800&q=80',
   introStory:
@@ -25,57 +40,31 @@ export const DEFAULT_HISTORY_CONTENT = {
       text: 'Una ciudad que combina historia, servicios y oportunidades para visitantes y vecinos.',
     },
   ],
+  documentary: {
+    title: 'Documental: Memoria de Trancas',
+    description:
+      'Serie audiovisual que recorre episodios de la historia local. Cada capítulo está disponible en el enlace de Google Drive.',
+    chapters: [
+      {
+        id: 'doc-ch-1',
+        title: 'Capítulo 1 — Orígenes',
+        description: 'Primeras huellas del territorio y las familias que dieron forma a la comunidad.',
+        driveUrl: '',
+        sortOrder: 10,
+      },
+    ],
+  },
+  sectionVisibility: { ...DEFAULT_HISTORY_SECTION_VISIBILITY },
   tourismCategories: [
     { id: 'all', label: 'Todos' },
     { id: 'nature', label: 'Naturaleza' },
     { id: 'culture', label: 'Patrimonio' },
     { id: 'faith', label: 'Espiritual' },
   ],
-  tourismSpots: [
-    {
-      id: 'potrero',
-      name: 'Dique El Potrero',
-      category: 'nature',
-      image:
-        'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1400&q=80',
-      summary:
-        'Un entorno natural para descanso, pesca y actividades al aire libre con vistas abiertas del paisaje tucumano.',
-      chips: ['Paisaje', 'Recreación', 'Aire libre'],
-    },
-    {
-      id: 'templo',
-      name: 'Parroquia local y circuito religioso',
-      category: 'faith',
-      image:
-        'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1400&q=80',
-      summary:
-        'Espacios de valor espiritual y arquitectónico que forman parte del recorrido tradicional de la comunidad.',
-      chips: ['Fe', 'Arquitectura', 'Tradición'],
-    },
-    {
-      id: 'plaza',
-      name: 'Plaza central y casco histórico',
-      category: 'culture',
-      image:
-        'https://images.unsplash.com/photo-1454391304352-2bf4678b1a7a?auto=format&fit=crop&w=1400&q=80',
-      summary:
-        'Punto de encuentro ciudadano con edificios representativos, memoria urbana y vida cultural activa.',
-      chips: ['Historia', 'Cultura', 'Encuentro'],
-    },
-    {
-      id: 'rural',
-      name: 'Rutas rurales y miradores',
-      category: 'nature',
-      image:
-        'https://images.unsplash.com/photo-1472396961693-142e6e269027?auto=format&fit=crop&w=1400&q=80',
-      summary:
-        'Recorridos escénicos ideales para conocer la identidad productiva y el paisaje del entorno de Trancas.',
-      chips: ['Circuito', 'Miradores', 'Tradición rural'],
-    },
-  ],
+  tourismSpots: [],
   closingTitle: 'Trancas: memoria, cultura y futuro',
   closingText:
-    'Esta sección reúne hitos históricos y atractivos turísticos para que vecinos y visitantes conozcan la identidad local. En próximas etapas se incorporarán más galerías, documentos históricos y recorridos temáticos.',
+    'Esta sección reúne hitos históricos y relatos para que vecinos y visitantes conozcan la identidad local. Explorá el documental, el resumen y los contenidos que iremos sumando.',
 }
 
 function mergeList(baseList, incomingList, mapper) {
@@ -83,13 +72,66 @@ function mergeList(baseList, incomingList, mapper) {
   return incomingList.map((item, index) => mapper(item, baseList[index], index)).filter(Boolean)
 }
 
+export function normalizeHistorySectionVisibility(raw) {
+  const base = DEFAULT_HISTORY_SECTION_VISIBILITY
+  if (!raw || typeof raw !== 'object') return { ...base }
+  return {
+    introStory: raw.introStory !== false,
+    legacyCards: raw.legacyCards !== false,
+    documentary: raw.documentary !== false,
+    closing: raw.closing !== false,
+  }
+}
+
+export function isHistorySectionVisible(content, key) {
+  const visibility = normalizeHistorySectionVisibility(content?.sectionVisibility)
+  return visibility[key] !== false
+}
+
+function normalizeChapter(raw, index = 0) {
+  if (!raw || typeof raw !== 'object') return null
+  const title = String(raw.title || '').trim()
+  if (!title) return null
+  const id = String(raw.id || '').trim() || `doc-ch-${index + 1}`
+  return {
+    id,
+    title,
+    description: String(raw.description || '').trim(),
+    driveUrl: String(raw.driveUrl || raw.linkUrl || '').trim(),
+    sortOrder: Number.isFinite(Number(raw.sortOrder)) ? Math.max(Number(raw.sortOrder), 0) : (index + 1) * 10,
+  }
+}
+
+export function normalizeHistoryDocumentary(raw, fallback = DEFAULT_HISTORY_DOCUMENTARY) {
+  const base = fallback || DEFAULT_HISTORY_DOCUMENTARY
+  if (!raw || typeof raw !== 'object') {
+    return {
+      title: base.title,
+      description: base.description,
+      chapters: Array.isArray(base.chapters) ? base.chapters.map((c, i) => normalizeChapter(c, i)).filter(Boolean) : [],
+    }
+  }
+  const chapters = Array.isArray(raw.chapters)
+    ? raw.chapters.map((c, i) => normalizeChapter(c, i)).filter(Boolean)
+    : []
+  chapters.sort((a, b) => a.sortOrder - b.sortOrder || a.title.localeCompare(b.title, 'es'))
+  return {
+    title: String(raw.title || base.title || '').trim(),
+    description: String(raw.description || base.description || '').trim(),
+    chapters,
+  }
+}
+
 export function mergeHistoryContent(base, remote) {
-  if (!remote || typeof remote !== 'object') return base
+  if (!remote || typeof remote !== 'object') return { ...base }
   return {
     ...base,
     heroBadge: remote.heroBadge || base.heroBadge,
     heroTitle: remote.heroTitle || base.heroTitle,
     heroSubtitle: remote.heroSubtitle || base.heroSubtitle,
+    heroSearchPlaceholder: String(
+      remote.heroSearchPlaceholder ?? base.heroSearchPlaceholder ?? '¿Qué querés conocer de Trancas?',
+    ),
     heroImageUrl: remote.heroImageUrl || base.heroImageUrl,
     introStory: remote.introStory || base.introStory,
     ctaPrimaryLabel: remote.ctaPrimaryLabel || base.ctaPrimaryLabel,
@@ -100,6 +142,10 @@ export function mergeHistoryContent(base, remote) {
       title: item?.title || fallback?.title || '',
       text: item?.text || fallback?.text || '',
     })),
+    documentary: normalizeHistoryDocumentary(remote.documentary, base.documentary),
+    sectionVisibility: normalizeHistorySectionVisibility(
+      remote.sectionVisibility ?? base.sectionVisibility,
+    ),
     tourismCategories: mergeList(
       base.tourismCategories,
       remote.tourismCategories,
@@ -122,5 +168,48 @@ export function mergeHistoryContent(base, remote) {
     })),
     closingTitle: remote.closingTitle || base.closingTitle,
     closingText: remote.closingText || base.closingText,
+  }
+}
+
+/** Filtra contenido de historia por texto libre (resumen, tarjetas, documental, cierre). */
+export function filterHistoryByQuery(content, query) {
+  const q = String(query || '')
+    .trim()
+    .toLowerCase()
+  if (!q) return { hasMatches: true, sections: {} }
+
+  const documentary = normalizeHistoryDocumentary(content?.documentary)
+  const legacyItems = (content?.legacyItems || []).filter((item) => {
+    const hay = [item?.title, item?.text].join(' ').toLowerCase()
+    return hay.includes(q)
+  })
+  const chapters = documentary.chapters.filter((ch) => {
+    const hay = [ch.title, ch.description].join(' ').toLowerCase()
+    return hay.includes(q)
+  })
+
+  const introMatch = String(content?.introStory || '').toLowerCase().includes(q)
+  const documentaryMetaMatch =
+    documentary.title.toLowerCase().includes(q) || documentary.description.toLowerCase().includes(q)
+  const closingMatch =
+    String(content?.closingTitle || '').toLowerCase().includes(q) ||
+    String(content?.closingText || '').toLowerCase().includes(q)
+
+  const hasMatches =
+    introMatch ||
+    legacyItems.length > 0 ||
+    documentaryMetaMatch ||
+    chapters.length > 0 ||
+    closingMatch
+
+  return {
+    hasMatches,
+    sections: {
+      introMatch,
+      legacyItems,
+      documentaryMetaMatch,
+      chapters,
+      closingMatch,
+    },
   }
 }

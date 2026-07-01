@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AdminHistoryEditorPreview } from '../../components/admin/AdminHistoryEditorPreview.jsx'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
 import { HeroImageModal } from '../../components/admin/HeroImageModal.jsx'
@@ -6,6 +6,8 @@ import { Toast } from '../../components/ui/Toast.jsx'
 import {
   DEFAULT_HISTORY_CONTENT,
   mergeHistoryContent,
+  normalizeHistoryDocumentary,
+  normalizeHistorySectionVisibility,
 } from '../../data/historyContent.js'
 import { useContentEditorConcurrencyConflict } from '../../hooks/useContentEditorConcurrencyConflict.jsx'
 import {
@@ -16,10 +18,12 @@ import { fetchTourismPlacesAdmin } from '../../services/tourismPlacesService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
 
 function mapToForm(content) {
+  const documentary = normalizeHistoryDocumentary(content?.documentary)
   return {
     heroBadge: content.heroBadge || '',
     heroTitle: content.heroTitle || '',
     heroSubtitle: content.heroSubtitle || '',
+    heroSearchPlaceholder: content.heroSearchPlaceholder || '',
     heroImageUrl: content.heroImageUrl || '',
     introStory: content.introStory || '',
     ctaPrimaryLabel: content.ctaPrimaryLabel || '',
@@ -32,9 +36,45 @@ function mapToForm(content) {
           text: item?.text || '',
         }))
       : [],
+    documentary: {
+      title: documentary.title || '',
+      description: documentary.description || '',
+      chapters: documentary.chapters.map((ch) => ({
+        id: ch.id || '',
+        title: ch.title || '',
+        description: ch.description || '',
+        driveUrl: ch.driveUrl || '',
+        sortOrder: Number(ch.sortOrder) || 0,
+      })),
+    },
+    sectionVisibility: normalizeHistorySectionVisibility(content?.sectionVisibility),
+    tourismCategories: Array.isArray(content.tourismCategories) ? content.tourismCategories : [],
+    tourismSpots: Array.isArray(content.tourismSpots) ? content.tourismSpots : [],
     closingTitle: content.closingTitle || '',
     closingText: content.closingText || '',
   }
+}
+
+function contentFormSnapshot(form) {
+  return JSON.stringify({
+    heroBadge: form.heroBadge || '',
+    heroTitle: form.heroTitle || '',
+    heroSubtitle: form.heroSubtitle || '',
+    heroSearchPlaceholder: form.heroSearchPlaceholder || '',
+    heroImageUrl: form.heroImageUrl || '',
+    introStory: form.introStory || '',
+    ctaPrimaryLabel: form.ctaPrimaryLabel || '',
+    ctaPrimaryHref: form.ctaPrimaryHref || '',
+    ctaSecondaryLabel: form.ctaSecondaryLabel || '',
+    ctaSecondaryHref: form.ctaSecondaryHref || '',
+    legacyItems: form.legacyItems || [],
+    documentary: form.documentary || { title: '', description: '', chapters: [] },
+    sectionVisibility: normalizeHistorySectionVisibility(form.sectionVisibility),
+    tourismCategories: form.tourismCategories || [],
+    tourismSpots: form.tourismSpots || [],
+    closingTitle: form.closingTitle || '',
+    closingText: form.closingText || '',
+  })
 }
 
 function cleanRows(rows, shape) {
@@ -47,8 +87,24 @@ function cleanRows(rows, shape) {
     .filter((row) => shape.some((key) => row[key]))
 }
 
+function cleanChapters(chapters) {
+  if (!Array.isArray(chapters)) return []
+  return chapters
+    .map((ch, index) => ({
+      id: String(ch?.id || '').trim() || `doc-ch-${index + 1}`,
+      title: String(ch?.title || '').trim(),
+      description: String(ch?.description || '').trim(),
+      driveUrl: String(ch?.driveUrl || '').trim(),
+      sortOrder: Number.isFinite(Number(ch?.sortOrder)) ? Number(ch.sortOrder) : (index + 1) * 10,
+    }))
+    .filter((ch) => ch.title)
+}
+
+const initialForm = mapToForm(DEFAULT_HISTORY_CONTENT)
+
 export function AdminHistory() {
-  const [form, setForm] = useState(() => mapToForm(DEFAULT_HISTORY_CONTENT))
+  const [form, setForm] = useState(() => initialForm)
+  const [savedSnapshot, setSavedSnapshot] = useState(() => contentFormSnapshot(initialForm))
   const [contentUpdatedAt, setContentUpdatedAt] = useState(null)
   const [places, setPlaces] = useState([])
   const [loading, setLoading] = useState(true)
@@ -58,10 +114,17 @@ export function AdminHistory() {
   const [toast, setToast] = useState(null)
   const dismissToast = useCallback(() => setToast(null), [])
 
+  const hasContentChanges = useMemo(
+    () => contentFormSnapshot(form) !== savedSnapshot,
+    [form, savedSnapshot],
+  )
+
   const loadFromServer = useCallback(async () => {
     const remote = await fetchHistoryContent()
     const merged = remote ? mergeHistoryContent(DEFAULT_HISTORY_CONTENT, remote) : DEFAULT_HISTORY_CONTENT
-    setForm(mapToForm(merged))
+    const nextForm = mapToForm(merged)
+    setForm(nextForm)
+    setSavedSnapshot(contentFormSnapshot(nextForm))
     setContentUpdatedAt(remote?.updatedAt || null)
     setError('')
   }, [])
@@ -112,6 +175,7 @@ export function AdminHistory() {
       heroBadge: form.heroBadge.trim(),
       heroTitle: form.heroTitle.trim(),
       heroSubtitle: form.heroSubtitle.trim(),
+      heroSearchPlaceholder: form.heroSearchPlaceholder.trim(),
       heroImageUrl: form.heroImageUrl.trim(),
       introStory: form.introStory,
       ctaPrimaryLabel: form.ctaPrimaryLabel.trim(),
@@ -119,6 +183,14 @@ export function AdminHistory() {
       ctaSecondaryLabel: form.ctaSecondaryLabel.trim(),
       ctaSecondaryHref: form.ctaSecondaryHref.trim(),
       legacyItems: cleanRows(form.legacyItems, ['title', 'text']),
+      documentary: {
+        title: String(form.documentary?.title || '').trim(),
+        description: String(form.documentary?.description || '').trim(),
+        chapters: cleanChapters(form.documentary?.chapters),
+      },
+      sectionVisibility: normalizeHistorySectionVisibility(form.sectionVisibility),
+      tourismCategories: form.tourismCategories || [],
+      tourismSpots: form.tourismSpots || [],
       closingTitle: form.closingTitle.trim(),
       closingText: form.closingText,
     }),
@@ -130,7 +202,9 @@ export function AdminHistory() {
       const saved = await updateHistoryContent(buildPayload(forceOverwrite))
       if (saved) {
         const merged = mergeHistoryContent(DEFAULT_HISTORY_CONTENT, saved)
-        setForm(mapToForm(merged))
+        const nextForm = mapToForm(merged)
+        setForm(nextForm)
+        setSavedSnapshot(contentFormSnapshot(nextForm))
         setContentUpdatedAt(saved?.updatedAt || null)
       }
       setError('')
@@ -218,6 +292,7 @@ export function AdminHistory() {
           saving={saving}
           error={error}
           places={places}
+          hasChanges={hasContentChanges}
           onChangeCover={() => setHeroImageOpen(true)}
           onSubmit={handleSubmit}
           apiAvailable={isApiConfigured()}

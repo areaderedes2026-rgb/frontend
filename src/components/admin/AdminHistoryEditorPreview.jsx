@@ -3,9 +3,16 @@ import { Link } from 'react-router-dom'
 import { Modal } from '../ui/Modal.jsx'
 import { ConfirmDialog } from '../ui/ConfirmDialog.jsx'
 import { SingleImageUploadField } from './SingleImageUploadField.jsx'
+import { AdminFloatingSaveBar } from './AdminFloatingSaveBar.jsx'
+import { HistoryHeroHeader } from '../history/HistoryHeroHeader.jsx'
+import { HistoryDocumentarySection } from '../history/HistoryDocumentarySection.jsx'
 import { inputClass, labelClass, textareaClass } from '../ui/formStyles.js'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
 import { ROUTES } from '../../utils/constants.js'
+import {
+  normalizeHistoryDocumentary,
+  normalizeHistorySectionVisibility,
+} from '../../data/historyContent.js'
 
 const ACTION_BTN_BASE =
   'inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto'
@@ -124,24 +131,74 @@ function DeleteChip({ label = 'Quitar', onClick, disabled = false }) {
   )
 }
 
-function SectionCard({ id, title, description, rightSlot, children, className = '', variant = 'card' }) {
+function SectionVisibilityToggle({ visible, onChange, disabled = false }) {
+  return (
+    <label className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 shadow-sm">
+      <input
+        type="checkbox"
+        checked={visible !== false}
+        onChange={(e) => onChange(e.target.checked)}
+        disabled={disabled}
+        className="h-3.5 w-3.5 rounded border-slate-300 text-sky-700"
+      />
+      Visible en el portal
+    </label>
+  )
+}
+
+function SectionCard({
+  id,
+  title,
+  description,
+  rightSlot,
+  children,
+  className = '',
+  variant = 'card',
+  visible = true,
+  onToggleVisible,
+  saving = false,
+}) {
   const base =
     variant === 'plain'
       ? ''
       : 'rounded-3xl border border-[#ddd7ca] bg-[#fcfcfa] p-5 shadow-sm sm:p-7'
   return (
-    <section id={id} className={`scroll-mt-32 ${base} ${className}`.trim()}>
+    <section
+      id={id}
+      className={`scroll-mt-32 ${!visible ? 'opacity-75' : ''} ${base} ${className}`.trim()}
+    >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-            {title}
-          </h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+              {title}
+            </h2>
+            {!visible ? (
+              <span className="inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-900 ring-1 ring-amber-200">
+                Oculta en el portal
+              </span>
+            ) : null}
+          </div>
           {description ? (
             <p className="mt-1 text-sm text-slate-600">{description}</p>
           ) : null}
         </div>
-        {rightSlot ? <div className="shrink-0">{rightSlot}</div> : null}
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          {onToggleVisible ? (
+            <SectionVisibilityToggle
+              visible={visible}
+              onChange={onToggleVisible}
+              disabled={saving}
+            />
+          ) : null}
+          {rightSlot ? <div>{rightSlot}</div> : null}
+        </div>
       </div>
+      {!visible ? (
+        <p className="mt-4 rounded-xl border border-dashed border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-900">
+          Esta sección no se muestra en el portal público. Podés seguir editándola y volver a activarla cuando quieras.
+        </p>
+      ) : null}
       <div className="mt-5">{children}</div>
     </section>
   )
@@ -161,6 +218,7 @@ function EmptyHint({ children, onAdd, addLabel = 'Agregar' }) {
 }
 
 const EMPTY_LEGACY = { title: '', text: '' }
+const EMPTY_CHAPTER = { title: '', description: '', driveUrl: '', sortOrder: 0 }
 
 export function AdminHistoryEditorPreview({
   form,
@@ -169,12 +227,27 @@ export function AdminHistoryEditorPreview({
   saving,
   error,
   places,
+  hasChanges = false,
   onChangeCover,
   onSubmit,
   apiAvailable,
 }) {
   const [editor, setEditor] = useState(null)
   const [confirmRemove, setConfirmRemove] = useState(null)
+  const [previewSearch, setPreviewSearch] = useState('')
+
+  const sectionVisibility = normalizeHistorySectionVisibility(form.sectionVisibility)
+  const documentary = normalizeHistoryDocumentary(form.documentary)
+
+  function setSectionVisible(key, visible) {
+    setForm((prev) => ({
+      ...prev,
+      sectionVisibility: {
+        ...normalizeHistorySectionVisibility(prev.sectionVisibility),
+        [key]: visible,
+      },
+    }))
+  }
 
   function openEditor(kind, index = null, draft = null) {
     setEditor({ kind, index, draft })
@@ -195,6 +268,7 @@ export function AdminHistoryEditorPreview({
       heroBadge: String(draft.heroBadge || '').trim(),
       heroTitle: String(draft.heroTitle || '').trim(),
       heroSubtitle: String(draft.heroSubtitle || ''),
+      heroSearchPlaceholder: String(draft.heroSearchPlaceholder || '').trim(),
       heroImageUrl: String(draft.heroImageUrl || '').trim(),
       ctaPrimaryLabel: String(draft.ctaPrimaryLabel || '').trim(),
       ctaPrimaryHref: String(draft.ctaPrimaryHref || '').trim(),
@@ -236,6 +310,59 @@ export function AdminHistoryEditorPreview({
     })
   }
 
+  function applyDocumentaryMeta(draft) {
+    setForm((prev) => ({
+      ...prev,
+      documentary: {
+        ...(prev.documentary || {}),
+        title: String(draft.title || '').trim(),
+        description: String(draft.description || '').trim(),
+        chapters: Array.isArray(prev.documentary?.chapters) ? prev.documentary.chapters : [],
+      },
+    }))
+  }
+
+  function upsertChapter(index, draft) {
+    setForm((prev) => {
+      const list = Array.isArray(prev.documentary?.chapters) ? [...prev.documentary.chapters] : []
+      const item = {
+        id: String(draft.id || '').trim() || `doc-ch-${Date.now()}`,
+        title: String(draft.title || '').trim(),
+        description: String(draft.description || '').trim(),
+        driveUrl: String(draft.driveUrl || '').trim(),
+        sortOrder: Number.isFinite(Number(draft.sortOrder)) ? Number(draft.sortOrder) : (list.length + 1) * 10,
+      }
+      if (index === null || index === undefined) list.push(item)
+      else list[index] = item
+      list.sort((a, b) => (Number(a.sortOrder) || 0) - (Number(b.sortOrder) || 0))
+      return {
+        ...prev,
+        documentary: {
+          ...(prev.documentary || {}),
+          title: prev.documentary?.title || '',
+          description: prev.documentary?.description || '',
+          chapters: list,
+        },
+      }
+    })
+  }
+
+  function removeChapter(index) {
+    setForm((prev) => {
+      const list = Array.isArray(prev.documentary?.chapters) ? [...prev.documentary.chapters] : []
+      list.splice(index, 1)
+      return {
+        ...prev,
+        documentary: {
+          ...(prev.documentary || {}),
+          title: prev.documentary?.title || '',
+          description: prev.documentary?.description || '',
+          chapters: list,
+        },
+      }
+    })
+  }
+
   function handleSaveEditor() {
     if (!editor) return
     const draft = editor.draft || {}
@@ -252,6 +379,12 @@ export function AdminHistoryEditorPreview({
       case 'closing':
         applyClosing(draft)
         break
+      case 'documentaryMeta':
+        applyDocumentaryMeta(draft)
+        break
+      case 'documentaryChapter':
+        upsertChapter(editor.index, draft)
+        break
       default:
         break
     }
@@ -261,6 +394,7 @@ export function AdminHistoryEditorPreview({
   function handleConfirmRemove() {
     if (!confirmRemove) return
     if (confirmRemove.kind === 'legacy') removeLegacy(confirmRemove.index)
+    if (confirmRemove.kind === 'documentaryChapter') removeChapter(confirmRemove.index)
     setConfirmRemove(null)
   }
 
@@ -271,6 +405,8 @@ export function AdminHistoryEditorPreview({
       intro: 'Editar resumen histórico',
       legacy: editor.index === null ? 'Nueva tarjeta' : 'Editar tarjeta',
       closing: 'Editar bloque de cierre',
+      documentaryMeta: 'Editar documental',
+      documentaryChapter: editor.index === null ? 'Nuevo capítulo' : 'Editar capítulo',
     }
     return labels[editor.kind] || 'Editar'
   }, [editor])
@@ -303,8 +439,8 @@ export function AdminHistoryEditorPreview({
   }
 
   const draft = editor?.draft || {}
-  const heroCoverUrl = form.heroImageUrl ? resolveMediaUrl(form.heroImageUrl) : ''
   const previewPlaces = (places || []).slice(0, 8)
+  const showFloatingSave = hasChanges && editor == null
 
   return (
     <>
@@ -326,7 +462,7 @@ export function AdminHistoryEditorPreview({
         open={editor != null}
         onClose={closeEditor}
         loading={saving}
-        size={editor?.kind === 'identity' || editor?.kind === 'intro' ? 'wide' : 'default'}
+        size={editor?.kind === 'identity' || editor?.kind === 'intro' || editor?.kind === 'documentaryMeta' ? 'wide' : 'default'}
         title={editorTitle}
         description="Los cambios quedarán pendientes hasta que toques «Guardar cambios» en el pie de la página."
       >
@@ -362,34 +498,17 @@ export function AdminHistoryEditorPreview({
           <p className="text-xs text-slate-600">
             Tocá el lápiz de cada sección para editar.{' '}
             <span className="hidden sm:inline">
-              Los cambios quedan en borrador hasta «Guardar cambios».
+              Los cambios quedan en borrador hasta guardarlos.
             </span>
           </p>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={onChangeCover}
-              disabled={saving}
-              className={ACTION_BTN_NEUTRAL}
-            >
-              Cambiar portada
-            </button>
-            <button
-              type="button"
-              onClick={onSubmit}
-              disabled={saving || loading}
-              className={ACTION_BTN_PRIMARY}
-            >
-              {saving ? (
-                <>
-                  <Spinner tone="white" size="sm" />
-                  Guardando…
-                </>
-              ) : (
-                'Guardar cambios'
-              )}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onChangeCover}
+            disabled={saving}
+            className={ACTION_BTN_NEUTRAL}
+          >
+            Cambiar portada
+          </button>
         </div>
 
         {error ? (
@@ -403,29 +522,37 @@ export function AdminHistoryEditorPreview({
 
         {/* Preview */}
         <article className="overflow-hidden rounded-3xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm">
-          {/* Hero */}
-          <header className="relative overflow-hidden">
-            {heroCoverUrl ? (
-              <img
-                src={heroCoverUrl}
-                alt=""
-                className="h-56 w-full object-cover sm:h-64 lg:h-80"
-              />
-            ) : (
-              <div className="flex h-56 w-full items-center justify-center bg-linear-to-br from-slate-700 to-slate-900 text-sm text-slate-300 sm:h-64 lg:h-80">
-                Sin imagen de portada
-              </div>
-            )}
-            <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-slate-950 via-slate-900/50 to-slate-900/10" />
+          <div className="relative">
+            <HistoryHeroHeader
+              badge={form.heroBadge || ''}
+              title={form.heroTitle || 'Sin título'}
+              subtitle={form.heroSubtitle || ''}
+              imageUrl={form.heroImageUrl || ''}
+              searchPlaceholder={form.heroSearchPlaceholder || '¿Qué querés conocer de Trancas?'}
+              searchQuery={previewSearch}
+              onSearchChange={setPreviewSearch}
+              primaryCta={
+                form.ctaPrimaryLabel
+                  ? { label: form.ctaPrimaryLabel, href: form.ctaPrimaryHref }
+                  : null
+              }
+              secondaryCta={
+                form.ctaSecondaryLabel
+                  ? { label: form.ctaSecondaryLabel, href: form.ctaSecondaryHref }
+                  : null
+              }
+              previewMode
+            />
             <div className="absolute right-4 top-4 z-20 sm:right-6 sm:top-6">
               <EditChip
                 tone="overlay"
-                label="Editar portada y CTAs"
+                label="Editar portada"
                 onClick={() =>
                   openEditor('identity', null, {
                     heroBadge: form.heroBadge || '',
                     heroTitle: form.heroTitle || '',
                     heroSubtitle: form.heroSubtitle || '',
+                    heroSearchPlaceholder: form.heroSearchPlaceholder || '',
                     heroImageUrl: form.heroImageUrl || '',
                     ctaPrimaryLabel: form.ctaPrimaryLabel || '',
                     ctaPrimaryHref: form.ctaPrimaryHref || '',
@@ -436,38 +563,7 @@ export function AdminHistoryEditorPreview({
                 disabled={saving}
               />
             </div>
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 p-6 sm:p-8 lg:p-10">
-              {form.heroBadge ? (
-                <p className="text-xs font-bold uppercase tracking-[0.24em] text-sky-200">
-                  {form.heroBadge}
-                </p>
-              ) : null}
-              <h1 className="mt-3 max-w-4xl font-serif text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl">
-                {form.heroTitle || 'Sin título'}
-              </h1>
-              {form.heroSubtitle ? (
-                <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-100 sm:text-base">
-                  {form.heroSubtitle}
-                </p>
-              ) : (
-                <p className="mt-3 max-w-3xl text-sm italic text-slate-300/90">
-                  (Sin subtítulo)
-                </p>
-              )}
-              <div className="mt-5 flex flex-wrap gap-3">
-                {form.ctaPrimaryLabel ? (
-                  <span className="inline-flex min-h-11 items-center justify-center rounded-xl bg-white px-5 text-sm font-semibold text-[#171b22]">
-                    {form.ctaPrimaryLabel}
-                  </span>
-                ) : null}
-                {form.ctaSecondaryLabel ? (
-                  <span className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/40 bg-white/10 px-5 text-sm font-semibold text-white backdrop-blur-sm">
-                    {form.ctaSecondaryLabel}
-                  </span>
-                ) : null}
-              </div>
-            </div>
-          </header>
+          </div>
 
           <div className="space-y-10 p-5 sm:p-7 lg:p-10">
             {/* Resumen */}
@@ -476,6 +572,9 @@ export function AdminHistoryEditorPreview({
               title="Resumen histórico"
               description="Texto largo que se muestra al inicio de la página pública."
               variant="plain"
+              visible={sectionVisibility.introStory}
+              onToggleVisible={(visible) => setSectionVisible('introStory', visible)}
+              saving={saving}
               rightSlot={
                 <EditChip
                   label="Editar"
@@ -503,6 +602,9 @@ export function AdminHistoryEditorPreview({
               title="Tarjetas introductorias"
               description="Tres bloques cortos que resumen valores o pilares de la historia local."
               variant="plain"
+              visible={sectionVisibility.legacyCards}
+              onToggleVisible={(visible) => setSectionVisible('legacyCards', visible)}
+              saving={saving}
               rightSlot={
                 <AddChip
                   label="Agregar tarjeta"
@@ -563,6 +665,115 @@ export function AdminHistoryEditorPreview({
                   ))}
                 </ul>
               )}
+            </SectionCard>
+
+            <SectionCard
+              id="documental-historia-admin"
+              title="Documental"
+              description="Nombre del documental, descripción general y capítulos con enlace a Google Drive."
+              variant="plain"
+              visible={sectionVisibility.documentary}
+              onToggleVisible={(visible) => setSectionVisible('documentary', visible)}
+              saving={saving}
+              rightSlot={
+                <div className="flex flex-wrap gap-2">
+                  <EditChip
+                    label="Editar documental"
+                    onClick={() =>
+                      openEditor('documentaryMeta', null, {
+                        title: form.documentary?.title || '',
+                        description: form.documentary?.description || '',
+                      })
+                    }
+                    disabled={saving}
+                  />
+                  <AddChip
+                    label="Agregar capítulo"
+                    onClick={() => openEditor('documentaryChapter', null, { ...EMPTY_CHAPTER })}
+                    disabled={saving}
+                  />
+                </div>
+              }
+            >
+              <div className="relative rounded-3xl border border-[#ddd7ca] bg-[#f8f7f3] p-5 sm:p-7">
+                {documentary.chapters.length > 0 ? (
+                  <>
+                    <HistoryDocumentarySection documentary={documentary} previewMode />
+                    <ul className="mt-6 space-y-2 border-t border-[#ddd7ca] pt-5">
+                      {documentary.chapters.map((chapter, idx) => (
+                        <li
+                          key={chapter.id || `admin-ch-${idx}`}
+                          className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200/80 bg-white px-3 py-2.5"
+                        >
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-slate-900">
+                              {chapter.title}
+                            </p>
+                            {chapter.driveUrl ? (
+                              <p className="truncate text-xs text-sky-800">{chapter.driveUrl}</p>
+                            ) : (
+                              <p className="text-xs italic text-slate-500">Sin enlace a Drive</p>
+                            )}
+                          </div>
+                          <div className="flex shrink-0 gap-1.5">
+                            <EditChip
+                              label="Editar"
+                              onClick={() => openEditor('documentaryChapter', idx, { ...chapter })}
+                              disabled={saving}
+                            />
+                            <DeleteChip
+                              label="Quitar"
+                              onClick={() =>
+                                setConfirmRemove({
+                                  kind: 'documentaryChapter',
+                                  index: idx,
+                                  title: '¿Quitar este capítulo?',
+                                  description: (
+                                    <>
+                                      Vas a quitar{' '}
+                                      <span className="font-semibold">
+                                        «{chapter.title || 'sin título'}»
+                                      </span>{' '}
+                                      del borrador.
+                                    </>
+                                  ),
+                                })
+                              }
+                              disabled={saving}
+                            />
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                ) : (
+                  <>
+                    {documentary.title || documentary.description ? (
+                      <header className="mb-4">
+                        <p className="text-xs font-bold uppercase tracking-[0.2em] text-sky-800">
+                          Documental
+                        </p>
+                        {documentary.title ? (
+                          <h3 className="mt-2 font-serif text-xl font-bold text-[#171b22]">
+                            {documentary.title}
+                          </h3>
+                        ) : null}
+                        {documentary.description ? (
+                          <p className="mt-2 text-sm leading-relaxed text-[#4b505a]">
+                            {documentary.description}
+                          </p>
+                        ) : null}
+                      </header>
+                    ) : null}
+                    <EmptyHint
+                      onAdd={() => openEditor('documentaryChapter', null, { ...EMPTY_CHAPTER })}
+                      addLabel="Agregar capítulo"
+                    >
+                      Todavía no hay capítulos. Sumá el primero con título, descripción y enlace al video en Drive.
+                    </EmptyHint>
+                  </>
+                )}
+              </div>
             </SectionCard>
 
             {/* Turismo histórico (link a otra sección admin) */}
@@ -639,6 +850,9 @@ export function AdminHistoryEditorPreview({
               title="Bloque de cierre"
               description="Mensaje final con un título y un texto descriptivo."
               variant="plain"
+              visible={sectionVisibility.closing}
+              onToggleVisible={(visible) => setSectionVisible('closing', visible)}
+              saving={saving}
               rightSlot={
                 <EditChip
                   label="Editar"
@@ -668,27 +882,19 @@ export function AdminHistoryEditorPreview({
           </div>
         </article>
 
-        {/* Footer pegajoso */}
-        <div className="sticky bottom-3 z-30 flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white/95 p-4 shadow-lg backdrop-blur sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-slate-600">
-            Los cambios no son visibles en el portal hasta que toques «Guardar cambios».
-          </p>
-          <button
-            type="button"
-            onClick={onSubmit}
-            disabled={loading || saving}
-            className={ACTION_BTN_PRIMARY}
-          >
-            {saving ? (
-              <>
-                <Spinner tone="white" size="sm" />
-                Guardando…
-              </>
-            ) : (
-              'Guardar cambios de Historia'
-            )}
-          </button>
-        </div>
+        <AdminFloatingSaveBar
+          open={showFloatingSave}
+          saving={saving}
+          disabled={loading}
+          saveLabel="Guardar cambios de Historia"
+          savingContent={
+            <>
+              <Spinner tone="white" size="sm" />
+              Guardando…
+            </>
+          }
+          onSave={onSubmit}
+        />
       </div>
     </>
   )
@@ -705,6 +911,10 @@ function EditorBody({ editor, draft, setDraftField, saving }) {
       return <LegacyForm draft={draft} setDraftField={setDraftField} saving={saving} />
     case 'closing':
       return <ClosingForm draft={draft} setDraftField={setDraftField} saving={saving} />
+    case 'documentaryMeta':
+      return <DocumentaryMetaForm draft={draft} setDraftField={setDraftField} saving={saving} />
+    case 'documentaryChapter':
+      return <DocumentaryChapterForm draft={draft} setDraftField={setDraftField} saving={saving} />
     default:
       return null
   }
@@ -739,6 +949,16 @@ function IdentityForm({ draft, setDraftField, saving }) {
           value={draft.heroSubtitle || ''}
           onChange={(e) => setDraftField('heroSubtitle', e.target.value)}
           disabled={saving}
+        />
+      </label>
+      <label className={`${labelClass} sm:col-span-2`}>
+        Placeholder del buscador
+        <input
+          className={inputClass}
+          value={draft.heroSearchPlaceholder || ''}
+          onChange={(e) => setDraftField('heroSearchPlaceholder', e.target.value)}
+          disabled={saving}
+          placeholder="¿Qué querés conocer de Trancas?"
         />
       </label>
       <div className="sm:col-span-2">
@@ -865,6 +1085,83 @@ function ClosingForm({ draft, setDraftField, saving }) {
           className={`${textareaClass} min-h-32`}
           value={draft.closingText || ''}
           onChange={(e) => setDraftField('closingText', e.target.value)}
+          disabled={saving}
+        />
+      </label>
+    </div>
+  )
+}
+
+function DocumentaryMetaForm({ draft, setDraftField, saving }) {
+  return (
+    <div className="grid gap-3">
+      <label className={labelClass}>
+        Nombre del documental
+        <input
+          className={inputClass}
+          value={draft.title || ''}
+          onChange={(e) => setDraftField('title', e.target.value)}
+          disabled={saving}
+          placeholder="Ej. Documental: Memoria de Trancas"
+        />
+      </label>
+      <label className={labelClass}>
+        Descripción del documental
+        <textarea
+          className={`${textareaClass} min-h-32`}
+          value={draft.description || ''}
+          onChange={(e) => setDraftField('description', e.target.value)}
+          disabled={saving}
+          placeholder="Breve presentación de la serie audiovisual."
+        />
+      </label>
+    </div>
+  )
+}
+
+function DocumentaryChapterForm({ draft, setDraftField, saving }) {
+  return (
+    <div className="grid gap-3">
+      <label className={labelClass}>
+        Título del capítulo
+        <input
+          className={inputClass}
+          value={draft.title || ''}
+          onChange={(e) => setDraftField('title', e.target.value)}
+          disabled={saving}
+        />
+      </label>
+      <label className={labelClass}>
+        Descripción breve
+        <textarea
+          className={`${textareaClass} min-h-28`}
+          value={draft.description || ''}
+          onChange={(e) => setDraftField('description', e.target.value)}
+          disabled={saving}
+        />
+      </label>
+      <label className={labelClass}>
+        Enlace a Google Drive
+        <input
+          className={inputClass}
+          type="url"
+          value={draft.driveUrl || ''}
+          onChange={(e) => setDraftField('driveUrl', e.target.value)}
+          disabled={saving}
+          placeholder="https://drive.google.com/..."
+        />
+        <span className="mt-1 text-xs text-slate-500">
+          URL pública del video. Se abrirá en una pestaña nueva.
+        </span>
+      </label>
+      <label className={labelClass}>
+        Orden
+        <input
+          className={inputClass}
+          type="number"
+          min={0}
+          value={draft.sortOrder ?? ''}
+          onChange={(e) => setDraftField('sortOrder', e.target.value)}
           disabled={saving}
         />
       </label>
