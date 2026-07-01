@@ -71,6 +71,7 @@ function mapContentToForm(content) {
     heroEyebrow: content.heroEyebrow || '',
     heroTitle: content.heroTitle || '',
     heroSubtitle: content.heroSubtitle || '',
+    heroSearchPlaceholder: content.heroSearchPlaceholder || '',
     heroImageUrl: content.heroImageUrl || '',
     heroPrimaryLabel: content.heroPrimaryLabel || '',
     heroPrimaryHref: content.heroPrimaryHref || '',

@@ -21,6 +21,7 @@ function mapContent(value) {
     heroEyebrow: String(value?.heroEyebrow || ''),
     heroTitle: String(value?.heroTitle || ''),
     heroSubtitle: String(value?.heroSubtitle || ''),
+    heroSearchPlaceholder: String(value?.heroSearchPlaceholder || ''),
     heroImageUrl: String(value?.heroImageUrl || ''),
     heroPrimaryLabel: String(value?.heroPrimaryLabel || ''),
     heroPrimaryHref: String(value?.heroPrimaryHref || ''),

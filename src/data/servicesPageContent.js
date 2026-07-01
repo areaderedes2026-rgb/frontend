@@ -148,9 +148,10 @@ export const DEFAULT_MUNICIPAL_SERVICES = [
 
 export const DEFAULT_SERVICES_PAGE_CONTENT = {
   heroEyebrow: 'Guía municipal',
-  heroTitle: 'Servicios al vecino',
+  heroTitle: 'Guía de trámites',
   heroSubtitle:
     'Encontrá trámites, requisitos y canales de gestión en un solo lugar. Diseñado para que puedas resolver tus gestiones de forma rápida y clara.',
+  heroSearchPlaceholder: '¿Qué trámite estás buscando?',
   heroImageUrl:
     'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=1900&q=80',
   heroPrimaryLabel: 'Ver trámites',
@@ -233,6 +234,9 @@ export function mergeServicesPageContent(base, remote) {
   return {
     ...base,
     ...remote,
+    heroSearchPlaceholder: String(
+      remote.heroSearchPlaceholder ?? base.heroSearchPlaceholder ?? '¿Qué trámite estás buscando?',
+    ),
     steps: Array.isArray(remote.steps) && remote.steps.length ? remote.steps : base.steps,
     scheduleLines:
       Array.isArray(remote.scheduleLines) && remote.scheduleLines.length
@@ -249,6 +253,31 @@ export function mergeServicesPageContent(base, remote) {
 export function buildServiceCategories(content) {
   const cats = Array.isArray(content?.categories) ? content.categories.filter(Boolean) : []
   return ['Todos', ...cats]
+}
+
+/** Filtra trámites por texto libre (título, resumen, categoría, requisitos, etc.). */
+export function filterMunicipalServicesByQuery(services, query) {
+  const q = String(query || '')
+    .trim()
+    .toLowerCase()
+  if (!q) return services
+
+  return services.filter((service) => {
+    const parts = [
+      service?.title,
+      service?.summary,
+      service?.description,
+      service?.category,
+      service?.mode,
+      service?.eta,
+      ...(Array.isArray(service?.requirements) ? service.requirements : []),
+      ...(Array.isArray(service?.docs) ? service.docs : []),
+    ]
+    return parts
+      .map((part) => String(part || '').toLowerCase())
+      .join(' ')
+      .includes(q)
+  })
 }
 
 export function linesToList(text) {

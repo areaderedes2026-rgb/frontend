@@ -2,13 +2,16 @@ import { useMemo, useState } from 'react'
 import { Modal } from '../ui/Modal.jsx'
 import { ConfirmDialog } from '../ui/ConfirmDialog.jsx'
 import { SingleImageUploadField } from './SingleImageUploadField.jsx'
+import { ServicesHeroHeader } from '../services/ServicesHeroHeader.jsx'
+import {
+  filterMunicipalServicesByQuery,
+  normalizeMunicipalService,
+} from '../../data/servicesPageContent.js'
 import {
   MunicipalServiceCard,
   MunicipalServiceDetailModal,
 } from '../services/MunicipalServiceDirectory.jsx'
-import { normalizeMunicipalService } from '../../data/servicesPageContent.js'
 import { inputClass, labelClass, textareaClass } from '../ui/formStyles.js'
-import { resolveMediaUrl } from '../../utils/imageUrl.js'
 import { ROUTES } from '../../utils/constants.js'
 
 const ACTION_BTN_BASE =
@@ -157,11 +160,8 @@ export function AdminServicesEditorPreview({
 }) {
   const [editor, setEditor] = useState(null)
   const [confirmRemove, setConfirmRemove] = useState(null)
+  const [previewSearch, setPreviewSearch] = useState('')
   const [previewService, setPreviewService] = useState(null)
-
-  const heroUrl = (form.heroImageUrl || '').trim()
-    ? resolveMediaUrl(form.heroImageUrl) || form.heroImageUrl
-    : ''
 
   const sortedServices = useMemo(
     () =>
@@ -170,6 +170,11 @@ export function AdminServicesEditorPreview({
         .sort((a, b) => (Number(a.sortOrder) || 0) - (Number(b.sortOrder) || 0)),
     [services],
   )
+
+  const previewServices = useMemo(() => {
+    if (!previewSearch.trim()) return sortedServices
+    return filterMunicipalServicesByQuery(sortedServices, previewSearch)
+  }, [previewSearch, sortedServices])
 
   const categoryOptions = useMemo(
     () => (form.categories || []).filter((c) => String(c || '').trim()),
@@ -201,6 +206,7 @@ export function AdminServicesEditorPreview({
           heroEyebrow: String(draft.heroEyebrow || '').trim(),
           heroTitle: String(draft.heroTitle || '').trim(),
           heroSubtitle: String(draft.heroSubtitle || ''),
+          heroSearchPlaceholder: String(draft.heroSearchPlaceholder || '').trim(),
           heroImageUrl: String(draft.heroImageUrl || '').trim(),
           heroPrimaryLabel: String(draft.heroPrimaryLabel || '').trim(),
           heroPrimaryHref: String(draft.heroPrimaryHref || '').trim(),
@@ -381,12 +387,22 @@ export function AdminServicesEditorPreview({
               <input className={inputClass} value={draft?.heroEyebrow || ''} onChange={(e) => setDraftField('heroEyebrow', e.target.value)} disabled={saving} />
             </label>
             <label className={labelClass}>
-              Título
+              Título de portada
               <input className={inputClass} value={draft?.heroTitle || ''} onChange={(e) => setDraftField('heroTitle', e.target.value)} disabled={saving} />
             </label>
             <label className={labelClass}>
-              Subtítulo
-              <textarea className={`${textareaClass} min-h-24`} value={draft?.heroSubtitle || ''} onChange={(e) => setDraftField('heroSubtitle', e.target.value)} disabled={saving} />
+              Texto del buscador
+              <input
+                className={inputClass}
+                value={draft?.heroSearchPlaceholder || ''}
+                onChange={(e) => setDraftField('heroSearchPlaceholder', e.target.value)}
+                disabled={saving}
+                placeholder="¿Qué trámite estás buscando?"
+              />
+            </label>
+            <label className={labelClass}>
+              Subtítulo (opcional, no se muestra en la portada nueva)
+              <textarea className={`${textareaClass} min-h-20`} value={draft?.heroSubtitle || ''} onChange={(e) => setDraftField('heroSubtitle', e.target.value)} disabled={saving} />
             </label>
             <SingleImageUploadField label="Imagen de portada" value={draft?.heroImageUrl || ''} onChange={(url) => setDraftField('heroImageUrl', url)} disabled={saving} />
             <div className="grid gap-4 sm:grid-cols-2">
@@ -519,16 +535,18 @@ export function AdminServicesEditorPreview({
         ) : null}
 
         <article className="overflow-hidden rounded-3xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm">
-          {/* Portada */}
-          <header className="relative overflow-hidden border-b border-white/10 bg-[#171b22]">
-            {heroUrl ? (
-              <img src={heroUrl} alt="" className="h-56 w-full object-cover object-center sm:h-64 lg:h-72" />
-            ) : (
-              <div className="flex h-56 w-full items-center justify-center bg-linear-to-br from-slate-700 to-slate-900 text-sm text-slate-300 sm:h-64 lg:h-72">
-                Sin imagen de portada
-              </div>
-            )}
-            <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-slate-950 via-slate-900/75 to-slate-900/35" />
+          <div className="relative">
+            <ServicesHeroHeader
+              title={form.heroTitle || 'Guía de trámites'}
+              imageUrl={form.heroImageUrl || ''}
+              searchPlaceholder={form.heroSearchPlaceholder || '¿Qué trámite estás buscando?'}
+              searchQuery={previewSearch}
+              onSearchChange={setPreviewSearch}
+              onSearchSubmit={() => {
+                document.getElementById('tramites-disponibles')?.scrollIntoView({ behavior: 'smooth' })
+              }}
+              previewMode
+            />
             <div className="absolute right-4 top-4 z-20 sm:right-6 sm:top-6">
               <EditChip
                 tone="overlay"
@@ -538,6 +556,7 @@ export function AdminServicesEditorPreview({
                     heroEyebrow: form.heroEyebrow,
                     heroTitle: form.heroTitle,
                     heroSubtitle: form.heroSubtitle,
+                    heroSearchPlaceholder: form.heroSearchPlaceholder,
                     heroImageUrl: form.heroImageUrl,
                     heroPrimaryLabel: form.heroPrimaryLabel,
                     heroPrimaryHref: form.heroPrimaryHref,
@@ -548,26 +567,7 @@ export function AdminServicesEditorPreview({
                 disabled={saving}
               />
             </div>
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 p-6 sm:p-8">
-              {form.heroEyebrow ? (
-                <p className="text-xs font-bold uppercase tracking-[0.22em] text-sky-200">{form.heroEyebrow}</p>
-              ) : null}
-              <h1 className="mt-2 max-w-4xl font-serif text-3xl font-bold tracking-tight text-white sm:text-4xl">
-                {form.heroTitle || 'Servicios al vecino'}
-              </h1>
-              <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-100 sm:text-base">
-                {form.heroSubtitle || <span className="italic text-slate-400">(Sin subtítulo)</span>}
-              </p>
-              <div className="mt-5 flex flex-wrap gap-3">
-                <span className="inline-flex min-h-11 items-center rounded-xl bg-[#171b22] px-5 text-sm font-semibold text-white">
-                  {form.heroPrimaryLabel || 'Ver trámites'}
-                </span>
-                <span className="inline-flex min-h-11 items-center rounded-xl border border-white/40 bg-white/10 px-5 text-sm font-semibold text-white">
-                  {form.heroSecondaryLabel || 'Atención al ciudadano'}
-                </span>
-              </div>
-            </div>
-          </header>
+          </div>
 
           <div className="space-y-10 p-5 sm:p-7 lg:p-10">
             {/* Proceso y horarios */}
@@ -789,9 +789,13 @@ export function AdminServicesEditorPreview({
                 <EmptyHint onAdd={onAddService} addLabel="Nuevo trámite">
                   Todavía no hay trámites. Creá el primero para el directorio público.
                 </EmptyHint>
+              ) : previewServices.length === 0 ? (
+                <div className="rounded-2xl border border-[#ddd7ca] bg-white px-5 py-8 text-center text-sm text-[#4b505a]">
+                  No hay trámites que coincidan con la búsqueda del preview.
+                </div>
               ) : (
                 <ul className="grid items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                  {sortedServices.map((item) => (
+                  {previewServices.map((item) => (
                     <li key={item.id || item.slug} className="h-full">
                       <div
                         className={`relative h-full ${

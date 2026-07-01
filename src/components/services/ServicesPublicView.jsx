@@ -3,12 +3,16 @@ import { Link } from 'react-router-dom'
 import { RevealOnScroll } from '../home/RevealOnScroll.jsx'
 import { Container } from '../ui/Container.jsx'
 import { LinkButton } from '../ui/LinkButton.jsx'
+import { ServicesHeroHeader } from './ServicesHeroHeader.jsx'
 import {
   MunicipalServiceCard,
   MunicipalServiceDetailModal,
 } from './MunicipalServiceDirectory.jsx'
-import { buildServiceCategories, normalizeMunicipalService } from '../../data/servicesPageContent.js'
-import { resolveMediaUrl } from '../../utils/imageUrl.js'
+import {
+  buildServiceCategories,
+  filterMunicipalServicesByQuery,
+  normalizeMunicipalService,
+} from '../../data/servicesPageContent.js'
 import { ROUTES } from '../../utils/constants.js'
 
 function resolveHref(href) {
@@ -18,12 +22,9 @@ function resolveHref(href) {
   return value.startsWith('/') ? value : `/${value}`
 }
 
-function isExternalHref(href) {
-  return String(href || '').startsWith('http')
-}
-
 export function ServicesPublicView({ content, services = [], previewMode = false }) {
   const [category, setCategory] = useState('Todos')
+  const [searchQuery, setSearchQuery] = useState('')
   const [detailService, setDetailService] = useState(null)
   const faqList = Array.isArray(content?.faq) ? content.faq : []
   const [openFaq, setOpenFaq] = useState(faqList[0]?.id || '')
@@ -38,12 +39,32 @@ export function ServicesPublicView({ content, services = [], previewMode = false
     [services],
   )
 
-  const visible = useMemo(() => {
-    if (category === 'Todos') return activeServices
-    return activeServices.filter((item) => item.category === category)
-  }, [activeServices, category])
+  const trimmedSearch = searchQuery.trim()
+  const isSearching = Boolean(trimmedSearch)
 
-  const heroImage = resolveMediaUrl(content?.heroImageUrl) || content?.heroImageUrl || ''
+  const visible = useMemo(() => {
+    let list = activeServices
+    if (isSearching) {
+      list = filterMunicipalServicesByQuery(list, trimmedSearch)
+    } else if (category !== 'Todos') {
+      list = list.filter((item) => item.category === category)
+    }
+    return list
+  }, [activeServices, category, isSearching, trimmedSearch])
+
+  function scrollToDirectory() {
+    if (previewMode) return
+    document.getElementById('tramites-disponibles')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  function handleSearchSubmit() {
+    scrollToDirectory()
+  }
+
+  function handleCategoryChange(next) {
+    setCategory(next)
+    setSearchQuery('')
+  }
 
   return (
     <section
@@ -58,68 +79,16 @@ export function ServicesPublicView({ content, services = [], previewMode = false
         service={detailService}
         onClose={() => setDetailService(null)}
       />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_45%_at_20%_-10%,rgba(56,189,248,0.12),transparent_65%)]" aria-hidden />
-      <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_55%_45%_at_100%_10%,rgba(15,23,42,0.12),transparent_70%)]"
-        aria-hidden
-      />
 
-      <div className="relative min-h-[52dvh] overflow-hidden border-b border-white/10 bg-[#171b22] sm:min-h-[56dvh] lg:min-h-[58dvh]">
-        <header className="relative overflow-hidden">
-          {heroImage ? (
-            <img
-              src={heroImage}
-              alt=""
-              className="absolute inset-0 h-full w-full object-cover object-center"
-              loading={previewMode ? 'lazy' : 'eager'}
-              decoding="async"
-            />
-          ) : null}
-          <div className="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/88 to-slate-900/35" />
-          <Container
-            className={`relative z-10 flex min-h-[52dvh] flex-col justify-center pb-8 sm:min-h-[56dvh] sm:pb-10 lg:min-h-[58dvh] lg:pb-12 ${
-              previewMode
-                ? 'pt-8'
-                : 'pt-[calc(var(--navbar-h,5rem)+1rem)] sm:pt-[calc(var(--navbar-h,5rem)+1.5rem)]'
-            }`}
-          >
-            <p className="hero-enter-eyebrow text-xs font-bold uppercase tracking-[0.22em] text-sky-200">
-              {content?.heroEyebrow || 'Guía municipal'}
-            </p>
-            <h1 className="hero-enter-title mt-3 max-w-4xl font-serif text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl">
-              {content?.heroTitle || 'Servicios al vecino'}
-            </h1>
-            <p className="hero-enter-subtitle mt-3 max-w-3xl text-sm leading-relaxed text-slate-100 sm:text-base">
-              {content?.heroSubtitle || ''}
-            </p>
-            <div className="hero-enter-actions mt-5 flex flex-wrap gap-3">
-              {isExternalHref(content?.heroPrimaryHref) ? (
-                <a
-                  href={resolveHref(content?.heroPrimaryHref)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#171b22] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#222831]"
-                >
-                  {content?.heroPrimaryLabel || 'Ver trámites'}
-                </a>
-              ) : (
-                <a
-                  href={resolveHref(content?.heroPrimaryHref)}
-                  className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#171b22] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#222831]"
-                >
-                  {content?.heroPrimaryLabel || 'Ver trámites'}
-                </a>
-              )}
-              <Link
-                to={resolveHref(content?.heroSecondaryHref)}
-                className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/40 bg-white/10 px-5 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white/70 hover:bg-white/15"
-              >
-                {content?.heroSecondaryLabel || 'Atención al ciudadano'}
-              </Link>
-            </div>
-          </Container>
-        </header>
-      </div>
+      <ServicesHeroHeader
+        title={content?.heroTitle || 'Guía de trámites'}
+        imageUrl={content?.heroImageUrl || ''}
+        searchPlaceholder={content?.heroSearchPlaceholder || '¿Qué trámite estás buscando?'}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onSearchSubmit={handleSearchSubmit}
+        previewMode={previewMode}
+      />
 
       <Container className="relative">
         <RevealOnScroll variant="slow">
@@ -157,7 +126,7 @@ export function ServicesPublicView({ content, services = [], previewMode = false
           </article>
         </RevealOnScroll>
 
-        <section id="tramites-disponibles" className="mt-10 sm:mt-12">
+        <section id="tramites-disponibles" className="mt-10 scroll-mt-[calc(var(--navbar-h,5rem)+1rem)] sm:mt-12">
           <RevealOnScroll variant="slow">
             <div className="mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-end sm:justify-between">
               <div>
@@ -167,30 +136,68 @@ export function ServicesPublicView({ content, services = [], previewMode = false
                 <h2 className="mt-2 font-serif text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
                   {content?.proceduresTitle || 'Directorio de servicios'}
                 </h2>
+                {isSearching ? (
+                  <p className="mt-2 text-sm text-[#4b505a]">
+                    {visible.length === 0 ? (
+                      <>
+                        No encontramos trámites para{' '}
+                        <span className="font-semibold text-[#171b22]">«{trimmedSearch}»</span>.
+                      </>
+                    ) : (
+                      <>
+                        {visible.length} resultado{visible.length === 1 ? '' : 's'} para{' '}
+                        <span className="font-semibold text-[#171b22]">«{trimmedSearch}»</span>.
+                      </>
+                    )}
+                  </p>
+                ) : null}
               </div>
-              <div className="flex flex-wrap gap-2">
-                {categories.map((item) => (
-                  <button
-                    key={item}
-                    type="button"
-                    onClick={() => setCategory(item)}
-                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                      item === category
-                        ? 'bg-[#171b22] text-white'
-                        : 'border border-[#d8d5cd] bg-white text-[#3e434d] hover:border-sky-200 hover:text-[#171b22]'
-                    }`}
-                  >
-                    {item}
-                  </button>
-                ))}
-              </div>
+              {!isSearching ? (
+                <div className="flex flex-wrap gap-2">
+                  {categories.map((item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      onClick={() => handleCategoryChange(item)}
+                      className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                        item === category
+                          ? 'bg-[#171b22] text-white'
+                          : 'border border-[#d8d5cd] bg-white text-[#3e434d] hover:border-sky-200 hover:text-[#171b22]'
+                      }`}
+                    >
+                      {item}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="inline-flex min-h-10 items-center justify-center rounded-full border border-[#d8d5cd] bg-white px-4 text-sm font-semibold text-[#3e434d] transition hover:border-sky-200 hover:text-[#171b22]"
+                >
+                  Limpiar búsqueda
+                </button>
+              )}
             </div>
           </RevealOnScroll>
 
           {visible.length === 0 ? (
-            <p className="rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-5 text-center text-sm text-[#4b505a]">
-              No hay trámites publicados en esta categoría.
-            </p>
+            <div className="rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-6 text-center">
+              <p className="text-sm text-[#4b505a]">
+                {isSearching
+                  ? 'Probá con otra palabra o revisá todas las categorías.'
+                  : 'No hay trámites publicados en esta categoría.'}
+              </p>
+              {isSearching ? (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl bg-[#171b22] px-4 text-sm font-semibold text-white transition hover:bg-[#222831]"
+                >
+                  Ver todos los trámites
+                </button>
+              ) : null}
+            </div>
           ) : (
             <ul className="grid items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {visible.map((item, idx) => (
