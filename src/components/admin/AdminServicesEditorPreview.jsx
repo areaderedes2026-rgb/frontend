@@ -6,6 +6,7 @@ import { ServicesHeroHeader } from '../services/ServicesHeroHeader.jsx'
 import {
   filterMunicipalServicesByQuery,
   normalizeMunicipalService,
+  normalizeServicesSectionVisibility,
 } from '../../data/servicesPageContent.js'
 import {
   SERVICE_CATEGORY_ICON_OPTIONS,
@@ -110,20 +111,104 @@ function DeleteChip({ label = 'Quitar', onClick, disabled = false }) {
   )
 }
 
-function SectionCard({ id, title, description, rightSlot, children, variant = 'plain' }) {
+function SectionVisibilityToggle({ visible, onChange, disabled = false }) {
+  return (
+    <label className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 shadow-sm">
+      <input
+        type="checkbox"
+        checked={visible !== false}
+        onChange={(e) => onChange(e.target.checked)}
+        disabled={disabled}
+        className="h-3.5 w-3.5 rounded border-slate-300 text-sky-700"
+      />
+      Visible en el portal
+    </label>
+  )
+}
+
+function FloatingSaveBar({ hasChanges, saving, onSave, apiAvailable }) {
+  return (
+    <div
+      className={`pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center px-3 pb-3 pt-2 transition-all duration-300 sm:px-4 sm:pb-4 ${
+        hasChanges ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
+      }`}
+      aria-live="polite"
+    >
+      <div className="pointer-events-auto flex w-full max-w-[min(96vw,88rem)] items-center gap-3 rounded-2xl border border-amber-300/90 bg-amber-50/95 px-4 py-3 shadow-[0_-10px_40px_-8px_rgba(15,23,42,0.25)] ring-2 ring-amber-400/30 backdrop-blur-md sm:gap-4 sm:px-5 sm:py-3.5">
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold text-slate-900">Servicios al vecino</p>
+          <p className="text-xs font-semibold text-amber-900">
+            Tenés cambios sin guardar — recordá publicarlos antes de salir
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onSave}
+          disabled={saving || !apiAvailable || !hasChanges}
+          className={ACTION_BTN_PRIMARY}
+        >
+          {saving ? (
+            <>
+              <Spinner tone="white" size="sm" />
+              Guardando…
+            </>
+          ) : (
+            'Guardar cambios'
+          )}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function SectionCard({
+  id,
+  title,
+  description,
+  rightSlot,
+  children,
+  variant = 'plain',
+  visible = true,
+  onToggleVisible,
+  saving = false,
+}) {
   const base =
     variant === 'card'
       ? 'rounded-3xl border border-[#ddd7ca] bg-[#fcfcfa] p-5 shadow-sm sm:p-7'
       : ''
   return (
-    <section id={id} className={`scroll-mt-32 ${base}`.trim()}>
+    <section
+      id={id}
+      className={`scroll-mt-32 ${!visible ? 'opacity-75' : ''} ${base}`.trim()}
+    >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">{title}</h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">{title}</h2>
+            {!visible ? (
+              <span className="inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-900 ring-1 ring-amber-200">
+                Oculta en el portal
+              </span>
+            ) : null}
+          </div>
           {description ? <p className="mt-1 text-sm text-slate-600">{description}</p> : null}
         </div>
-        {rightSlot ? <div className="shrink-0">{rightSlot}</div> : null}
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          {onToggleVisible ? (
+            <SectionVisibilityToggle
+              visible={visible}
+              onChange={onToggleVisible}
+              disabled={saving}
+            />
+          ) : null}
+          {rightSlot ? <div>{rightSlot}</div> : null}
+        </div>
       </div>
+      {!visible ? (
+        <p className="mt-4 rounded-xl border border-dashed border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-900">
+          Esta sección no se muestra en el portal público. Podés seguir editándola y volver a activarla cuando quieras.
+        </p>
+      ) : null}
       <div className="mt-5">{children}</div>
     </section>
   )
@@ -159,6 +244,7 @@ export function AdminServicesEditorPreview({
   loading,
   saving,
   error,
+  hasChanges = false,
   onSubmit,
   onChangeCover,
   apiAvailable,
@@ -188,6 +274,21 @@ export function AdminServicesEditorPreview({
     if (!previewSearch.trim()) return sortedServices
     return filterMunicipalServicesByQuery(sortedServices, previewSearch)
   }, [previewSearch, sortedServices])
+
+  const sectionVisibility = useMemo(
+    () => normalizeServicesSectionVisibility(form.sectionVisibility),
+    [form.sectionVisibility],
+  )
+
+  function setSectionVisible(key, value) {
+    setForm((prev) => ({
+      ...prev,
+      sectionVisibility: {
+        ...normalizeServicesSectionVisibility(prev.sectionVisibility),
+        [key]: value,
+      },
+    }))
+  }
 
   function openEditor(kind, index = null, draft = null) {
     setEditor({ kind, index, draft })
@@ -617,25 +718,16 @@ export function AdminServicesEditorPreview({
         </div>
       </Modal>
 
-      <div className="admin-fade-up space-y-5">
+      <div className={`admin-fade-up space-y-5 ${hasChanges ? 'pb-24 sm:pb-28' : ''}`}>
         <div className="flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-slate-600">
-            Tocá el lápiz de cada bloque para editarlo. Los trámites se guardan al instante; el resto con{' '}
-            <strong>Guardar cambios</strong>.
+            Tocá el lápiz de cada bloque para editarlo. Marcá o desmarcá{' '}
+            <strong>Visible en el portal</strong> para mostrar u ocultar secciones. Los trámites se
+            guardan al instante; el resto con la barra flotante de guardado.
           </p>
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={onChangeCover} disabled={saving || !apiAvailable} className={ACTION_BTN_NEUTRAL}>
               Cambiar portada
-            </button>
-            <button type="button" onClick={onSubmit} disabled={saving || !apiAvailable} className={ACTION_BTN_PRIMARY}>
-              {saving ? (
-                <>
-                  <Spinner tone="white" size="sm" />
-                  Guardando…
-                </>
-              ) : (
-                'Guardar cambios'
-              )}
             </button>
           </div>
         </div>
@@ -687,6 +779,9 @@ export function AdminServicesEditorPreview({
               id="proceso-gestion"
               title="Cómo iniciar tu gestión"
               description="Pasos y horarios que ven los vecinos antes del directorio de trámites."
+              visible={sectionVisibility.processGuide}
+              onToggleVisible={(value) => setSectionVisible('processGuide', value)}
+              saving={saving}
             >
               <article className="overflow-hidden rounded-2xl border border-[#ddd7ca] bg-white shadow-sm">
                 <div className="grid gap-0 lg:grid-cols-12">
@@ -811,6 +906,9 @@ export function AdminServicesEditorPreview({
               id="categorias-tramites"
               title="Categorías de trámites"
               description="Grilla de accesos con ícono. Al tocar una categoría el vecino abre una pestaña con los trámites de esa área."
+              visible={sectionVisibility.categories}
+              onToggleVisible={(value) => setSectionVisible('categories', value)}
+              saving={saving}
               rightSlot={
                 <div className="flex flex-wrap gap-2">
                   <EditChip
@@ -922,6 +1020,9 @@ export function AdminServicesEditorPreview({
               id="faq-servicios"
               title="Preguntas frecuentes"
               description="Respuestas que orientan al vecino antes de iniciar un trámite."
+              visible={sectionVisibility.faq}
+              onToggleVisible={(value) => setSectionVisible('faq', value)}
+              saving={saving}
               rightSlot={
                 <AddChip
                   label="Agregar pregunta"
@@ -972,6 +1073,9 @@ export function AdminServicesEditorPreview({
               id="cta-servicios"
               title="Bloque de cierre"
               description="Invitación final con enlaces a atención ciudadana y novedades."
+              visible={sectionVisibility.finalCta}
+              onToggleVisible={(value) => setSectionVisible('finalCta', value)}
+              saving={saving}
               rightSlot={
                 <EditChip
                   label="Editar"
@@ -1009,6 +1113,13 @@ export function AdminServicesEditorPreview({
           </div>
         </article>
       </div>
+
+      <FloatingSaveBar
+        hasChanges={hasChanges}
+        saving={saving}
+        apiAvailable={apiAvailable}
+        onSave={onSubmit}
+      />
     </>
   )
 }

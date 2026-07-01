@@ -152,6 +152,29 @@ export const DEFAULT_MUNICIPAL_SERVICES = [
   },
 ]
 
+export const DEFAULT_SERVICES_SECTION_VISIBILITY = {
+  processGuide: true,
+  categories: true,
+  faq: true,
+  finalCta: true,
+}
+
+export function normalizeServicesSectionVisibility(raw) {
+  const base = DEFAULT_SERVICES_SECTION_VISIBILITY
+  if (!raw || typeof raw !== 'object') return { ...base }
+  return {
+    processGuide: raw.processGuide !== false,
+    categories: raw.categories !== false,
+    faq: raw.faq !== false,
+    finalCta: raw.finalCta !== false,
+  }
+}
+
+export function isServicesSectionVisible(content, key) {
+  const visibility = normalizeServicesSectionVisibility(content?.sectionVisibility)
+  return visibility[key] !== false
+}
+
 export const DEFAULT_SERVICES_PAGE_CONTENT = {
   heroEyebrow: 'Guía municipal',
   heroTitle: 'Guía de trámites',
@@ -202,6 +225,7 @@ export const DEFAULT_SERVICES_PAGE_CONTENT = {
   finalPrimaryHref: ROUTES.atencionCiudadano,
   finalSecondaryLabel: 'Ver novedades',
   finalSecondaryHref: ROUTES.news,
+  sectionVisibility: { ...DEFAULT_SERVICES_SECTION_VISIBILITY },
 }
 
 export function normalizeMunicipalService(raw, fallbackId = 0, categories = DEFAULT_SERVICE_CATEGORIES) {
@@ -257,6 +281,9 @@ export function mergeServicesPageContent(base, remote) {
       DEFAULT_SERVICE_CATEGORIES,
     ),
     faq: Array.isArray(remote.faq) && remote.faq.length ? remote.faq : base.faq,
+    sectionVisibility: normalizeServicesSectionVisibility(
+      remote.sectionVisibility ?? base.sectionVisibility,
+    ),
   }
 }
 

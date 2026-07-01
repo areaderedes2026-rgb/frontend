@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AdminServicesEditorPreview } from '../../components/admin/AdminServicesEditorPreview.jsx'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
 import { HeroImageModal } from '../../components/admin/HeroImageModal.jsx'
@@ -12,6 +12,7 @@ import {
   listToLines,
   mergeServicesPageContent,
   normalizeMunicipalService,
+  normalizeServicesSectionVisibility,
 } from '../../data/servicesPageContent.js'
 import {
   normalizeServiceCategories,
@@ -27,6 +28,7 @@ import {
 } from '../../services/municipalServicesService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
 import { useContentEditorConcurrencyConflict } from '../../hooks/useContentEditorConcurrencyConflict.jsx'
+import { clearMunicipalServicesPublicCache } from '../../hooks/useMunicipalServicesPublicData.js'
 import { ROUTES } from '../../utils/constants.js'
 
 const ACTION_BTN_BASE =
@@ -70,6 +72,33 @@ function serviceToForm(service, categories = []) {
   }
 }
 
+function contentFormSnapshot(form) {
+  return JSON.stringify({
+    heroEyebrow: form.heroEyebrow || '',
+    heroTitle: form.heroTitle || '',
+    heroSubtitle: form.heroSubtitle || '',
+    heroSearchPlaceholder: form.heroSearchPlaceholder || '',
+    heroImageUrl: form.heroImageUrl || '',
+    heroPrimaryLabel: form.heroPrimaryLabel || '',
+    heroPrimaryHref: form.heroPrimaryHref || '',
+    heroSecondaryLabel: form.heroSecondaryLabel || '',
+    heroSecondaryHref: form.heroSecondaryHref || '',
+    steps: form.steps || [],
+    scheduleLines: form.scheduleLines || [],
+    categories: form.categories || [],
+    proceduresEyebrow: form.proceduresEyebrow || '',
+    proceduresTitle: form.proceduresTitle || '',
+    faq: form.faq || [],
+    finalCtaTitle: form.finalCtaTitle || '',
+    finalCtaText: form.finalCtaText || '',
+    finalPrimaryLabel: form.finalPrimaryLabel || '',
+    finalPrimaryHref: form.finalPrimaryHref || '',
+    finalSecondaryLabel: form.finalSecondaryLabel || '',
+    finalSecondaryHref: form.finalSecondaryHref || '',
+    sectionVisibility: normalizeServicesSectionVisibility(form.sectionVisibility),
+  })
+}
+
 function mapContentToForm(content) {
   const categories = normalizeServiceCategories(content.categories).map((item) => ({ ...item }))
   return {
@@ -96,11 +125,14 @@ function mapContentToForm(content) {
     finalPrimaryHref: content.finalPrimaryHref || '',
     finalSecondaryLabel: content.finalSecondaryLabel || '',
     finalSecondaryHref: content.finalSecondaryHref || '',
+    sectionVisibility: normalizeServicesSectionVisibility(content.sectionVisibility),
   }
 }
 
 export function AdminServices() {
-  const [contentForm, setContentForm] = useState(() => mapContentToForm(DEFAULT_SERVICES_PAGE_CONTENT))
+  const initialForm = mapContentToForm(DEFAULT_SERVICES_PAGE_CONTENT)
+  const [contentForm, setContentForm] = useState(() => initialForm)
+  const [savedSnapshot, setSavedSnapshot] = useState(() => contentFormSnapshot(initialForm))
   const [contentUpdatedAt, setContentUpdatedAt] = useState(null)
   const [contentLoading, setContentLoading] = useState(true)
   const [contentSaving, setContentSaving] = useState(false)
@@ -124,13 +156,20 @@ export function AdminServices() {
 
   const apiAvailable = isApiConfigured()
 
+  const hasContentChanges = useMemo(
+    () => contentFormSnapshot(contentForm) !== savedSnapshot,
+    [contentForm, savedSnapshot],
+  )
+
   const loadContent = useCallback(async () => {
     setContentLoading(true)
     setContentError('')
     try {
       const remote = await fetchServicesPageContent()
       const merged = mergeServicesPageContent(DEFAULT_SERVICES_PAGE_CONTENT, remote || {})
-      setContentForm(mapContentToForm(merged))
+      const nextForm = mapContentToForm(merged)
+      setContentForm(nextForm)
+      setSavedSnapshot(contentFormSnapshot(nextForm))
       setContentUpdatedAt(remote?.updatedAt || null)
     } catch (e) {
       setContentError(e.message || 'No se pudo cargar el contenido de servicios.')
@@ -175,8 +214,11 @@ export function AdminServices() {
     async ({ forceOverwrite = false } = {}) => {
       const saved = await updateServicesPageContent(buildPayload(forceOverwrite))
       const merged = mergeServicesPageContent(DEFAULT_SERVICES_PAGE_CONTENT, saved || {})
-      setContentForm(mapContentToForm(merged))
+      const nextForm = mapContentToForm(merged)
+      setContentForm(nextForm)
+      setSavedSnapshot(contentFormSnapshot(nextForm))
       setContentUpdatedAt(saved?.updatedAt || null)
+      clearMunicipalServicesPublicCache()
       setContentError('')
       setToast({ variant: 'success', message: 'Contenido de servicios guardado.' })
     },
@@ -349,6 +391,7 @@ export function AdminServices() {
           loading={contentLoading}
           saving={contentSaving}
           error={contentError}
+          hasChanges={hasContentChanges}
           onSubmit={() => void handleSaveContent()}
           onChangeCover={() => setHeroImageOpen(true)}
           apiAvailable={apiAvailable}

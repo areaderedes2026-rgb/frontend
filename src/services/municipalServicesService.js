@@ -65,6 +65,12 @@ function mapContent(value) {
     finalPrimaryHref: String(value?.finalPrimaryHref || ''),
     finalSecondaryLabel: String(value?.finalSecondaryLabel || ''),
     finalSecondaryHref: String(value?.finalSecondaryHref || ''),
+    sectionVisibility: {
+      processGuide: value?.sectionVisibility?.processGuide !== false,
+      categories: value?.sectionVisibility?.categories !== false,
+      faq: value?.sectionVisibility?.faq !== false,
+      finalCta: value?.sectionVisibility?.finalCta !== false,
+    },
     updatedAt: value?.updatedAt || value?.updated_at || null,
   }
 }

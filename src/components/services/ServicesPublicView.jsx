@@ -11,6 +11,7 @@ import {
 import { ServiceCategoryGrid } from './ServiceCategoryGrid.jsx'
 import {
   filterMunicipalServicesByQuery,
+  isServicesSectionVisible,
   normalizeMunicipalService,
 } from '../../data/servicesPageContent.js'
 import { normalizeServiceCategories } from '../../data/serviceCategoriesContent.js'
@@ -50,9 +51,18 @@ export function ServicesPublicView({ content, services = [], previewMode = false
     return filterMunicipalServicesByQuery(activeServices, trimmedSearch)
   }, [activeServices, isSearching, trimmedSearch])
 
+  const showProcessGuide = isServicesSectionVisible(content, 'processGuide')
+  const showCategories = isServicesSectionVisible(content, 'categories')
+  const showFaq = isServicesSectionVisible(content, 'faq')
+  const showFinalCta = isServicesSectionVisible(content, 'finalCta')
+
   function scrollToDirectory() {
     if (previewMode) return
-    const target = isSearching ? 'resultados-busqueda' : 'categorias-tramites'
+    const target = isSearching
+      ? 'resultados-busqueda'
+      : showCategories
+        ? 'categorias-tramites'
+        : 'contenido-servicios'
     document.getElementById(target)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
@@ -80,7 +90,8 @@ export function ServicesPublicView({ content, services = [], previewMode = false
         previewMode={previewMode}
       />
 
-      <Container className="relative">
+      <Container className="relative" id="contenido-servicios">
+        {showProcessGuide ? (
         <RevealOnScroll variant="slow">
           <article className="mt-8 overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm">
             <div className="grid gap-0 border-t border-[#ddd7ca] lg:grid-cols-12">
@@ -115,7 +126,9 @@ export function ServicesPublicView({ content, services = [], previewMode = false
             </div>
           </article>
         </RevealOnScroll>
+        ) : null}
 
+        {showCategories ? (
         <section id="categorias-tramites" className="mt-10 scroll-mt-[calc(var(--navbar-h,5rem)+1rem)] sm:mt-12">
           <RevealOnScroll variant="slow">
             <ServiceCategoryGrid
@@ -127,6 +140,7 @@ export function ServicesPublicView({ content, services = [], previewMode = false
             />
           </RevealOnScroll>
         </section>
+        ) : null}
 
         {isSearching ? (
           <section id="resultados-busqueda" className="mt-10 scroll-mt-[calc(var(--navbar-h,5rem)+1rem)] sm:mt-12">
@@ -185,6 +199,7 @@ export function ServicesPublicView({ content, services = [], previewMode = false
           </section>
         ) : null}
 
+        {showFaq ? (
         <section className="mt-12 grid gap-8 lg:mt-16 lg:grid-cols-12 lg:gap-10">
           <RevealOnScroll variant="slow" className="lg:col-span-5">
             <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-sky-800">
@@ -251,7 +266,9 @@ export function ServicesPublicView({ content, services = [], previewMode = false
             </div>
           </RevealOnScroll>
         </section>
+        ) : null}
 
+        {showFinalCta ? (
         <RevealOnScroll variant="newsCardSlow" delayMs={previewMode ? 0 : 140}>
           <section className="mt-10 overflow-hidden rounded-3xl border border-slate-200/80 bg-linear-to-r from-slate-900 via-slate-800 to-slate-900 p-8 text-center shadow-lg sm:mt-12 sm:p-10">
             <p className="font-serif text-xl font-bold text-white sm:text-2xl">
@@ -273,6 +290,7 @@ export function ServicesPublicView({ content, services = [], previewMode = false
             </div>
           </section>
         </RevealOnScroll>
+        ) : null}
       </Container>
     </section>
   )

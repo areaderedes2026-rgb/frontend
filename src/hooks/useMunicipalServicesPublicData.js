@@ -24,6 +24,11 @@ export function getMunicipalServicesPublicCache() {
   return cachedPayload
 }
 
+export function clearMunicipalServicesPublicCache() {
+  cachedPayload = null
+  inflightRequest = null
+}
+
 export async function loadMunicipalServicesPublicData({ force = false } = {}) {
   if (!force && cachedPayload) return cachedPayload
   if (!force && inflightRequest) return inflightRequest
