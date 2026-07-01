@@ -14,11 +14,13 @@ function IndexLink({ item, index, active, onSelect, compact = false, linkRef }) 
           onSelect(item.id)
         }}
         aria-current={isActive ? 'location' : undefined}
-        className={`history-index-link group relative flex items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-[border-color,background-color,box-shadow,color] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+        className={`history-index-link group relative flex items-center justify-between gap-1.5 rounded-xl border font-semibold transition-[border-color,background-color,box-shadow,color] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          compact ? 'px-2 py-2 text-xs' : 'px-3 py-2.5 text-sm'
+        } ${
           isActive
             ? 'history-index-link-active border-sky-300/90 bg-white text-[#0f1319] shadow-md shadow-sky-500/10 ring-1 ring-sky-200/60'
             : 'border-[#ddd7ca] bg-white text-[#171b22] hover:border-sky-200 hover:text-[#0f1319] hover:shadow-sm'
-        } ${compact ? 'min-w-[9.5rem]' : 'w-full'}`}
+        } ${compact ? 'min-w-[9.5rem] lg:min-w-0' : 'w-full'}`}
       >
         <span className="flex min-w-0 items-center gap-2.5">
           <span
@@ -41,7 +43,7 @@ function IndexLink({ item, index, active, onSelect, compact = false, linkRef }) 
   )
 }
 
-export function HistoryPageIndex({ items = [], className = '' }) {
+export function HistoryPageIndex({ items = [], className = '', compact = false }) {
   const sectionIds = items.map((item) => item.id)
   const { activeId, scrollToSection } = useSectionScrollSpy(sectionIds)
   const mobileNavRef = useRef(null)
@@ -71,11 +73,15 @@ export function HistoryPageIndex({ items = [], className = '' }) {
     <nav aria-label="Índice de la historia" className={`history-page-index ${className}`.trim()}>
       {/* Escritorio */}
       <div className="hidden lg:block">
-        <div className="rounded-2xl border border-[#ddd7ca] bg-[#f8f7f3] p-4 xl:p-5">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-700">
+        <div
+          className={`rounded-2xl border border-[#ddd7ca] bg-[#f8f7f3] ${
+            compact ? 'p-3' : 'p-4 xl:p-5'
+          }`}
+        >
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-sky-700">
             Navegación de contenido
           </p>
-          <ol className="mt-4 space-y-2">
+          <ol className={compact ? 'mt-3 space-y-1.5' : 'mt-4 space-y-2'}>
             {items.map((item, index) => (
               <IndexLink
                 key={item.id}
@@ -83,6 +89,7 @@ export function HistoryPageIndex({ items = [], className = '' }) {
                 index={index}
                 active={activeId}
                 onSelect={scrollToSection}
+                compact={compact}
               />
             ))}
           </ol>

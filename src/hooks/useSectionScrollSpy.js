@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { getHistoryScrollOffset } from '../utils/historyPageNav.js'
 
 /**
- * Scroll spy con IntersectionObserver (mismo enfoque que ConcejoPageNav).
+ * Scroll spy por posición de scroll (mismo criterio que Bootstrap / docs).
  * No bloquea el scroll manual tras un clic en el índice.
  */
 export function useSectionScrollSpy(sectionIds) {
@@ -43,38 +43,42 @@ export function useSectionScrollSpy(sectionIds) {
     const ids = (sectionIds || []).filter(Boolean)
     if (!ids.length) return undefined
 
-    const elements = ids
-      .map((id) => document.getElementById(id))
-      .filter((node) => node instanceof HTMLElement)
+    let ticking = false
 
-    if (!elements.length) return undefined
+    const resolveActiveId = () => {
+      if (isClickScrollingRef.current) return
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (isClickScrollingRef.current) return
+      const offset = getHistoryScrollOffset() + 20
+      let current = ids[0]
 
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)
-
-        if (visible.length > 0) {
-          setActiveId(visible[0].target.id)
+      for (const id of ids) {
+        const el = document.getElementById(id)
+        if (!el) continue
+        if (el.getBoundingClientRect().top <= offset) {
+          current = id
         }
-      },
-      {
-        root: null,
-        rootMargin: '-20% 0px -58% 0px',
-        threshold: [0, 0.1, 0.25, 0.5],
-      },
-    )
+      }
 
-    for (const el of elements) observer.observe(el)
+      setActiveId(current)
+      ticking = false
+    }
+
+    const onScroll = () => {
+      if (ticking) return
+      ticking = true
+      window.requestAnimationFrame(resolveActiveId)
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll, { passive: true })
+    resolveActiveId()
 
     return () => {
-      observer.disconnect()
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
       if (clickScrollTimerRef.current) window.clearTimeout(clickScrollTimerRef.current)
     }
-  }, [idsKey, sectionIds])
+  }, [idsKey])
 
   return { activeId, scrollToSection }
 }

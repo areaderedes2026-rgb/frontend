@@ -120,9 +120,104 @@ export function HistoryPublicView({
   const secondaryHref = resolveHref(content?.ctaSecondaryHref)
   const primaryHref = resolveHref(content?.ctaPrimaryHref || '#historia-secciones')
 
+  const mainBlocks = (
+    <>
+      {showStoryBlock ? (
+        <HistoryStorySections
+          sections={visibleStorySections}
+          loading={loading}
+          previewMode={previewMode}
+        />
+      ) : null}
+
+      {showLegacyBlock ? (
+        <div
+          id="tarjetas-historia"
+          className="scroll-mt-[calc(var(--navbar-h,5rem)+1.25rem)] max-lg:scroll-mt-[calc(var(--navbar-h,5rem)+5.75rem)]"
+        >
+          <ul className="grid gap-5 lg:grid-cols-3">
+            {(loading
+              ? Array.from({ length: 3 }, (_, idx) => ({ idx }))
+              : legacyItems
+            ).map((item, idx) => (
+              <li key={loading ? `legacy-skeleton-${idx}` : `${item.title}-${idx}`}>
+                <RevealOnScroll variant="newsCardSlow" delayMs={idx * 90}>
+                  <article className="h-full rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-lg hover:shadow-sky-500/8">
+                    {loading ? (
+                      <HydrationLegacyCardBlock />
+                    ) : (
+                      <>
+                        <h2 className="text-lg font-bold tracking-tight text-[#171b22]">
+                          {item.title}
+                        </h2>
+                        <p className="mt-2 text-sm leading-relaxed text-[#4b505a]">{item.text}</p>
+                      </>
+                    )}
+                  </article>
+                </RevealOnScroll>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {showDocumentaryBlock ? (
+        <RevealOnScroll variant="slow">
+          <div className="scroll-mt-[calc(var(--navbar-h,5rem)+1.25rem)] max-lg:scroll-mt-[calc(var(--navbar-h,5rem)+5.75rem)]">
+            <HistoryDocumentarySection
+              documentary={documentary}
+              chapters={documentaryChapters}
+              previewMode={previewMode}
+              showHeader={!isSearching || searchFilter.sections.documentaryMetaMatch}
+            />
+          </div>
+        </RevealOnScroll>
+      ) : null}
+
+      {showClosingBlock ? (
+        <RevealOnScroll variant="newsCardSlow" delayMs={120}>
+          <section
+            id="cierre-historia"
+            className="scroll-mt-[calc(var(--navbar-h,5rem)+1.25rem)] max-lg:scroll-mt-[calc(var(--navbar-h,5rem)+5.75rem)] rounded-3xl border border-[#ddd7ca] bg-[#f8f7f3] p-6 sm:p-7"
+          >
+            {loading ? (
+              <HydrationSectionHeadingBlock />
+            ) : (
+              <>
+                <h2 className="text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
+                  {content?.closingTitle}
+                </h2>
+                <p className="mt-3 max-w-3xl whitespace-pre-wrap text-sm leading-relaxed text-[#4b505a] sm:text-base">
+                  {content?.closingText}
+                </p>
+              </>
+            )}
+            {!previewMode ? (
+              <div className="mt-5 flex flex-wrap gap-3">
+                <LinkButton to="#historia-secciones">Volver a las secciones</LinkButton>
+                <Link
+                  to={ROUTES.turismo}
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#2a313b] bg-[#171b22] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#222831]"
+                >
+                  Explorar turismo
+                </Link>
+              </div>
+            ) : null}
+          </section>
+        </RevealOnScroll>
+      ) : null}
+
+      {!hasVisibleContent && isSearching ? (
+        <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-5 py-10 text-center text-sm text-slate-600">
+          Probá con otras palabras o explorá las secciones y el documental sin filtro.
+        </p>
+      ) : null}
+    </>
+  )
+
   return (
     <section
-      className={`relative overflow-x-hidden bg-linear-to-b from-[#f1eee8] via-[#f7f7f5] to-[#fcfcfa] ${
+      className={`relative bg-linear-to-b from-[#f1eee8] via-[#f7f7f5] to-[#fcfcfa] ${
         previewMode
           ? ''
           : '-mt-[calc(var(--navbar-h,5rem)+1.5rem)] pb-10 sm:-mt-[calc(var(--navbar-h,5rem)+2rem)] sm:pb-14'
@@ -166,7 +261,10 @@ export function HistoryPublicView({
         searchDisabled={loading}
       />
 
-      <Container className="relative" id="contenido-historia">
+      <Container
+        className="relative max-w-[min(100%,96rem)]! px-2 sm:px-3 lg:px-4 xl:px-5"
+        id="contenido-historia"
+      >
         {isSearching ? (
           <div id="resultados-busqueda-historia" className="mt-8 scroll-mt-32">
             <p className="text-sm text-slate-600">
@@ -186,114 +284,20 @@ export function HistoryPublicView({
         ) : null}
 
         {!isSearching || searchFilter.hasMatches ? (
-          <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-start lg:gap-8 xl:gap-10">
-            {showPageIndex ? (
-              <aside className="sticky top-[calc(var(--navbar-h,5rem)+0.5rem)] z-20 lg:col-span-3 lg:top-[calc(var(--navbar-h,5rem)+1rem)] lg:self-start">
-                <HistoryPageIndex items={navItems} />
+          showPageIndex ? (
+            <div className="mt-6 grid grid-cols-1 gap-5 sm:mt-8 lg:grid-cols-[minmax(9.25rem,10.75rem)_minmax(0,1fr)] lg:items-start lg:gap-6 xl:gap-8">
+              <aside className="z-20 max-lg:sticky max-lg:top-[calc(var(--navbar-h,5rem)+0.5rem)] lg:sticky lg:top-[calc(var(--navbar-h,5rem)+1rem)] lg:self-start">
+                <HistoryPageIndex items={navItems} compact />
               </aside>
-            ) : null}
-
-            <article
-              className={`min-w-0 rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm ${
-                showPageIndex ? 'lg:col-span-9' : 'lg:col-span-12'
-              }`}
-            >
-            <div className="space-y-10 p-5 sm:p-7 lg:p-10">
-              {showStoryBlock ? (
-                <HistoryStorySections
-                  sections={visibleStorySections}
-                  loading={loading}
-                  previewMode={previewMode}
-                />
-              ) : null}
-
-              {showLegacyBlock ? (
-                <div
-                  id="tarjetas-historia"
-                  className="scroll-mt-[calc(var(--navbar-h,5rem)+1.25rem)] max-lg:scroll-mt-[calc(var(--navbar-h,5rem)+5.75rem)]"
-                >
-                <ul className="grid gap-5 lg:grid-cols-3">
-                  {(loading
-                    ? Array.from({ length: 3 }, (_, idx) => ({ idx }))
-                    : legacyItems
-                  ).map((item, idx) => (
-                    <li key={loading ? `legacy-skeleton-${idx}` : `${item.title}-${idx}`}>
-                      <RevealOnScroll variant="newsCardSlow" delayMs={idx * 90}>
-                        <article className="h-full rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-lg hover:shadow-sky-500/8">
-                          {loading ? (
-                            <HydrationLegacyCardBlock />
-                          ) : (
-                            <>
-                              <h2 className="text-lg font-bold tracking-tight text-[#171b22]">
-                                {item.title}
-                              </h2>
-                              <p className="mt-2 text-sm leading-relaxed text-[#4b505a]">
-                                {item.text}
-                              </p>
-                            </>
-                          )}
-                        </article>
-                      </RevealOnScroll>
-                    </li>
-                  ))}
-                </ul>
-                </div>
-              ) : null}
-
-              {showDocumentaryBlock ? (
-                <RevealOnScroll variant="slow">
-                  <div className="scroll-mt-[calc(var(--navbar-h,5rem)+1.25rem)] max-lg:scroll-mt-[calc(var(--navbar-h,5rem)+5.75rem)]">
-                  <HistoryDocumentarySection
-                    documentary={documentary}
-                    chapters={documentaryChapters}
-                    previewMode={previewMode}
-                    showHeader={!isSearching || searchFilter.sections.documentaryMetaMatch}
-                  />
-                  </div>
-                </RevealOnScroll>
-              ) : null}
-
-              {showClosingBlock ? (
-                <RevealOnScroll variant="newsCardSlow" delayMs={120}>
-                  <section
-                    id="cierre-historia"
-                    className="scroll-mt-[calc(var(--navbar-h,5rem)+1.25rem)] max-lg:scroll-mt-[calc(var(--navbar-h,5rem)+5.75rem)] rounded-3xl border border-[#ddd7ca] bg-[#f8f7f3] p-6 sm:p-7"
-                  >
-                    {loading ? (
-                      <HydrationSectionHeadingBlock />
-                    ) : (
-                      <>
-                        <h2 className="text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
-                          {content?.closingTitle}
-                        </h2>
-                        <p className="mt-3 max-w-3xl whitespace-pre-wrap text-sm leading-relaxed text-[#4b505a] sm:text-base">
-                          {content?.closingText}
-                        </p>
-                      </>
-                    )}
-                    {!previewMode ? (
-                      <div className="mt-5 flex flex-wrap gap-3">
-                        <LinkButton to="#historia-secciones">Volver a las secciones</LinkButton>
-                        <Link
-                          to={ROUTES.turismo}
-                          className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#2a313b] bg-[#171b22] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#222831]"
-                        >
-                          Explorar turismo
-                        </Link>
-                      </div>
-                    ) : null}
-                  </section>
-                </RevealOnScroll>
-              ) : null}
-
-              {!hasVisibleContent && isSearching ? (
-                <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-5 py-10 text-center text-sm text-slate-600">
-                  Probá con otras palabras o explorá las secciones y el documental sin filtro.
-                </p>
-              ) : null}
+              <article className="min-w-0 rounded-3xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm">
+                <div className="space-y-10 p-4 sm:p-6 lg:p-7 xl:p-8">{mainBlocks}</div>
+              </article>
             </div>
+          ) : (
+            <article className="mt-8 rounded-3xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm">
+              <div className="space-y-10 p-5 sm:p-7 lg:p-10">{mainBlocks}</div>
             </article>
-          </div>
+          )
         ) : null}
       </Container>
     </section>
