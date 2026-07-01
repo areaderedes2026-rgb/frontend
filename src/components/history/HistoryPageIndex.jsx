@@ -1,106 +1,115 @@
-import { useCallback } from 'react'
-import { scrollToHistorySection } from '../../utils/historyPageNav.js'
+import { useEffect, useRef } from 'react'
+import { useSectionScrollSpy } from '../../hooks/useSectionScrollSpy.js'
 
-function IndexLink({ item, index, active, onSelect, compact = false }) {
+function IndexLink({ item, index, active, onSelect, compact = false, linkRef }) {
   const isActive = active === item.id
 
   return (
-    <li>
-      <button
-        type="button"
-        onClick={() => onSelect(item.id)}
+    <li className={compact ? 'shrink-0 snap-start' : undefined}>
+      <a
+        ref={linkRef}
+        href={`#${item.id}`}
+        onClick={(event) => {
+          event.preventDefault()
+          onSelect(item.id)
+        }}
         aria-current={isActive ? 'location' : undefined}
-        className={`history-index-link group relative flex w-full items-start gap-3 rounded-xl border px-3 py-2.5 text-left transition-[border-color,background-color,box-shadow,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+        className={`history-index-link group relative flex items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-[border-color,background-color,box-shadow,color] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
           isActive
-            ? 'history-index-link-active border-sky-300/90 bg-white shadow-md shadow-sky-500/10 ring-1 ring-sky-200/60'
-            : 'border-[#ddd7ca] bg-white/90 hover:border-sky-200/80 hover:bg-white hover:shadow-sm'
-        } ${compact ? 'min-w-[10.5rem] shrink-0 snap-start' : ''}`}
+            ? 'history-index-link-active border-sky-300/90 bg-white text-[#0f1319] shadow-md shadow-sky-500/10 ring-1 ring-sky-200/60'
+            : 'border-[#ddd7ca] bg-white text-[#171b22] hover:border-sky-200 hover:text-[#0f1319] hover:shadow-sm'
+        } ${compact ? 'min-w-[9.5rem]' : 'w-full'}`}
       >
-        <span
-          className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold tabular-nums transition-colors duration-300 ${
-            isActive
-              ? 'bg-sky-700 text-white'
-              : 'bg-[#f1eee8] text-slate-600 group-hover:bg-sky-50 group-hover:text-sky-800'
-          }`}
-          aria-hidden
-        >
-          {index + 1}
-        </span>
-        <span className="min-w-0 flex-1">
+        <span className="flex min-w-0 items-center gap-2.5">
           <span
-            className={`block text-sm font-semibold leading-snug transition-colors duration-300 ${
-              isActive ? 'text-[#0f1319]' : 'text-[#171b22] group-hover:text-[#0f1319]'
-            } ${compact ? 'line-clamp-1' : 'line-clamp-2'}`}
+            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold tabular-nums transition-colors duration-300 ${
+              isActive
+                ? 'bg-sky-700 text-white'
+                : 'bg-[#f1eee8] text-slate-600 group-hover:bg-sky-50 group-hover:text-sky-800'
+            }`}
+            aria-hidden
           >
+            {index + 1}
+          </span>
+          <span className={`min-w-0 ${compact ? 'line-clamp-1' : 'line-clamp-2'} leading-snug`}>
             {item.label}
           </span>
         </span>
-      </button>
+        {!compact ? <span aria-hidden className="shrink-0 text-slate-400">↘</span> : null}
+      </a>
     </li>
   )
 }
 
-export function HistoryPageIndex({
-  items = [],
-  activeId = '',
-  onNavigate,
-  className = '',
-}) {
-  const handleSelect = useCallback(
-    (id) => {
-      onNavigate?.(id)
-      scrollToHistorySection(id)
-    },
-    [onNavigate],
-  )
+export function HistoryPageIndex({ items = [], className = '' }) {
+  const sectionIds = items.map((item) => item.id)
+  const { activeId, scrollToSection } = useSectionScrollSpy(sectionIds)
+  const mobileNavRef = useRef(null)
+  const mobileLinkRefs = useRef({})
+
+  useEffect(() => {
+    const hash = window.location.hash.replace(/^#/, '').trim()
+    if (!hash || !sectionIds.includes(hash)) return undefined
+    const timer = window.setTimeout(() => scrollToSection(hash), 160)
+    return () => window.clearTimeout(timer)
+  }, [sectionIds.join('|'), scrollToSection])
+
+  useEffect(() => {
+    const link = mobileLinkRefs.current[activeId]
+    const nav = mobileNavRef.current
+    if (!link || !nav) return
+    const linkLeft = link.offsetLeft
+    const linkWidth = link.offsetWidth
+    const navWidth = nav.clientWidth
+    const scrollLeft = linkLeft - navWidth / 2 + linkWidth / 2
+    nav.scrollTo({ left: Math.max(0, scrollLeft), behavior: 'smooth' })
+  }, [activeId])
 
   if (!items.length) return null
 
   return (
-    <nav
-      aria-label="Índice de la historia"
-      className={`history-page-index ${className}`.trim()}
-    >
-      {/* Escritorio: columna izquierda fija */}
+    <nav aria-label="Índice de la historia" className={`history-page-index ${className}`.trim()}>
+      {/* Escritorio */}
       <div className="hidden lg:block">
-        <div className="sticky top-[calc(var(--navbar-h,5rem)+1rem)] z-20">
-          <div className="rounded-2xl border border-[#ddd7ca] bg-[#f8f7f3]/95 p-5 shadow-sm backdrop-blur-sm">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-800">
-              Índice
-            </p>
-            <p className="mt-1 text-xs leading-relaxed text-slate-600">
-              Navegá por los capítulos de la historia local.
-            </p>
-            <ol className="mt-4 space-y-2">
-              {items.map((item, index) => (
-                <IndexLink
-                  key={item.id}
-                  item={item}
-                  index={index}
-                  active={activeId}
-                  onSelect={handleSelect}
-                />
-              ))}
-            </ol>
-          </div>
-        </div>
-      </div>
-
-      {/* Móvil: franja horizontal fija */}
-      <div className="history-page-index-mobile lg:hidden">
-        <div className="sticky top-[calc(var(--navbar-h,5rem)+0.5rem)] z-20 -mx-1 rounded-2xl border border-[#ddd7ca] bg-[#f8f7f3]/95 px-3 py-3 shadow-sm backdrop-blur-sm">
-          <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-[0.18em] text-sky-800">
-            Índice
+        <div className="rounded-2xl border border-[#ddd7ca] bg-[#f8f7f3] p-4 xl:p-5">
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-700">
+            Navegación de contenido
           </p>
-          <ol className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <ol className="mt-4 space-y-2">
             {items.map((item, index) => (
               <IndexLink
                 key={item.id}
                 item={item}
                 index={index}
                 active={activeId}
-                onSelect={handleSelect}
+                onSelect={scrollToSection}
+              />
+            ))}
+          </ol>
+        </div>
+      </div>
+
+      {/* Móvil */}
+      <div className="history-page-index-mobile lg:hidden">
+        <div className="rounded-2xl border border-[#ddd7ca] bg-[#f8f7f3]/95 px-3 py-3 shadow-sm backdrop-blur-sm">
+          <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-[0.18em] text-sky-800">
+            Índice
+          </p>
+          <ol
+            ref={mobileNavRef}
+            className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {items.map((item, index) => (
+              <IndexLink
+                key={item.id}
+                item={item}
+                index={index}
+                active={activeId}
+                onSelect={scrollToSection}
                 compact
+                linkRef={(node) => {
+                  if (node) mobileLinkRefs.current[item.id] = node
+                }}
               />
             ))}
           </ol>

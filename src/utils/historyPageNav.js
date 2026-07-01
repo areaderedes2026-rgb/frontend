@@ -7,7 +7,7 @@ export function getHistoryScrollOffset(extraPx = 16) {
   return navbar + extraPx
 }
 
-export function scrollToHistorySection(sectionId, { updateHash = true } = {}) {
+export function scrollToHistorySection(sectionId, { updateHash = false } = {}) {
   if (!sectionId || typeof window === 'undefined') return false
   const el = document.getElementById(sectionId)
   if (!el) return false

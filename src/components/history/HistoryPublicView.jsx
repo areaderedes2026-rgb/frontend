@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { RevealOnScroll } from '../home/RevealOnScroll.jsx'
 import { Container } from '../ui/Container.jsx'
@@ -13,7 +13,6 @@ import {
   normalizeHistoryDocumentary,
   normalizeHistoryStorySections,
 } from '../../data/historyContent.js'
-import { useHistoryScrollSpy } from '../../hooks/useHistoryScrollSpy.js'
 import { getHistoryPageNavItems, scrollToHistorySection } from '../../utils/historyPageNav.js'
 import { ROUTES } from '../../utils/constants.js'
 import {
@@ -110,41 +109,12 @@ export function HistoryPublicView({
   const navSectionIds = useMemo(() => navItems.map((item) => item.id), [navItems])
   const showPageIndex = navItems.length >= 2 && !loading
 
-  const { activeId, setProgrammaticTarget } = useHistoryScrollSpy(navSectionIds, {
-    enabled: showPageIndex && !previewMode,
-  })
-
-  useEffect(() => {
-    if (previewMode || loading || !showPageIndex) return undefined
-    const hash = window.location.hash.replace(/^#/, '').trim()
-    if (!hash || !navSectionIds.includes(hash)) return undefined
-
-    const prefersReduce =
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const delay = prefersReduce ? 0 : 140
-
-    const timer = window.setTimeout(() => {
-      setProgrammaticTarget(hash)
-      scrollToHistorySection(hash, { updateHash: false })
-    }, delay)
-
-    return () => window.clearTimeout(timer)
-  }, [loading, navSectionIds, previewMode, setProgrammaticTarget, showPageIndex])
-
-  function handleIndexNavigate(id) {
-    setProgrammaticTarget(id)
-  }
-
   function scrollToContent() {
     if (previewMode) return
     const target = isSearching
       ? 'resultados-busqueda-historia'
       : navSectionIds[0] || 'historia-secciones'
-    if (!isSearching && navSectionIds[0]) {
-      setProgrammaticTarget(navSectionIds[0])
-    }
-    scrollToHistorySection(target, { updateHash: !isSearching })
+    scrollToHistorySection(target, { updateHash: false })
   }
 
   const secondaryHref = resolveHref(content?.ctaSecondaryHref)
@@ -216,19 +186,16 @@ export function HistoryPublicView({
         ) : null}
 
         {!isSearching || searchFilter.hasMatches ? (
-          <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-10">
+          <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-start lg:gap-8 xl:gap-10">
             {showPageIndex ? (
-              <HistoryPageIndex
-                items={navItems}
-                activeId={activeId}
-                onNavigate={handleIndexNavigate}
-                className="lg:col-span-4"
-              />
+              <aside className="sticky top-[calc(var(--navbar-h,5rem)+0.5rem)] z-20 lg:col-span-3 lg:top-[calc(var(--navbar-h,5rem)+1rem)] lg:self-start">
+                <HistoryPageIndex items={navItems} />
+              </aside>
             ) : null}
 
             <article
-              className={`rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm ${
-                showPageIndex ? 'lg:col-span-8' : 'lg:col-span-12'
+              className={`min-w-0 rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm ${
+                showPageIndex ? 'lg:col-span-9' : 'lg:col-span-12'
               }`}
             >
             <div className="space-y-10 p-5 sm:p-7 lg:p-10">
