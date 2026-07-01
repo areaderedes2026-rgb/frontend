@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { RevealOnScroll } from '../home/RevealOnScroll.jsx'
 import { Container } from '../ui/Container.jsx'
@@ -6,12 +6,15 @@ import { LinkButton } from '../ui/LinkButton.jsx'
 import { HistoryHeroHeader } from './HistoryHeroHeader.jsx'
 import { HistoryDocumentarySection } from './HistoryDocumentarySection.jsx'
 import { HistoryStorySections } from './HistoryStorySections.jsx'
+import { HistoryPageIndex } from './HistoryPageIndex.jsx'
 import {
   filterHistoryByQuery,
   isHistorySectionVisible,
   normalizeHistoryDocumentary,
   normalizeHistoryStorySections,
 } from '../../data/historyContent.js'
+import { useHistoryScrollSpy } from '../../hooks/useHistoryScrollSpy.js'
+import { getHistoryPageNavItems, scrollToHistorySection } from '../../utils/historyPageNav.js'
 import { ROUTES } from '../../utils/constants.js'
 import {
   HydrationLegacyCardBlock,
@@ -83,10 +86,65 @@ export function HistoryPublicView({
   const hasVisibleContent =
     showStoryBlock || showLegacyBlock || showDocumentaryBlock || showClosingBlock
 
+  const navItems = useMemo(
+    () =>
+      getHistoryPageNavItems({
+        storySections: showStoryBlock ? visibleStorySections : [],
+        showLegacy: showLegacyBlock,
+        showDocumentary: showDocumentaryBlock,
+        documentaryTitle: documentary.title,
+        showClosing: showClosingBlock,
+        closingTitle: content?.closingTitle,
+      }),
+    [
+      showStoryBlock,
+      visibleStorySections,
+      showLegacyBlock,
+      showDocumentaryBlock,
+      showClosingBlock,
+      documentary.title,
+      content?.closingTitle,
+    ],
+  )
+
+  const navSectionIds = useMemo(() => navItems.map((item) => item.id), [navItems])
+  const showPageIndex = navItems.length >= 2 && !loading
+
+  const { activeId, setProgrammaticTarget } = useHistoryScrollSpy(navSectionIds, {
+    enabled: showPageIndex && !previewMode,
+  })
+
+  useEffect(() => {
+    if (previewMode || loading || !showPageIndex) return undefined
+    const hash = window.location.hash.replace(/^#/, '').trim()
+    if (!hash || !navSectionIds.includes(hash)) return undefined
+
+    const prefersReduce =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const delay = prefersReduce ? 0 : 140
+
+    const timer = window.setTimeout(() => {
+      setProgrammaticTarget(hash)
+      scrollToHistorySection(hash, { updateHash: false })
+    }, delay)
+
+    return () => window.clearTimeout(timer)
+  }, [loading, navSectionIds, previewMode, setProgrammaticTarget, showPageIndex])
+
+  function handleIndexNavigate(id) {
+    setProgrammaticTarget(id)
+  }
+
   function scrollToContent() {
     if (previewMode) return
-    const target = isSearching ? 'resultados-busqueda-historia' : 'historia-secciones'
-    document.getElementById(target)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    const target = isSearching
+      ? 'resultados-busqueda-historia'
+      : navSectionIds[0] || 'historia-secciones'
+    if (!isSearching && navSectionIds[0]) {
+      setProgrammaticTarget(navSectionIds[0])
+    }
+    scrollToHistorySection(target, { updateHash: !isSearching })
   }
 
   const secondaryHref = resolveHref(content?.ctaSecondaryHref)
@@ -94,7 +152,7 @@ export function HistoryPublicView({
 
   return (
     <section
-      className={`relative overflow-hidden bg-linear-to-b from-[#f1eee8] via-[#f7f7f5] to-[#fcfcfa] ${
+      className={`relative overflow-x-hidden bg-linear-to-b from-[#f1eee8] via-[#f7f7f5] to-[#fcfcfa] ${
         previewMode
           ? ''
           : '-mt-[calc(var(--navbar-h,5rem)+1.5rem)] pb-10 sm:-mt-[calc(var(--navbar-h,5rem)+2rem)] sm:pb-14'
@@ -158,7 +216,21 @@ export function HistoryPublicView({
         ) : null}
 
         {!isSearching || searchFilter.hasMatches ? (
-          <article className="mt-8 overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm">
+          <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-10">
+            {showPageIndex ? (
+              <HistoryPageIndex
+                items={navItems}
+                activeId={activeId}
+                onNavigate={handleIndexNavigate}
+                className="lg:col-span-4"
+              />
+            ) : null}
+
+            <article
+              className={`rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm ${
+                showPageIndex ? 'lg:col-span-8' : 'lg:col-span-12'
+              }`}
+            >
             <div className="space-y-10 p-5 sm:p-7 lg:p-10">
               {showStoryBlock ? (
                 <HistoryStorySections
@@ -169,6 +241,10 @@ export function HistoryPublicView({
               ) : null}
 
               {showLegacyBlock ? (
+                <div
+                  id="tarjetas-historia"
+                  className="scroll-mt-[calc(var(--navbar-h,5rem)+1.25rem)] max-lg:scroll-mt-[calc(var(--navbar-h,5rem)+5.75rem)]"
+                >
                 <ul className="grid gap-5 lg:grid-cols-3">
                   {(loading
                     ? Array.from({ length: 3 }, (_, idx) => ({ idx }))
@@ -194,16 +270,19 @@ export function HistoryPublicView({
                     </li>
                   ))}
                 </ul>
+                </div>
               ) : null}
 
               {showDocumentaryBlock ? (
                 <RevealOnScroll variant="slow">
+                  <div className="scroll-mt-[calc(var(--navbar-h,5rem)+1.25rem)] max-lg:scroll-mt-[calc(var(--navbar-h,5rem)+5.75rem)]">
                   <HistoryDocumentarySection
                     documentary={documentary}
                     chapters={documentaryChapters}
                     previewMode={previewMode}
                     showHeader={!isSearching || searchFilter.sections.documentaryMetaMatch}
                   />
+                  </div>
                 </RevealOnScroll>
               ) : null}
 
@@ -211,7 +290,7 @@ export function HistoryPublicView({
                 <RevealOnScroll variant="newsCardSlow" delayMs={120}>
                   <section
                     id="cierre-historia"
-                    className="scroll-mt-32 rounded-3xl border border-[#ddd7ca] bg-[#f8f7f3] p-6 sm:p-7"
+                    className="scroll-mt-[calc(var(--navbar-h,5rem)+1.25rem)] max-lg:scroll-mt-[calc(var(--navbar-h,5rem)+5.75rem)] rounded-3xl border border-[#ddd7ca] bg-[#f8f7f3] p-6 sm:p-7"
                   >
                     {loading ? (
                       <HydrationSectionHeadingBlock />
@@ -246,7 +325,8 @@ export function HistoryPublicView({
                 </p>
               ) : null}
             </div>
-          </article>
+            </article>
+          </div>
         ) : null}
       </Container>
     </section>

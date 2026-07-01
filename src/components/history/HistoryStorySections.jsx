@@ -10,12 +10,12 @@ export function HistoryStorySections({
   if (!loading && (!sections || sections.length === 0)) return null
 
   return (
-    <div id="historia-secciones" className="scroll-mt-32 space-y-8">
+    <div id="historia-secciones" className="scroll-mt-[calc(var(--navbar-h,5rem)+1.25rem)] max-lg:scroll-mt-[calc(var(--navbar-h,5rem)+5.75rem)] space-y-8">
       {(loading ? [{ id: 'skeleton' }, { id: 'skeleton-2' }] : sections).map((section, idx) => (
         <RevealOnScroll key={section.id || `story-${idx}`} variant="slow" delayMs={idx * 80}>
           <article
             id={loading ? undefined : storySectionAnchorId(section)}
-            className="overflow-hidden rounded-3xl border border-[#ddd7ca] bg-[#f8f7f3]"
+            className="history-story-section scroll-mt-[calc(var(--navbar-h,5rem)+1.25rem)] max-lg:scroll-mt-[calc(var(--navbar-h,5rem)+5.75rem)] overflow-hidden rounded-3xl border border-[#ddd7ca] bg-[#f8f7f3]"
           >
             <div className="border-b border-[#ddd7ca]/80 bg-[#fcfcfa] px-6 py-5 sm:px-8 sm:py-6">
               {loading ? (

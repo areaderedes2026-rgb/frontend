@@ -33,7 +33,7 @@ export function HistoryDocumentarySection({
   if (!title && !description && list.length === 0) return null
 
   return (
-    <section id="documental-historia" className="scroll-mt-32">
+    <section id="documental-historia" className="scroll-mt-[calc(var(--navbar-h,5rem)+1.25rem)] max-lg:scroll-mt-[calc(var(--navbar-h,5rem)+5.75rem)]">
       {showHeader ? (
         <header className="mb-6">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-sky-800">Documental</p>
