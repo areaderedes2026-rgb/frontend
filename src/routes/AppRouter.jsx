@@ -4,6 +4,7 @@ import { MainLayout } from '../components/layout/MainLayout.jsx'
 import { AdminLayout } from '../components/layout/AdminLayout.jsx'
 import { ProtectedRoute } from './ProtectedRoute.jsx'
 import { Home } from '../pages/Home.jsx'
+import { ServicesLayout } from '../pages/ServicesLayout.jsx'
 import { Services } from '../pages/Services.jsx'
 import { ServicesCategoryPage } from '../pages/ServicesCategoryPage.jsx'
 import { AtencionCiudadano } from '../pages/AtencionCiudadano.jsx'
@@ -316,11 +317,10 @@ export function AppRouter() {
         />
         <Route path="/history/lugares/:slug" element={<LegacyTourismPlaceRedirect />} />
         <Route path="/about" element={<Navigate to="/history" replace />} />
-        <Route path="/services" element={<Services />} />
-        <Route
-          path="/services/categoria/:categorySlug"
-          element={<ServicesCategoryPage />}
-        />
+        <Route path="/services" element={<ServicesLayout />}>
+          <Route index element={<Services />} />
+          <Route path="categoria/:categorySlug" element={<ServicesCategoryPage />} />
+        </Route>
         <Route
           path="/eventos"
           element={

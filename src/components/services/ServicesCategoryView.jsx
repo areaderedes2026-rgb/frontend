@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { RevealOnScroll } from '../home/RevealOnScroll.jsx'
 import { Container } from '../ui/Container.jsx'
@@ -28,6 +28,11 @@ export function ServicesCategoryView({
   const [searchQuery, setSearchQuery] = useState('')
   const [detailService, setDetailService] = useState(null)
 
+  useEffect(() => {
+    setSearchQuery('')
+    setDetailService(null)
+  }, [categorySlug])
+
   const categories = useMemo(
     () => normalizeServiceCategories(content?.categories),
     [content?.categories],
@@ -44,7 +49,7 @@ export function ServicesCategoryView({
         .filter((item) => item.isActive !== false)
         .map((item, index) => normalizeMunicipalService(item, index + 1, categories))
         .sort((a, b) => (Number(a.sortOrder) || 0) - (Number(b.sortOrder) || 0)),
-    [services],
+    [services, categories],
   )
 
   const categoryServices = useMemo(() => {
@@ -77,7 +82,8 @@ export function ServicesCategoryView({
 
   return (
     <section
-      className={`relative overflow-hidden bg-linear-to-b from-[#f1eee8] via-[#f7f7f5] to-[#fcfcfa] ${
+      key={categorySlug}
+      className={`services-category-enter relative overflow-hidden bg-linear-to-b from-[#f1eee8] via-[#f7f7f5] to-[#fcfcfa] ${
         previewMode
           ? ''
           : '-mt-[calc(var(--navbar-h,5rem)+1.5rem)] pb-12 sm:-mt-[calc(var(--navbar-h,5rem)+2rem)] sm:pb-16'

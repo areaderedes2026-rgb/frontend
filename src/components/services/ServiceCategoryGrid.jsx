@@ -37,8 +37,6 @@ function CategoryTile({ category, count, previewMode = false, to, className: ext
   return (
     <Link
       to={to}
-      target="_blank"
-      rel="noopener noreferrer"
       className={className}
       aria-label={`Ver trámites de ${category.name}`}
     >
