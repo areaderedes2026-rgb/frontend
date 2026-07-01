@@ -59,6 +59,21 @@ body {
   animation: services-category-enter 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+@keyframes admin-floating-save-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 100%, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.admin-floating-save-bar {
+  animation: admin-floating-save-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 /* Buscador global (navbar): entrada/salida fluidas (duración en Navbar ~0.48s / 0.42s) */
 @keyframes site-search-panel-in {
   0% {
@@ -616,6 +631,7 @@ body {
   .admin-fade-up,
   .admin-fade-up-delayed,
   .services-category-enter,
+  .admin-floating-save-bar,
   .animate-news-ticker,
   .news-category-marquee-track {
     animation: none !important;

@@ -20,6 +20,7 @@ import {
 } from '../services/MunicipalServiceDirectory.jsx'
 import { ServiceCategoryGrid } from '../services/ServiceCategoryGrid.jsx'
 import { ServiceCategoryIconBadge } from '../services/ServiceCategoryIcons.jsx'
+import { AdminFloatingSaveBar } from './AdminFloatingSaveBar.jsx'
 import { inputClass, labelClass, textareaClass } from '../ui/formStyles.js'
 import { ROUTES } from '../../utils/constants.js'
 
@@ -123,41 +124,6 @@ function SectionVisibilityToggle({ visible, onChange, disabled = false }) {
       />
       Visible en el portal
     </label>
-  )
-}
-
-function FloatingSaveBar({ hasChanges, saving, onSave, apiAvailable }) {
-  return (
-    <div
-      className={`pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center px-3 pb-3 pt-2 transition-all duration-300 sm:px-4 sm:pb-4 ${
-        hasChanges ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
-      }`}
-      aria-live="polite"
-    >
-      <div className="pointer-events-auto flex w-full max-w-[min(96vw,88rem)] items-center gap-3 rounded-2xl border border-amber-300/90 bg-amber-50/95 px-4 py-3 shadow-[0_-10px_40px_-8px_rgba(15,23,42,0.25)] ring-2 ring-amber-400/30 backdrop-blur-md sm:gap-4 sm:px-5 sm:py-3.5">
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold text-slate-900">Servicios al vecino</p>
-          <p className="text-xs font-semibold text-amber-900">
-            Tenés cambios sin guardar — recordá publicarlos antes de salir
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={onSave}
-          disabled={saving || !apiAvailable || !hasChanges}
-          className={ACTION_BTN_PRIMARY}
-        >
-          {saving ? (
-            <>
-              <Spinner tone="white" size="sm" />
-              Guardando…
-            </>
-          ) : (
-            'Guardar cambios'
-          )}
-        </button>
-      </div>
-    </div>
   )
 }
 
@@ -718,7 +684,7 @@ export function AdminServicesEditorPreview({
         </div>
       </Modal>
 
-      <div className={`admin-fade-up space-y-5 ${hasChanges ? 'pb-24 sm:pb-28' : ''}`}>
+      <div className="admin-fade-up space-y-5">
         <div className="flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-slate-600">
             Tocá el lápiz de cada bloque para editarlo. Marcá o desmarcá{' '}
@@ -1114,11 +1080,20 @@ export function AdminServicesEditorPreview({
         </article>
       </div>
 
-      <FloatingSaveBar
-        hasChanges={hasChanges}
+      <AdminFloatingSaveBar
+        open={hasChanges && editor == null}
+        title="Servicios al vecino"
+        message="Tenés cambios sin guardar — la barra te acompaña mientras editás"
         saving={saving}
-        apiAvailable={apiAvailable}
+        disabled={!apiAvailable}
         onSave={onSubmit}
+        actionClassName={ACTION_BTN_PRIMARY}
+        savingContent={
+          <>
+            <Spinner tone="white" size="sm" />
+            Guardando…
+          </>
+        }
       />
     </>
   )
