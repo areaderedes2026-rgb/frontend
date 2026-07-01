@@ -14,6 +14,10 @@ import {
   normalizeMunicipalService,
 } from '../../data/servicesPageContent.js'
 import {
+  normalizeServiceCategories,
+  resolveServiceCategoryId,
+} from '../../data/serviceCategoriesContent.js'
+import {
   createMunicipalService,
   deleteMunicipalService,
   fetchMunicipalServicesAdmin,
@@ -46,9 +50,9 @@ const EMPTY_SERVICE = {
   isActive: true,
 }
 
-function serviceToForm(service) {
+function serviceToForm(service, categories = []) {
   if (!service) return { ...EMPTY_SERVICE }
-  const normalized = normalizeMunicipalService(service)
+  const normalized = normalizeMunicipalService(service, 0, categories)
   return {
     title: normalized.title || '',
     slug: normalized.slug || '',
@@ -67,6 +71,7 @@ function serviceToForm(service) {
 }
 
 function mapContentToForm(content) {
+  const categories = normalizeServiceCategories(content.categories).map((item) => ({ ...item }))
   return {
     heroEyebrow: content.heroEyebrow || '',
     heroTitle: content.heroTitle || '',
@@ -79,7 +84,7 @@ function mapContentToForm(content) {
     heroSecondaryHref: content.heroSecondaryHref || '',
     steps: Array.isArray(content.steps) ? [...content.steps] : [],
     scheduleLines: Array.isArray(content.scheduleLines) ? [...content.scheduleLines] : [],
-    categories: Array.isArray(content.categories) ? [...content.categories] : [],
+    categories,
     proceduresEyebrow: content.proceduresEyebrow || '',
     proceduresTitle: content.proceduresTitle || '',
     faq: Array.isArray(content.faq)
@@ -211,15 +216,16 @@ export function AdminServices() {
   }, [apiAvailable, handleConflict, persistContent])
 
   function openCreateService() {
+    const cats = normalizeServiceCategories(contentForm.categories)
     setEditingService(null)
-    setServiceForm({ ...EMPTY_SERVICE, category: contentForm.categories?.[0] || '' })
+    setServiceForm({ ...EMPTY_SERVICE, category: cats[0]?.id || '' })
     setServiceFormError('')
     setModalOpen(true)
   }
 
   function openEditService(service) {
     setEditingService(service)
-    setServiceForm(serviceToForm(service))
+    setServiceForm(serviceToForm(service, contentForm.categories))
     setServiceFormError('')
     setModalOpen(true)
   }
@@ -391,9 +397,9 @@ export function AdminServices() {
               disabled={serviceSaving}
             >
               <option value="">Sin categoría</option>
-              {(contentForm.categories || []).map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
+              {normalizeServiceCategories(contentForm.categories).map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
                 </option>
               ))}
             </select>

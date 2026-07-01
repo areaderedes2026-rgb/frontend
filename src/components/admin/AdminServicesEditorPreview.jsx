@@ -8,9 +8,17 @@ import {
   normalizeMunicipalService,
 } from '../../data/servicesPageContent.js'
 import {
+  SERVICE_CATEGORY_ICON_OPTIONS,
+  countServicesInCategory,
+  normalizeServiceCategories,
+  slugifyServiceCategory,
+} from '../../data/serviceCategoriesContent.js'
+import {
   MunicipalServiceCard,
   MunicipalServiceDetailModal,
 } from '../services/MunicipalServiceDirectory.jsx'
+import { ServiceCategoryGrid } from '../services/ServiceCategoryGrid.jsx'
+import { ServiceCategoryIconBadge } from '../services/ServiceCategoryIcons.jsx'
 import { inputClass, labelClass, textareaClass } from '../ui/formStyles.js'
 import { ROUTES } from '../../utils/constants.js'
 
@@ -163,12 +171,17 @@ export function AdminServicesEditorPreview({
   const [previewSearch, setPreviewSearch] = useState('')
   const [previewService, setPreviewService] = useState(null)
 
+  const categoryOptions = useMemo(
+    () => normalizeServiceCategories(form.categories),
+    [form.categories],
+  )
+
   const sortedServices = useMemo(
     () =>
       [...services]
-        .map((item, index) => normalizeMunicipalService(item, index + 1))
+        .map((item, index) => normalizeMunicipalService(item, index + 1, categoryOptions))
         .sort((a, b) => (Number(a.sortOrder) || 0) - (Number(b.sortOrder) || 0)),
-    [services],
+    [services, categoryOptions],
   )
 
   const previewServices = useMemo(() => {
@@ -176,13 +189,22 @@ export function AdminServicesEditorPreview({
     return filterMunicipalServicesByQuery(sortedServices, previewSearch)
   }, [previewSearch, sortedServices])
 
-  const categoryOptions = useMemo(
-    () => (form.categories || []).filter((c) => String(c || '').trim()),
-    [form.categories],
-  )
-
   function openEditor(kind, index = null, draft = null) {
     setEditor({ kind, index, draft })
+  }
+
+  function openCategoryEditor(category = null, index = null) {
+    if (category) {
+      openEditor('category', index, { ...category })
+      return
+    }
+    openEditor('category', null, {
+      name: '',
+      slug: '',
+      icon: 'default',
+      sortOrder: (categoryOptions.length + 1) * 10,
+      enabled: true,
+    })
   }
 
   function closeEditor() {
@@ -244,19 +266,39 @@ export function AdminServicesEditorPreview({
         }))
         break
       case 'category': {
-        const value = String(draft.name || '').trim()
-        if (!value) break
+        const name = String(draft.name || '').trim()
+        if (!name) break
         setForm((prev) => {
           const list = [...(prev.categories || [])]
-          if (index === null || index === undefined) {
-            if (!list.includes(value)) list.push(value)
-          } else {
-            list[index] = value
-            return {
-              ...prev,
-              categories: list,
-            }
+          const existing =
+            index != null && index >= 0
+              ? normalizeServiceCategories([list[index]])[0]
+              : null
+          const slugRaw =
+            String(draft.slug || '').trim() ||
+            existing?.slug ||
+            slugifyServiceCategory(name) ||
+            `categoria-${list.length + 1}`
+          const slug = slugifyServiceCategory(slugRaw) || slugRaw
+          const id =
+            existing?.id ||
+            `svc-cat-${slugifyServiceCategory(name) || `item-${Date.now().toString(36)}`}`
+          const icon = SERVICE_CATEGORY_ICON_OPTIONS.some((o) => o.value === draft.icon)
+            ? draft.icon
+            : existing?.icon || 'default'
+          const sortOrder = Number.isFinite(Number(draft.sortOrder))
+            ? Math.max(Number(draft.sortOrder), 0)
+            : existing?.sortOrder ?? (list.length + 1) * 10
+          const item = {
+            id,
+            slug,
+            name,
+            icon,
+            sortOrder,
+            enabled: draft.enabled !== false,
           }
+          if (index == null || index === undefined) list.push(item)
+          else list[index] = item
           return { ...prev, categories: list }
         })
         break
@@ -444,10 +486,80 @@ export function AdminServicesEditorPreview({
           </div>
         ) : null}
         {editor?.kind === 'category' ? (
-          <label className={labelClass}>
-            Nombre de la categoría
-            <input className={inputClass} value={draft?.name || ''} onChange={(e) => setDraftField('name', e.target.value)} disabled={saving} />
-          </label>
+          <div className="grid gap-4">
+            <label className={labelClass}>
+              Nombre visible
+              <input
+                className={inputClass}
+                value={draft?.name || ''}
+                onChange={(e) => setDraftField('name', e.target.value)}
+                disabled={saving}
+                placeholder="Ej. Documentación"
+              />
+            </label>
+            <label className={labelClass}>
+              Slug en la URL (opcional)
+              <input
+                className={inputClass}
+                value={draft?.slug || ''}
+                onChange={(e) => setDraftField('slug', e.target.value)}
+                disabled={saving}
+                placeholder="documentacion"
+              />
+              <span className="mt-1 block text-xs font-normal text-slate-500">
+                Se usa en /services/categoria/<strong>slug</strong>. Si lo dejás vacío se genera del nombre.
+              </span>
+            </label>
+            <label className={labelClass}>
+              Ícono
+              <div className="mt-2 flex flex-wrap gap-2">
+                {SERVICE_CATEGORY_ICON_OPTIONS.map((option) => {
+                  const selected = (draft?.icon || 'default') === option.value
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      disabled={saving}
+                      onClick={() => setDraftField('icon', option.value)}
+                      className={`inline-flex flex-col items-center gap-1.5 rounded-xl border px-3 py-2 text-[11px] font-semibold transition ${
+                        selected
+                          ? 'border-sky-300 bg-sky-50 text-sky-900'
+                          : 'border-slate-200 bg-white text-slate-600 hover:border-sky-200'
+                      }`}
+                    >
+                      <ServiceCategoryIconBadge icon={option.value} className="h-10 w-10" />
+                      {option.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </label>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className={labelClass}>
+                Orden
+                <input
+                  type="number"
+                  min={0}
+                  className={inputClass}
+                  value={draft?.sortOrder ?? 0}
+                  onChange={(e) => setDraftField('sortOrder', e.target.value)}
+                  disabled={saving}
+                />
+              </label>
+              <label className={`${labelClass} justify-end`}>
+                <span className="flex items-center gap-2 pt-6">
+                  <input
+                    type="checkbox"
+                    checked={draft?.enabled !== false}
+                    onChange={(e) => setDraftField('enabled', e.target.checked)}
+                    disabled={saving}
+                    className="h-4 w-4 rounded border-slate-300 text-sky-700"
+                  />
+                  Publicada en el portal
+                </span>
+              </label>
+            </div>
+          </div>
         ) : null}
         {editor?.kind === 'faq' ? (
           <div className="grid gap-4">
@@ -543,7 +655,7 @@ export function AdminServicesEditorPreview({
               searchQuery={previewSearch}
               onSearchChange={setPreviewSearch}
               onSearchSubmit={() => {
-                document.getElementById('tramites-disponibles')?.scrollIntoView({ behavior: 'smooth' })
+                document.getElementById('categorias-tramites')?.scrollIntoView({ behavior: 'smooth' })
               }}
               previewMode
             />
@@ -696,78 +808,59 @@ export function AdminServicesEditorPreview({
 
             {/* Directorio — títulos y categorías */}
             <SectionCard
-              id="directorio-servicios"
-              title="Directorio de servicios"
-              description="Títulos de la sección y categorías del filtro (sin «Todos», que se agrega solo en el portal)."
+              id="categorias-tramites"
+              title="Categorías de trámites"
+              description="Grilla de accesos con ícono. Al tocar una categoría el vecino abre una pestaña con los trámites de esa área."
               rightSlot={
-                <EditChip
-                  label="Editar títulos"
-                  disabled={saving}
-                  onClick={() =>
-                    openEditor('proceduresMeta', null, {
-                      proceduresEyebrow: form.proceduresEyebrow,
-                      proceduresTitle: form.proceduresTitle,
-                    })
-                  }
-                />
+                <div className="flex flex-wrap gap-2">
+                  <EditChip
+                    label="Editar títulos"
+                    disabled={saving}
+                    onClick={() =>
+                      openEditor('proceduresMeta', null, {
+                        proceduresEyebrow: form.proceduresEyebrow,
+                        proceduresTitle: form.proceduresTitle,
+                      })
+                    }
+                  />
+                  <AddChip label="Nueva categoría" disabled={saving} onClick={() => openCategoryEditor()} />
+                </div>
               }
             >
-              <div className="rounded-2xl border border-[#ddd7ca] bg-white p-4 sm:p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-800">
-                  {form.proceduresEyebrow || 'Trámites disponibles'}
-                </p>
-                <h3 className="mt-2 font-serif text-2xl font-bold text-[#171b22]">
-                  {form.proceduresTitle || 'Directorio de servicios'}
-                </h3>
-                <div className="mt-4 flex flex-wrap items-center gap-2">
-                  <span className="rounded-full bg-[#171b22] px-4 py-2 text-sm font-semibold text-white">Todos</span>
-                  {categoryOptions.map((cat, idx) => (
-                    <span
-                      key={`cat-${idx}-${cat}`}
-                      className="group inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5 text-sm font-semibold text-sky-900"
-                    >
-                      {cat}
-                      <button
-                        type="button"
-                        title={`Editar ${cat}`}
-                        disabled={saving}
-                        onClick={() => openEditor('category', idx, { name: cat })}
-                        className="rounded-md px-1 hover:bg-sky-100"
-                      >
-                        <PencilIcon className="h-3 w-3" />
-                      </button>
-                      <button
-                        type="button"
-                        title={`Quitar ${cat}`}
-                        disabled={saving}
-                        onClick={() =>
-                          setConfirmRemove({
-                            kind: 'category',
-                            index: idx,
-                            title: '¿Quitar categoría?',
-                            description: `Se eliminará «${cat}» del filtro.`,
-                          })
-                        }
-                        className="rounded-md px-1 text-red-700 hover:bg-red-100"
-                      >
-                        <TrashIcon className="h-3 w-3" />
-                      </button>
-                    </span>
-                  ))}
-                  <AddChip
-                    label="Categoría"
-                    disabled={saving}
-                    onClick={() => openEditor('category', null, { name: '' })}
-                  />
-                </div>
-              </div>
+              {categoryOptions.length === 0 ? (
+                <EmptyHint onAdd={() => openCategoryEditor()} addLabel="Nueva categoría">
+                  Todavía no hay categorías. Creá la primera para organizar los trámites.
+                </EmptyHint>
+              ) : (
+                <ServiceCategoryGrid
+                  categories={form.categories}
+                  services={sortedServices}
+                  eyebrow={form.proceduresEyebrow || 'Categorías'}
+                  title={form.proceduresTitle || 'Elegí un área para ver sus trámites'}
+                  previewMode
+                  saving={saving}
+                  onEditCategory={(category, index) => openCategoryEditor(category, index)}
+                  onDeleteCategory={(category, index) => {
+                    const count = countServicesInCategory(sortedServices, category, categoryOptions)
+                    setConfirmRemove({
+                      kind: 'category',
+                      index,
+                      title: '¿Quitar categoría?',
+                      description:
+                        count > 0
+                          ? `«${category.name}» tiene ${count} trámite${count === 1 ? '' : 's'} asignado${count === 1 ? '' : 's'}. Al quitarla, esos trámites quedarán sin categoría visible hasta reasignarlos.`
+                          : `Se eliminará «${category.name}» del borrador.`,
+                    })
+                  }}
+                />
+              )}
             </SectionCard>
 
             {/* Trámites */}
             <SectionCard
               id="tramites-disponibles"
               title="Trámites del directorio"
-              description="Las tarjetas se ven igual que en el portal. «Ver más» abre el detalle; «Editar» modifica el trámite."
+              description="Las tarjetas se ven igual que en la página de cada categoría. «Ver más» abre el detalle; «Editar» modifica el trámite."
               rightSlot={
                 <AddChip
                   label="Nuevo trámite"

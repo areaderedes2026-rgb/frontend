@@ -7,6 +7,7 @@ export const ROUTES = {
   turismo: '/turismo',
   tourismPlaceDetail: (slug) => `/turismo/lugares/${slug}`,
   services: '/services',
+  serviceCategory: (slug) => `/services/categoria/${slug}`,
   events: '/eventos',
   government: '/gobierno/intendencia',
   governmentIntendencia: '/gobierno/intendencia',

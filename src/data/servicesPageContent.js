@@ -1,11 +1,17 @@
 import { ROUTES } from '../utils/constants.js'
+import {
+  DEFAULT_SERVICE_CATEGORIES,
+  findServiceCategory,
+  normalizeServiceCategories,
+  resolveServiceCategoryId,
+} from './serviceCategoriesContent.js'
 
 export const DEFAULT_MUNICIPAL_SERVICES = [
   {
     id: 1,
     slug: 'partidas',
     title: 'Solicitud de partidas',
-    category: 'Documentación',
+    category: 'svc-cat-documentacion',
     mode: 'Presencial y web',
     eta: '48 hs hábiles',
     summary:
@@ -27,7 +33,7 @@ export const DEFAULT_MUNICIPAL_SERVICES = [
     id: 2,
     slug: 'habilitacion-comercial',
     title: 'Habilitación comercial',
-    category: 'Comunidad',
+    category: 'svc-cat-comunidad',
     mode: 'Sin turno previo',
     eta: 'Dependiendo del trámite',
     summary:
@@ -60,7 +66,7 @@ export const DEFAULT_MUNICIPAL_SERVICES = [
     id: 3,
     slug: 'reclamo-urbano',
     title: 'Reclamos de servicios urbanos',
-    category: 'Obras',
+    category: 'svc-cat-obras',
     mode: 'Formulario web',
     eta: 'Respuesta inicial en 72 hs',
     summary:
@@ -82,7 +88,7 @@ export const DEFAULT_MUNICIPAL_SERVICES = [
     id: 4,
     slug: 'apoyo-social',
     title: 'Programas de asistencia social',
-    category: 'Comunidad',
+    category: 'svc-cat-comunidad',
     mode: 'Entrevista presencial',
     eta: 'Según evaluación',
     summary:
@@ -104,7 +110,7 @@ export const DEFAULT_MUNICIPAL_SERVICES = [
     id: 5,
     slug: 'turnos-salud',
     title: 'Turnos de salud municipal',
-    category: 'Salud',
+    category: 'svc-cat-salud',
     mode: 'Telefónico y presencial',
     eta: 'Asignación diaria',
     summary:
@@ -126,7 +132,7 @@ export const DEFAULT_MUNICIPAL_SERVICES = [
     id: 6,
     slug: 'licencia-conducir',
     title: 'Licencia de conducir',
-    category: 'Documentación',
+    category: 'svc-cat-documentacion',
     mode: 'Turno previo',
     eta: '1 a 3 días',
     summary:
@@ -155,7 +161,7 @@ export const DEFAULT_SERVICES_PAGE_CONTENT = {
   heroImageUrl:
     'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=1900&q=80',
   heroPrimaryLabel: 'Ver trámites',
-  heroPrimaryHref: '#tramites-disponibles',
+  heroPrimaryHref: '#categorias-tramites',
   heroSecondaryLabel: 'Atención al ciudadano',
   heroSecondaryHref: ROUTES.atencionCiudadano,
   steps: [
@@ -169,9 +175,9 @@ export const DEFAULT_SERVICES_PAGE_CONTENT = {
     'Mesa de entrada y áreas operativas',
     'Canales digitales en despliegue progresivo',
   ],
-  categories: ['Documentación', 'Comunidad', 'Obras', 'Salud'],
-  proceduresEyebrow: 'Trámites disponibles',
-  proceduresTitle: 'Directorio de servicios',
+  categories: DEFAULT_SERVICE_CATEGORIES.map((item) => ({ ...item })),
+  proceduresEyebrow: 'Categorías',
+  proceduresTitle: 'Elegí un área para ver sus trámites',
   faq: [
     {
       id: 'faq-1',
@@ -198,7 +204,7 @@ export const DEFAULT_SERVICES_PAGE_CONTENT = {
   finalSecondaryHref: ROUTES.news,
 }
 
-export function normalizeMunicipalService(raw, fallbackId = 0) {
+export function normalizeMunicipalService(raw, fallbackId = 0, categories = DEFAULT_SERVICE_CATEGORIES) {
   const summary = String(raw?.summary || '').trim()
   const description = String(raw?.description || '').trim() || summary
   const requirements = Array.isArray(raw?.requirements)
@@ -210,11 +216,15 @@ export function normalizeMunicipalService(raw, fallbackId = 0) {
   const linkUrl = String(raw?.linkUrl || raw?.linkHref || '').trim()
   const linkLabel = String(raw?.linkLabel || '').trim()
 
+  const category = resolveServiceCategoryId(raw?.category, categories)
+  const categoryRow = findServiceCategory(categories, { id: category })
+
   return {
     id: Number(raw?.id) || fallbackId,
     slug: String(raw?.slug || ''),
     title: String(raw?.title || ''),
-    category: String(raw?.category || ''),
+    category,
+    categoryName: categoryRow?.name || '',
     mode: String(raw?.mode || ''),
     eta: String(raw?.eta || ''),
     summary: summary || description.slice(0, 280),
@@ -242,17 +252,16 @@ export function mergeServicesPageContent(base, remote) {
       Array.isArray(remote.scheduleLines) && remote.scheduleLines.length
         ? remote.scheduleLines
         : base.scheduleLines,
-    categories:
-      Array.isArray(remote.categories) && remote.categories.length
-        ? remote.categories
-        : base.categories,
+    categories: normalizeServiceCategories(
+      remote.categories?.length ? remote.categories : base.categories,
+      DEFAULT_SERVICE_CATEGORIES,
+    ),
     faq: Array.isArray(remote.faq) && remote.faq.length ? remote.faq : base.faq,
   }
 }
 
 export function buildServiceCategories(content) {
-  const cats = Array.isArray(content?.categories) ? content.categories.filter(Boolean) : []
-  return ['Todos', ...cats]
+  return normalizeServiceCategories(content?.categories)
 }
 
 /** Filtra trámites por texto libre (título, resumen, categoría, requisitos, etc.). */
@@ -268,6 +277,7 @@ export function filterMunicipalServicesByQuery(services, query) {
       service?.summary,
       service?.description,
       service?.category,
+      service?.categoryName,
       service?.mode,
       service?.eta,
       ...(Array.isArray(service?.requirements) ? service.requirements : []),

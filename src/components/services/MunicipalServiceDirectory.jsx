@@ -50,7 +50,9 @@ export function MunicipalServiceCard({ service, onVerMas, className = '' }) {
       className={`group flex h-full min-h-[280px] flex-col rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-5 shadow-sm ring-1 ring-[#1a1d24]/5 transition duration-300 hover:-translate-y-1 hover:border-sky-200/80 hover:shadow-lg hover:shadow-sky-500/10 ${className}`.trim()}
     >
       <div className="flex flex-wrap gap-2">
-        {service?.category ? <ServiceBadge>{service.category}</ServiceBadge> : null}
+        {service?.categoryName || service?.category ? (
+          <ServiceBadge>{service.categoryName || service.category}</ServiceBadge>
+        ) : null}
         {service?.mode ? <ServiceBadge>{service.mode}</ServiceBadge> : null}
       </div>
       <h3 className="mt-3 text-lg font-bold tracking-tight text-[#171b22]">{service?.title}</h3>
@@ -99,7 +101,9 @@ export function MunicipalServiceDetailModal({ open, service, onClose }) {
     <Modal open={open} onClose={onClose} size="xlarge" title={service.title || 'Detalle del trámite'}>
       <div className="space-y-5">
         <div className="flex flex-wrap gap-2">
-          {service.category ? <ServiceBadge>{service.category}</ServiceBadge> : null}
+          {service.categoryName || service.category ? (
+            <ServiceBadge>{service.categoryName || service.category}</ServiceBadge>
+          ) : null}
           {service.mode ? <ServiceBadge>{service.mode}</ServiceBadge> : null}
         </div>
 

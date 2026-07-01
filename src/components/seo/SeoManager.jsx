@@ -99,6 +99,13 @@ function routeSeo(pathname) {
         'Consulta tramites, requisitos y servicios municipales de Trancas.',
     }
   }
+  if (pathname.startsWith('/services/categoria/')) {
+    return {
+      title: 'Tramites por categoria | Municipalidad de Trancas',
+      description:
+        'Tramites y gestiones municipales organizados por area en Trancas.',
+    }
+  }
   if (pathname === '/atencion-ciudadano') {
     return {
       title: 'Atencion al ciudadano | Municipalidad de Trancas',

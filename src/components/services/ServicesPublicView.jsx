@@ -8,11 +8,12 @@ import {
   MunicipalServiceCard,
   MunicipalServiceDetailModal,
 } from './MunicipalServiceDirectory.jsx'
+import { ServiceCategoryGrid } from './ServiceCategoryGrid.jsx'
 import {
-  buildServiceCategories,
   filterMunicipalServicesByQuery,
   normalizeMunicipalService,
 } from '../../data/servicesPageContent.js'
+import { normalizeServiceCategories } from '../../data/serviceCategoriesContent.js'
 import { ROUTES } from '../../utils/constants.js'
 
 function resolveHref(href) {
@@ -23,47 +24,36 @@ function resolveHref(href) {
 }
 
 export function ServicesPublicView({ content, services = [], previewMode = false }) {
-  const [category, setCategory] = useState('Todos')
   const [searchQuery, setSearchQuery] = useState('')
   const [detailService, setDetailService] = useState(null)
   const faqList = Array.isArray(content?.faq) ? content.faq : []
   const [openFaq, setOpenFaq] = useState(faqList[0]?.id || '')
 
-  const categories = useMemo(() => buildServiceCategories(content), [content])
+  const categories = useMemo(
+    () => normalizeServiceCategories(content?.categories),
+    [content?.categories],
+  )
   const activeServices = useMemo(
     () =>
       [...services]
         .filter((item) => item.isActive !== false)
-        .map((item, index) => normalizeMunicipalService(item, index + 1))
+        .map((item, index) => normalizeMunicipalService(item, index + 1, categories))
         .sort((a, b) => (Number(a.sortOrder) || 0) - (Number(b.sortOrder) || 0)),
-    [services],
+    [services, categories],
   )
 
   const trimmedSearch = searchQuery.trim()
   const isSearching = Boolean(trimmedSearch)
 
-  const visible = useMemo(() => {
-    let list = activeServices
-    if (isSearching) {
-      list = filterMunicipalServicesByQuery(list, trimmedSearch)
-    } else if (category !== 'Todos') {
-      list = list.filter((item) => item.category === category)
-    }
-    return list
-  }, [activeServices, category, isSearching, trimmedSearch])
+  const searchResults = useMemo(() => {
+    if (!isSearching) return []
+    return filterMunicipalServicesByQuery(activeServices, trimmedSearch)
+  }, [activeServices, isSearching, trimmedSearch])
 
   function scrollToDirectory() {
     if (previewMode) return
-    document.getElementById('tramites-disponibles')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
-
-  function handleSearchSubmit() {
-    scrollToDirectory()
-  }
-
-  function handleCategoryChange(next) {
-    setCategory(next)
-    setSearchQuery('')
+    const target = isSearching ? 'resultados-busqueda' : 'categorias-tramites'
+    document.getElementById(target)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
   return (
@@ -86,7 +76,7 @@ export function ServicesPublicView({ content, services = [], previewMode = false
         searchPlaceholder={content?.heroSearchPlaceholder || '¿Qué trámite estás buscando?'}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        onSearchSubmit={handleSearchSubmit}
+        onSearchSubmit={scrollToDirectory}
         previewMode={previewMode}
       />
 
@@ -126,50 +116,43 @@ export function ServicesPublicView({ content, services = [], previewMode = false
           </article>
         </RevealOnScroll>
 
-        <section id="tramites-disponibles" className="mt-10 scroll-mt-[calc(var(--navbar-h,5rem)+1rem)] sm:mt-12">
+        <section id="categorias-tramites" className="mt-10 scroll-mt-[calc(var(--navbar-h,5rem)+1rem)] sm:mt-12">
           <RevealOnScroll variant="slow">
-            <div className="mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-800">
-                  {content?.proceduresEyebrow || 'Trámites disponibles'}
-                </p>
-                <h2 className="mt-2 font-serif text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
-                  {content?.proceduresTitle || 'Directorio de servicios'}
-                </h2>
-                {isSearching ? (
+            <ServiceCategoryGrid
+              categories={categories}
+              services={activeServices}
+              eyebrow={content?.proceduresEyebrow || 'Categorías'}
+              title={content?.proceduresTitle || 'Elegí un área para ver sus trámites'}
+              previewMode={previewMode}
+            />
+          </RevealOnScroll>
+        </section>
+
+        {isSearching ? (
+          <section id="resultados-busqueda" className="mt-10 scroll-mt-[calc(var(--navbar-h,5rem)+1rem)] sm:mt-12">
+            <RevealOnScroll variant="slow">
+              <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-800">
+                    Resultados de búsqueda
+                  </p>
+                  <h2 className="mt-2 font-serif text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
+                    Trámites encontrados
+                  </h2>
                   <p className="mt-2 text-sm text-[#4b505a]">
-                    {visible.length === 0 ? (
+                    {searchResults.length === 0 ? (
                       <>
                         No encontramos trámites para{' '}
                         <span className="font-semibold text-[#171b22]">«{trimmedSearch}»</span>.
                       </>
                     ) : (
                       <>
-                        {visible.length} resultado{visible.length === 1 ? '' : 's'} para{' '}
+                        {searchResults.length} resultado{searchResults.length === 1 ? '' : 's'} para{' '}
                         <span className="font-semibold text-[#171b22]">«{trimmedSearch}»</span>.
                       </>
                     )}
                   </p>
-                ) : null}
-              </div>
-              {!isSearching ? (
-                <div className="flex flex-wrap gap-2">
-                  {categories.map((item) => (
-                    <button
-                      key={item}
-                      type="button"
-                      onClick={() => handleCategoryChange(item)}
-                      className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                        item === category
-                          ? 'bg-[#171b22] text-white'
-                          : 'border border-[#d8d5cd] bg-white text-[#3e434d] hover:border-sky-200 hover:text-[#171b22]'
-                      }`}
-                    >
-                      {item}
-                    </button>
-                  ))}
                 </div>
-              ) : (
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
@@ -177,43 +160,30 @@ export function ServicesPublicView({ content, services = [], previewMode = false
                 >
                   Limpiar búsqueda
                 </button>
-              )}
-            </div>
-          </RevealOnScroll>
+              </div>
+            </RevealOnScroll>
 
-          {visible.length === 0 ? (
-            <div className="rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-6 text-center">
-              <p className="text-sm text-[#4b505a]">
-                {isSearching
-                  ? 'Probá con otra palabra o revisá todas las categorías.'
-                  : 'No hay trámites publicados en esta categoría.'}
-              </p>
-              {isSearching ? (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl bg-[#171b22] px-4 text-sm font-semibold text-white transition hover:bg-[#222831]"
-                >
-                  Ver todos los trámites
-                </button>
-              ) : null}
-            </div>
-          ) : (
-            <ul className="grid items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {visible.map((item, idx) => (
-                <li key={item.id || item.slug} className="h-full">
-                  <RevealOnScroll variant="newsCardSlow" delayMs={previewMode ? 0 : idx * 80} className="h-full">
-                    <MunicipalServiceCard
-                      service={item}
-                      onVerMas={setDetailService}
-                      className="h-full"
-                    />
-                  </RevealOnScroll>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+            {searchResults.length === 0 ? (
+              <div className="rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-6 text-center text-sm text-[#4b505a]">
+                Probá con otra palabra o explorá las categorías.
+              </div>
+            ) : (
+              <ul className="grid items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {searchResults.map((item, idx) => (
+                  <li key={item.id || item.slug} className="h-full">
+                    <RevealOnScroll variant="newsCardSlow" delayMs={previewMode ? 0 : idx * 70} className="h-full">
+                      <MunicipalServiceCard
+                        service={item}
+                        onVerMas={setDetailService}
+                        className="h-full"
+                      />
+                    </RevealOnScroll>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        ) : null}
 
         <section className="mt-12 grid gap-8 lg:mt-16 lg:grid-cols-12 lg:gap-10">
           <RevealOnScroll variant="slow" className="lg:col-span-5">

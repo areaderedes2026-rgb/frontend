@@ -32,7 +32,23 @@ function mapContent(value) {
       ? value.scheduleLines.map((x) => String(x || ''))
       : [],
     categories: Array.isArray(value?.categories)
-      ? value.categories.map((x) => String(x || ''))
+      ? value.categories.map((item, index) => {
+          if (item == null) return null
+          if (typeof item === 'string') {
+            const name = String(item || '').trim()
+            if (!name) return null
+            return { name }
+          }
+          if (typeof item !== 'object') return null
+          return {
+            id: String(item?.id || '').trim(),
+            slug: String(item?.slug || '').trim(),
+            name: String(item?.name || '').trim(),
+            icon: String(item?.icon || '').trim(),
+            sortOrder: Number(item?.sortOrder) || (index + 1) * 10,
+            enabled: item?.enabled !== false,
+          }
+        }).filter(Boolean)
       : [],
     proceduresEyebrow: String(value?.proceduresEyebrow || ''),
     proceduresTitle: String(value?.proceduresTitle || ''),
