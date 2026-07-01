@@ -1,5 +1,10 @@
+import {
+  normalizeHistoryStorySections,
+  storySectionsMatchQuery,
+} from './historyStorySections.js'
+
 export const DEFAULT_HISTORY_SECTION_VISIBILITY = {
-  introStory: true,
+  storySections: true,
   legacyCards: true,
   documentary: true,
   closing: true,
@@ -12,6 +17,9 @@ export const DEFAULT_HISTORY_DOCUMENTARY = {
   chapters: [],
 }
 
+const DEFAULT_INTRO_STORY =
+  'Trancas es una tierra de memoria profunda, forjada por generaciones de familias que hicieron del trabajo, la solidaridad y la identidad cultural un rasgo distintivo del norte tucumano. A lo largo de su historia, el territorio creció como punto de encuentro entre caminos productivos, tradiciones rurales y expresiones comunitarias que todavía hoy sostienen su vida cotidiana. Cada etapa dejó huellas en sus barrios, en sus instituciones y en la manera en que vecinos y vecinas construyen pertenencia: desde las primeras formas de organización local hasta la consolidación de un perfil social, cultural y económico propio. En la actualidad, Trancas continúa esa trayectoria con una mirada puesta en el futuro, integrando desarrollo, turismo, patrimonio e innovación pública, sin perder el vínculo con sus raíces ni con los relatos que dieron forma a su historia.'
+
 export const DEFAULT_HISTORY_CONTENT = {
   heroBadge: 'Identidad tucumana',
   heroTitle: 'Historia de Trancas',
@@ -20,10 +28,9 @@ export const DEFAULT_HISTORY_CONTENT = {
   heroSearchPlaceholder: '¿Qué querés conocer de Trancas?',
   heroImageUrl:
     'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1800&q=80',
-  introStory:
-    'Trancas es una tierra de memoria profunda, forjada por generaciones de familias que hicieron del trabajo, la solidaridad y la identidad cultural un rasgo distintivo del norte tucumano. A lo largo de su historia, el territorio creció como punto de encuentro entre caminos productivos, tradiciones rurales y expresiones comunitarias que todavía hoy sostienen su vida cotidiana. Cada etapa dejó huellas en sus barrios, en sus instituciones y en la manera en que vecinos y vecinas construyen pertenencia: desde las primeras formas de organización local hasta la consolidación de un perfil social, cultural y económico propio. En la actualidad, Trancas continúa esa trayectoria con una mirada puesta en el futuro, integrando desarrollo, turismo, patrimonio e innovación pública, sin perder el vínculo con sus raíces ni con los relatos que dieron forma a su historia.',
-  ctaPrimaryLabel: 'Leer resumen histórico',
-  ctaPrimaryHref: '#resumen-historia',
+  storySections: normalizeHistoryStorySections(null, DEFAULT_INTRO_STORY),
+  ctaPrimaryLabel: 'Leer la historia',
+  ctaPrimaryHref: '#historia-secciones',
   ctaSecondaryLabel: 'Puntos turísticos',
   ctaSecondaryHref: '/turismo',
   legacyItems: [
@@ -64,7 +71,7 @@ export const DEFAULT_HISTORY_CONTENT = {
   tourismSpots: [],
   closingTitle: 'Trancas: memoria, cultura y futuro',
   closingText:
-    'Esta sección reúne hitos históricos y relatos para que vecinos y visitantes conozcan la identidad local. Explorá el documental, el resumen y los contenidos que iremos sumando.',
+    'Esta sección reúne hitos históricos y relatos para que vecinos y visitantes conozcan la identidad local. Explorá el documental, las secciones narrativas y los contenidos que iremos sumando.',
 }
 
 function mergeList(baseList, incomingList, mapper) {
@@ -75,8 +82,9 @@ function mergeList(baseList, incomingList, mapper) {
 export function normalizeHistorySectionVisibility(raw) {
   const base = DEFAULT_HISTORY_SECTION_VISIBILITY
   if (!raw || typeof raw !== 'object') return { ...base }
+  const storyVisible = raw.storySections !== false && raw.introStory !== false
   return {
-    introStory: raw.introStory !== false,
+    storySections: storyVisible,
     legacyCards: raw.legacyCards !== false,
     documentary: raw.documentary !== false,
     closing: raw.closing !== false,
@@ -85,6 +93,7 @@ export function normalizeHistorySectionVisibility(raw) {
 
 export function isHistorySectionVisible(content, key) {
   const visibility = normalizeHistorySectionVisibility(content?.sectionVisibility)
+  if (key === 'introStory') return visibility.storySections !== false
   return visibility[key] !== false
 }
 
@@ -122,8 +131,14 @@ export function normalizeHistoryDocumentary(raw, fallback = DEFAULT_HISTORY_DOCU
   }
 }
 
+export { normalizeHistoryStorySections }
+
 export function mergeHistoryContent(base, remote) {
   if (!remote || typeof remote !== 'object') return { ...base }
+  const storySections = normalizeHistoryStorySections(
+    remote.storySections,
+    remote.introStory || DEFAULT_INTRO_STORY,
+  )
   return {
     ...base,
     heroBadge: remote.heroBadge || base.heroBadge,
@@ -133,7 +148,7 @@ export function mergeHistoryContent(base, remote) {
       remote.heroSearchPlaceholder ?? base.heroSearchPlaceholder ?? '¿Qué querés conocer de Trancas?',
     ),
     heroImageUrl: remote.heroImageUrl || base.heroImageUrl,
-    introStory: remote.introStory || base.introStory,
+    storySections: storySections.length > 0 ? storySections : base.storySections,
     ctaPrimaryLabel: remote.ctaPrimaryLabel || base.ctaPrimaryLabel,
     ctaPrimaryHref: remote.ctaPrimaryHref || base.ctaPrimaryHref,
     ctaSecondaryLabel: remote.ctaSecondaryLabel || base.ctaSecondaryLabel,
@@ -171,7 +186,7 @@ export function mergeHistoryContent(base, remote) {
   }
 }
 
-/** Filtra contenido de historia por texto libre (resumen, tarjetas, documental, cierre). */
+/** Filtra contenido de historia por texto libre (secciones, tarjetas, documental, cierre). */
 export function filterHistoryByQuery(content, query) {
   const q = String(query || '')
     .trim()
@@ -179,6 +194,10 @@ export function filterHistoryByQuery(content, query) {
   if (!q) return { hasMatches: true, sections: {} }
 
   const documentary = normalizeHistoryDocumentary(content?.documentary)
+  const storySections = storySectionsMatchQuery(
+    normalizeHistoryStorySections(content?.storySections, content?.introStory),
+    q,
+  )
   const legacyItems = (content?.legacyItems || []).filter((item) => {
     const hay = [item?.title, item?.text].join(' ').toLowerCase()
     return hay.includes(q)
@@ -188,7 +207,6 @@ export function filterHistoryByQuery(content, query) {
     return hay.includes(q)
   })
 
-  const introMatch = String(content?.introStory || '').toLowerCase().includes(q)
   const documentaryMetaMatch =
     documentary.title.toLowerCase().includes(q) || documentary.description.toLowerCase().includes(q)
   const closingMatch =
@@ -196,7 +214,7 @@ export function filterHistoryByQuery(content, query) {
     String(content?.closingText || '').toLowerCase().includes(q)
 
   const hasMatches =
-    introMatch ||
+    storySections.length > 0 ||
     legacyItems.length > 0 ||
     documentaryMetaMatch ||
     chapters.length > 0 ||
@@ -205,7 +223,7 @@ export function filterHistoryByQuery(content, query) {
   return {
     hasMatches,
     sections: {
-      introMatch,
+      storySections,
       legacyItems,
       documentaryMetaMatch,
       chapters,

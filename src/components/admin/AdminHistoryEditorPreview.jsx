@@ -6,12 +6,18 @@ import { SingleImageUploadField } from './SingleImageUploadField.jsx'
 import { AdminFloatingSaveBar } from './AdminFloatingSaveBar.jsx'
 import { HistoryHeroHeader } from '../history/HistoryHeroHeader.jsx'
 import { HistoryDocumentarySection } from '../history/HistoryDocumentarySection.jsx'
+import { HistoryStorySections } from '../history/HistoryStorySections.jsx'
+import {
+  createEmptyStorySectionDraft,
+  HistoryStorySectionEditorForm,
+} from './HistoryStorySectionEditorForm.jsx'
 import { inputClass, labelClass, textareaClass } from '../ui/formStyles.js'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
 import { ROUTES } from '../../utils/constants.js'
 import {
   normalizeHistoryDocumentary,
   normalizeHistorySectionVisibility,
+  normalizeHistoryStorySections,
 } from '../../data/historyContent.js'
 
 const ACTION_BTN_BASE =
@@ -238,6 +244,7 @@ export function AdminHistoryEditorPreview({
 
   const sectionVisibility = normalizeHistorySectionVisibility(form.sectionVisibility)
   const documentary = normalizeHistoryDocumentary(form.documentary)
+  const storySections = normalizeHistoryStorySections(form.storySections)
 
   function setSectionVisible(key, visible) {
     setForm((prev) => ({
@@ -277,16 +284,64 @@ export function AdminHistoryEditorPreview({
     }))
   }
 
-  function applyIntro(draft) {
-    setForm((prev) => ({ ...prev, introStory: String(draft.introStory || '') }))
-  }
-
   function applyClosing(draft) {
     setForm((prev) => ({
       ...prev,
       closingTitle: String(draft.closingTitle || '').trim(),
       closingText: String(draft.closingText || ''),
     }))
+  }
+
+  function upsertStorySection(index, draft) {
+    setForm((prev) => {
+      const list = Array.isArray(prev.storySections) ? [...prev.storySections] : []
+      const paragraphs = (Array.isArray(draft.paragraphs) ? draft.paragraphs : [])
+        .map((p) => String(p || '').trim())
+        .filter(Boolean)
+      const images = (Array.isArray(draft.images) ? draft.images : [])
+        .map((image, imageIndex) => {
+          const imageUrl = String(image?.imageUrl || '').trim()
+          const caption = String(image?.caption || '').trim()
+          if (!imageUrl && !caption) return null
+          return {
+            id: String(image?.id || '').trim() || `hist-img-${Date.now()}-${imageIndex}`,
+            imageUrl,
+            caption,
+            sortOrder: Number.isFinite(Number(image?.sortOrder))
+              ? Number(image.sortOrder)
+              : (imageIndex + 1) * 10,
+          }
+        })
+        .filter(Boolean)
+      const item = {
+        id: String(draft.id || '').trim() || `story-${Date.now()}`,
+        title: String(draft.title || '').trim(),
+        subtitle: String(draft.subtitle || '').trim(),
+        paragraphs: paragraphs.length > 0 ? paragraphs : [],
+        images,
+        sortOrder: Number.isFinite(Number(draft.sortOrder))
+          ? Number(draft.sortOrder)
+          : (list.length + 1) * 10,
+      }
+      if (index === null || index === undefined) list.push(item)
+      else list[index] = item
+      list.sort((a, b) => (Number(a.sortOrder) || 0) - (Number(b.sortOrder) || 0))
+      return { ...prev, storySections: list }
+    })
+  }
+
+  function removeStorySection(index) {
+    setForm((prev) => {
+      const list = Array.isArray(prev.storySections) ? [...prev.storySections] : []
+      list.splice(index, 1)
+      return { ...prev, storySections: list }
+    })
+  }
+
+  function nextStorySectionSortOrder() {
+    const list = Array.isArray(form.storySections) ? form.storySections : []
+    const max = list.reduce((acc, item) => Math.max(acc, Number(item?.sortOrder) || 0), 0)
+    return max + 10
   }
 
   function upsertLegacy(index, draft) {
@@ -370,8 +425,8 @@ export function AdminHistoryEditorPreview({
       case 'identity':
         applyIdentity(draft)
         break
-      case 'intro':
-        applyIntro(draft)
+      case 'storySection':
+        upsertStorySection(editor.index, draft)
         break
       case 'legacy':
         upsertLegacy(editor.index, draft)
@@ -394,6 +449,7 @@ export function AdminHistoryEditorPreview({
   function handleConfirmRemove() {
     if (!confirmRemove) return
     if (confirmRemove.kind === 'legacy') removeLegacy(confirmRemove.index)
+    if (confirmRemove.kind === 'storySection') removeStorySection(confirmRemove.index)
     if (confirmRemove.kind === 'documentaryChapter') removeChapter(confirmRemove.index)
     setConfirmRemove(null)
   }
@@ -402,7 +458,7 @@ export function AdminHistoryEditorPreview({
     if (!editor) return ''
     const labels = {
       identity: 'Editar portada y CTAs',
-      intro: 'Editar resumen histórico',
+      storySection: editor.index === null ? 'Nueva sección narrativa' : 'Editar sección narrativa',
       legacy: editor.index === null ? 'Nueva tarjeta' : 'Editar tarjeta',
       closing: 'Editar bloque de cierre',
       documentaryMeta: 'Editar documental',
@@ -462,7 +518,13 @@ export function AdminHistoryEditorPreview({
         open={editor != null}
         onClose={closeEditor}
         loading={saving}
-        size={editor?.kind === 'identity' || editor?.kind === 'intro' || editor?.kind === 'documentaryMeta' ? 'wide' : 'default'}
+        size={
+          editor?.kind === 'identity' ||
+          editor?.kind === 'storySection' ||
+          editor?.kind === 'documentaryMeta'
+            ? 'wide'
+            : 'default'
+        }
         title={editorTitle}
         description="Los cambios quedarán pendientes hasta que toques «Guardar cambios» en el pie de la página."
       >
@@ -566,34 +628,102 @@ export function AdminHistoryEditorPreview({
           </div>
 
           <div className="space-y-10 p-5 sm:p-7 lg:p-10">
-            {/* Resumen */}
+            {/* Secciones narrativas */}
             <SectionCard
-              id="resumen-historia"
-              title="Resumen histórico"
-              description="Texto largo que se muestra al inicio de la página pública."
+              id="secciones-historia"
+              title="Secciones de la historia"
+              description="Capítulos ordenables con título, subtítulo, párrafos e imágenes (ej. inicios, ferrocarril, instituciones)."
               variant="plain"
-              visible={sectionVisibility.introStory}
-              onToggleVisible={(visible) => setSectionVisible('introStory', visible)}
+              visible={sectionVisibility.storySections}
+              onToggleVisible={(visible) => setSectionVisible('storySections', visible)}
               saving={saving}
               rightSlot={
-                <EditChip
-                  label="Editar"
+                <AddChip
+                  label="Agregar sección"
                   onClick={() =>
-                    openEditor('intro', null, { introStory: form.introStory || '' })
+                    openEditor(
+                      'storySection',
+                      null,
+                      createEmptyStorySectionDraft(nextStorySectionSortOrder()),
+                    )
                   }
                   disabled={saving}
                 />
               }
             >
-              <div className="rounded-3xl border border-[#ddd7ca] bg-[#f8f7f3] p-6 sm:p-8">
-                {form.introStory ? (
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-[#3e434d] sm:text-base">
-                    {form.introStory}
-                  </p>
-                ) : (
-                  <p className="text-sm italic text-slate-500">(Sin resumen cargado)</p>
-                )}
-              </div>
+              {storySections.length === 0 ? (
+                <EmptyHint
+                  onAdd={() =>
+                    openEditor(
+                      'storySection',
+                      null,
+                      createEmptyStorySectionDraft(nextStorySectionSortOrder()),
+                    )
+                  }
+                  addLabel="Agregar sección"
+                >
+                  Todavía no hay secciones narrativas. Creá la primera para contar la historia por etapas.
+                </EmptyHint>
+              ) : (
+                <>
+                  <HistoryStorySections sections={storySections} previewMode />
+                  <ul className="mt-6 space-y-2 border-t border-[#ddd7ca] pt-5">
+                    {storySections.map((section, idx) => (
+                      <li
+                        key={section.id || `story-admin-${idx}`}
+                        className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200/80 bg-white px-3 py-2.5"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-slate-900">
+                            {section.title}
+                          </p>
+                          <p className="truncate text-xs text-slate-500">
+                            Orden {section.sortOrder} · {section.paragraphs?.length || 0} párrafo(s)
+                            · {section.images?.length || 0} imagen(es)
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 gap-1.5">
+                          <EditChip
+                            label="Editar"
+                            onClick={() => {
+                              const formSection = (form.storySections || [])[idx] || section
+                              openEditor('storySection', idx, {
+                                ...formSection,
+                                paragraphs:
+                                  formSection.paragraphs?.length > 0
+                                    ? [...formSection.paragraphs]
+                                    : [''],
+                                images: (formSection.images || []).map((image) => ({ ...image })),
+                              })
+                            }}
+                            disabled={saving}
+                          />
+                          <DeleteChip
+                            label="Quitar"
+                            onClick={() =>
+                              setConfirmRemove({
+                                kind: 'storySection',
+                                index: idx,
+                                title: '¿Quitar esta sección?',
+                                description: (
+                                  <>
+                                    Vas a quitar{' '}
+                                    <span className="font-semibold">
+                                      «{section.title || 'sin título'}»
+                                    </span>{' '}
+                                    del borrador.
+                                  </>
+                                ),
+                              })
+                            }
+                            disabled={saving}
+                          />
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
             </SectionCard>
 
             {/* Tarjetas introductorias */}
@@ -905,8 +1035,14 @@ function EditorBody({ editor, draft, setDraftField, saving }) {
   switch (editor.kind) {
     case 'identity':
       return <IdentityForm draft={draft} setDraftField={setDraftField} saving={saving} />
-    case 'intro':
-      return <IntroForm draft={draft} setDraftField={setDraftField} saving={saving} />
+    case 'storySection':
+      return (
+        <HistoryStorySectionEditorForm
+          draft={draft}
+          setDraftField={setDraftField}
+          saving={saving}
+        />
+      )
     case 'legacy':
       return <LegacyForm draft={draft} setDraftField={setDraftField} saving={saving} />
     case 'closing':
@@ -982,7 +1118,7 @@ function IdentityForm({ draft, setDraftField, saving }) {
             value={draft.ctaPrimaryLabel || ''}
             onChange={(e) => setDraftField('ctaPrimaryLabel', e.target.value)}
             disabled={saving}
-            placeholder="Ej. Leer resumen histórico"
+            placeholder="Ej. Leer la historia"
           />
         </label>
         <label className={labelClass}>
@@ -992,7 +1128,7 @@ function IdentityForm({ draft, setDraftField, saving }) {
             value={draft.ctaPrimaryHref || ''}
             onChange={(e) => setDraftField('ctaPrimaryHref', e.target.value)}
             disabled={saving}
-            placeholder="#resumen-historia"
+            placeholder="#historia-secciones"
           />
         </label>
       </fieldset>
@@ -1022,23 +1158,6 @@ function IdentityForm({ draft, setDraftField, saving }) {
         </label>
       </fieldset>
     </div>
-  )
-}
-
-function IntroForm({ draft, setDraftField, saving }) {
-  return (
-    <label className={labelClass}>
-      Resumen histórico (texto largo)
-      <textarea
-        className={`${textareaClass} min-h-60`}
-        value={draft.introStory || ''}
-        onChange={(e) => setDraftField('introStory', e.target.value)}
-        disabled={saving}
-      />
-      <span className="mt-1 text-xs text-slate-500">
-        Podés usar saltos de línea para separar párrafos.
-      </span>
-    </label>
   )
 }
 

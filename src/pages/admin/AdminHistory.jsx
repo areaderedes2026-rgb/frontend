@@ -8,6 +8,7 @@ import {
   mergeHistoryContent,
   normalizeHistoryDocumentary,
   normalizeHistorySectionVisibility,
+  normalizeHistoryStorySections,
 } from '../../data/historyContent.js'
 import { useContentEditorConcurrencyConflict } from '../../hooks/useContentEditorConcurrencyConflict.jsx'
 import {
@@ -17,6 +18,22 @@ import {
 import { fetchTourismPlacesAdmin } from '../../services/tourismPlacesService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
 
+function mapStorySectionsToForm(content) {
+  return normalizeHistoryStorySections(content?.storySections, content?.introStory).map((section) => ({
+    id: section.id || '',
+    title: section.title || '',
+    subtitle: section.subtitle || '',
+    paragraphs: section.paragraphs?.length ? [...section.paragraphs] : [''],
+    images: (section.images || []).map((image) => ({
+      id: image.id || '',
+      imageUrl: image.imageUrl || '',
+      caption: image.caption || '',
+      sortOrder: Number(image.sortOrder) || 0,
+    })),
+    sortOrder: Number(section.sortOrder) || 0,
+  }))
+}
+
 function mapToForm(content) {
   const documentary = normalizeHistoryDocumentary(content?.documentary)
   return {
@@ -25,7 +42,7 @@ function mapToForm(content) {
     heroSubtitle: content.heroSubtitle || '',
     heroSearchPlaceholder: content.heroSearchPlaceholder || '',
     heroImageUrl: content.heroImageUrl || '',
-    introStory: content.introStory || '',
+    storySections: mapStorySectionsToForm(content),
     ctaPrimaryLabel: content.ctaPrimaryLabel || '',
     ctaPrimaryHref: content.ctaPrimaryHref || '',
     ctaSecondaryLabel: content.ctaSecondaryLabel || '',
@@ -62,7 +79,7 @@ function contentFormSnapshot(form) {
     heroSubtitle: form.heroSubtitle || '',
     heroSearchPlaceholder: form.heroSearchPlaceholder || '',
     heroImageUrl: form.heroImageUrl || '',
-    introStory: form.introStory || '',
+    storySections: form.storySections || [],
     ctaPrimaryLabel: form.ctaPrimaryLabel || '',
     ctaPrimaryHref: form.ctaPrimaryHref || '',
     ctaSecondaryLabel: form.ctaSecondaryLabel || '',
@@ -85,6 +102,45 @@ function cleanRows(rows, shape) {
       return out
     })
     .filter((row) => shape.some((key) => row[key]))
+}
+
+function cleanStorySections(sections) {
+  if (!Array.isArray(sections)) return []
+  return sections
+    .map((section, index) => {
+      const title = String(section?.title || '').trim()
+      if (!title) return null
+      const paragraphs = (Array.isArray(section?.paragraphs) ? section.paragraphs : [])
+        .map((p) => String(p || '').trim())
+        .filter(Boolean)
+      const images = (Array.isArray(section?.images) ? section.images : [])
+        .map((image, imageIndex) => {
+          const imageUrl = String(image?.imageUrl || '').trim()
+          const caption = String(image?.caption || '').trim()
+          if (!imageUrl && !caption) return null
+          return {
+            id: String(image?.id || '').trim() || `hist-img-${index + 1}-${imageIndex + 1}`,
+            imageUrl,
+            caption,
+            sortOrder: Number.isFinite(Number(image?.sortOrder))
+              ? Number(image.sortOrder)
+              : (imageIndex + 1) * 10,
+          }
+        })
+        .filter(Boolean)
+      return {
+        id: String(section?.id || '').trim() || `story-${index + 1}`,
+        title,
+        subtitle: String(section?.subtitle || '').trim(),
+        paragraphs,
+        images,
+        sortOrder: Number.isFinite(Number(section?.sortOrder))
+          ? Number(section.sortOrder)
+          : (index + 1) * 10,
+      }
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.sortOrder - b.sortOrder)
 }
 
 function cleanChapters(chapters) {
@@ -177,7 +233,7 @@ export function AdminHistory() {
       heroSubtitle: form.heroSubtitle.trim(),
       heroSearchPlaceholder: form.heroSearchPlaceholder.trim(),
       heroImageUrl: form.heroImageUrl.trim(),
-      introStory: form.introStory,
+      storySections: cleanStorySections(form.storySections),
       ctaPrimaryLabel: form.ctaPrimaryLabel.trim(),
       ctaPrimaryHref: form.ctaPrimaryHref.trim(),
       ctaSecondaryLabel: form.ctaSecondaryLabel.trim(),

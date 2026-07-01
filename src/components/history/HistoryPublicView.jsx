@@ -5,14 +5,15 @@ import { Container } from '../ui/Container.jsx'
 import { LinkButton } from '../ui/LinkButton.jsx'
 import { HistoryHeroHeader } from './HistoryHeroHeader.jsx'
 import { HistoryDocumentarySection } from './HistoryDocumentarySection.jsx'
+import { HistoryStorySections } from './HistoryStorySections.jsx'
 import {
   filterHistoryByQuery,
   isHistorySectionVisible,
   normalizeHistoryDocumentary,
+  normalizeHistoryStorySections,
 } from '../../data/historyContent.js'
 import { ROUTES } from '../../utils/constants.js'
 import {
-  HydrationBodyParagraphLines,
   HydrationLegacyCardBlock,
   HydrationSectionHeadingBlock,
 } from '../skeleton/PageHydrationSkeleton.jsx'
@@ -33,6 +34,11 @@ export function HistoryPublicView({
   const trimmedSearch = searchQuery.trim()
   const isSearching = Boolean(trimmedSearch)
 
+  const storySections = useMemo(
+    () => normalizeHistoryStorySections(content?.storySections, content?.introStory),
+    [content?.storySections, content?.introStory],
+  )
+
   const documentary = useMemo(
     () => normalizeHistoryDocumentary(content?.documentary),
     [content?.documentary],
@@ -43,10 +49,15 @@ export function HistoryPublicView({
     [content, trimmedSearch],
   )
 
-  const showIntro = isHistorySectionVisible(content, 'introStory')
+  const showStorySections = isHistorySectionVisible(content, 'storySections')
   const showLegacy = isHistorySectionVisible(content, 'legacyCards')
   const showDocumentary = isHistorySectionVisible(content, 'documentary')
   const showClosing = isHistorySectionVisible(content, 'closing')
+
+  const visibleStorySections = useMemo(() => {
+    if (!isSearching) return storySections
+    return searchFilter.sections.storySections || []
+  }, [isSearching, searchFilter.sections.storySections, storySections])
 
   const legacyItems = useMemo(() => {
     const all = Array.isArray(content?.legacyItems) ? content.legacyItems : []
@@ -59,7 +70,8 @@ export function HistoryPublicView({
     return searchFilter.sections.chapters || []
   }, [documentary.chapters, isSearching, searchFilter.sections.chapters])
 
-  const showIntroBlock = showIntro && (!isSearching || searchFilter.sections.introMatch)
+  const showStoryBlock =
+    showStorySections && (!isSearching || visibleStorySections.length > 0)
   const showLegacyBlock = showLegacy && (!isSearching || legacyItems.length > 0)
   const showDocumentaryBlock =
     showDocumentary &&
@@ -69,15 +81,16 @@ export function HistoryPublicView({
   const showClosingBlock = showClosing && (!isSearching || searchFilter.sections.closingMatch)
 
   const hasVisibleContent =
-    showIntroBlock || showLegacyBlock || showDocumentaryBlock || showClosingBlock
+    showStoryBlock || showLegacyBlock || showDocumentaryBlock || showClosingBlock
 
   function scrollToContent() {
     if (previewMode) return
-    const target = isSearching ? 'resultados-busqueda-historia' : 'contenido-historia'
+    const target = isSearching ? 'resultados-busqueda-historia' : 'historia-secciones'
     document.getElementById(target)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
   const secondaryHref = resolveHref(content?.ctaSecondaryHref)
+  const primaryHref = resolveHref(content?.ctaPrimaryHref || '#historia-secciones')
 
   return (
     <section
@@ -113,7 +126,7 @@ export function HistoryPublicView({
         onSearchSubmit={scrollToContent}
         primaryCta={
           content?.ctaPrimaryLabel
-            ? { label: content.ctaPrimaryLabel, href: content.ctaPrimaryHref }
+            ? { label: content.ctaPrimaryLabel, href: primaryHref }
             : null
         }
         secondaryCta={
@@ -147,21 +160,12 @@ export function HistoryPublicView({
         {!isSearching || searchFilter.hasMatches ? (
           <article className="mt-8 overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm">
             <div className="space-y-10 p-5 sm:p-7 lg:p-10">
-              {showIntroBlock ? (
-                <RevealOnScroll variant="slow">
-                  <section
-                    id="resumen-historia"
-                    className="scroll-mt-32 rounded-3xl border border-[#ddd7ca] bg-[#f8f7f3] p-6 sm:p-8"
-                  >
-                    {loading ? (
-                      <HydrationBodyParagraphLines />
-                    ) : (
-                      <p className="whitespace-pre-wrap text-sm leading-relaxed text-[#3e434d] sm:text-base">
-                        {content?.introStory}
-                      </p>
-                    )}
-                  </section>
-                </RevealOnScroll>
+              {showStoryBlock ? (
+                <HistoryStorySections
+                  sections={visibleStorySections}
+                  loading={loading}
+                  previewMode={previewMode}
+                />
               ) : null}
 
               {showLegacyBlock ? (
@@ -223,7 +227,7 @@ export function HistoryPublicView({
                     )}
                     {!previewMode ? (
                       <div className="mt-5 flex flex-wrap gap-3">
-                        <LinkButton to="#resumen-historia">Volver al resumen</LinkButton>
+                        <LinkButton to="#historia-secciones">Volver a las secciones</LinkButton>
                         <Link
                           to={ROUTES.turismo}
                           className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#2a313b] bg-[#171b22] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#222831]"
@@ -238,7 +242,7 @@ export function HistoryPublicView({
 
               {!hasVisibleContent && isSearching ? (
                 <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-5 py-10 text-center text-sm text-slate-600">
-                  Probá con otras palabras o explorá el resumen y el documental sin filtro.
+                  Probá con otras palabras o explorá las secciones y el documental sin filtro.
                 </p>
               ) : null}
             </div>
