@@ -3,13 +3,14 @@ import { ServicesCategoryView } from '../components/services/ServicesCategoryVie
 
 export function ServicesCategoryPage() {
   const { categorySlug = '' } = useParams()
-  const { content, services } = useOutletContext()
+  const { content, services, contentReady } = useOutletContext()
 
   return (
     <ServicesCategoryView
       content={content}
       services={services}
       categorySlug={categorySlug}
+      contentReady={contentReady}
     />
   )
 }

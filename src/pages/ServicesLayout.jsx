@@ -4,14 +4,7 @@ import { isApiConfigured } from '../utils/apiConfig.js'
 
 export function ServicesLayout() {
   const { content, services, loading } = useMunicipalServicesPublicData()
+  const contentReady = !isApiConfigured() || !loading
 
-  if (loading && isApiConfigured()) {
-    return (
-      <div className="flex min-h-[50dvh] items-center justify-center px-4 py-16 text-sm text-slate-600">
-        Cargando servicios…
-      </div>
-    )
-  }
-
-  return <Outlet context={{ content, services }} />
+  return <Outlet context={{ content, services, contentReady }} />
 }

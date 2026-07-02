@@ -183,9 +183,11 @@ export function AreasIndex() {
       : undefined
 
   const heroProps = {
-    ...pageHeroToHeaderProps(pageContent, DEFAULT_AREAS_PAGE_HERO, { primaryHrefOverride }),
-    imageUrl: heroImage,
-    imageReady: pageContentHydrated,
+    ...(pageContentHydrated
+      ? pageHeroToHeaderProps(pageContent, DEFAULT_AREAS_PAGE_HERO, { primaryHrefOverride })
+      : {}),
+    imageUrl: pageContentHydrated ? heroImage : '',
+    contentReady: pageContentHydrated,
     searchQuery: directoryQuery,
     onSearchChange: setDirectoryQuery,
     onSearchSubmit: scrollToDirectory,

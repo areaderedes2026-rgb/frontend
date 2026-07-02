@@ -25,7 +25,12 @@ function resolveHref(href) {
   return value.startsWith('/') ? value : `/${value}`
 }
 
-export function ServicesPublicView({ content, services = [], previewMode = false }) {
+export function ServicesPublicView({
+  content,
+  services = [],
+  previewMode = false,
+  contentReady = true,
+}) {
   const [searchQuery, setSearchQuery] = useState('')
   const [detailService, setDetailService] = useState(null)
   const faqList = Array.isArray(content?.faq) ? content.faq : []
@@ -68,7 +73,8 @@ export function ServicesPublicView({ content, services = [], previewMode = false
   }
 
   const heroProps = {
-    ...servicesHeroToHeaderProps(content),
+    ...(contentReady || previewMode ? servicesHeroToHeaderProps(content) : {}),
+    contentReady: previewMode || contentReady,
     searchQuery,
     onSearchChange: setSearchQuery,
     onSearchSubmit: scrollToDirectory,

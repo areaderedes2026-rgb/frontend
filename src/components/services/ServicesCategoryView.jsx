@@ -25,6 +25,7 @@ export function ServicesCategoryView({
   services = [],
   categorySlug,
   previewMode = false,
+  contentReady = true,
 }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [detailService, setDetailService] = useState(null)
@@ -97,7 +98,8 @@ export function ServicesCategoryView({
       />
 
       <ServicesHeroHeader
-        {...servicesHeroToHeaderProps(content)}
+        {...(contentReady || previewMode ? servicesHeroToHeaderProps(content) : {})}
+        contentReady={previewMode || contentReady}
         title={category.name}
         badge=""
         subtitle=""

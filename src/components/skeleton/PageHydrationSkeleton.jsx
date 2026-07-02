@@ -7,9 +7,33 @@
 export function HydrationHeroDarkBackdrop({ className = '' }) {
   return (
     <div
-      className={`absolute inset-0 animate-pulse bg-slate-700 ${className}`.trim()}
+      className={`absolute inset-0 animate-pulse bg-linear-to-br from-slate-800 via-slate-900 to-[#171b22] ${className}`.trim()}
       aria-hidden
     />
+  )
+}
+
+/**
+ * Portada de listados (Áreas, Noticias, Servicios) mientras hidrata la configuración del admin.
+ * Centrado: antetítulo, título, subtítulo, buscador y botones en placeholder.
+ */
+export function HydrationPageListHeroSkeleton({ className = '' }) {
+  return (
+    <div
+      className={`mx-auto w-full max-w-2xl animate-pulse ${className}`.trim()}
+      aria-busy="true"
+      aria-label="Cargando portada"
+    >
+      <div className="mx-auto h-3 w-36 rounded-full bg-white/30 sm:w-44" />
+      <div className="mx-auto mt-4 h-10 w-full max-w-xl rounded-lg bg-white/38 sm:h-11" />
+      <div className="mx-auto mt-3 h-4 w-full max-w-lg rounded bg-white/28" />
+      <div className="mx-auto mt-2 h-4 w-11/12 max-w-md rounded bg-white/22" />
+      <div className="mx-auto mt-8 h-[3.25rem] w-full rounded-2xl bg-white/18 ring-1 ring-white/20 sm:h-[3.5rem]" />
+      <div className="mx-auto mt-5 flex flex-wrap justify-center gap-3">
+        <div className="h-11 w-32 rounded-xl bg-white/24 sm:w-36" />
+        <div className="h-11 w-32 rounded-xl bg-white/14 sm:w-36" />
+      </div>
+    </div>
   )
 }
 

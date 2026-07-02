@@ -1,10 +1,7 @@
 import { useId } from 'react'
 import { Link } from 'react-router-dom'
-import { Container } from '../ui/Container.jsx'
 import { LinkButton } from '../ui/LinkButton.jsx'
-import { HydrationHeroDarkBackdrop } from '../skeleton/PageHydrationSkeleton.jsx'
-import { resolveMediaUrl } from '../../utils/imageUrl.js'
-import { heroOverlayGradientStyle, normalizeHeroOverlayOpacity } from '../../utils/heroOverlay.js'
+import { PageListHeroBackdrop } from '../shared/PageListHeroBackdrop.jsx'
 
 function SearchIcon({ className = 'h-5 w-5' }) {
   return (
@@ -26,7 +23,7 @@ export function AreasHeroHeader({
   title = 'Todas las áreas en un solo lugar',
   subtitle = '',
   imageUrl = '',
-  imageReady = true,
+  contentReady = true,
   overlayOpacity = 65,
   searchPlaceholder = 'Buscar por nombre, slug o descripción…',
   searchQuery = '',
@@ -40,8 +37,6 @@ export function AreasHeroHeader({
   className = '',
 }) {
   const inputId = useId()
-  const heroImage = imageUrl ? resolveMediaUrl(imageUrl) || imageUrl : ''
-  const overlay = normalizeHeroOverlayOpacity(overlayOpacity)
 
   function handleSubmit(e) {
     e.preventDefault()
@@ -49,53 +44,28 @@ export function AreasHeroHeader({
   }
 
   return (
-    <header
-      className={`relative overflow-hidden border-b border-white/10 bg-[#171b22] ${className}`.trim()}
+    <PageListHeroBackdrop
+      contentReady={contentReady}
+      previewMode={previewMode}
+      imageUrl={imageUrl}
+      overlayOpacity={overlayOpacity}
+      className={className}
     >
-      {!imageReady ? (
-        <HydrationHeroDarkBackdrop />
-      ) : heroImage ? (
-        <img
-          src={heroImage}
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover object-center"
-          loading={previewMode ? 'lazy' : 'eager'}
-          decoding="async"
-        />
-      ) : (
-        <div
-          className="absolute inset-0 bg-linear-to-br from-slate-800 via-slate-900 to-[#171b22]"
-          aria-hidden
-        />
-      )}
-      <div
-        className="absolute inset-0"
-        style={heroOverlayGradientStyle(overlay)}
-        aria-hidden
-      />
+      {badge ? (
+        <p className="hero-enter-eyebrow text-xs font-bold uppercase tracking-[0.24em] text-sky-200">
+          {badge}
+        </p>
+      ) : null}
+      <h1 className="hero-enter-title mt-2 max-w-4xl font-serif text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-[2.75rem] lg:leading-tight">
+        {title}
+      </h1>
+      {subtitle ? (
+        <p className="hero-enter-subtitle mt-3 max-w-3xl text-sm leading-relaxed text-slate-100 sm:text-base">
+          {subtitle}
+        </p>
+      ) : null}
 
-      <Container
-        className={`relative z-10 flex min-h-[44dvh] flex-col items-center justify-center px-4 text-center sm:min-h-[48dvh] lg:min-h-[52dvh] ${
-          previewMode
-            ? 'py-12'
-            : 'pb-10 pt-[calc(var(--navbar-h,5rem)+2rem)] sm:pb-12 sm:pt-[calc(var(--navbar-h,5rem)+2.5rem)] lg:pb-14'
-        }`}
-      >
-        {badge ? (
-          <p className="hero-enter-eyebrow text-xs font-bold uppercase tracking-[0.24em] text-sky-200">
-            {badge}
-          </p>
-        ) : null}
-        <h1 className="hero-enter-title mt-2 max-w-4xl font-serif text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-[2.75rem] lg:leading-tight">
-          {title}
-        </h1>
-        {subtitle ? (
-          <p className="hero-enter-subtitle mt-3 max-w-3xl text-sm leading-relaxed text-slate-100 sm:text-base">
-            {subtitle}
-          </p>
-        ) : null}
-
-        {showSearch ? (
+      {showSearch ? (
         <form
           onSubmit={handleSubmit}
           className="hero-enter-actions mt-6 w-full max-w-2xl sm:mt-8"
@@ -126,33 +96,32 @@ export function AreasHeroHeader({
             </button>
           </div>
         </form>
-        ) : null}
+      ) : null}
 
-        {primaryCta?.label || secondaryCta?.label ? (
-          <div className="hero-enter-actions mt-5 flex flex-wrap justify-center gap-3">
-            {primaryCta?.label ? (
-              <LinkButton to={primaryCta.href || '#areas-grid'}>{primaryCta.label}</LinkButton>
-            ) : null}
-            {secondaryCta?.label ? (
-              String(secondaryCta.href || '').startsWith('#') ? (
-                <a
-                  href={secondaryCta.href || '#areas-grid'}
-                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/40 bg-white/10 px-5 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white/70 hover:bg-white/15"
-                >
-                  {secondaryCta.label}
-                </a>
-              ) : (
-                <Link
-                  to={secondaryCta.href || '#areas-grid'}
-                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/40 bg-white/10 px-5 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white/70 hover:bg-white/15"
-                >
-                  {secondaryCta.label}
-                </Link>
-              )
-            ) : null}
-          </div>
-        ) : null}
-      </Container>
-    </header>
+      {primaryCta?.label || secondaryCta?.label ? (
+        <div className="hero-enter-actions mt-5 flex flex-wrap justify-center gap-3">
+          {primaryCta?.label ? (
+            <LinkButton to={primaryCta.href || '#areas-grid'}>{primaryCta.label}</LinkButton>
+          ) : null}
+          {secondaryCta?.label ? (
+            String(secondaryCta.href || '').startsWith('#') ? (
+              <a
+                href={secondaryCta.href || '#areas-grid'}
+                className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/40 bg-white/10 px-5 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white/70 hover:bg-white/15"
+              >
+                {secondaryCta.label}
+              </a>
+            ) : (
+              <Link
+                to={secondaryCta.href || '#areas-grid'}
+                className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/40 bg-white/10 px-5 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white/70 hover:bg-white/15"
+              >
+                {secondaryCta.label}
+              </Link>
+            )
+          ) : null}
+        </div>
+      ) : null}
+    </PageListHeroBackdrop>
   )
 }

@@ -365,9 +365,9 @@ export function NewsList() {
   }
 
   const heroProps = {
-    ...pageHeroToHeaderProps(pageContent, DEFAULT_NEWS_PAGE_HERO),
-    imageUrl: heroImage,
-    imageReady: pageContentHydrated,
+    ...(pageContentHydrated ? pageHeroToHeaderProps(pageContent, DEFAULT_NEWS_PAGE_HERO) : {}),
+    imageUrl: pageContentHydrated ? heroImage : '',
+    contentReady: pageContentHydrated,
     searchQuery: query,
     onSearchChange: setQuery,
     onSearchSubmit: scrollToNewsContent,
