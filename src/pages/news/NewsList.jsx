@@ -1,11 +1,11 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Container } from '../../components/ui/Container.jsx'
+import { NewsHeroHeader } from '../../components/news/NewsHeroHeader.jsx'
 import { useNewsList } from '../../hooks/useNewsList.js'
 import { formatShortDate } from '../../utils/formatDate.js'
 import { NewsCoverMedia } from '../../components/news/NewsCoverMedia.jsx'
 import { RevealOnScroll } from '../../components/home/RevealOnScroll.jsx'
-import { HydrationHeroDarkBackdrop } from '../../components/skeleton/PageHydrationSkeleton.jsx'
 import { fetchSitePageBanner } from '../../services/sitePageBannerService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
 
@@ -152,6 +152,9 @@ const COVERAGE_PAGE_SIZE = 5
 /** Portada por defecto del listado de noticias si no hay una personalizada en admin. */
 const NEWS_LIST_DEFAULT_HERO_IMAGE = '/images/news-hero-bg.jpg'
 
+const NEWS_HERO_SUBTITLE =
+  'Cobertura institucional, novedades de gestión y comunicados oficiales.'
+
 /**
  * Tarjeta compacta para secciones por categoría (más pequeña que “Más cobertura”).
  * La categoría no se repite en la tarjeta: el título de sección ya la identifica.
@@ -288,6 +291,7 @@ export function NewsList() {
   const [category, setCategory] = useState('Todas')
   const [sort, setSort] = useState('newest')
   const [heroImageUrl, setHeroImageUrl] = useState('')
+  const [heroOverlayOpacity, setHeroOverlayOpacity] = useState(65)
   const [heroHydrated, setHeroHydrated] = useState(!apiEnabled)
 
   useEffect(() => {
@@ -296,6 +300,13 @@ export function NewsList() {
     fetchSitePageBanner('news')
       .then((content) => {
         if (!cancelled) setHeroImageUrl(String(content?.heroImageUrl || ''))
+        if (!cancelled) {
+          setHeroOverlayOpacity(
+            Number.isFinite(Number(content?.overlayOpacity))
+              ? Math.min(90, Math.max(0, Math.round(Number(content.overlayOpacity))))
+              : 65,
+          )
+        }
       })
       .catch(() => {
         if (!cancelled) setHeroImageUrl('')
@@ -351,6 +362,24 @@ export function NewsList() {
     [categories],
   )
 
+  const heroImage = heroImageUrl || NEWS_LIST_DEFAULT_HERO_IMAGE
+
+  function scrollToNewsContent() {
+    document.getElementById('contenido-noticias')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  const heroProps = {
+    subtitle: NEWS_HERO_SUBTITLE,
+    imageUrl: heroImage,
+    imageReady: heroHydrated,
+    overlayOpacity: heroOverlayOpacity,
+    searchPlaceholder: 'Buscar por título o contenido…',
+    searchQuery: query,
+    onSearchChange: setQuery,
+    onSearchSubmit: scrollToNewsContent,
+    searchDisabled: loading,
+  }
+
   return (
     <section className="news-editorial relative -mt-[calc(var(--navbar-h,5rem)+1.5rem)] overflow-hidden bg-linear-to-b from-[#f1eee8] via-[#f7f7f5] to-[#fcfcfa] pb-10 sm:-mt-[calc(var(--navbar-h,5rem)+2rem)] sm:pb-14">
       <div
@@ -362,38 +391,7 @@ export function NewsList() {
         aria-hidden
       />
 
-      <div className="relative min-h-[52dvh] overflow-hidden border-b border-white/10 bg-[#171b22] sm:min-h-[56dvh] lg:min-h-[58dvh]">
-        {heroHydrated ? (
-          <img
-            src={heroImageUrl || NEWS_LIST_DEFAULT_HERO_IMAGE}
-            alt=""
-            width={1920}
-            height={1080}
-            fetchPriority="high"
-            className="absolute inset-0 h-full w-full object-cover object-center"
-            decoding="async"
-          />
-        ) : (
-          <HydrationHeroDarkBackdrop />
-        )}
-        <div
-          className="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/88 to-slate-900/35"
-          aria-hidden
-        />
-        <Container className="relative z-10 flex min-h-[52dvh] flex-col justify-center pt-[calc(var(--navbar-h,5rem)+1rem)] pb-8 sm:min-h-[56dvh] sm:pt-[calc(var(--navbar-h,5rem)+1.5rem)] sm:pb-10 lg:min-h-[58dvh] lg:pb-12">
-          <div className="max-w-4xl">
-            <p className="hero-enter-eyebrow text-[11px] font-bold uppercase tracking-[0.28em] text-sky-200/95 sm:text-xs sm:tracking-[0.32em]">
-              Municipalidad de Trancas
-            </p>
-            <h1 className="hero-enter-title news-editorial-masthead mt-2 max-w-4xl text-balance text-white drop-shadow-sm">
-              Noticias Trancas
-            </h1>
-            <p className="hero-enter-subtitle news-editorial-deck mt-3 max-w-2xl text-slate-100/95 drop-shadow-sm">
-              Cobertura institucional, novedades de gestión y comunicados oficiales.
-            </p>
-          </div>
-        </Container>
-      </div>
+      <NewsHeroHeader {...heroProps} />
 
       <RevealOnScroll variant="slow">
         <div className="news-category-marquee-wrap w-full min-w-0 overflow-hidden border-y border-[#d6d0c4] bg-[#f5f3ee]/95">
@@ -436,24 +434,11 @@ export function NewsList() {
         </div>
       </RevealOnScroll>
 
-      <Container className="relative">
+      <Container className="relative" id="contenido-noticias">
         <RevealOnScroll variant="slow" delayMs={120} className="relative z-30">
-          <div className="mt-8 rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-4 shadow-sm sm:p-5">
-          <div className="grid gap-3 lg:grid-cols-12">
-            <div className="min-w-0 lg:col-span-5">
-              <label className="sr-only" htmlFor="news-search">
-                Buscar noticias
-              </label>
-              <input
-                id="news-search"
-                type="search"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Buscar por título o contenido..."
-                className="w-full rounded-lg border border-[#d8d5cd] bg-white px-3 py-2.5 text-sm text-[#171b22] shadow-none transition placeholder:text-slate-400 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
-              />
-            </div>
-            <div className="min-w-0 lg:col-span-4">
+          <div className="mt-8 scroll-mt-[calc(var(--navbar-h,5rem)+1.25rem)] rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] p-4 shadow-sm sm:p-5">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-12">
+            <div className="min-w-0 lg:col-span-8">
               <label className="sr-only" htmlFor="news-category">
                 Categoría
               </label>
@@ -464,7 +449,7 @@ export function NewsList() {
                 onChange={setCategory}
               />
             </div>
-            <div className="min-w-0 lg:col-span-3">
+            <div className="min-w-0 lg:col-span-4">
               <label className="sr-only" htmlFor="news-sort">
                 Ordenar noticias
               </label>

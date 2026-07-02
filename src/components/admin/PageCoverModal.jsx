@@ -5,10 +5,11 @@ import { labelClass } from '../ui/formStyles.js'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
 import { heroOverlayGradientStyle, normalizeHeroOverlayOpacity } from '../../utils/heroOverlay.js'
 
-export function AreasPageCoverModal({
+/** Modal reutilizable: imagen de portada + overlay (Áreas, Noticias, etc.). */
+export function PageCoverModal({
   open,
-  title = 'Portada de Áreas',
-  description = 'Imagen y overlay oscuro del header público del listado de áreas.',
+  title = 'Portada',
+  description = 'Imagen y overlay oscuro del header público.',
   value,
   overlayOpacity = 65,
   onChange,
@@ -18,8 +19,9 @@ export function AreasPageCoverModal({
   saving = false,
   disabled = false,
   saveLabel = 'Guardar portada',
+  imageHelpText = 'Subí la imagen principal de la sección o importala por URL.',
   previewBadge = 'Municipalidad de Trancas',
-  previewTitle = 'Todas las áreas en un solo lugar',
+  previewTitle = 'Título de la sección',
 }) {
   const image = value ? resolveMediaUrl(value) || value : ''
   const overlay = normalizeHeroOverlayOpacity(overlayOpacity)
@@ -37,7 +39,7 @@ export function AreasPageCoverModal({
         <div className="space-y-5">
           <SingleImageUploadField
             label="Imagen de portada"
-            helpText="Subí la imagen principal del listado de áreas o importala por URL."
+            helpText={imageHelpText}
             value={value}
             onChange={onChange}
             kind="cover"
@@ -105,3 +107,6 @@ export function AreasPageCoverModal({
     </Modal>
   )
 }
+
+/** @deprecated Usar PageCoverModal */
+export const AreasPageCoverModal = PageCoverModal

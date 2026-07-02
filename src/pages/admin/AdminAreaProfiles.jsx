@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { AdminAreaEditorPreview } from '../../components/admin/AdminAreaEditorPreview.jsx'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
-import { AreasPageCoverModal } from '../../components/admin/AreasPageCoverModal.jsx'
+import { PageCoverModal } from '../../components/admin/PageCoverModal.jsx'
 import { SingleImageUploadField } from '../../components/admin/SingleImageUploadField.jsx'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
 import { Modal } from '../../components/ui/Modal.jsx'
@@ -785,7 +785,7 @@ export function AdminAreaProfiles() {
         onConfirm={handleConfirmDeleteArea}
         variant="danger"
       />
-      <AreasPageCoverModal
+      <PageCoverModal
         open={globalCoverOpen}
         title="Portada de Áreas"
         description="Esta imagen y el overlay se muestran en el header público de “Todas las áreas”."
@@ -797,6 +797,8 @@ export function AdminAreaProfiles() {
         onSave={handleSaveGlobalCover}
         saving={savingGlobalCover}
         disabled={!isApiConfigured()}
+        imageHelpText="Subí la imagen principal del listado de áreas o importala por URL."
+        previewTitle="Todas las áreas en un solo lugar"
       />
       <Modal
         open={createModalOpen}
