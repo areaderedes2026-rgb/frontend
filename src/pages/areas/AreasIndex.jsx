@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { AreasHeroHeader } from '../../components/areas/AreasHeroHeader.jsx'
 import { RevealOnScroll } from '../../components/home/RevealOnScroll.jsx'
 import { Container } from '../../components/ui/Container.jsx'
-import { LinkButton } from '../../components/ui/LinkButton.jsx'
 import { useAreas } from '../../hooks/useAreas.js'
 import { fetchAreasPageContent } from '../../services/areasPageService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
-import { HydrationHeroDarkBackdrop } from '../../components/skeleton/PageHydrationSkeleton.jsx'
 
 const DEFAULT_AREAS_HERO_IMAGE =
   'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1600&q=80'
+
+const AREAS_HERO_SUBTITLE =
+  'Explorá programas, equipos y acciones de cada área municipal para encontrar más rápido la gestión que necesitás.'
 
 function normalizeSearch(text) {
   return String(text || '')
@@ -37,6 +39,91 @@ function sortAreasCopy(list, mode) {
     })
   })
   return copy
+}
+
+function AreasDirectoryToolbar({
+  directoryQuery,
+  directorySort,
+  onSortChange,
+  areasCount,
+  resultsCount,
+}) {
+  const isFiltering = Boolean(directoryQuery.trim())
+
+  return (
+    <RevealOnScroll variant="slow">
+      <div
+        className="mt-8 flex flex-col gap-4 rounded-2xl border border-[#e8e4dc] bg-[#fcfcfa]/95 p-4 shadow-[0_1px_0_rgba(255,255,255,0.85)_inset,0_12px_40px_-28px_rgba(15,23,42,0.18)] backdrop-blur-[2px] sm:flex-row sm:items-center sm:justify-between sm:p-5"
+        aria-label="Orden del directorio de áreas"
+      >
+        <p className="text-xs text-[#6b7280] sm:text-sm">
+          {isFiltering ? (
+            <>
+              <span className="font-semibold tabular-nums text-[#374151]">{resultsCount}</span>
+              {resultsCount === 1 ? ' resultado' : ' resultados'}
+              {directorySort === 'priority' ? ' · orden por defecto' : ' · orden alfabético'}
+            </>
+          ) : (
+            <>
+              Mostrando las{' '}
+              <span className="font-semibold text-[#374151]">{areasCount}</span> áreas
+              {directorySort === 'priority'
+                ? ' en orden por defecto.'
+                : ' en orden alfabético.'}
+            </>
+          )}
+        </p>
+        <div className="flex shrink-0 flex-col gap-1.5 sm:flex-row sm:items-center">
+          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#6b7280] sm:mr-1">
+            Orden
+          </span>
+          <div className="inline-flex rounded-xl border border-[#ddd7ca] bg-[#f4f1eb] p-0.5 shadow-sm">
+            <button
+              type="button"
+              onClick={() => onSortChange('priority')}
+              className={`rounded-[10px] px-3.5 py-2 text-xs font-semibold transition sm:px-4 sm:text-sm ${
+                directorySort === 'priority'
+                  ? 'bg-white text-[#0f172a] shadow-sm ring-1 ring-[#e5e2da]'
+                  : 'text-[#5c6169] hover:text-[#171b22]'
+              }`}
+              aria-pressed={directorySort === 'priority'}
+            >
+              Por defecto
+            </button>
+            <button
+              type="button"
+              onClick={() => onSortChange('alpha')}
+              className={`rounded-[10px] px-3.5 py-2 text-xs font-semibold transition sm:px-4 sm:text-sm ${
+                directorySort === 'alpha'
+                  ? 'bg-white text-[#0f172a] shadow-sm ring-1 ring-[#e5e2da]'
+                  : 'text-[#5c6169] hover:text-[#171b22]'
+              }`}
+              aria-pressed={directorySort === 'alpha'}
+            >
+              A–Z
+            </button>
+          </div>
+        </div>
+      </div>
+    </RevealOnScroll>
+  )
+}
+
+function AreasGridSkeleton() {
+  return (
+    <ul className="mt-10 grid gap-5 sm:mt-12 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      {Array.from({ length: 8 }, (_, idx) => (
+        <li key={`area-skeleton-${idx}`} className="animate-pulse overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa]">
+          <div className="aspect-16/10 bg-slate-200" />
+          <div className="space-y-3 p-5">
+            <div className="h-6 w-3/4 rounded bg-slate-200" />
+            <div className="h-4 w-full rounded bg-slate-100" />
+            <div className="h-4 w-5/6 rounded bg-slate-100" />
+          </div>
+        </li>
+      ))}
+    </ul>
+  )
 }
 
 export function AreasIndex() {
@@ -82,14 +169,43 @@ export function AreasIndex() {
     }
   }, [apiEnabled])
 
+  function scrollToDirectory() {
+    document.getElementById('areas-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  const heroProps = {
+    subtitle: AREAS_HERO_SUBTITLE,
+    imageUrl: heroImage,
+    imageReady: globalCoverHydrated,
+    searchPlaceholder: 'Buscar por nombre, slug o descripción…',
+    searchQuery: directoryQuery,
+    onSearchChange: setDirectoryQuery,
+    onSearchSubmit: scrollToDirectory,
+    searchDisabled: loading,
+    primaryCta: {
+      label: 'Empezar recorrido',
+      href: featured?.slug ? `/areas/${featured.slug}` : '#areas-grid',
+    },
+    secondaryCta: {
+      label: 'Ver directorio',
+      href: '#areas-grid',
+    },
+  }
+
   if (loading) {
     return (
-      <section className="relative pb-10 sm:pb-12">
-        <Container>
-          <div className="animate-pulse rounded-3xl border border-[#ddd7ca] bg-[#fcfcfa] px-6 py-12 text-center shadow-sm">
-            <div className="mx-auto h-7 w-64 rounded bg-slate-200" />
-            <div className="mx-auto mt-4 h-4 w-96 max-w-full rounded bg-slate-100" />
-          </div>
+      <section className="relative -mt-[calc(var(--navbar-h,5rem)+1.5rem)] overflow-hidden bg-linear-to-b from-[#f1eee8] via-[#f7f7f5] to-[#fcfcfa] pb-8 sm:-mt-[calc(var(--navbar-h,5rem)+2rem)] sm:pb-12">
+        <div
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_85%_45%_at_20%_-10%,rgba(56,189,248,0.12),transparent_60%)]"
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_55%_45%_at_100%_10%,rgba(15,23,42,0.12),transparent_70%)]"
+          aria-hidden
+        />
+        <AreasHeroHeader {...heroProps} searchDisabled />
+        <Container className="relative" id="contenido-areas">
+          <AreasGridSkeleton />
         </Container>
       </section>
     )
@@ -97,10 +213,11 @@ export function AreasIndex() {
 
   if (error) {
     return (
-      <section className="relative pb-10 sm:pb-12">
-        <Container>
-          <div className="rounded-3xl border border-red-200 bg-red-50 px-6 py-10 text-center shadow-sm">
-            <h1 className="text-2xl font-bold text-red-900">No pudimos cargar las áreas</h1>
+      <section className="relative -mt-[calc(var(--navbar-h,5rem)+1.5rem)] overflow-hidden bg-linear-to-b from-[#f1eee8] via-[#f7f7f5] to-[#fcfcfa] pb-8 sm:-mt-[calc(var(--navbar-h,5rem)+2rem)] sm:pb-12">
+        <AreasHeroHeader {...heroProps} searchDisabled />
+        <Container className="relative">
+          <div className="mt-8 rounded-3xl border border-red-200 bg-red-50 px-6 py-10 text-center shadow-sm">
+            <h2 className="text-2xl font-bold text-red-900">No pudimos cargar las áreas</h2>
             <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-red-800 sm:text-base">
               {error}
             </p>
@@ -121,121 +238,18 @@ export function AreasIndex() {
         aria-hidden
       />
 
-      <div className="relative min-h-[52dvh] overflow-hidden border-b border-white/10 bg-[#171b22] sm:min-h-[56dvh] lg:min-h-[58dvh]">
-        {globalCoverHydrated ? (
-          <img
-            src={heroImage}
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover object-center"
-          />
-        ) : (
-          <HydrationHeroDarkBackdrop />
-        )}
-        <div className="absolute inset-0 bg-linear-to-t from-black/76 via-black/62 to-black/36" />
-        <Container className="relative z-10 flex min-h-[52dvh] flex-col justify-center pt-[calc(var(--navbar-h,5rem)+1rem)] pb-8 sm:min-h-[56dvh] sm:pt-[calc(var(--navbar-h,5rem)+1.5rem)] sm:pb-10 lg:min-h-[58dvh] lg:pb-12">
-          <div className="max-w-4xl">
-            <p className="hero-enter-eyebrow text-[11px] font-bold uppercase tracking-[0.28em] text-sky-200/95 sm:text-xs sm:tracking-[0.32em]">
-              Municipalidad de Trancas
-            </p>
-            <h1 className="hero-enter-title mt-2 max-w-3xl font-serif text-3xl font-bold leading-tight text-white sm:text-4xl lg:text-[2.85rem]">
-              Todas las áreas en un solo lugar
-            </h1>
-            <p className="hero-enter-subtitle mt-3 max-w-2xl text-sm leading-relaxed text-slate-100 sm:text-base">
-              Explorá programas, equipos y acciones de cada área municipal para encontrar
-              más rápido la gestión que necesitás.
-            </p>
-            <div className="hero-enter-actions mt-6 flex flex-wrap items-center gap-3">
-              <LinkButton to={featured?.slug ? `/areas/${featured.slug}` : '/areas#areas-grid'}>
-                Empezar recorrido
-              </LinkButton>
-              <a
-                href="#areas-grid"
-                className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/40 bg-white/10 px-5 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white/70 hover:bg-white/15"
-              >
-                Ver directorio
-              </a>
-            </div>
-          </div>
-        </Container>
-      </div>
+      <AreasHeroHeader {...heroProps} />
 
-      <Container className="relative">
-        <RevealOnScroll variant="slow">
-          <div
-            className="mt-8 rounded-2xl border border-[#e8e4dc] bg-[#fcfcfa]/95 p-4 shadow-[0_1px_0_rgba(255,255,255,0.85)_inset,0_12px_40px_-28px_rgba(15,23,42,0.18)] backdrop-blur-[2px] sm:p-5"
-            role="search"
-            aria-label="Buscar y ordenar áreas"
-          >
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-stretch lg:gap-5">
-              <div className="relative min-w-0 flex-1">
-                <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8b9099]" aria-hidden>
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-4.35-4.35M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z" />
-                  </svg>
-                </span>
-                <input
-                  type="search"
-                  id="areas-directory-search"
-                  value={directoryQuery}
-                  onChange={(e) => setDirectoryQuery(e.target.value)}
-                  placeholder="Buscar por nombre, slug o descripción…"
-                  autoComplete="off"
-                  className="w-full rounded-xl border border-[#ddd7ca] bg-white py-3 pl-10 pr-3 text-sm text-[#171b22] shadow-inner outline-none ring-sky-300/40 transition placeholder:text-[#8b9099] focus:border-sky-300 focus:ring-2"
-                />
-              </div>
-              <div className="flex shrink-0 flex-col justify-center gap-1.5 sm:flex-row sm:items-center">
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#6b7280] sm:mr-1 sm:self-center">
-                  Orden
-                </span>
-                <div className="inline-flex rounded-xl border border-[#ddd7ca] bg-[#f4f1eb] p-0.5 shadow-sm">
-                  <button
-                    type="button"
-                    onClick={() => setDirectorySort('priority')}
-                    className={`rounded-[10px] px-3.5 py-2 text-xs font-semibold transition sm:px-4 sm:text-sm ${
-                      directorySort === 'priority'
-                        ? 'bg-white text-[#0f172a] shadow-sm ring-1 ring-[#e5e2da]'
-                        : 'text-[#5c6169] hover:text-[#171b22]'
-                    }`}
-                    aria-pressed={directorySort === 'priority'}
-                  >
-                    Por defecto
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDirectorySort('alpha')}
-                    className={`rounded-[10px] px-3.5 py-2 text-xs font-semibold transition sm:px-4 sm:text-sm ${
-                      directorySort === 'alpha'
-                        ? 'bg-white text-[#0f172a] shadow-sm ring-1 ring-[#e5e2da]'
-                        : 'text-[#5c6169] hover:text-[#171b22]'
-                    }`}
-                    aria-pressed={directorySort === 'alpha'}
-                  >
-                    A–Z
-                  </button>
-                </div>
-              </div>
-            </div>
-            <p className="mt-3 text-xs text-[#6b7280]">
-              {directoryQuery.trim() ? (
-                <>
-                  <span className="font-semibold tabular-nums text-[#374151]">{directoryAreas.length}</span>
-                  {directoryAreas.length === 1 ? ' resultado' : ' resultados'}
-                  {directorySort === 'priority' ? ' · orden por defecto' : ' · orden alfabético'}
-                </>
-              ) : (
-                <>
-                  Mostrando las{' '}
-                  <span className="font-semibold text-[#374151]">{areas.length}</span> áreas
-                  {directorySort === 'priority'
-                    ? ' en orden por defecto.'
-                    : ' en orden alfabético.'}
-                </>
-              )}
-            </p>
-          </div>
-        </RevealOnScroll>
+      <Container className="relative" id="contenido-areas">
+        <AreasDirectoryToolbar
+          directoryQuery={directoryQuery}
+          directorySort={directorySort}
+          onSortChange={setDirectorySort}
+          areasCount={areas.length}
+          resultsCount={directoryAreas.length}
+        />
 
-        <div id="areas-grid" className="mt-10 sm:mt-12">
+        <div id="areas-grid" className="mt-10 scroll-mt-[calc(var(--navbar-h,5rem)+1.25rem)] sm:mt-12">
           <RevealOnScroll variant="slow">
             <div className="mb-5 flex flex-col gap-2 sm:mb-6 sm:flex-row sm:items-end sm:justify-between">
               <div>
