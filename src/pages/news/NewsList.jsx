@@ -7,6 +7,11 @@ import { formatShortDate } from '../../utils/formatDate.js'
 import { NewsCoverMedia } from '../../components/news/NewsCoverMedia.jsx'
 import { RevealOnScroll } from '../../components/home/RevealOnScroll.jsx'
 import { fetchSitePageBanner } from '../../services/sitePageBannerService.js'
+import {
+  DEFAULT_NEWS_PAGE_HERO,
+  mergePageHeroCover,
+  pageHeroToHeaderProps,
+} from '../../data/pageHeroCoverContent.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
 
 function NewsCategorySelect({ id, value, options, onChange }) {
@@ -152,9 +157,6 @@ const COVERAGE_PAGE_SIZE = 5
 /** Portada por defecto del listado de noticias si no hay una personalizada en admin. */
 const NEWS_LIST_DEFAULT_HERO_IMAGE = '/images/news-hero-bg.jpg'
 
-const NEWS_HERO_SUBTITLE =
-  'Cobertura institucional, novedades de gestión y comunicados oficiales.'
-
 /**
  * Tarjeta compacta para secciones por categoría (más pequeña que “Más cobertura”).
  * La categoría no se repite en la tarjeta: el título de sección ya la identifica.
@@ -290,29 +292,23 @@ export function NewsList() {
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('Todas')
   const [sort, setSort] = useState('newest')
-  const [heroImageUrl, setHeroImageUrl] = useState('')
-  const [heroOverlayOpacity, setHeroOverlayOpacity] = useState(65)
-  const [heroHydrated, setHeroHydrated] = useState(!apiEnabled)
+  const [pageContent, setPageContent] = useState(DEFAULT_NEWS_PAGE_HERO)
+  const [pageContentHydrated, setPageContentHydrated] = useState(!apiEnabled)
 
   useEffect(() => {
     let cancelled = false
     if (!apiEnabled) return () => {}
     fetchSitePageBanner('news')
       .then((content) => {
-        if (!cancelled) setHeroImageUrl(String(content?.heroImageUrl || ''))
         if (!cancelled) {
-          setHeroOverlayOpacity(
-            Number.isFinite(Number(content?.overlayOpacity))
-              ? Math.min(90, Math.max(0, Math.round(Number(content.overlayOpacity))))
-              : 65,
-          )
+          setPageContent(mergePageHeroCover(DEFAULT_NEWS_PAGE_HERO, content))
         }
       })
       .catch(() => {
-        if (!cancelled) setHeroImageUrl('')
+        if (!cancelled) setPageContent(DEFAULT_NEWS_PAGE_HERO)
       })
       .finally(() => {
-        if (!cancelled) setHeroHydrated(true)
+        if (!cancelled) setPageContentHydrated(true)
       })
     return () => {
       cancelled = true
@@ -362,18 +358,16 @@ export function NewsList() {
     [categories],
   )
 
-  const heroImage = heroImageUrl || NEWS_LIST_DEFAULT_HERO_IMAGE
+  const heroImage = pageContent.heroImageUrl?.trim() || NEWS_LIST_DEFAULT_HERO_IMAGE
 
   function scrollToNewsContent() {
     document.getElementById('contenido-noticias')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
   const heroProps = {
-    subtitle: NEWS_HERO_SUBTITLE,
+    ...pageHeroToHeaderProps(pageContent, DEFAULT_NEWS_PAGE_HERO),
     imageUrl: heroImage,
-    imageReady: heroHydrated,
-    overlayOpacity: heroOverlayOpacity,
-    searchPlaceholder: 'Buscar por título o contenido…',
+    imageReady: pageContentHydrated,
     searchQuery: query,
     onSearchChange: setQuery,
     onSearchSubmit: scrollToNewsContent,

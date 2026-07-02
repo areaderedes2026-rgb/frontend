@@ -36,6 +36,7 @@ export function AreasHeroHeader({
   secondaryCta,
   previewMode = false,
   searchDisabled = false,
+  showSearch = true,
   className = '',
 }) {
   const inputId = useId()
@@ -94,6 +95,7 @@ export function AreasHeroHeader({
           </p>
         ) : null}
 
+        {showSearch ? (
         <form
           onSubmit={handleSubmit}
           className="hero-enter-actions mt-6 w-full max-w-2xl sm:mt-8"
@@ -124,6 +126,7 @@ export function AreasHeroHeader({
             </button>
           </div>
         </form>
+        ) : null}
 
         {primaryCta?.label || secondaryCta?.label ? (
           <div className="hero-enter-actions mt-5 flex flex-wrap justify-center gap-3">

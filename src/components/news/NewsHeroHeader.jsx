@@ -1,5 +1,7 @@
 import { useId } from 'react'
+import { Link } from 'react-router-dom'
 import { Container } from '../ui/Container.jsx'
+import { LinkButton } from '../ui/LinkButton.jsx'
 import { HydrationHeroDarkBackdrop } from '../skeleton/PageHydrationSkeleton.jsx'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
 import { heroOverlayGradientStyle, normalizeHeroOverlayOpacity } from '../../utils/heroOverlay.js'
@@ -30,8 +32,11 @@ export function NewsHeroHeader({
   searchQuery = '',
   onSearchChange,
   onSearchSubmit,
+  primaryCta,
+  secondaryCta,
   previewMode = false,
   searchDisabled = false,
+  showSearch = true,
   className = '',
 }) {
   const inputId = useId()
@@ -93,6 +98,7 @@ export function NewsHeroHeader({
           </p>
         ) : null}
 
+        {showSearch ? (
         <form
           onSubmit={handleSubmit}
           className="hero-enter-actions mt-6 w-full max-w-2xl sm:mt-8"
@@ -123,6 +129,32 @@ export function NewsHeroHeader({
             </button>
           </div>
         </form>
+        ) : null}
+
+        {primaryCta?.label || secondaryCta?.label ? (
+          <div className="hero-enter-actions mt-5 flex flex-wrap justify-center gap-3">
+            {primaryCta?.label ? (
+              <LinkButton to={primaryCta.href || '#contenido-noticias'}>{primaryCta.label}</LinkButton>
+            ) : null}
+            {secondaryCta?.label ? (
+              String(secondaryCta.href || '').startsWith('#') ? (
+                <a
+                  href={secondaryCta.href || '#contenido-noticias'}
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/40 bg-white/10 px-5 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white/70 hover:bg-white/15"
+                >
+                  {secondaryCta.label}
+                </a>
+              ) : (
+                <Link
+                  to={secondaryCta.href || '#contenido-noticias'}
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/40 bg-white/10 px-5 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white/70 hover:bg-white/15"
+                >
+                  {secondaryCta.label}
+                </Link>
+              )
+            ) : null}
+          </div>
+        ) : null}
       </Container>
     </header>
   )

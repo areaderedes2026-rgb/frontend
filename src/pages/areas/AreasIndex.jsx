@@ -5,13 +5,15 @@ import { RevealOnScroll } from '../../components/home/RevealOnScroll.jsx'
 import { Container } from '../../components/ui/Container.jsx'
 import { useAreas } from '../../hooks/useAreas.js'
 import { fetchAreasPageContent } from '../../services/areasPageService.js'
+import {
+  DEFAULT_AREAS_PAGE_HERO,
+  mergePageHeroCover,
+  pageHeroToHeaderProps,
+} from '../../data/pageHeroCoverContent.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
 
 const DEFAULT_AREAS_HERO_IMAGE =
   'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1600&q=80'
-
-const AREAS_HERO_SUBTITLE =
-  'Explorá programas, equipos y acciones de cada área municipal para encontrar más rápido la gestión que necesitás.'
 
 function normalizeSearch(text) {
   return String(text || '')
@@ -129,16 +131,15 @@ function AreasGridSkeleton() {
 export function AreasIndex() {
   const apiEnabled = isApiConfigured()
   const { areas, loading, error } = useAreas()
-  const [globalCover, setGlobalCover] = useState('')
-  const [heroOverlayOpacity, setHeroOverlayOpacity] = useState(65)
-  const [globalCoverHydrated, setGlobalCoverHydrated] = useState(!apiEnabled)
+  const [pageContent, setPageContent] = useState(DEFAULT_AREAS_PAGE_HERO)
+  const [pageContentHydrated, setPageContentHydrated] = useState(!apiEnabled)
   const [directoryQuery, setDirectoryQuery] = useState('')
   const [directorySort, setDirectorySort] = useState('priority')
   const featured = areas[0] ?? null
-  const heroImage = useMemo(
-    () => globalCover || DEFAULT_AREAS_HERO_IMAGE,
-    [globalCover],
-  )
+  const heroImage = useMemo(() => {
+    const url = pageContent.heroImageUrl?.trim()
+    return url || DEFAULT_AREAS_HERO_IMAGE
+  }, [pageContent.heroImageUrl])
 
   const directoryAreas = useMemo(() => {
     const q = normalizeSearch(directoryQuery.trim())
@@ -157,20 +158,15 @@ export function AreasIndex() {
     if (!apiEnabled) return () => {}
     fetchAreasPageContent()
       .then((content) => {
-        if (!cancelled) setGlobalCover(String(content?.heroImageUrl || ''))
         if (!cancelled) {
-          setHeroOverlayOpacity(
-            Number.isFinite(Number(content?.overlayOpacity))
-              ? Math.min(90, Math.max(0, Math.round(Number(content.overlayOpacity))))
-              : 65,
-          )
+          setPageContent(mergePageHeroCover(DEFAULT_AREAS_PAGE_HERO, content))
         }
       })
       .catch(() => {
-        if (!cancelled) setGlobalCover('')
+        if (!cancelled) setPageContent(DEFAULT_AREAS_PAGE_HERO)
       })
       .finally(() => {
-        if (!cancelled) setGlobalCoverHydrated(true)
+        if (!cancelled) setPageContentHydrated(true)
       })
     return () => {
       cancelled = true
@@ -181,24 +177,19 @@ export function AreasIndex() {
     document.getElementById('areas-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
+  const primaryHrefOverride =
+    pageContent.primaryHref === '#areas-grid' && featured?.slug
+      ? `/areas/${featured.slug}`
+      : undefined
+
   const heroProps = {
-    subtitle: AREAS_HERO_SUBTITLE,
+    ...pageHeroToHeaderProps(pageContent, DEFAULT_AREAS_PAGE_HERO, { primaryHrefOverride }),
     imageUrl: heroImage,
-    imageReady: globalCoverHydrated,
-    overlayOpacity: heroOverlayOpacity,
-    searchPlaceholder: 'Buscar por nombre, slug o descripción…',
+    imageReady: pageContentHydrated,
     searchQuery: directoryQuery,
     onSearchChange: setDirectoryQuery,
     onSearchSubmit: scrollToDirectory,
     searchDisabled: loading,
-    primaryCta: {
-      label: 'Empezar recorrido',
-      href: featured?.slug ? `/areas/${featured.slug}` : '#areas-grid',
-    },
-    secondaryCta: {
-      label: 'Ver directorio',
-      href: '#areas-grid',
-    },
   }
 
   if (loading) {

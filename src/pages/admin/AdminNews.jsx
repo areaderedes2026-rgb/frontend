@@ -13,7 +13,10 @@ import {
 } from '../../services/sitePageBannerService.js'
 import { formatDate } from '../../utils/formatDate.js'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
-import { heroOverlayGradientStyle, normalizeHeroOverlayOpacity } from '../../utils/heroOverlay.js'
+import {
+  DEFAULT_NEWS_PAGE_HERO,
+  mergePageHeroCover,
+} from '../../data/pageHeroCoverContent.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
 import { ROUTES } from '../../utils/constants.js'
 import { inputClass, labelClass } from '../../components/ui/formStyles.js'
@@ -98,40 +101,28 @@ export function AdminNews() {
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [bannerOpen, setBannerOpen] = useState(false)
   const [bannerSaving, setBannerSaving] = useState(false)
-  const [bannerImageUrl, setBannerImageUrl] = useState('')
-  const [bannerOverlayOpacity, setBannerOverlayOpacity] = useState(65)
+  const [bannerDraft, setBannerDraft] = useState(DEFAULT_NEWS_PAGE_HERO)
   const [bannerUpdatedAt, setBannerUpdatedAt] = useState(null)
 
   const loadBannerFromServer = useCallback(async () => {
     const content = await fetchSitePageBanner('news')
-    setBannerImageUrl(String(content?.heroImageUrl || ''))
-    setBannerOverlayOpacity(
-      Number.isFinite(Number(content?.overlayOpacity))
-        ? Math.min(90, Math.max(0, Math.round(Number(content.overlayOpacity))))
-        : 65,
-    )
+    setBannerDraft(mergePageHeroCover(DEFAULT_NEWS_PAGE_HERO, content))
     setBannerUpdatedAt(content?.updatedAt || null)
   }, [])
 
   const persistBanner = useCallback(
     async ({ forceOverwrite = false } = {}) => {
       const saved = await updateSitePageBanner('news', {
-        heroImageUrl: bannerImageUrl.trim(),
-        overlayOpacity: bannerOverlayOpacity,
+        ...bannerDraft,
         expectedUpdatedAt: bannerUpdatedAt,
         forceOverwrite,
       })
-      setBannerImageUrl(String(saved?.heroImageUrl || ''))
-      setBannerOverlayOpacity(
-        Number.isFinite(Number(saved?.overlayOpacity))
-          ? Math.min(90, Math.max(0, Math.round(Number(saved.overlayOpacity))))
-          : 65,
-      )
+      setBannerDraft(mergePageHeroCover(DEFAULT_NEWS_PAGE_HERO, saved))
       setBannerUpdatedAt(saved?.updatedAt || null)
       setBannerOpen(false)
       setFlash('Se actualizó la portada de Noticias.')
     },
-    [bannerImageUrl, bannerOverlayOpacity, bannerUpdatedAt],
+    [bannerDraft, bannerUpdatedAt],
   )
 
   const { conflictDialog: bannerConflictDialog, handleConflict: handleBannerConflict } =
@@ -164,18 +155,12 @@ export function AdminNews() {
     fetchSitePageBanner('news')
       .then((content) => {
         if (cancelled) return
-        setBannerImageUrl(String(content?.heroImageUrl || ''))
-        setBannerOverlayOpacity(
-          Number.isFinite(Number(content?.overlayOpacity))
-            ? Math.min(90, Math.max(0, Math.round(Number(content.overlayOpacity))))
-            : 65,
-        )
+        setBannerDraft(mergePageHeroCover(DEFAULT_NEWS_PAGE_HERO, content))
         setBannerUpdatedAt(content?.updatedAt || null)
       })
       .catch(() => {
         if (!cancelled) {
-          setBannerImageUrl('')
-          setBannerOverlayOpacity(65)
+          setBannerDraft(DEFAULT_NEWS_PAGE_HERO)
           setBannerUpdatedAt(null)
         }
       })
@@ -288,17 +273,17 @@ export function AdminNews() {
       <PageCoverModal
         open={bannerOpen}
         title="Portada de Noticias"
-        description="Imagen y overlay del header público del listado de noticias."
-        value={bannerImageUrl}
-        overlayOpacity={bannerOverlayOpacity}
-        onChange={setBannerImageUrl}
-        onOverlayChange={setBannerOverlayOpacity}
+        description="Imagen, overlay, textos, buscador y botones del header público del listado de noticias."
+        draft={bannerDraft}
+        onFieldChange={(key, value) =>
+          setBannerDraft((prev) => ({ ...prev, [key]: value }))
+        }
         onClose={() => setBannerOpen(false)}
         onSave={handleSaveBanner}
         saving={bannerSaving}
         disabled={!isApiConfigured()}
         imageHelpText="Subí la imagen principal del listado de noticias o importala por URL."
-        previewTitle="Noticias Trancas"
+        previewTitleClassName="news-editorial-masthead"
       />
       <ConfirmDialog
         open={deleteTarget != null}
@@ -375,51 +360,6 @@ export function AdminNews() {
             </button>
           </div>
         ) : null}
-
-        <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 px-4 py-3 sm:px-5">
-            <div>
-              <p className="text-sm font-semibold text-slate-900">Portada pública de Noticias</p>
-              <p className="text-xs text-slate-600">
-                Overlay actual: {normalizeHeroOverlayOpacity(bannerOverlayOpacity)}%
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setBannerOpen(true)}
-              className={ACTION_BTN_NEUTRAL}
-            >
-              Editar portada
-            </button>
-          </div>
-          <div className="relative aspect-16/7 bg-slate-900">
-            {bannerImageUrl ? (
-              <img
-                src={resolveMediaUrl(bannerImageUrl) || bannerImageUrl}
-                alt=""
-                className="h-full w-full object-cover object-center"
-                loading="lazy"
-              />
-            ) : (
-              <div className="grid h-full place-items-center text-sm text-slate-400">
-                Sin imagen de portada configurada
-              </div>
-            )}
-            <div
-              className="absolute inset-0"
-              style={heroOverlayGradientStyle(bannerOverlayOpacity)}
-              aria-hidden
-            />
-            <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-sky-100">
-                Municipalidad de Trancas
-              </p>
-              <p className="news-editorial-masthead mt-1 font-serif text-xl font-bold text-white sm:text-2xl">
-                Noticias Trancas
-              </p>
-            </div>
-          </div>
-        </div>
 
         {loading ? (
           <div className="admin-fade-up rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">

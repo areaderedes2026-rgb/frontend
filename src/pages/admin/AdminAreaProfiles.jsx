@@ -25,7 +25,10 @@ import {
 import { isApiConfigured } from '../../utils/apiConfig.js'
 import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
-import { heroOverlayGradientStyle, normalizeHeroOverlayOpacity } from '../../utils/heroOverlay.js'
+import {
+  DEFAULT_AREAS_PAGE_HERO,
+  mergePageHeroCover,
+} from '../../data/pageHeroCoverContent.js'
 import {
   isServiceAuthoritySectionVisible,
   normalizeServiceAuthoritySection,
@@ -404,8 +407,7 @@ export function AdminAreaProfiles() {
   const [searchQuery, setSearchQuery] = useState('')
   const [catalogSort, setCatalogSort] = useState('priority')
   const [page, setPage] = useState(1)
-  const [globalCover, setGlobalCover] = useState('')
-  const [globalCoverOverlay, setGlobalCoverOverlay] = useState(65)
+  const [pageCoverDraft, setPageCoverDraft] = useState(DEFAULT_AREAS_PAGE_HERO)
   const [globalCoverOpen, setGlobalCoverOpen] = useState(false)
   const [savingGlobalCover, setSavingGlobalCover] = useState(false)
   const [profileUpdatedAt, setProfileUpdatedAt] = useState(null)
@@ -513,12 +515,7 @@ export function AdminAreaProfiles() {
     fetchAreasPageContent()
       .then((content) => {
         if (!cancelled) {
-          setGlobalCover(String(content?.heroImageUrl || ''))
-          setGlobalCoverOverlay(
-            Number.isFinite(Number(content?.overlayOpacity))
-              ? Math.min(90, Math.max(0, Math.round(Number(content.overlayOpacity))))
-              : 65,
-          )
+          setPageCoverDraft(mergePageHeroCover(DEFAULT_AREAS_PAGE_HERO, content))
           setAreasPageUpdatedAt(content?.updatedAt || null)
         }
       })
@@ -722,16 +719,10 @@ export function AdminAreaProfiles() {
     setSavingGlobalCover(true)
     try {
       const saved = await updateAreasPageContent({
-        heroImageUrl: globalCover.trim(),
-        overlayOpacity: globalCoverOverlay,
+        ...pageCoverDraft,
         expectedUpdatedAt: areasPageUpdatedAt,
       })
-      setGlobalCover(String(saved?.heroImageUrl || ''))
-      setGlobalCoverOverlay(
-        Number.isFinite(Number(saved?.overlayOpacity))
-          ? Math.min(90, Math.max(0, Math.round(Number(saved.overlayOpacity))))
-          : 65,
-      )
+      setPageCoverDraft(mergePageHeroCover(DEFAULT_AREAS_PAGE_HERO, saved))
       setAreasPageUpdatedAt(saved?.updatedAt || null)
       setGlobalCoverOpen(false)
       setToast({
@@ -788,17 +779,16 @@ export function AdminAreaProfiles() {
       <PageCoverModal
         open={globalCoverOpen}
         title="Portada de Áreas"
-        description="Esta imagen y el overlay se muestran en el header público de “Todas las áreas”."
-        value={globalCover}
-        overlayOpacity={globalCoverOverlay}
-        onChange={setGlobalCover}
-        onOverlayChange={setGlobalCoverOverlay}
+        description="Imagen, overlay, textos, buscador y botones del header público del listado de áreas."
+        draft={pageCoverDraft}
+        onFieldChange={(key, value) =>
+          setPageCoverDraft((prev) => ({ ...prev, [key]: value }))
+        }
         onClose={() => setGlobalCoverOpen(false)}
         onSave={handleSaveGlobalCover}
         saving={savingGlobalCover}
         disabled={!isApiConfigured()}
         imageHelpText="Subí la imagen principal del listado de áreas o importala por URL."
-        previewTitle="Todas las áreas en un solo lugar"
       />
       <Modal
         open={createModalOpen}
@@ -1019,50 +1009,6 @@ export function AdminAreaProfiles() {
                   >
                     Cambiar portada
                   </button>
-                </div>
-              </div>
-              <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/70">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 px-4 py-3">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900">Portada pública del listado</p>
-                    <p className="text-xs text-slate-600">
-                      Overlay actual: {normalizeHeroOverlayOpacity(globalCoverOverlay)}%
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setGlobalCoverOpen(true)}
-                    className={ACTION_BTN_NEUTRAL}
-                  >
-                    Editar portada
-                  </button>
-                </div>
-                <div className="relative aspect-16/7 bg-slate-900">
-                  {globalCover ? (
-                    <img
-                      src={resolveMediaUrl(globalCover) || globalCover}
-                      alt=""
-                      className="h-full w-full object-cover object-center"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="grid h-full place-items-center text-sm text-slate-400">
-                      Sin imagen de portada configurada
-                    </div>
-                  )}
-                  <div
-                    className="absolute inset-0"
-                    style={heroOverlayGradientStyle(globalCoverOverlay)}
-                    aria-hidden
-                  />
-                  <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-sky-100">
-                      Municipalidad de Trancas
-                    </p>
-                    <p className="mt-1 font-serif text-xl font-bold text-white sm:text-2xl">
-                      Todas las áreas en un solo lugar
-                    </p>
-                  </div>
                 </div>
               </div>
               <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600">
