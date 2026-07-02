@@ -16,6 +16,7 @@ import {
 import {
   filterMunicipalServicesByQuery,
   normalizeMunicipalService,
+  servicesHeroToHeaderProps,
 } from '../../data/servicesPageContent.js'
 import { ROUTES } from '../../utils/constants.js'
 
@@ -96,8 +97,13 @@ export function ServicesCategoryView({
       />
 
       <ServicesHeroHeader
+        {...servicesHeroToHeaderProps(content)}
         title={category.name}
-        imageUrl={content?.heroImageUrl || ''}
+        badge=""
+        subtitle=""
+        primaryCta={null}
+        secondaryCta={null}
+        showSearch
         searchPlaceholder={`Buscar en ${category.name}…`}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}

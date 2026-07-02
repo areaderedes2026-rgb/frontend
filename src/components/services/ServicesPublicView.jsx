@@ -13,6 +13,7 @@ import {
   filterMunicipalServicesByQuery,
   isServicesSectionVisible,
   normalizeMunicipalService,
+  servicesHeroToHeaderProps,
 } from '../../data/servicesPageContent.js'
 import { normalizeServiceCategories } from '../../data/serviceCategoriesContent.js'
 import { ROUTES } from '../../utils/constants.js'
@@ -66,6 +67,14 @@ export function ServicesPublicView({ content, services = [], previewMode = false
     document.getElementById(target)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
+  const heroProps = {
+    ...servicesHeroToHeaderProps(content),
+    searchQuery,
+    onSearchChange: setSearchQuery,
+    onSearchSubmit: scrollToDirectory,
+    previewMode,
+  }
+
   return (
     <section
       className={`relative overflow-hidden bg-linear-to-b from-[#f1eee8] via-[#f7f7f5] to-[#fcfcfa] ${
@@ -80,15 +89,7 @@ export function ServicesPublicView({ content, services = [], previewMode = false
         onClose={() => setDetailService(null)}
       />
 
-      <ServicesHeroHeader
-        title={content?.heroTitle || 'Guía de trámites'}
-        imageUrl={content?.heroImageUrl || ''}
-        searchPlaceholder={content?.heroSearchPlaceholder || '¿Qué trámite estás buscando?'}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        onSearchSubmit={scrollToDirectory}
-        previewMode={previewMode}
-      />
+      <ServicesHeroHeader {...heroProps} />
 
       <Container className="relative" id="contenido-servicios">
         {showProcessGuide ? (

@@ -1,18 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AdminServicesEditorPreview } from '../../components/admin/AdminServicesEditorPreview.jsx'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
-import { HeroImageModal } from '../../components/admin/HeroImageModal.jsx'
+import { PageCoverModal } from '../../components/admin/PageCoverModal.jsx'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
 import { Modal } from '../../components/ui/Modal.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
 import { inputClass, labelClass, textareaClass } from '../../components/ui/formStyles.js'
 import {
   DEFAULT_SERVICES_PAGE_CONTENT,
+  applyHeroCoverToServicesContent,
   linesToList,
   listToLines,
   mergeServicesPageContent,
   normalizeMunicipalService,
   normalizeServicesSectionVisibility,
+  servicesContentToHeroCover,
 } from '../../data/servicesPageContent.js'
 import {
   normalizeServiceCategories,
@@ -79,10 +81,17 @@ function contentFormSnapshot(form) {
     heroSubtitle: form.heroSubtitle || '',
     heroSearchPlaceholder: form.heroSearchPlaceholder || '',
     heroImageUrl: form.heroImageUrl || '',
+    overlayOpacity: Number(form.overlayOpacity) || 65,
     heroPrimaryLabel: form.heroPrimaryLabel || '',
     heroPrimaryHref: form.heroPrimaryHref || '',
     heroSecondaryLabel: form.heroSecondaryLabel || '',
     heroSecondaryHref: form.heroSecondaryHref || '',
+    showHeroBadge: form.showHeroBadge !== false,
+    showHeroTitle: form.showHeroTitle !== false,
+    showHeroSubtitle: form.showHeroSubtitle !== false,
+    showSearch: form.showSearch !== false,
+    showPrimaryButton: form.showPrimaryButton !== false,
+    showSecondaryButton: form.showSecondaryButton !== false,
     steps: form.steps || [],
     scheduleLines: form.scheduleLines || [],
     categories: form.categories || [],
@@ -107,10 +116,17 @@ function mapContentToForm(content) {
     heroSubtitle: content.heroSubtitle || '',
     heroSearchPlaceholder: content.heroSearchPlaceholder || '',
     heroImageUrl: content.heroImageUrl || '',
+    overlayOpacity: Number(content.overlayOpacity) || 65,
     heroPrimaryLabel: content.heroPrimaryLabel || '',
     heroPrimaryHref: content.heroPrimaryHref || '',
     heroSecondaryLabel: content.heroSecondaryLabel || '',
     heroSecondaryHref: content.heroSecondaryHref || '',
+    showHeroBadge: content.showHeroBadge !== false,
+    showHeroTitle: content.showHeroTitle !== false,
+    showHeroSubtitle: content.showHeroSubtitle !== false,
+    showSearch: content.showSearch !== false,
+    showPrimaryButton: content.showPrimaryButton !== false,
+    showSecondaryButton: content.showSecondaryButton !== false,
     steps: Array.isArray(content.steps) ? [...content.steps] : [],
     scheduleLines: Array.isArray(content.scheduleLines) ? [...content.scheduleLines] : [],
     categories,
@@ -143,7 +159,10 @@ export function AdminServices() {
   const [itemsError, setItemsError] = useState('')
 
   const [toast, setToast] = useState(null)
-  const [heroImageOpen, setHeroImageOpen] = useState(false)
+  const [heroCoverOpen, setHeroCoverOpen] = useState(false)
+  const [heroCoverDraft, setHeroCoverDraft] = useState(() =>
+    servicesContentToHeroCover(DEFAULT_SERVICES_PAGE_CONTENT),
+  )
   const dismissToast = useCallback(() => setToast(null), [])
 
   const [modalOpen, setModalOpen] = useState(false)
@@ -349,22 +368,27 @@ export function AdminServices() {
       />
       {toast ? <Toast variant={toast.variant} message={toast.message} onDismiss={dismissToast} /> : null}
 
-      <HeroImageModal
-        open={heroImageOpen}
-        title="Portada de Servicios al vecino"
-        value={contentForm.heroImageUrl}
-        onChange={(value) => setContentForm((prev) => ({ ...prev, heroImageUrl: value }))}
-        onClose={() => setHeroImageOpen(false)}
+      <PageCoverModal
+        open={heroCoverOpen}
+        title="Portada de Servicios"
+        description="Imagen, overlay, textos, buscador y botones del header público de la guía de trámites."
+        draft={heroCoverDraft}
+        onFieldChange={(key, value) =>
+          setHeroCoverDraft((prev) => ({ ...prev, [key]: value }))
+        }
+        onClose={() => setHeroCoverOpen(false)}
         onSave={() => {
-          setHeroImageOpen(false)
+          setContentForm((prev) => applyHeroCoverToServicesContent(prev, heroCoverDraft))
+          setHeroCoverOpen(false)
           setToast({
             variant: 'success',
             message: 'Portada actualizada en el borrador. Guardá los cambios para publicarla.',
           })
         }}
         saving={contentSaving}
-        disabled={contentLoading || contentSaving}
+        disabled={contentLoading || contentSaving || !apiAvailable}
         saveLabel="Aplicar al borrador"
+        imageHelpText="Subí la imagen principal de Servicios al vecino o importala por URL."
       />
 
       <AdminPageShell
@@ -393,7 +417,10 @@ export function AdminServices() {
           error={contentError}
           hasChanges={hasContentChanges}
           onSubmit={() => void handleSaveContent()}
-          onChangeCover={() => setHeroImageOpen(true)}
+          onChangeCover={() => {
+            setHeroCoverDraft(servicesContentToHeroCover(contentForm))
+            setHeroCoverOpen(true)
+          }}
           apiAvailable={apiAvailable}
           onAddService={openCreateService}
           onEditService={openEditService}

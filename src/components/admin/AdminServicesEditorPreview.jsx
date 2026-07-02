@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react'
 import { Modal } from '../ui/Modal.jsx'
 import { ConfirmDialog } from '../ui/ConfirmDialog.jsx'
-import { SingleImageUploadField } from './SingleImageUploadField.jsx'
 import { ServicesHeroHeader } from '../services/ServicesHeroHeader.jsx'
 import {
   filterMunicipalServicesByQuery,
   normalizeMunicipalService,
   normalizeServicesSectionVisibility,
+  servicesHeroToHeaderProps,
 } from '../../data/servicesPageContent.js'
 import {
   countServicesInCategory,
@@ -22,7 +22,6 @@ import { ServiceCategoryGrid } from '../services/ServiceCategoryGrid.jsx'
 import { AdminFloatingSaveBar } from './AdminFloatingSaveBar.jsx'
 import { ServiceCategoryIconPicker } from './ServiceCategoryIconPicker.jsx'
 import { inputClass, labelClass, textareaClass } from '../ui/formStyles.js'
-import { ROUTES } from '../../utils/constants.js'
 
 const ACTION_BTN_BASE =
   'inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto'
@@ -289,20 +288,6 @@ export function AdminServicesEditorPreview({
     if (!editor) return
     const { kind, index, draft } = editor
     switch (kind) {
-      case 'identity':
-        setForm((prev) => ({
-          ...prev,
-          heroEyebrow: String(draft.heroEyebrow || '').trim(),
-          heroTitle: String(draft.heroTitle || '').trim(),
-          heroSubtitle: String(draft.heroSubtitle || ''),
-          heroSearchPlaceholder: String(draft.heroSearchPlaceholder || '').trim(),
-          heroImageUrl: String(draft.heroImageUrl || '').trim(),
-          heroPrimaryLabel: String(draft.heroPrimaryLabel || '').trim(),
-          heroPrimaryHref: String(draft.heroPrimaryHref || '').trim(),
-          heroSecondaryLabel: String(draft.heroSecondaryLabel || '').trim(),
-          heroSecondaryHref: String(draft.heroSecondaryHref || '').trim(),
-        }))
-        break
       case 'step': {
         const text = String(draft.text || '').trim()
         if (!text) break
@@ -431,8 +416,6 @@ export function AdminServicesEditorPreview({
   const editorTitle = useMemo(() => {
     if (!editor) return ''
     switch (editor.kind) {
-      case 'identity':
-        return 'Editar portada'
       case 'step':
         return editor.index == null ? 'Agregar paso' : 'Editar paso'
       case 'scheduleLine':
@@ -485,55 +468,10 @@ export function AdminServicesEditorPreview({
         open={editor != null}
         onClose={closeEditor}
         loading={saving}
-        size={editor?.kind === 'identity' ? 'wide' : 'default'}
+        size="default"
         title={editorTitle}
         description="Los cambios quedan en borrador hasta que toques «Guardar cambios» en la barra superior."
       >
-        {editor?.kind === 'identity' ? (
-          <div className="grid gap-4">
-            <label className={labelClass}>
-              Antetítulo
-              <input className={inputClass} value={draft?.heroEyebrow || ''} onChange={(e) => setDraftField('heroEyebrow', e.target.value)} disabled={saving} />
-            </label>
-            <label className={labelClass}>
-              Título de portada
-              <input className={inputClass} value={draft?.heroTitle || ''} onChange={(e) => setDraftField('heroTitle', e.target.value)} disabled={saving} />
-            </label>
-            <label className={labelClass}>
-              Texto del buscador
-              <input
-                className={inputClass}
-                value={draft?.heroSearchPlaceholder || ''}
-                onChange={(e) => setDraftField('heroSearchPlaceholder', e.target.value)}
-                disabled={saving}
-                placeholder="¿Qué trámite estás buscando?"
-              />
-            </label>
-            <label className={labelClass}>
-              Subtítulo (opcional, no se muestra en la portada nueva)
-              <textarea className={`${textareaClass} min-h-20`} value={draft?.heroSubtitle || ''} onChange={(e) => setDraftField('heroSubtitle', e.target.value)} disabled={saving} />
-            </label>
-            <SingleImageUploadField label="Imagen de portada" value={draft?.heroImageUrl || ''} onChange={(url) => setDraftField('heroImageUrl', url)} disabled={saving} />
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className={labelClass}>
-                Botón principal (texto)
-                <input className={inputClass} value={draft?.heroPrimaryLabel || ''} onChange={(e) => setDraftField('heroPrimaryLabel', e.target.value)} disabled={saving} />
-              </label>
-              <label className={labelClass}>
-                Botón principal (enlace)
-                <input className={inputClass} value={draft?.heroPrimaryHref || ''} onChange={(e) => setDraftField('heroPrimaryHref', e.target.value)} disabled={saving} placeholder="#tramites-disponibles" />
-              </label>
-              <label className={labelClass}>
-                Botón secundario (texto)
-                <input className={inputClass} value={draft?.heroSecondaryLabel || ''} onChange={(e) => setDraftField('heroSecondaryLabel', e.target.value)} disabled={saving} />
-              </label>
-              <label className={labelClass}>
-                Botón secundario (ruta)
-                <input className={inputClass} value={draft?.heroSecondaryHref || ''} onChange={(e) => setDraftField('heroSecondaryHref', e.target.value)} disabled={saving} placeholder={ROUTES.atencionCiudadano} />
-              </label>
-            </div>
-          </div>
-        ) : null}
         {editor?.kind === 'step' || editor?.kind === 'scheduleLine' ? (
           <label className={labelClass}>
             {editor.kind === 'step' ? 'Texto del paso' : 'Línea de horario o canal'}
@@ -689,39 +627,15 @@ export function AdminServicesEditorPreview({
         ) : null}
 
         <article className="overflow-hidden rounded-3xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm">
-          <div className="relative">
-            <ServicesHeroHeader
-              title={form.heroTitle || 'Guía de trámites'}
-              imageUrl={form.heroImageUrl || ''}
-              searchPlaceholder={form.heroSearchPlaceholder || '¿Qué trámite estás buscando?'}
-              searchQuery={previewSearch}
-              onSearchChange={setPreviewSearch}
-              onSearchSubmit={() => {
-                document.getElementById('categorias-tramites')?.scrollIntoView({ behavior: 'smooth' })
-              }}
-              previewMode
-            />
-            <div className="absolute right-4 top-4 z-20 sm:right-6 sm:top-6">
-              <EditChip
-                tone="overlay"
-                label="Editar portada"
-                onClick={() =>
-                  openEditor('identity', null, {
-                    heroEyebrow: form.heroEyebrow,
-                    heroTitle: form.heroTitle,
-                    heroSubtitle: form.heroSubtitle,
-                    heroSearchPlaceholder: form.heroSearchPlaceholder,
-                    heroImageUrl: form.heroImageUrl,
-                    heroPrimaryLabel: form.heroPrimaryLabel,
-                    heroPrimaryHref: form.heroPrimaryHref,
-                    heroSecondaryLabel: form.heroSecondaryLabel,
-                    heroSecondaryHref: form.heroSecondaryHref,
-                  })
-                }
-                disabled={saving}
-              />
-            </div>
-          </div>
+          <ServicesHeroHeader
+            {...servicesHeroToHeaderProps(form)}
+            searchQuery={previewSearch}
+            onSearchChange={setPreviewSearch}
+            onSearchSubmit={() => {
+              document.getElementById('categorias-tramites')?.scrollIntoView({ behavior: 'smooth' })
+            }}
+            previewMode
+          />
 
           <div className="space-y-10 p-5 sm:p-7 lg:p-10">
             {/* Proceso y horarios */}

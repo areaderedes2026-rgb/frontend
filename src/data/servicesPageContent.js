@@ -1,4 +1,5 @@
 import { ROUTES } from '../utils/constants.js'
+import { mergePageHeroCover, pageHeroToHeaderProps } from './pageHeroCoverContent.js'
 import {
   DEFAULT_SERVICE_CATEGORIES,
   findServiceCategory,
@@ -183,6 +184,13 @@ export const DEFAULT_SERVICES_PAGE_CONTENT = {
   heroSearchPlaceholder: '¿Qué trámite estás buscando?',
   heroImageUrl:
     'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=1900&q=80',
+  overlayOpacity: 65,
+  showHeroBadge: true,
+  showHeroTitle: true,
+  showHeroSubtitle: true,
+  showSearch: true,
+  showPrimaryButton: true,
+  showSecondaryButton: true,
   heroPrimaryLabel: 'Ver trámites',
   heroPrimaryHref: '#categorias-tramites',
   heroSecondaryLabel: 'Atención al ciudadano',
@@ -284,7 +292,109 @@ export function mergeServicesPageContent(base, remote) {
     sectionVisibility: normalizeServicesSectionVisibility(
       remote.sectionVisibility ?? base.sectionVisibility,
     ),
+    overlayOpacity: Math.min(
+      90,
+      Math.max(
+        0,
+        Math.round(
+          Number.isFinite(Number(remote.overlayOpacity))
+            ? Number(remote.overlayOpacity)
+            : base.overlayOpacity ?? 65,
+        ),
+      ),
+    ),
+    showHeroBadge:
+      typeof remote.showHeroBadge === 'boolean' ? remote.showHeroBadge : base.showHeroBadge !== false,
+    showHeroTitle:
+      typeof remote.showHeroTitle === 'boolean' ? remote.showHeroTitle : base.showHeroTitle !== false,
+    showHeroSubtitle:
+      typeof remote.showHeroSubtitle === 'boolean'
+        ? remote.showHeroSubtitle
+        : base.showHeroSubtitle !== false,
+    showSearch: typeof remote.showSearch === 'boolean' ? remote.showSearch : base.showSearch !== false,
+    showPrimaryButton:
+      typeof remote.showPrimaryButton === 'boolean'
+        ? remote.showPrimaryButton
+        : base.showPrimaryButton !== false,
+    showSecondaryButton:
+      typeof remote.showSecondaryButton === 'boolean'
+        ? remote.showSecondaryButton
+        : base.showSecondaryButton !== false,
   }
+}
+
+function servicesHeroDefaults() {
+  const d = DEFAULT_SERVICES_PAGE_CONTENT
+  return {
+    heroImageUrl: d.heroImageUrl,
+    overlayOpacity: d.overlayOpacity ?? 65,
+    heroBadge: d.heroEyebrow,
+    heroTitle: d.heroTitle,
+    heroSubtitle: d.heroSubtitle,
+    heroSearchPlaceholder: d.heroSearchPlaceholder,
+    showHeroBadge: d.showHeroBadge !== false,
+    showHeroTitle: d.showHeroTitle !== false,
+    showHeroSubtitle: d.showHeroSubtitle !== false,
+    showSearch: d.showSearch !== false,
+    showPrimaryButton: d.showPrimaryButton !== false,
+    primaryLabel: d.heroPrimaryLabel,
+    primaryHref: d.heroPrimaryHref,
+    showSecondaryButton: d.showSecondaryButton !== false,
+    secondaryLabel: d.heroSecondaryLabel,
+    secondaryHref: d.heroSecondaryHref,
+  }
+}
+
+/** Convierte contenido de servicios al formato del modal de portada. */
+export function servicesContentToHeroCover(content) {
+  const c = content && typeof content === 'object' ? content : {}
+  return mergePageHeroCover(servicesHeroDefaults(), {
+    heroImageUrl: c.heroImageUrl,
+    overlayOpacity: c.overlayOpacity,
+    heroBadge: c.heroEyebrow,
+    heroTitle: c.heroTitle,
+    heroSubtitle: c.heroSubtitle,
+    heroSearchPlaceholder: c.heroSearchPlaceholder,
+    showHeroBadge: c.showHeroBadge,
+    showHeroTitle: c.showHeroTitle,
+    showHeroSubtitle: c.showHeroSubtitle,
+    showSearch: c.showSearch,
+    showPrimaryButton: c.showPrimaryButton,
+    primaryLabel: c.heroPrimaryLabel,
+    primaryHref: c.heroPrimaryHref,
+    showSecondaryButton: c.showSecondaryButton,
+    secondaryLabel: c.heroSecondaryLabel,
+    secondaryHref: c.heroSecondaryHref,
+  })
+}
+
+/** Aplica el borrador del modal de portada al contenido de servicios. */
+export function applyHeroCoverToServicesContent(content, draft) {
+  const merged = mergePageHeroCover(servicesHeroDefaults(), draft)
+  return {
+    ...(content && typeof content === 'object' ? content : {}),
+    heroImageUrl: merged.heroImageUrl,
+    overlayOpacity: merged.overlayOpacity,
+    heroEyebrow: merged.heroBadge,
+    heroTitle: merged.heroTitle,
+    heroSubtitle: merged.heroSubtitle,
+    heroSearchPlaceholder: merged.heroSearchPlaceholder,
+    showHeroBadge: merged.showHeroBadge,
+    showHeroTitle: merged.showHeroTitle,
+    showHeroSubtitle: merged.showHeroSubtitle,
+    showSearch: merged.showSearch,
+    showPrimaryButton: merged.showPrimaryButton,
+    heroPrimaryLabel: merged.primaryLabel,
+    heroPrimaryHref: merged.primaryHref,
+    showSecondaryButton: merged.showSecondaryButton,
+    heroSecondaryLabel: merged.secondaryLabel,
+    heroSecondaryHref: merged.secondaryHref,
+  }
+}
+
+/** Props del header público de Servicios desde contenido guardado. */
+export function servicesHeroToHeaderProps(content, options) {
+  return pageHeroToHeaderProps(servicesContentToHeroCover(content), servicesHeroDefaults(), options)
 }
 
 export function buildServiceCategories(content) {

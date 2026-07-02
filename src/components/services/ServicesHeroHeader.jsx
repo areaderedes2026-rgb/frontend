@@ -1,6 +1,10 @@
 import { useId } from 'react'
+import { Link } from 'react-router-dom'
 import { Container } from '../ui/Container.jsx'
+import { LinkButton } from '../ui/LinkButton.jsx'
+import { HydrationHeroDarkBackdrop } from '../skeleton/PageHydrationSkeleton.jsx'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
+import { heroOverlayGradientStyle, normalizeHeroOverlayOpacity } from '../../utils/heroOverlay.js'
 
 function SearchIcon({ className = 'h-5 w-5' }) {
   return (
@@ -15,21 +19,29 @@ function SearchIcon({ className = 'h-5 w-5' }) {
 }
 
 /**
- * Portada de Servicios: título centrado y buscador de trámites (estilo guía municipal).
+ * Portada de Servicios: estilo alineado a Áreas, Noticias e Historia.
  */
 export function ServicesHeroHeader({
+  badge = 'Guía municipal',
   title = 'Guía de trámites',
+  subtitle = '',
   imageUrl = '',
+  imageReady = true,
+  overlayOpacity = 65,
   searchPlaceholder = '¿Qué trámite estás buscando?',
   searchQuery = '',
   onSearchChange,
   onSearchSubmit,
+  primaryCta,
+  secondaryCta,
   previewMode = false,
   searchDisabled = false,
+  showSearch = true,
   className = '',
 }) {
   const inputId = useId()
   const heroImage = imageUrl ? resolveMediaUrl(imageUrl) || imageUrl : ''
+  const overlay = normalizeHeroOverlayOpacity(overlayOpacity)
 
   function handleSubmit(e) {
     e.preventDefault()
@@ -40,7 +52,9 @@ export function ServicesHeroHeader({
     <header
       className={`relative overflow-hidden border-b border-white/10 bg-[#171b22] ${className}`.trim()}
     >
-      {heroImage ? (
+      {!imageReady ? (
+        <HydrationHeroDarkBackdrop />
+      ) : heroImage ? (
         <img
           src={heroImage}
           alt=""
@@ -55,10 +69,10 @@ export function ServicesHeroHeader({
         />
       )}
       <div
-        className="absolute inset-0 bg-linear-to-b from-slate-950/55 via-slate-950/78 to-slate-950/92"
+        className="absolute inset-0"
+        style={heroOverlayGradientStyle(overlay)}
         aria-hidden
       />
-      <div className="pointer-events-none absolute inset-0 bg-black/25" aria-hidden />
 
       <Container
         className={`relative z-10 flex min-h-[44dvh] flex-col items-center justify-center px-4 text-center sm:min-h-[48dvh] lg:min-h-[52dvh] ${
@@ -67,40 +81,88 @@ export function ServicesHeroHeader({
             : 'pb-10 pt-[calc(var(--navbar-h,5rem)+2rem)] sm:pb-12 sm:pt-[calc(var(--navbar-h,5rem)+2.5rem)] lg:pb-14'
         }`}
       >
-        <h1 className="hero-enter-title max-w-4xl text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-[2.75rem] lg:leading-tight">
+        {badge ? (
+          <p className="hero-enter-eyebrow text-xs font-bold uppercase tracking-[0.24em] text-sky-200">
+            {badge}
+          </p>
+        ) : null}
+        <h1 className="hero-enter-title mt-2 max-w-4xl font-serif text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-[2.75rem] lg:leading-tight">
           {title}
         </h1>
+        {subtitle ? (
+          <p className="hero-enter-subtitle mt-3 max-w-3xl text-sm leading-relaxed text-slate-100 sm:text-base">
+            {subtitle}
+          </p>
+        ) : null}
 
-        <form
-          onSubmit={handleSubmit}
-          className="hero-enter-actions mt-8 w-full max-w-2xl sm:mt-10"
-          role="search"
-        >
-          <label htmlFor={inputId} className="sr-only">
-            {searchPlaceholder}
-          </label>
-          <div className="relative flex items-center overflow-hidden rounded-2xl bg-white shadow-[0_16px_48px_-20px_rgba(0,0,0,0.55)] ring-1 ring-white/80">
-            <input
-              id={inputId}
-              type="search"
-              value={searchQuery}
-              onChange={(e) => onSearchChange?.(e.target.value)}
-              disabled={searchDisabled}
-              placeholder={searchPlaceholder}
-              autoComplete="off"
-              enterKeyHint="search"
-              className="min-h-[3.25rem] w-full border-0 bg-transparent py-3 pl-5 pr-14 text-base text-[#171b22] placeholder:text-slate-400 focus:outline-none focus:ring-0 disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-[3.5rem] sm:text-[17px]"
-            />
-            <button
-              type="submit"
-              disabled={searchDisabled}
-              className="absolute right-1.5 inline-flex h-11 w-11 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-sky-800 focus:outline-none focus-visible:ring-4 focus-visible:ring-sky-300/50 disabled:cursor-not-allowed disabled:opacity-50"
-              aria-label="Buscar trámite"
-            >
-              <SearchIcon />
-            </button>
+        {showSearch ? (
+          <form
+            onSubmit={handleSubmit}
+            className="hero-enter-actions mt-6 w-full max-w-2xl sm:mt-8"
+            role="search"
+          >
+            <label htmlFor={inputId} className="sr-only">
+              {searchPlaceholder}
+            </label>
+            <div className="relative flex items-center overflow-hidden rounded-2xl bg-white shadow-[0_16px_48px_-20px_rgba(0,0,0,0.55)] ring-1 ring-white/80">
+              <input
+                id={inputId}
+                type="search"
+                value={searchQuery}
+                onChange={(e) => onSearchChange?.(e.target.value)}
+                disabled={searchDisabled}
+                placeholder={searchPlaceholder}
+                autoComplete="off"
+                enterKeyHint="search"
+                className="min-h-[3.25rem] w-full border-0 bg-transparent py-3 pl-5 pr-14 text-base text-[#171b22] placeholder:text-slate-400 focus:outline-none focus:ring-0 disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-[3.5rem] sm:text-[17px]"
+              />
+              <button
+                type="submit"
+                disabled={searchDisabled}
+                className="absolute right-1.5 inline-flex h-11 w-11 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-sky-800 focus:outline-none focus-visible:ring-4 focus-visible:ring-sky-300/50 disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label="Buscar trámite"
+              >
+                <SearchIcon />
+              </button>
+            </div>
+          </form>
+        ) : null}
+
+        {primaryCta?.label || secondaryCta?.label ? (
+          <div className="hero-enter-actions mt-5 flex flex-wrap justify-center gap-3">
+            {primaryCta?.label ? (
+              String(primaryCta.href || '').startsWith('#') ? (
+                <a
+                  href={primaryCta.href || '#categorias-tramites'}
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl bg-sky-700 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-800"
+                >
+                  {primaryCta.label}
+                </a>
+              ) : (
+                <LinkButton to={primaryCta.href || '#categorias-tramites'}>
+                  {primaryCta.label}
+                </LinkButton>
+              )
+            ) : null}
+            {secondaryCta?.label ? (
+              String(secondaryCta.href || '').startsWith('#') ? (
+                <a
+                  href={secondaryCta.href || '#contenido-servicios'}
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/40 bg-white/10 px-5 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white/70 hover:bg-white/15"
+                >
+                  {secondaryCta.label}
+                </a>
+              ) : (
+                <Link
+                  to={secondaryCta.href || '#contenido-servicios'}
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/40 bg-white/10 px-5 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white/70 hover:bg-white/15"
+                >
+                  {secondaryCta.label}
+                </Link>
+              )
+            ) : null}
           </div>
-        </form>
+        ) : null}
       </Container>
     </header>
   )
