@@ -38,7 +38,10 @@ export const DEFAULT_NEWS_PAGE_HERO = {
 }
 
 function cleanBool(value, fallback) {
-  return typeof value === 'boolean' ? value : fallback
+  if (typeof value === 'boolean') return value
+  if (value === 0 || value === '0' || value === 'false') return false
+  if (value === 1 || value === '1' || value === 'true') return true
+  return fallback
 }
 
 function cleanNumber(value, fallback) {

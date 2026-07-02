@@ -271,6 +271,13 @@ export function normalizeMunicipalService(raw, fallbackId = 0, categories = DEFA
   }
 }
 
+export function normalizeHeroToggle(value, fallback = true) {
+  if (value === false || value === 0 || value === '0' || value === 'false') return false
+  if (value === true || value === 1 || value === '1' || value === 'true') return true
+  if (typeof value === 'boolean') return value
+  return fallback
+}
+
 export function mergeServicesPageContent(base, remote) {
   if (!remote || typeof remote !== 'object') return { ...base }
   return {
@@ -303,23 +310,15 @@ export function mergeServicesPageContent(base, remote) {
         ),
       ),
     ),
-    showHeroBadge:
-      typeof remote.showHeroBadge === 'boolean' ? remote.showHeroBadge : base.showHeroBadge !== false,
-    showHeroTitle:
-      typeof remote.showHeroTitle === 'boolean' ? remote.showHeroTitle : base.showHeroTitle !== false,
-    showHeroSubtitle:
-      typeof remote.showHeroSubtitle === 'boolean'
-        ? remote.showHeroSubtitle
-        : base.showHeroSubtitle !== false,
-    showSearch: typeof remote.showSearch === 'boolean' ? remote.showSearch : base.showSearch !== false,
-    showPrimaryButton:
-      typeof remote.showPrimaryButton === 'boolean'
-        ? remote.showPrimaryButton
-        : base.showPrimaryButton !== false,
-    showSecondaryButton:
-      typeof remote.showSecondaryButton === 'boolean'
-        ? remote.showSecondaryButton
-        : base.showSecondaryButton !== false,
+    showHeroBadge: normalizeHeroToggle(remote.showHeroBadge, base.showHeroBadge !== false),
+    showHeroTitle: normalizeHeroToggle(remote.showHeroTitle, base.showHeroTitle !== false),
+    showHeroSubtitle: normalizeHeroToggle(remote.showHeroSubtitle, base.showHeroSubtitle !== false),
+    showSearch: normalizeHeroToggle(remote.showSearch, base.showSearch !== false),
+    showPrimaryButton: normalizeHeroToggle(remote.showPrimaryButton, base.showPrimaryButton !== false),
+    showSecondaryButton: normalizeHeroToggle(
+      remote.showSecondaryButton,
+      base.showSecondaryButton !== false,
+    ),
   }
 }
 

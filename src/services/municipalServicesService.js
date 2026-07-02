@@ -1,6 +1,7 @@
 import {
   DEFAULT_MUNICIPAL_SERVICES,
   DEFAULT_SERVICES_PAGE_CONTENT,
+  normalizeHeroToggle,
   normalizeMunicipalService,
 } from '../data/servicesPageContent.js'
 import { getApiBase } from '../utils/apiConfig.js'
@@ -23,10 +24,20 @@ function mapContent(value) {
     heroSubtitle: String(value?.heroSubtitle || ''),
     heroSearchPlaceholder: String(value?.heroSearchPlaceholder || ''),
     heroImageUrl: String(value?.heroImageUrl || ''),
+    overlayOpacity: Math.min(
+      90,
+      Math.max(0, Math.round(Number(value?.overlayOpacity ?? 65) || 65)),
+    ),
     heroPrimaryLabel: String(value?.heroPrimaryLabel || ''),
     heroPrimaryHref: String(value?.heroPrimaryHref || ''),
     heroSecondaryLabel: String(value?.heroSecondaryLabel || ''),
     heroSecondaryHref: String(value?.heroSecondaryHref || ''),
+    showHeroBadge: normalizeHeroToggle(value?.showHeroBadge, true),
+    showHeroTitle: normalizeHeroToggle(value?.showHeroTitle, true),
+    showHeroSubtitle: normalizeHeroToggle(value?.showHeroSubtitle, true),
+    showSearch: normalizeHeroToggle(value?.showSearch, true),
+    showPrimaryButton: normalizeHeroToggle(value?.showPrimaryButton, true),
+    showSecondaryButton: normalizeHeroToggle(value?.showSecondaryButton, true),
     steps: Array.isArray(value?.steps) ? value.steps.map((x) => String(x || '')) : [],
     scheduleLines: Array.isArray(value?.scheduleLines)
       ? value.scheduleLines.map((x) => String(x || ''))
