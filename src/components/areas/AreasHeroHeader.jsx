@@ -4,6 +4,7 @@ import { Container } from '../ui/Container.jsx'
 import { LinkButton } from '../ui/LinkButton.jsx'
 import { HydrationHeroDarkBackdrop } from '../skeleton/PageHydrationSkeleton.jsx'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
+import { heroOverlayGradientStyle, normalizeHeroOverlayOpacity } from '../../utils/heroOverlay.js'
 
 function SearchIcon({ className = 'h-5 w-5' }) {
   return (
@@ -26,6 +27,7 @@ export function AreasHeroHeader({
   subtitle = '',
   imageUrl = '',
   imageReady = true,
+  overlayOpacity = 65,
   searchPlaceholder = 'Buscar por nombre, slug o descripción…',
   searchQuery = '',
   onSearchChange,
@@ -38,6 +40,7 @@ export function AreasHeroHeader({
 }) {
   const inputId = useId()
   const heroImage = imageUrl ? resolveMediaUrl(imageUrl) || imageUrl : ''
+  const overlay = normalizeHeroOverlayOpacity(overlayOpacity)
 
   function handleSubmit(e) {
     e.preventDefault()
@@ -65,10 +68,10 @@ export function AreasHeroHeader({
         />
       )}
       <div
-        className="absolute inset-0 bg-linear-to-b from-slate-950/55 via-slate-950/78 to-slate-950/92"
+        className="absolute inset-0"
+        style={heroOverlayGradientStyle(overlay)}
         aria-hidden
       />
-      <div className="pointer-events-none absolute inset-0 bg-black/25" aria-hidden />
 
       <Container
         className={`relative z-10 flex min-h-[44dvh] flex-col items-center justify-center px-4 text-center sm:min-h-[48dvh] lg:min-h-[52dvh] ${

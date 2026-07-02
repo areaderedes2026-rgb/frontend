@@ -130,6 +130,7 @@ export function AreasIndex() {
   const apiEnabled = isApiConfigured()
   const { areas, loading, error } = useAreas()
   const [globalCover, setGlobalCover] = useState('')
+  const [heroOverlayOpacity, setHeroOverlayOpacity] = useState(65)
   const [globalCoverHydrated, setGlobalCoverHydrated] = useState(!apiEnabled)
   const [directoryQuery, setDirectoryQuery] = useState('')
   const [directorySort, setDirectorySort] = useState('priority')
@@ -157,6 +158,13 @@ export function AreasIndex() {
     fetchAreasPageContent()
       .then((content) => {
         if (!cancelled) setGlobalCover(String(content?.heroImageUrl || ''))
+        if (!cancelled) {
+          setHeroOverlayOpacity(
+            Number.isFinite(Number(content?.overlayOpacity))
+              ? Math.min(90, Math.max(0, Math.round(Number(content.overlayOpacity))))
+              : 65,
+          )
+        }
       })
       .catch(() => {
         if (!cancelled) setGlobalCover('')
@@ -177,6 +185,7 @@ export function AreasIndex() {
     subtitle: AREAS_HERO_SUBTITLE,
     imageUrl: heroImage,
     imageReady: globalCoverHydrated,
+    overlayOpacity: heroOverlayOpacity,
     searchPlaceholder: 'Buscar por nombre, slug o descripción…',
     searchQuery: directoryQuery,
     onSearchChange: setDirectoryQuery,
