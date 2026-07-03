@@ -9,6 +9,7 @@ import {
 } from '../../data/homeEmergencyContent.js'
 import { heroOverlayGradientStyle } from '../../utils/heroOverlay.js'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
+import { SectionTopWave } from './SectionTopWave.jsx'
 
 function PhoneIcon({ className = 'h-5 w-5' }) {
   return (
@@ -27,26 +28,10 @@ function telHref(phone) {
   return digits ? `tel:${digits}` : null
 }
 
-function SectionWave() {
-  return (
-    <svg
-      className="pointer-events-none absolute inset-x-0 -top-12 z-[1] h-12 w-full text-[#171b22]"
-      viewBox="0 0 1440 96"
-      preserveAspectRatio="none"
-      aria-hidden
-    >
-      <path
-        fill="currentColor"
-        d="M0 58L60 52C120 46 240 34 360 42C480 50 600 78 720 74C840 70 960 34 1080 30C1200 26 1320 54 1380 68L1440 82V96H0V58Z"
-      />
-    </svg>
-  )
-}
-
-function EmergencySkeleton() {
+function EmergencySkeleton({ previousTone = 'light' }) {
   return (
     <section className="relative isolate overflow-visible border-b border-white/10 bg-[#171b22] py-14 text-white sm:py-16">
-      <SectionWave />
+      <SectionTopWave tone="accent" previousTone={previousTone} />
       <Container className="relative z-10">
         <div className="mx-auto max-w-2xl text-center">
           <div className="mx-auto h-6 w-36 animate-pulse rounded-full bg-white/10" />
@@ -63,14 +48,14 @@ function EmergencySkeleton() {
   )
 }
 
-export function HomeEmergencyNumbers({ content, loading = false }) {
+export function HomeEmergencyNumbers({ content, loading = false, previousTone = 'light' }) {
   const merged = useMemo(
     () => mergeHomeEmergencyContent(DEFAULT_HOME_EMERGENCY_CONTENT, content || {}),
     [content],
   )
   const numbers = useMemo(() => getActiveEmergencyNumbers(merged), [merged])
 
-  if (loading) return <EmergencySkeleton />
+  if (loading) return <EmergencySkeleton previousTone={previousTone} />
   if (numbers.length === 0) return null
 
   const imageUrl =
@@ -82,9 +67,9 @@ export function HomeEmergencyNumbers({ content, loading = false }) {
       className="relative isolate overflow-visible border-b border-white/10 bg-[#171b22] py-14 text-white sm:py-16 lg:py-20"
       aria-labelledby="titulo-emergencias-inicio"
     >
-      <SectionWave />
+      <SectionTopWave tone="accent" previousTone={previousTone} />
 
-      <div className="absolute inset-0 overflow-hidden" aria-hidden>
+      <div className="absolute inset-0 z-0 overflow-hidden" aria-hidden>
         <img
           src={imageUrl}
           alt=""

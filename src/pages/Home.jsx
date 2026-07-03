@@ -249,7 +249,11 @@ export function Home() {
         </RevealOnScroll>
       </StorySection>
 
-      <HomeEmergencyNumbers content={homeEmergencyContent} loading={homeEmergencyLoading} />
+      <HomeEmergencyNumbers
+        content={homeEmergencyContent}
+        loading={homeEmergencyLoading}
+        previousTone={mapTone}
+      />
 
       <StorySection
         eyebrow="Gestiones"
