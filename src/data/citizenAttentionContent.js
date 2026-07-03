@@ -1,11 +1,28 @@
 /** Contenido por defecto de la sección Atención al ciudadano. */
 
+import { mergePageHeroCover, pageHeroToHeaderProps } from './pageHeroCoverContent.js'
+import { normalizeHeroToggle } from './servicesPageContent.js'
+
+export const CITIZEN_ATTENTION_DEFAULT_HERO_IMAGE = '/images/atencion-hero-bg.jpg'
+
 export const DEFAULT_CITIZEN_ATTENTION_CONTENT = {
   heroEyebrow: 'Tu municipio te escucha',
   heroTitle: 'Atención al ciudadano',
   heroSubtitle:
     'Un solo lugar para consultas, reclamos y orientación. Diseñamos esta experiencia para que encuentres rápido el canal adecuado y nos dejes tu mensaje con total claridad.',
-  heroImageUrl: '/images/atencion-hero-bg.jpg',
+  heroImageUrl: CITIZEN_ATTENTION_DEFAULT_HERO_IMAGE,
+  overlayOpacity: 65,
+  heroSearchPlaceholder: '',
+  showHeroBadge: true,
+  showHeroTitle: true,
+  showHeroSubtitle: true,
+  showSearch: false,
+  showPrimaryButton: true,
+  heroPrimaryLabel: 'Dejar consulta',
+  heroPrimaryHref: '#consulta-ciudadano',
+  showSecondaryButton: true,
+  heroSecondaryLabel: 'Ver servicios',
+  heroSecondaryHref: '/services',
   channels: [
   {
     id: 'presencial',
@@ -101,6 +118,31 @@ export function mergeCitizenAttentionContent(base, remote) {
     heroTitle: remote.heroTitle || base.heroTitle,
     heroSubtitle: remote.heroSubtitle || base.heroSubtitle,
     heroImageUrl: remote.heroImageUrl || base.heroImageUrl,
+    overlayOpacity: Math.min(
+      90,
+      Math.max(
+        0,
+        Math.round(
+          Number.isFinite(Number(remote.overlayOpacity))
+            ? Number(remote.overlayOpacity)
+            : base.overlayOpacity ?? 65,
+        ),
+      ),
+    ),
+    heroSearchPlaceholder: String(remote.heroSearchPlaceholder ?? base.heroSearchPlaceholder ?? ''),
+    showHeroBadge: normalizeHeroToggle(remote.showHeroBadge, base.showHeroBadge !== false),
+    showHeroTitle: normalizeHeroToggle(remote.showHeroTitle, base.showHeroTitle !== false),
+    showHeroSubtitle: normalizeHeroToggle(remote.showHeroSubtitle, base.showHeroSubtitle !== false),
+    showSearch: normalizeHeroToggle(remote.showSearch, base.showSearch !== false),
+    showPrimaryButton: normalizeHeroToggle(remote.showPrimaryButton, base.showPrimaryButton !== false),
+    heroPrimaryLabel: String(remote.heroPrimaryLabel ?? base.heroPrimaryLabel ?? ''),
+    heroPrimaryHref: String(remote.heroPrimaryHref ?? base.heroPrimaryHref ?? ''),
+    showSecondaryButton: normalizeHeroToggle(
+      remote.showSecondaryButton,
+      base.showSecondaryButton !== false,
+    ),
+    heroSecondaryLabel: String(remote.heroSecondaryLabel ?? base.heroSecondaryLabel ?? ''),
+    heroSecondaryHref: String(remote.heroSecondaryHref ?? base.heroSecondaryHref ?? ''),
     channels: mergeList(base.channels, remote.channels, (item, fallback, i) => ({
       id: item?.id || fallback?.id || `canal-${i + 1}`,
       title: item?.title || fallback?.title || '',
@@ -127,4 +169,75 @@ export function mergeCitizenAttentionContent(base, remote) {
     finalSecondaryLabel: remote.finalSecondaryLabel || base.finalSecondaryLabel,
     finalSecondaryHref: remote.finalSecondaryHref || base.finalSecondaryHref,
   }
+}
+
+function citizenHeroDefaults() {
+  const d = DEFAULT_CITIZEN_ATTENTION_CONTENT
+  return {
+    heroImageUrl: d.heroImageUrl,
+    overlayOpacity: d.overlayOpacity ?? 65,
+    heroBadge: d.heroEyebrow,
+    heroTitle: d.heroTitle,
+    heroSubtitle: d.heroSubtitle,
+    heroSearchPlaceholder: d.heroSearchPlaceholder,
+    showHeroBadge: d.showHeroBadge !== false,
+    showHeroTitle: d.showHeroTitle !== false,
+    showHeroSubtitle: d.showHeroSubtitle !== false,
+    showSearch: d.showSearch === true,
+    showPrimaryButton: d.showPrimaryButton !== false,
+    primaryLabel: d.heroPrimaryLabel,
+    primaryHref: d.heroPrimaryHref,
+    showSecondaryButton: d.showSecondaryButton !== false,
+    secondaryLabel: d.heroSecondaryLabel,
+    secondaryHref: d.heroSecondaryHref,
+  }
+}
+
+export function citizenContentToHeroCover(content) {
+  const c = content && typeof content === 'object' ? content : {}
+  return mergePageHeroCover(citizenHeroDefaults(), {
+    heroImageUrl: c.heroImageUrl,
+    overlayOpacity: c.overlayOpacity,
+    heroBadge: c.heroEyebrow,
+    heroTitle: c.heroTitle,
+    heroSubtitle: c.heroSubtitle,
+    heroSearchPlaceholder: c.heroSearchPlaceholder,
+    showHeroBadge: c.showHeroBadge,
+    showHeroTitle: c.showHeroTitle,
+    showHeroSubtitle: c.showHeroSubtitle,
+    showSearch: c.showSearch,
+    showPrimaryButton: c.showPrimaryButton,
+    primaryLabel: c.heroPrimaryLabel,
+    primaryHref: c.heroPrimaryHref,
+    showSecondaryButton: c.showSecondaryButton,
+    secondaryLabel: c.heroSecondaryLabel,
+    secondaryHref: c.heroSecondaryHref,
+  })
+}
+
+export function applyHeroCoverToCitizenContent(content, draft) {
+  const merged = mergePageHeroCover(citizenHeroDefaults(), draft)
+  return {
+    ...(content && typeof content === 'object' ? content : {}),
+    heroImageUrl: merged.heroImageUrl,
+    overlayOpacity: merged.overlayOpacity,
+    heroEyebrow: merged.heroBadge,
+    heroTitle: merged.heroTitle,
+    heroSubtitle: merged.heroSubtitle,
+    heroSearchPlaceholder: merged.heroSearchPlaceholder,
+    showHeroBadge: merged.showHeroBadge,
+    showHeroTitle: merged.showHeroTitle,
+    showHeroSubtitle: merged.showHeroSubtitle,
+    showSearch: merged.showSearch,
+    showPrimaryButton: merged.showPrimaryButton,
+    heroPrimaryLabel: merged.primaryLabel,
+    heroPrimaryHref: merged.primaryHref,
+    showSecondaryButton: merged.showSecondaryButton,
+    heroSecondaryLabel: merged.secondaryLabel,
+    heroSecondaryHref: merged.secondaryHref,
+  }
+}
+
+export function citizenHeroToHeaderProps(content, options) {
+  return pageHeroToHeaderProps(citizenContentToHeroCover(content), citizenHeroDefaults(), options)
 }

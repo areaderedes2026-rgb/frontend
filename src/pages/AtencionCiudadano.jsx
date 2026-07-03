@@ -1,23 +1,20 @@
 import { useCallback, useEffect, useId, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { CitizenPageFloats } from '../components/atencion/CitizenPageFloats.jsx'
 import { RevealOnScroll } from '../components/home/RevealOnScroll.jsx'
+import { PageListHeroHeader } from '../components/shared/PageListHeroHeader.jsx'
 import { Button } from '../components/ui/Button.jsx'
 import { Container } from '../components/ui/Container.jsx'
 import { Toast } from '../components/ui/Toast.jsx'
 import { formErrorClass, inputClass, labelClass, textareaClass } from '../components/ui/formStyles.js'
 import {
+  CITIZEN_ATTENTION_DEFAULT_HERO_IMAGE,
   DEFAULT_CITIZEN_ATTENTION_CONTENT,
+  citizenHeroToHeaderProps,
   mergeCitizenAttentionContent,
 } from '../data/citizenAttentionContent.js'
 import { createCitizenInquiry, fetchCitizenAttentionContent } from '../services/citizenAttentionService.js'
 import { isApiConfigured } from '../utils/apiConfig.js'
-import { ROUTES } from '../utils/constants.js'
-import {
-  HydrationCitizenChannelGrid,
-  HydrationHeroDarkBackdrop,
-  HydrationHeroLightTextBlock,
-} from '../components/skeleton/PageHydrationSkeleton.jsx'
+import { HydrationCitizenChannelGrid } from '../components/skeleton/PageHydrationSkeleton.jsx'
 
 function ChannelIcon({ name, className = 'h-6 w-6' }) {
   const common = { className, fill: 'none', viewBox: '0 0 24 24', strokeWidth: 1.65, stroke: 'currentColor' }
@@ -132,6 +129,7 @@ export function AtencionCiudadano() {
   const apiEnabled = isApiConfigured()
   const formId = useId()
   const [content, setContent] = useState(DEFAULT_CITIZEN_ATTENTION_CONTENT)
+  const [pageContentHydrated, setPageContentHydrated] = useState(!apiEnabled)
   const [loadingContent, setLoadingContent] = useState(apiEnabled)
   const [loadError, setLoadError] = useState('')
   const [form, setForm] = useState(EMPTY_FORM)
@@ -162,7 +160,10 @@ export function AtencionCiudadano() {
           setLoadError(e.message || 'No se pudo cargar la sección de atención.')
         }
       } finally {
-        if (!cancelled) setLoadingContent(false)
+        if (!cancelled) {
+          setLoadingContent(false)
+          setPageContentHydrated(true)
+        }
       }
     }
     load()
@@ -171,6 +172,15 @@ export function AtencionCiudadano() {
     }
   }, [apiEnabled])
   const showContentSkeleton = apiEnabled && loadingContent
+
+  const heroImage =
+    content.heroImageUrl?.trim() || CITIZEN_ATTENTION_DEFAULT_HERO_IMAGE
+
+  const heroProps = {
+    ...(pageContentHydrated ? citizenHeroToHeaderProps(content) : {}),
+    imageUrl: pageContentHydrated ? heroImage : '',
+    contentReady: pageContentHydrated,
+  }
 
   function updateField(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }))
@@ -248,57 +258,7 @@ export function AtencionCiudadano() {
           aria-hidden
         />
 
-        <div className="relative min-h-[52dvh] overflow-hidden border-b border-white/10 bg-[#171b22] sm:min-h-[56dvh] lg:min-h-[58dvh]">
-          <div className="relative min-h-[52dvh] sm:min-h-[56dvh] lg:min-h-[58dvh]">
-            <img
-              src={showContentSkeleton ? '' : content.heroImageUrl}
-              alt=""
-              width={1920}
-              height={1080}
-              fetchPriority="high"
-              decoding="async"
-              className={`absolute inset-0 h-full w-full object-cover object-[center_30%] ${
-                showContentSkeleton ? 'opacity-0' : 'opacity-100'
-              }`}
-            />
-            {showContentSkeleton ? <HydrationHeroDarkBackdrop /> : null}
-            <div
-              className="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/88 to-slate-900/25"
-              aria-hidden
-            />
-            <Container className="relative z-10 flex min-h-[52dvh] flex-col justify-center pt-[calc(var(--navbar-h,5rem)+1rem)] pb-8 sm:min-h-[56dvh] sm:pt-[calc(var(--navbar-h,5rem)+1.5rem)] sm:pb-10 lg:min-h-[58dvh] lg:pb-12">
-              {showContentSkeleton ? (
-                <HydrationHeroLightTextBlock />
-              ) : (
-                <>
-                  <p className="hero-enter-eyebrow text-[11px] font-bold uppercase tracking-[0.28em] text-sky-200 sm:text-xs">
-                    {content.heroEyebrow}
-                  </p>
-                  <h1 className="hero-enter-title mt-2 max-w-3xl font-serif text-3xl font-bold tracking-tight text-white drop-shadow-sm sm:text-4xl lg:text-5xl">
-                    {content.heroTitle}
-                  </h1>
-                  <p className="hero-enter-subtitle mt-3 max-w-2xl text-sm leading-relaxed text-slate-100/95 sm:text-base">
-                    {content.heroSubtitle}
-                  </p>
-                </>
-              )}
-              <div className="hero-enter-actions mt-6 flex flex-wrap gap-3">
-                <a
-                  href="#consulta-ciudadano"
-                  className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#171b22] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#222831]"
-                >
-                  Dejar consulta
-                </a>
-                <Link
-                  to={ROUTES.services}
-                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/45 bg-white/10 px-5 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white/70 hover:bg-white/15"
-                >
-                  Ver servicios
-                </Link>
-              </div>
-            </Container>
-          </div>
-        </div>
+        <PageListHeroHeader {...heroProps} />
 
         <Container className="relative">
           <RevealOnScroll variant="slow">

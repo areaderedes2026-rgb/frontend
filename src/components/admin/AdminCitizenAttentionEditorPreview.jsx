@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react'
 import { ConfirmDialog } from '../ui/ConfirmDialog.jsx'
 import { Modal } from '../ui/Modal.jsx'
-import { SingleImageUploadField } from './SingleImageUploadField.jsx'
+import { PageListHeroHeader } from '../shared/PageListHeroHeader.jsx'
 import { inputClass, labelClass, textareaClass } from '../ui/formStyles.js'
-import { resolveMediaUrl } from '../../utils/imageUrl.js'
+import { citizenHeroToHeaderProps } from '../../data/citizenAttentionContent.js'
 
 const ACTION_BTN_BASE =
   'inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto'
@@ -186,6 +186,7 @@ export function AdminCitizenAttentionEditorPreview({
   saving,
   error,
   onSubmit,
+  onChangeCover,
   apiAvailable,
 }) {
   const [editor, setEditor] = useState(null)
@@ -225,15 +226,6 @@ export function AdminCitizenAttentionEditorPreview({
   function handleSaveEditor() {
     if (!editor) return
     const draft = editor.draft || {}
-    if (editor.kind === 'hero') {
-      setForm((prev) => ({
-        ...prev,
-        heroEyebrow: String(draft.heroEyebrow || '').trim(),
-        heroTitle: String(draft.heroTitle || '').trim(),
-        heroSubtitle: String(draft.heroSubtitle || ''),
-        heroImageUrl: String(draft.heroImageUrl || '').trim(),
-      }))
-    }
     if (editor.kind === 'channel') {
       upsertListItem('channels', editor.index, {
         id: String(draft.id || '').trim(),
@@ -282,7 +274,6 @@ export function AdminCitizenAttentionEditorPreview({
   const editorTitle = useMemo(() => {
     if (!editor) return ''
     const labels = {
-      hero: 'Editar portada',
       channel: editor.index === null ? 'Nuevo canal de atención' : 'Editar canal de atención',
       faq: editor.index === null ? 'Nueva pregunta frecuente' : 'Editar pregunta frecuente',
       tip: editor.index === null ? 'Nuevo consejo' : 'Editar consejo',
@@ -318,7 +309,6 @@ export function AdminCitizenAttentionEditorPreview({
   }
 
   const draft = editor?.draft || {}
-  const heroUrl = form.heroImageUrl ? resolveMediaUrl(form.heroImageUrl) : ''
 
   return (
     <>
@@ -340,7 +330,7 @@ export function AdminCitizenAttentionEditorPreview({
         open={editor != null}
         onClose={closeEditor}
         loading={saving}
-        size={editor?.kind === 'hero' || editor?.kind === 'channel' || editor?.kind === 'faq' ? 'wide' : 'default'}
+        size={editor?.kind === 'channel' || editor?.kind === 'faq' ? 'wide' : 'default'}
         title={editorTitle}
         description="Los cambios quedan pendientes hasta que toques «Guardar cambios»."
       >
@@ -361,6 +351,40 @@ export function AdminCitizenAttentionEditorPreview({
       </Modal>
 
       <div className="admin-fade-up space-y-5">
+        <div className="flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-slate-600">
+            Tocá el lápiz de cada sección para editarla.{' '}
+            <span className="hidden sm:inline">
+              Los cambios quedan en borrador hasta «Guardar cambios».
+            </span>
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={onChangeCover}
+              disabled={saving || !apiAvailable}
+              className={ACTION_BTN_NEUTRAL}
+            >
+              Cambiar portada
+            </button>
+            <button
+              type="button"
+              onClick={onSubmit}
+              disabled={saving || loading || !apiAvailable}
+              className={ACTION_BTN_PRIMARY}
+            >
+              {saving ? (
+                <>
+                  <Spinner tone="white" />
+                  Guardando…
+                </>
+              ) : (
+                'Guardar cambios'
+              )}
+            </button>
+          </div>
+        </div>
+
         {error ? (
           <p
             className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
@@ -371,56 +395,7 @@ export function AdminCitizenAttentionEditorPreview({
         ) : null}
 
         <article className="overflow-hidden rounded-3xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm">
-          <header className="relative overflow-hidden">
-            {heroUrl ? (
-              <img
-                src={heroUrl}
-                alt=""
-                className="h-56 w-full object-cover object-[center_30%] sm:h-64 lg:h-80"
-              />
-            ) : (
-              <div className="flex h-56 w-full items-center justify-center bg-linear-to-br from-slate-700 to-slate-900 text-sm text-slate-300 sm:h-64 lg:h-80">
-                Sin imagen de portada
-              </div>
-            )}
-            <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/88 to-slate-900/25" />
-            <div className="absolute right-4 top-4 z-20 sm:right-6 sm:top-6">
-              <EditChip
-                tone="overlay"
-                label="Editar portada"
-                onClick={() =>
-                  openEditor('hero', null, {
-                    heroEyebrow: form.heroEyebrow,
-                    heroTitle: form.heroTitle,
-                    heroSubtitle: form.heroSubtitle,
-                    heroImageUrl: form.heroImageUrl,
-                  })
-                }
-                disabled={saving}
-              />
-            </div>
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 p-6 sm:p-8 lg:p-10">
-              {form.heroEyebrow ? (
-                <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-sky-200 sm:text-xs">
-                  {form.heroEyebrow}
-                </p>
-              ) : null}
-              <h1 className="mt-2 max-w-3xl font-serif text-3xl font-bold tracking-tight text-white drop-shadow-sm sm:text-4xl lg:text-5xl">
-                {form.heroTitle || 'Sin título'}
-              </h1>
-              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-100/95 sm:text-base">
-                {form.heroSubtitle || <span className="italic text-slate-300">(Sin subtítulo)</span>}
-              </p>
-              <div className="mt-6 flex flex-wrap gap-3">
-                <span className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#171b22] px-5 text-sm font-semibold text-white shadow-sm">
-                  Dejar consulta
-                </span>
-                <span className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/45 bg-white/10 px-5 text-sm font-semibold text-white backdrop-blur-sm">
-                  Ver servicios
-                </span>
-              </div>
-            </div>
-          </header>
+          <PageListHeroHeader {...citizenHeroToHeaderProps(form)} previewMode />
 
           <div className="space-y-10 p-5 sm:p-7 lg:p-10">
             <section id="faq-atencion" className="grid gap-8 lg:grid-cols-12 lg:gap-10">
@@ -692,25 +667,10 @@ export function AdminCitizenAttentionEditorPreview({
           </div>
         </article>
 
-        <div className="sticky bottom-3 z-30 flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white/95 p-4 shadow-lg backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+        <div className="sticky bottom-3 z-30 rounded-2xl border border-slate-200/80 bg-white/95 p-4 shadow-lg backdrop-blur">
           <p className="text-xs text-slate-600">
             Los cambios no son visibles en el portal hasta que toques «Guardar cambios».
           </p>
-          <button
-            type="button"
-            onClick={onSubmit}
-            disabled={loading || saving}
-            className={ACTION_BTN_PRIMARY}
-          >
-            {saving ? (
-              <>
-                <Spinner tone="white" />
-                Guardando…
-              </>
-            ) : (
-              'Guardar cambios de Atención'
-            )}
-          </button>
         </div>
       </div>
     </>
@@ -720,8 +680,6 @@ export function AdminCitizenAttentionEditorPreview({
 function EditorBody({ editor, draft, setDraftField, saving }) {
   if (!editor) return null
   switch (editor.kind) {
-    case 'hero':
-      return <HeroForm draft={draft} setDraftField={setDraftField} saving={saving} />
     case 'channel':
       return <ChannelForm draft={draft} setDraftField={setDraftField} saving={saving} />
     case 'faq':
@@ -735,50 +693,6 @@ function EditorBody({ editor, draft, setDraftField, saving }) {
     default:
       return null
   }
-}
-
-function HeroForm({ draft, setDraftField, saving }) {
-  return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      <label className={labelClass}>
-        Etiqueta superior
-        <input
-          className={inputClass}
-          value={draft.heroEyebrow || ''}
-          onChange={(e) => setDraftField('heroEyebrow', e.target.value)}
-          disabled={saving}
-        />
-      </label>
-      <label className={labelClass}>
-        Título principal
-        <input
-          className={inputClass}
-          value={draft.heroTitle || ''}
-          onChange={(e) => setDraftField('heroTitle', e.target.value)}
-          disabled={saving}
-        />
-      </label>
-      <label className={`${labelClass} sm:col-span-2`}>
-        Subtítulo
-        <textarea
-          className={`${textareaClass} min-h-24`}
-          value={draft.heroSubtitle || ''}
-          onChange={(e) => setDraftField('heroSubtitle', e.target.value)}
-          disabled={saving}
-        />
-      </label>
-      <div className="sm:col-span-2">
-        <SingleImageUploadField
-          label="Imagen de portada"
-          helpText="Se usa como fondo del hero principal."
-          value={draft.heroImageUrl || ''}
-          onChange={(value) => setDraftField('heroImageUrl', value)}
-          kind="cover"
-          disabled={saving}
-        />
-      </div>
-    </div>
-  )
 }
 
 function ChannelForm({ draft, setDraftField, saving }) {
