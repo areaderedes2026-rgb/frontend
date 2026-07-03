@@ -33,7 +33,18 @@ function CalendarIcon({ className = 'h-6 w-6' }) {
 
 function AgendaSkeleton() {
   return (
-    <section className="relative isolate overflow-hidden border-b border-white/10 bg-[#171b22] py-12 text-white sm:py-14">
+    <section className="relative isolate overflow-visible border-y border-white/10 bg-[#171b22] py-12 text-white sm:py-14">
+      <svg
+        className="pointer-events-none absolute inset-x-0 -top-12 z-0 h-12 w-full text-[#171b22]"
+        viewBox="0 0 1440 96"
+        preserveAspectRatio="none"
+        aria-hidden
+      >
+        <path
+          fill="currentColor"
+          d="M0 58L60 52C120 46 240 34 360 42C480 50 600 78 720 74C840 70 960 34 1080 30C1200 26 1320 54 1380 68L1440 82V96H0V58Z"
+        />
+      </svg>
       <Container className="relative z-10">
         <div className="mx-auto max-w-2xl text-center">
           <div className="mx-auto h-6 w-40 animate-pulse rounded-full bg-white/10" />
@@ -291,17 +302,20 @@ export function HomeEventsAgenda({ events = [], loading = false }) {
 
   return (
     <section
-      className="relative isolate overflow-hidden border-b border-white/10 bg-[#171b22] py-12 text-white sm:py-14"
+      className="relative isolate overflow-visible border-y border-white/10 bg-[#171b22] py-12 text-white sm:py-14"
       aria-labelledby="titulo-agenda-inicio"
     >
-      <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_18%_28%,rgba(56,189,248,0.18),transparent_62%)]"
+      <svg
+        className="pointer-events-none absolute inset-x-0 -top-12 z-0 h-12 w-full text-[#171b22]"
+        viewBox="0 0 1440 96"
+        preserveAspectRatio="none"
         aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_55%_50%_at_100%_100%,rgba(14,165,233,0.14),transparent_68%)]"
-        aria-hidden
-      />
+      >
+        <path
+          fill="currentColor"
+          d="M0 58L60 52C120 46 240 34 360 42C480 50 600 78 720 74C840 70 960 34 1080 30C1200 26 1320 54 1380 68L1440 82V96H0V58Z"
+        />
+      </svg>
 
       <Container className="relative z-10">
         <RevealOnScroll variant="slow">
