@@ -67,6 +67,23 @@ export function AdminSettingsHome() {
           </span>
         </Link>
         <Link
+          to={ROUTES.adminSettingsHomeEmergency}
+          onMouseEnter={() => preloadAdminRoute('settingsHomeEmergency')}
+          onFocus={() => preloadAdminRoute('settingsHomeEmergency')}
+          className="group admin-fade-up rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-md"
+        >
+          <p className="text-xs font-bold uppercase tracking-wide text-sky-700">
+            Inicio
+          </p>
+          <p className="mt-2 text-lg font-semibold text-slate-900">Números de emergencia</p>
+          <p className="mt-2 text-sm leading-relaxed text-slate-600">
+            Imagen de fondo, overlay, textos y contactos prioritarios del inicio.
+          </p>
+          <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-sky-800 group-hover:text-sky-950">
+            Abrir módulo <span aria-hidden>→</span>
+          </span>
+        </Link>
+        <Link
           to={ROUTES.adminSettingsIntendencia}
           className="group admin-fade-up rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-md"
         >

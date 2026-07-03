@@ -32,6 +32,9 @@ export function AdminSettingsLayout() {
         <NavLink to={ROUTES.adminSettingsHomeMap} className={subNavClass}>
           Mapa Inicio
         </NavLink>
+        <NavLink to={ROUTES.adminSettingsHomeEmergency} className={subNavClass}>
+          Emergencias
+        </NavLink>
         {isAdmin ? (
           <NavLink to={ROUTES.adminUsers} className={subNavClass}>
             Usuarios

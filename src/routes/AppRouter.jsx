@@ -33,6 +33,7 @@ const AdminSettingsHome = lazy(adminRouteLoaders.settingsHome)
 const AdminCategories = lazy(adminRouteLoaders.settingsCategories)
 const AdminSettingsHomeBanners = lazy(adminRouteLoaders.settingsHomeBanners)
 const AdminSettingsHomeMap = lazy(adminRouteLoaders.settingsHomeMap)
+const AdminSettingsHomeEmergency = lazy(adminRouteLoaders.settingsHomeEmergency)
 const AdminIntendencia = lazy(adminRouteLoaders.settingsIntendencia)
 const AdminLegisladorEste = lazy(adminRouteLoaders.settingsLegisladorEste)
 const AdminConcejoDeliberante = lazy(adminRouteLoaders.settingsConcejoDeliberante)
@@ -242,6 +243,14 @@ export function AppRouter() {
               element={
                 <Suspense fallback={<AdminRouteFallback />}>
                   <AdminSettingsHomeMap />
+                </Suspense>
+              }
+            />
+            <Route
+              path="home-emergency"
+              element={
+                <Suspense fallback={<AdminRouteFallback />}>
+                  <AdminSettingsHomeEmergency />
                 </Suspense>
               }
             />

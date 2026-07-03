@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { HomeHeroBanner } from '../components/home/HomeHeroBanner.jsx'
 import { HomeInteractiveMap } from '../components/home/HomeInteractiveMap.jsx'
 import { HomeEventsAgenda } from '../components/home/HomeEventsAgenda.jsx'
+import { HomeEmergencyNumbers } from '../components/home/HomeEmergencyNumbers.jsx'
 import { Link } from 'react-router-dom'
 import { AreasCarousel } from '../components/home/AreasCarousel.jsx'
 import { RevealOnScroll } from '../components/home/RevealOnScroll.jsx'
@@ -10,9 +11,14 @@ import { NewsCoverMedia } from '../components/news/NewsCoverMedia.jsx'
 import { Container } from '../components/ui/Container.jsx'
 import { LinkButton } from '../components/ui/LinkButton.jsx'
 import { DEFAULT_HOME_HERO_CONTENT, mergeHomeHeroContent } from '../data/homeHeroContent.js'
+import {
+  DEFAULT_HOME_EMERGENCY_CONTENT,
+  mergeHomeEmergencyContent,
+} from '../data/homeEmergencyContent.js'
 import { DEFAULT_HOME_MAP_CONTENT, mergeHomeMapContent } from '../data/homeMapContent.js'
 import { useNewsList } from '../hooks/useNewsList.js'
 import { fetchPublicEvents } from '../services/eventsService.js'
+import { fetchHomeEmergencyContent } from '../services/homeEmergencyService.js'
 import { fetchHomeHeroContent } from '../services/homeHeroService.js'
 import { fetchHomeMapContent } from '../services/homeMapService.js'
 import { formatShortDate } from '../utils/formatDate.js'
@@ -32,6 +38,8 @@ export function Home() {
   const [homeHeroContent, setHomeHeroContent] = useState(DEFAULT_HOME_HERO_CONTENT)
   const [homeHeroLoading, setHomeHeroLoading] = useState(true)
   const [homeMapContent, setHomeMapContent] = useState(DEFAULT_HOME_MAP_CONTENT)
+  const [homeEmergencyContent, setHomeEmergencyContent] = useState(DEFAULT_HOME_EMERGENCY_CONTENT)
+  const [homeEmergencyLoading, setHomeEmergencyLoading] = useState(true)
   const [events, setEvents] = useState([])
   const [eventsLoading, setEventsLoading] = useState(true)
 
@@ -85,6 +93,30 @@ export function Home() {
       }
     }
     void loadMap()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    async function loadEmergency() {
+      try {
+        const remote = await fetchHomeEmergencyContent()
+        if (!cancelled) {
+          setHomeEmergencyContent(
+            mergeHomeEmergencyContent(DEFAULT_HOME_EMERGENCY_CONTENT, remote || {}),
+          )
+        }
+      } catch {
+        if (!cancelled) {
+          setHomeEmergencyContent(DEFAULT_HOME_EMERGENCY_CONTENT)
+        }
+      } finally {
+        if (!cancelled) setHomeEmergencyLoading(false)
+      }
+    }
+    void loadEmergency()
     return () => {
       cancelled = true
     }
@@ -216,6 +248,8 @@ export function Home() {
           <HomeInteractiveMap content={homeMapContent} />
         </RevealOnScroll>
       </StorySection>
+
+      <HomeEmergencyNumbers content={homeEmergencyContent} loading={homeEmergencyLoading} />
 
       <StorySection
         eyebrow="Gestiones"

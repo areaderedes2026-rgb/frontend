@@ -43,6 +43,7 @@ export const ROUTES = {
   adminSettingsCategories: '/admin/settings/categories',
   adminSettingsHomeBanners: '/admin/settings/home-banners',
   adminSettingsHomeMap: '/admin/settings/home-map',
+  adminSettingsHomeEmergency: '/admin/settings/home-emergency',
   adminSettingsIntendencia: '/admin/settings/intendencia',
   adminSettingsLegisladorEste: '/admin/settings/legislador-este',
   adminSettingsConcejoDeliberante: '/admin/settings/concejo-deliberante',
