@@ -275,7 +275,7 @@ export function mergeOfertaAcademicaContent(base, remote) {
     showHeroBadge: normalizeHeroToggle(remote.showHeroBadge, base.showHeroBadge !== false),
     showHeroTitle: normalizeHeroToggle(remote.showHeroTitle, base.showHeroTitle !== false),
     showHeroSubtitle: normalizeHeroToggle(remote.showHeroSubtitle, base.showHeroSubtitle !== false),
-    showSearch: normalizeHeroToggle(remote.showSearch, base.showSearch === true),
+    showSearch: normalizeHeroToggle(remote.showSearch, base.showSearch !== false),
     showPrimaryButton: normalizeHeroToggle(remote.showPrimaryButton, base.showPrimaryButton !== false),
     heroPrimaryLabel: String(remote.heroPrimaryLabel ?? base.heroPrimaryLabel ?? ''),
     heroPrimaryHref: String(remote.heroPrimaryHref ?? base.heroPrimaryHref ?? ''),

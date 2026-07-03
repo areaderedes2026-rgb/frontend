@@ -9,6 +9,7 @@ import {
   mergeOfertaAcademicaContent,
   ofertaContentToHeroCover,
 } from '../../data/ofertaAcademicaContent.js'
+import { normalizeHeroToggle } from '../../data/servicesPageContent.js'
 import { useContentEditorConcurrencyConflict } from '../../hooks/useContentEditorConcurrencyConflict.jsx'
 import {
   fetchOfertaAcademicaContent,
@@ -20,8 +21,31 @@ function cloneContent(c) {
   return JSON.parse(JSON.stringify(c))
 }
 
+function normalizeOverlay(value, fallback = 65) {
+  const n = Number(value)
+  return Number.isFinite(n) ? Math.min(90, Math.max(0, Math.round(n))) : fallback
+}
+
+function mapContentToForm(content) {
+  const merged = mergeOfertaAcademicaContent(DEFAULT_OFERTA_ACADEMICA_CONTENT, content || {})
+  return {
+    ...merged,
+    categories: [...(merged.categories || [])],
+    introParagraphs: [...(merged.introParagraphs || [])],
+    highlights: (merged.highlights || []).map((h) => ({ ...h })),
+    offers: (merged.offers || []).map((o) => ({ ...o })),
+    overlayOpacity: normalizeOverlay(merged.overlayOpacity, 65),
+    showHeroBadge: normalizeHeroToggle(merged.showHeroBadge, true),
+    showHeroTitle: normalizeHeroToggle(merged.showHeroTitle, true),
+    showHeroSubtitle: normalizeHeroToggle(merged.showHeroSubtitle, true),
+    showSearch: normalizeHeroToggle(merged.showSearch, false),
+    showPrimaryButton: normalizeHeroToggle(merged.showPrimaryButton, true),
+    showSecondaryButton: normalizeHeroToggle(merged.showSecondaryButton, true),
+  }
+}
+
 export function AdminOfertaAcademica() {
-  const [form, setForm] = useState(() => cloneContent(DEFAULT_OFERTA_ACADEMICA_CONTENT))
+  const [form, setForm] = useState(() => mapContentToForm(DEFAULT_OFERTA_ACADEMICA_CONTENT))
   const [contentUpdatedAt, setContentUpdatedAt] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -37,8 +61,8 @@ export function AdminOfertaAcademica() {
 
   const loadFromServer = useCallback(async () => {
     const remote = await fetchOfertaAcademicaContent()
-    const merged = mergeOfertaAcademicaContent(DEFAULT_OFERTA_ACADEMICA_CONTENT, remote || {})
-    setForm(cloneContent(merged))
+    const nextForm = mapContentToForm(remote || {})
+    setForm(cloneContent(nextForm))
     setContentUpdatedAt(remote?.updatedAt || null)
     setError('')
   }, [])
@@ -74,16 +98,16 @@ export function AdminOfertaAcademica() {
       heroTitle: String(form.heroTitle || '').trim(),
       heroSubtitle: String(form.heroSubtitle || ''),
       heroImageUrl: String(form.heroImageUrl || '').trim(),
-      overlayOpacity: form.overlayOpacity,
+      overlayOpacity: normalizeOverlay(form.overlayOpacity, 65),
       heroSearchPlaceholder: String(form.heroSearchPlaceholder || ''),
-      showHeroBadge: form.showHeroBadge,
-      showHeroTitle: form.showHeroTitle,
-      showHeroSubtitle: form.showHeroSubtitle,
-      showSearch: form.showSearch,
-      showPrimaryButton: form.showPrimaryButton,
+      showHeroBadge: normalizeHeroToggle(form.showHeroBadge, true),
+      showHeroTitle: normalizeHeroToggle(form.showHeroTitle, true),
+      showHeroSubtitle: normalizeHeroToggle(form.showHeroSubtitle, true),
+      showSearch: normalizeHeroToggle(form.showSearch, false),
+      showPrimaryButton: normalizeHeroToggle(form.showPrimaryButton, true),
       heroPrimaryLabel: String(form.heroPrimaryLabel || '').trim(),
       heroPrimaryHref: String(form.heroPrimaryHref || '').trim(),
-      showSecondaryButton: form.showSecondaryButton,
+      showSecondaryButton: normalizeHeroToggle(form.showSecondaryButton, true),
       heroSecondaryLabel: String(form.heroSecondaryLabel || '').trim(),
       heroSecondaryHref: String(form.heroSecondaryHref || '').trim(),
       introTitle: String(form.introTitle || '').trim(),
@@ -109,8 +133,8 @@ export function AdminOfertaAcademica() {
   const persistContent = useCallback(
     async ({ forceOverwrite = false } = {}) => {
       const saved = await updateOfertaAcademicaContent(buildPayload(forceOverwrite))
-      const merged = mergeOfertaAcademicaContent(DEFAULT_OFERTA_ACADEMICA_CONTENT, saved || {})
-      setForm(cloneContent(merged))
+      const nextForm = mapContentToForm(saved || {})
+      setForm(cloneContent(nextForm))
       setContentUpdatedAt(saved?.updatedAt || null)
       setError('')
       setToast({ variant: 'success', message: 'Se guardaron los cambios de Oferta académica.' })
@@ -188,7 +212,10 @@ export function AdminOfertaAcademica() {
         }
         onClose={() => setHeroCoverOpen(false)}
         onSave={() => {
-          setForm((prev) => applyHeroCoverToOfertaContent(prev, heroCoverDraft))
+          const nextForm = mapContentToForm(
+            applyHeroCoverToOfertaContent(form, heroCoverDraft),
+          )
+          setForm(cloneContent(nextForm))
           setHeroCoverOpen(false)
           setToast({
             variant: 'success',
