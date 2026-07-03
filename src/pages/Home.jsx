@@ -233,7 +233,7 @@ export function Home() {
         className="relative"
       >
         <RevealOnScroll variant="slow">
-          <AreasCarousel showHeader={false} />
+          <AreasCarousel showHeader={false} tone={areasTone} />
         </RevealOnScroll>
       </StorySection>
 
