@@ -1,80 +1,19 @@
 import { useEffect, useMemo, useState } from 'react'
-
-const WEEKDAY_LABELS = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom']
-const MONTH_LABELS = [
-  'Enero',
-  'Febrero',
-  'Marzo',
-  'Abril',
-  'Mayo',
-  'Junio',
-  'Julio',
-  'Agosto',
-  'Septiembre',
-  'Octubre',
-  'Noviembre',
-  'Diciembre',
-]
-
-function toMonthKey(date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-}
-
-function startOfMonth(date) {
-  return new Date(date.getFullYear(), date.getMonth(), 1)
-}
-
-function parseEventDate(value) {
-  if (!value) return null
-  const d = new Date(value)
-  if (Number.isNaN(d.getTime())) return null
-  return d
-}
-
-function weekdayIndexMondayFirst(date) {
-  const day = date.getDay()
-  return day === 0 ? 6 : day - 1
-}
-
-function dayKey(date) {
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
-}
-
-function formatHour(date) {
-  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
-}
-
-function monthGridDays(monthDate) {
-  const first = startOfMonth(monthDate)
-  const startOffset = weekdayIndexMondayFirst(first)
-  const startDate = new Date(first)
-  startDate.setDate(first.getDate() - startOffset)
-
-  const days = []
-  for (let i = 0; i < 42; i += 1) {
-    const d = new Date(startDate)
-    d.setDate(startDate.getDate() + i)
-    days.push(d)
-  }
-  return days
-}
+import {
+  MONTH_LABELS,
+  WEEKDAY_LABELS,
+  dayKey,
+  formatEventHour,
+  groupEventsByDay,
+  monthGridDays,
+  normalizeCalendarEvents,
+  parseEventDate,
+  startOfMonth,
+  toMonthKey,
+} from '../../utils/eventCalendar.js'
 
 export function EventsInteractiveCalendar({ events, focusDate = '' }) {
-  const parsedEvents = useMemo(
-    () =>
-      (Array.isArray(events) ? events : [])
-        .map((event) => {
-          const date = parseEventDate(event.datetime)
-          if (!date) return null
-          return { ...event, date }
-        })
-        .filter(Boolean)
-        .sort((a, b) => a.date.getTime() - b.date.getTime()),
-    [events],
-  )
+  const parsedEvents = useMemo(() => normalizeCalendarEvents(events), [events])
 
   const initialMonth = parsedEvents[0]?.date
     ? startOfMonth(parsedEvents[0].date)
@@ -93,17 +32,7 @@ export function EventsInteractiveCalendar({ events, focusDate = '' }) {
     setSelectedDay(dayKey(target))
   }, [focusDate])
 
-  const eventsByDay = useMemo(() => {
-    const map = new Map()
-    for (const event of parsedEvents) {
-      const key = dayKey(event.date)
-      const list = map.get(key) || []
-      list.push(event)
-      map.set(key, list)
-    }
-    return map
-  }, [parsedEvents])
-
+  const eventsByDay = useMemo(() => groupEventsByDay(events), [events])
   const days = useMemo(() => monthGridDays(visibleMonth), [visibleMonth])
   const selectedEvents = eventsByDay.get(selectedDay) || []
 
@@ -180,7 +109,7 @@ export function EventsInteractiveCalendar({ events, focusDate = '' }) {
 
         <aside className="p-5 sm:p-6 lg:col-span-4">
           <h4 className="text-sm font-bold uppercase tracking-[0.16em] text-sky-800">
-            Detalle del dia
+            Detalle del día
           </h4>
           {selectedEvents.length === 0 ? (
             <p className="mt-3 rounded-lg border border-[#ddd7ca] bg-[#f8f7f3] px-3 py-2 text-sm text-[#4b505a]">
@@ -194,7 +123,7 @@ export function EventsInteractiveCalendar({ events, focusDate = '' }) {
                   className="rounded-xl border border-[#ddd7ca] bg-[#f8f7f3] p-3.5"
                 >
                   <p className="text-[11px] font-bold uppercase tracking-wide text-sky-800">
-                    {event.type} · {formatHour(event.date)}
+                    {event.type || 'Evento'} · {formatEventHour(event.date)}
                   </p>
                   <h5 className="mt-1 text-sm font-semibold text-[#171b22]">{event.title}</h5>
                   <p className="mt-1 text-xs leading-relaxed text-[#4b505a]">{event.summary}</p>

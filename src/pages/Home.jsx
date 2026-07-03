@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { HomeHeroBanner } from '../components/home/HomeHeroBanner.jsx'
 import { HomeInteractiveMap } from '../components/home/HomeInteractiveMap.jsx'
+import { HomeEventsAgenda } from '../components/home/HomeEventsAgenda.jsx'
 import { Link } from 'react-router-dom'
 import { AreasCarousel } from '../components/home/AreasCarousel.jsx'
 import { RevealOnScroll } from '../components/home/RevealOnScroll.jsx'
@@ -15,7 +16,7 @@ import { fetchPublicEvents } from '../services/eventsService.js'
 import { fetchHomeHeroContent } from '../services/homeHeroService.js'
 import { fetchHomeMapContent } from '../services/homeMapService.js'
 import { formatShortDate } from '../utils/formatDate.js'
-import { pickUpcomingPublicEvents } from '../utils/publicEvents.js'
+import { sortPublicEventsForDisplay } from '../utils/publicEvents.js'
 import { ROUTES } from '../utils/constants.js'
 
 function excerptWords(text, maxWords = 14) {
@@ -37,11 +38,12 @@ export function Home() {
   const featuredNews = news[0] ?? null
   const secondaryNews = useMemo(() => news.slice(1, 5), [news])
 
-  const upcomingEvents = useMemo(() => pickUpcomingPublicEvents(events, 3), [events])
-  const showEventsSection = !eventsLoading && upcomingEvents.length > 0
-  const areasTone = showEventsSection ? 'light' : 'accent'
-  const mapTone = showEventsSection ? 'accent' : 'light'
-  const accessTone = showEventsSection ? 'light' : 'accent'
+  const visibleEvents = useMemo(() => sortPublicEventsForDisplay(events), [events])
+  const showEventsSection = eventsLoading || visibleEvents.length > 0
+  const hasPublishedEvents = visibleEvents.length > 0
+  const areasTone = hasPublishedEvents ? 'light' : 'accent'
+  const mapTone = hasPublishedEvents ? 'accent' : 'light'
+  const accessTone = hasPublishedEvents ? 'light' : 'accent'
   const accessIsAccent = accessTone === 'accent'
 
   useEffect(() => {
@@ -188,88 +190,7 @@ export function Home() {
       </StorySection>
 
       {showEventsSection ? (
-        <section className="relative isolate overflow-visible border-y border-white/10 bg-[#171b22] py-12 text-white sm:py-14">
-          <svg
-            className="pointer-events-none absolute inset-x-0 -top-12 z-0 h-12 w-full text-[#171b22]"
-            viewBox="0 0 1440 96"
-            preserveAspectRatio="none"
-            aria-hidden
-          >
-            <path
-              fill="currentColor"
-              d="M0 58L60 52C120 46 240 34 360 42C480 50 600 78 720 74C840 70 960 34 1080 30C1200 26 1320 54 1380 68L1440 82V96H0V58Z"
-            />
-          </svg>
-          <Container className="relative z-10">
-            <RevealOnScroll variant="slow">
-              <div className="mx-auto max-w-2xl text-center">
-                <p className="inline-flex rounded-full border border-white/14 bg-white/8 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-sky-100">
-                  Agenda municipal
-                </p>
-                <h2 className="mt-3 font-serif text-2xl font-bold tracking-tight text-white sm:text-3xl">
-                  Próximos eventos
-                </h2>
-              </div>
-            </RevealOnScroll>
-
-            <div className="mt-6 sm:mt-8">
-              <div className="mx-auto grid max-w-3xl justify-items-center gap-3 sm:grid-cols-3 sm:gap-4">
-                {upcomingEvents.map((event, index) => (
-                  <RevealOnScroll
-                    key={event.id}
-                    variant="slow"
-                    delayMs={index * 90}
-                    className="h-full w-full max-w-56"
-                  >
-                    <article className="group h-full overflow-hidden rounded-[1.6rem] border border-white/70 bg-white/75 shadow-[0_18px_55px_-34px_rgba(23,27,34,0.55)] ring-1 ring-[#171b22]/5 backdrop-blur transition-all duration-500 hover:-translate-y-1 hover:border-sky-200/80 hover:shadow-[0_24px_70px_-36px_rgba(2,132,199,0.38)]">
-                      <Link
-                        to={ROUTES.events}
-                        className="flex h-full flex-col"
-                        aria-label={`${event.title}: ver agenda completa`}
-                      >
-                        <div className="relative flex aspect-3/4 w-full items-center justify-center bg-[#171b22] p-2.5">
-                          {event.flyerUrl ? (
-                            <img
-                              src={event.flyerUrl}
-                              alt={event.title}
-                              className="max-h-full max-w-full rounded-md object-contain transition-transform duration-500 group-hover:scale-[1.02]"
-                              loading="lazy"
-                              decoding="async"
-                            />
-                          ) : (
-                            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                              Sin flyer
-                            </span>
-                          )}
-                          <span className="absolute left-2.5 top-2.5 rounded-full border border-sky-300/40 bg-slate-900/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-sky-100">
-                            {formatShortDate(event.eventDate)}
-                          </span>
-                        </div>
-                        <div className="flex flex-1 flex-col gap-1 p-3.5">
-                          <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-[#171b22]">
-                            {event.title}
-                          </h3>
-                          <p className="line-clamp-1 text-xs text-[#4b505a]">
-                            {event.place}
-                          </p>
-                        </div>
-                      </Link>
-                    </article>
-                  </RevealOnScroll>
-                ))}
-              </div>
-              <div className="mt-5 flex justify-center sm:mt-6">
-                <Link
-                  to={ROUTES.events}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-white/14 bg-white/8 px-4 py-2 text-sm font-semibold text-sky-100 shadow-sm transition hover:border-sky-200/60 hover:bg-white/12 hover:text-white"
-                >
-                  Ver todos los eventos
-                  <span aria-hidden>→</span>
-                </Link>
-              </div>
-            </div>
-          </Container>
-        </section>
+        <HomeEventsAgenda events={visibleEvents} loading={eventsLoading} />
       ) : null}
 
       <StorySection
