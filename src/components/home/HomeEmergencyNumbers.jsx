@@ -27,9 +27,26 @@ function telHref(phone) {
   return digits ? `tel:${digits}` : null
 }
 
+function SectionWave() {
+  return (
+    <svg
+      className="pointer-events-none absolute inset-x-0 -top-12 z-[1] h-12 w-full text-[#171b22]"
+      viewBox="0 0 1440 96"
+      preserveAspectRatio="none"
+      aria-hidden
+    >
+      <path
+        fill="currentColor"
+        d="M0 58L60 52C120 46 240 34 360 42C480 50 600 78 720 74C840 70 960 34 1080 30C1200 26 1320 54 1380 68L1440 82V96H0V58Z"
+      />
+    </svg>
+  )
+}
+
 function EmergencySkeleton() {
   return (
-    <section className="relative isolate overflow-hidden border-y border-white/10 bg-[#171b22] py-14 text-white sm:py-16">
+    <section className="relative isolate overflow-visible border-b border-white/10 bg-[#171b22] py-14 text-white sm:py-16">
+      <SectionWave />
       <Container className="relative z-10">
         <div className="mx-auto max-w-2xl text-center">
           <div className="mx-auto h-6 w-36 animate-pulse rounded-full bg-white/10" />
@@ -62,21 +79,24 @@ export function HomeEmergencyNumbers({ content, loading = false }) {
 
   return (
     <section
-      className="relative isolate overflow-hidden border-y border-white/10 py-14 text-white sm:py-16 lg:py-20"
+      className="relative isolate overflow-visible border-b border-white/10 bg-[#171b22] py-14 text-white sm:py-16 lg:py-20"
       aria-labelledby="titulo-emergencias-inicio"
     >
-      <img
-        src={imageUrl}
-        alt=""
-        className="absolute inset-0 h-full w-full object-cover object-center"
-        loading="lazy"
-        decoding="async"
-      />
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={heroOverlayGradientStyle(merged.overlayOpacity, 65)}
-        aria-hidden
-      />
+      <SectionWave />
+
+      <div className="absolute inset-0 overflow-hidden" aria-hidden>
+        <img
+          src={imageUrl}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover object-center"
+          loading="lazy"
+          decoding="async"
+        />
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={heroOverlayGradientStyle(merged.overlayOpacity, 65)}
+        />
+      </div>
 
       <Container className="relative z-10">
         <RevealOnScroll variant="slow">
