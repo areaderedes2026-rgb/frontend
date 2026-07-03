@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
 import { Modal } from '../ui/Modal.jsx'
 import { ConfirmDialog } from '../ui/ConfirmDialog.jsx'
-import { SingleImageUploadField } from './SingleImageUploadField.jsx'
+import { PageListHeroHeader } from '../shared/PageListHeroHeader.jsx'
 import { inputClass, labelClass, textareaClass } from '../ui/formStyles.js'
+import { ofertaHeroToHeaderProps } from '../../data/ofertaAcademicaContent.js'
 import {
   OFERTA_OFFER_DETAIL_MAX,
   OFERTA_OFFER_INSCRIPTION_MAX,
@@ -236,8 +237,6 @@ export function AdminOfertaAcademicaEditorPreview({
   const [editor, setEditor] = useState(null)
   const [confirmRemove, setConfirmRemove] = useState(null)
 
-  const heroUrl = (form.heroImageUrl || '').trim()
-
   const categoryOptions = useMemo(
     () => (form.categories || []).filter((c) => c && c !== 'Todos'),
     [form.categories],
@@ -254,16 +253,6 @@ export function AdminOfertaAcademicaEditorPreview({
     setEditor((prev) =>
       prev ? { ...prev, draft: { ...(prev.draft || {}), [field]: value } } : prev,
     )
-  }
-
-  function applyIdentity(draft) {
-    setForm((prev) => ({
-      ...prev,
-      heroEyebrow: String(draft.heroEyebrow || '').trim(),
-      heroTitle: String(draft.heroTitle || '').trim(),
-      heroSubtitle: String(draft.heroSubtitle || ''),
-      heroImageUrl: String(draft.heroImageUrl || '').trim(),
-    }))
   }
 
   function applyIntroTitle(draft) {
@@ -348,9 +337,6 @@ export function AdminOfertaAcademicaEditorPreview({
     if (!editor) return
     const { kind, index, draft } = editor
     switch (kind) {
-      case 'identity':
-        applyIdentity(draft)
-        break
       case 'introTitle':
         applyIntroTitle(draft)
         break
@@ -417,8 +403,6 @@ export function AdminOfertaAcademicaEditorPreview({
   const editorTitle = useMemo(() => {
     if (!editor) return ''
     switch (editor.kind) {
-      case 'identity':
-        return 'Editar portada'
       case 'introTitle':
         return 'Editar título de la introducción'
       case 'paragraph':
@@ -456,7 +440,7 @@ export function AdminOfertaAcademicaEditorPreview({
         open={editor != null}
         onClose={closeEditor}
         loading={saving}
-        size={editor?.kind === 'identity' || editor?.kind === 'offer' ? 'wide' : 'default'}
+        size={editor?.kind === 'offer' ? 'wide' : 'default'}
         title={editorTitle}
         description="Los cambios quedan en borrador hasta que toques «Guardar cambios» en el pie de la página."
       >
@@ -534,59 +518,7 @@ export function AdminOfertaAcademicaEditorPreview({
 
         {/* Preview */}
         <article className="overflow-hidden rounded-3xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm">
-          {/* Hero */}
-          <header className="relative overflow-hidden">
-            {heroUrl ? (
-              <img
-                src={heroUrl}
-                alt=""
-                className="h-56 w-full object-cover object-[center_35%] sm:h-64 lg:h-80"
-              />
-            ) : (
-              <div className="flex h-56 w-full items-center justify-center bg-linear-to-br from-slate-700 to-slate-900 text-sm text-slate-300 sm:h-64 lg:h-80">
-                Sin imagen de portada
-              </div>
-            )}
-            <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-slate-950 via-slate-900/75 to-slate-900/35" />
-            <div className="absolute right-4 top-4 z-20 sm:right-6 sm:top-6">
-              <EditChip
-                tone="overlay"
-                label="Editar portada"
-                onClick={() =>
-                  openEditor('identity', null, {
-                    heroEyebrow: form.heroEyebrow,
-                    heroTitle: form.heroTitle,
-                    heroSubtitle: form.heroSubtitle,
-                    heroImageUrl: form.heroImageUrl,
-                  })
-                }
-                disabled={saving}
-              />
-            </div>
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 p-6 sm:p-8 lg:p-10">
-              {form.heroEyebrow ? (
-                <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-sky-200 sm:text-xs">
-                  {form.heroEyebrow}
-                </p>
-              ) : null}
-              <h1 className="mt-2 max-w-3xl font-serif text-3xl font-bold leading-tight tracking-tight text-white drop-shadow-sm sm:text-4xl lg:text-[2.75rem]">
-                {form.heroTitle || 'Sin título'}
-              </h1>
-              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-100 sm:text-base">
-                {form.heroSubtitle || (
-                  <span className="italic text-slate-300">(Sin subtítulo)</span>
-                )}
-              </p>
-              <div className="mt-5 flex flex-wrap gap-3">
-                <span className="inline-flex min-h-11 items-center justify-center rounded-xl bg-white px-5 text-sm font-semibold text-[#171b22] shadow-sm">
-                  Ver ofertas
-                </span>
-                <span className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/45 bg-white/10 px-5 text-sm font-semibold text-white backdrop-blur-sm">
-                  Áreas municipales
-                </span>
-              </div>
-            </div>
-          </header>
+          <PageListHeroHeader {...ofertaHeroToHeaderProps(form)} previewMode />
 
           <div className="space-y-10 p-5 sm:p-7 lg:p-10">
             {/* Introducción */}
@@ -990,8 +922,6 @@ export function AdminOfertaAcademicaEditorPreview({
 function EditorBody({ editor, draft, setDraftField, saving, categoryOptions }) {
   if (!editor) return null
   switch (editor.kind) {
-    case 'identity':
-      return <IdentityForm draft={draft} setDraftField={setDraftField} saving={saving} />
     case 'introTitle':
       return <IntroTitleForm draft={draft} setDraftField={setDraftField} saving={saving} />
     case 'paragraph':
@@ -1014,51 +944,6 @@ function EditorBody({ editor, draft, setDraftField, saving, categoryOptions }) {
     default:
       return null
   }
-}
-
-function IdentityForm({ draft, setDraftField, saving }) {
-  return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      <label className={labelClass}>
-        Etiqueta superior (eyebrow)
-        <input
-          className={inputClass}
-          value={draft.heroEyebrow || ''}
-          onChange={(e) => setDraftField('heroEyebrow', e.target.value)}
-          disabled={saving}
-          placeholder="Ej. Educación pública"
-        />
-      </label>
-      <label className={labelClass}>
-        Título principal
-        <input
-          className={inputClass}
-          value={draft.heroTitle || ''}
-          onChange={(e) => setDraftField('heroTitle', e.target.value)}
-          disabled={saving}
-        />
-      </label>
-      <label className={`${labelClass} sm:col-span-2`}>
-        Subtítulo
-        <textarea
-          className={`${textareaClass} min-h-24`}
-          value={draft.heroSubtitle || ''}
-          onChange={(e) => setDraftField('heroSubtitle', e.target.value)}
-          disabled={saving}
-        />
-      </label>
-      <div className="sm:col-span-2">
-        <SingleImageUploadField
-          label="Imagen de portada"
-          helpText="Se usa como fondo del hero principal de Oferta académica."
-          value={draft.heroImageUrl || ''}
-          onChange={(value) => setDraftField('heroImageUrl', value)}
-          kind="cover"
-          disabled={saving}
-        />
-      </div>
-    </div>
-  )
 }
 
 function IntroTitleForm({ draft, setDraftField, saving }) {

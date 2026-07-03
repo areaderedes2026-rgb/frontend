@@ -2,17 +2,19 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Container } from '../components/ui/Container.jsx'
 import { RevealOnScroll } from '../components/home/RevealOnScroll.jsx'
-import { LinkButton } from '../components/ui/LinkButton.jsx'
+import { PageListHeroHeader } from '../components/shared/PageListHeroHeader.jsx'
 import { EventsInteractiveCalendar } from '../components/events/EventsInteractiveCalendar.jsx'
 import { fetchPublicEvents } from '../services/eventsService.js'
 import { fetchSitePageBanner } from '../services/sitePageBannerService.js'
 import { isApiConfigured } from '../utils/apiConfig.js'
 import { ROUTES } from '../utils/constants.js'
-import { HydrationHeroDarkBackdrop } from '../components/skeleton/PageHydrationSkeleton.jsx'
 import { pickNextFeaturedEvent, sortPublicEventsForDisplay } from '../utils/publicEvents.js'
-
-const DEFAULT_HERO_IMAGE =
-  'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1900&q=80'
+import {
+  DEFAULT_EVENTS_PAGE_HERO,
+  EVENTS_LIST_DEFAULT_HERO_IMAGE,
+  mergePageHeroCover,
+  pageHeroToHeaderProps,
+} from '../data/pageHeroCoverContent.js'
 
 function EventTag({ children }) {
   return (
@@ -28,8 +30,8 @@ export function Events() {
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [calendarFocusDate, setCalendarFocusDate] = useState('')
-  const [heroImageUrl, setHeroImageUrl] = useState('')
-  const [heroHydrated, setHeroHydrated] = useState(!apiEnabled)
+  const [pageContent, setPageContent] = useState(DEFAULT_EVENTS_PAGE_HERO)
+  const [pageContentHydrated, setPageContentHydrated] = useState(!apiEnabled)
   const [highlightEventId, setHighlightEventId] = useState('')
   const visibleEvents = useMemo(() => sortPublicEventsForDisplay(events), [events])
   const featured = useMemo(() => pickNextFeaturedEvent(events), [events])
@@ -40,13 +42,13 @@ export function Events() {
     if (!apiEnabled) return () => {}
     fetchSitePageBanner('events')
       .then((content) => {
-        if (!cancelled) setHeroImageUrl(String(content?.heroImageUrl || ''))
+        if (!cancelled) setPageContent(mergePageHeroCover(DEFAULT_EVENTS_PAGE_HERO, content))
       })
       .catch(() => {
-        if (!cancelled) setHeroImageUrl('')
+        if (!cancelled) setPageContent(DEFAULT_EVENTS_PAGE_HERO)
       })
       .finally(() => {
-        if (!cancelled) setHeroHydrated(true)
+        if (!cancelled) setPageContentHydrated(true)
       })
     return () => {
       cancelled = true
@@ -98,47 +100,21 @@ export function Events() {
     return () => window.clearTimeout(t)
   }, [highlightEventId])
 
+  const heroImage =
+    pageContent.heroImageUrl?.trim() || EVENTS_LIST_DEFAULT_HERO_IMAGE
+
+  const heroProps = {
+    ...(pageContentHydrated ? pageHeroToHeaderProps(pageContent, DEFAULT_EVENTS_PAGE_HERO) : {}),
+    imageUrl: pageContentHydrated ? heroImage : '',
+    contentReady: pageContentHydrated,
+  }
+
   return (
     <section className="relative -mt-[calc(var(--navbar-h,5rem)+1.5rem)] overflow-hidden bg-linear-to-b from-[#f1eee8] via-[#f7f7f5] to-[#fcfcfa] pb-12 sm:-mt-[calc(var(--navbar-h,5rem)+2rem)] sm:pb-16">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_45%_at_20%_-10%,rgba(56,189,248,0.12),transparent_65%)]" aria-hidden />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_55%_45%_at_100%_10%,rgba(15,23,42,0.12),transparent_70%)]" aria-hidden />
 
-      <div className="relative min-h-[52dvh] overflow-hidden border-b border-white/10 bg-[#171b22] sm:min-h-[56dvh] lg:min-h-[58dvh]">
-        <header className="relative overflow-hidden">
-          {heroHydrated ? (
-            <img
-              src={heroImageUrl || DEFAULT_HERO_IMAGE}
-              alt=""
-              className="absolute inset-0 h-full w-full object-cover object-center"
-            />
-          ) : (
-            <HydrationHeroDarkBackdrop />
-          )}
-          <div className="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/85 to-slate-900/35" />
-          <Container className="relative z-10 flex min-h-[52dvh] flex-col justify-center pt-[calc(var(--navbar-h,5rem)+1rem)] pb-8 sm:min-h-[56dvh] sm:pt-[calc(var(--navbar-h,5rem)+1.5rem)] sm:pb-10 lg:min-h-[58dvh] lg:pb-12">
-            <p className="hero-enter-eyebrow text-xs font-bold uppercase tracking-[0.22em] text-sky-200">
-              Agenda municipal
-            </p>
-            <h1 className="hero-enter-title mt-3 max-w-4xl font-serif text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl">
-              Eventos en Trancas
-            </h1>
-            <p className="hero-enter-subtitle mt-3 max-w-3xl text-sm leading-relaxed text-slate-100 sm:text-base">
-              Conoce actividades culturales, deportivas e institucionales para toda la comunidad.
-            </p>
-            <div className="hero-enter-actions mt-5 flex flex-wrap gap-3">
-              <a
-                href="#proximos-eventos"
-                className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#171b22] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#222831]"
-              >
-                Ver agenda
-              </a>
-              <LinkButton to={ROUTES.atencionCiudadano} variant="secondary">
-                Consultar un evento
-              </LinkButton>
-            </div>
-          </Container>
-        </header>
-      </div>
+      <PageListHeroHeader {...heroProps} />
 
       <Container className="relative">
         <RevealOnScroll variant="slow">

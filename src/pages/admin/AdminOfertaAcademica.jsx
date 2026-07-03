@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
 import { AdminOfertaAcademicaEditorPreview } from '../../components/admin/AdminOfertaAcademicaEditorPreview.jsx'
-import { HeroImageModal } from '../../components/admin/HeroImageModal.jsx'
+import { PageCoverModal } from '../../components/admin/PageCoverModal.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
 import {
   DEFAULT_OFERTA_ACADEMICA_CONTENT,
+  applyHeroCoverToOfertaContent,
   mergeOfertaAcademicaContent,
+  ofertaContentToHeroCover,
 } from '../../data/ofertaAcademicaContent.js'
 import { useContentEditorConcurrencyConflict } from '../../hooks/useContentEditorConcurrencyConflict.jsx'
 import {
@@ -24,7 +26,10 @@ export function AdminOfertaAcademica() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [heroImageOpen, setHeroImageOpen] = useState(false)
+  const [heroCoverOpen, setHeroCoverOpen] = useState(false)
+  const [heroCoverDraft, setHeroCoverDraft] = useState(() =>
+    ofertaContentToHeroCover(DEFAULT_OFERTA_ACADEMICA_CONTENT),
+  )
   const [toast, setToast] = useState(null)
   const dismissToast = useCallback(() => setToast(null), [])
 
@@ -69,6 +74,18 @@ export function AdminOfertaAcademica() {
       heroTitle: String(form.heroTitle || '').trim(),
       heroSubtitle: String(form.heroSubtitle || ''),
       heroImageUrl: String(form.heroImageUrl || '').trim(),
+      overlayOpacity: form.overlayOpacity,
+      heroSearchPlaceholder: String(form.heroSearchPlaceholder || ''),
+      showHeroBadge: form.showHeroBadge,
+      showHeroTitle: form.showHeroTitle,
+      showHeroSubtitle: form.showHeroSubtitle,
+      showSearch: form.showSearch,
+      showPrimaryButton: form.showPrimaryButton,
+      heroPrimaryLabel: String(form.heroPrimaryLabel || '').trim(),
+      heroPrimaryHref: String(form.heroPrimaryHref || '').trim(),
+      showSecondaryButton: form.showSecondaryButton,
+      heroSecondaryLabel: String(form.heroSecondaryLabel || '').trim(),
+      heroSecondaryHref: String(form.heroSecondaryHref || '').trim(),
       introTitle: String(form.introTitle || '').trim(),
       introParagraphs: (form.introParagraphs || [])
         .map((p) => String(p || '').trim())
@@ -161,14 +178,18 @@ export function AdminOfertaAcademica() {
         />
       ) : null}
 
-      <HeroImageModal
-        open={heroImageOpen}
+      <PageCoverModal
+        open={heroCoverOpen}
         title="Portada de Oferta académica"
-        value={form.heroImageUrl}
-        onChange={(value) => setForm((prev) => ({ ...prev, heroImageUrl: value }))}
-        onClose={() => setHeroImageOpen(false)}
+        description="Imagen, overlay, textos y botones del header público de Oferta académica."
+        draft={heroCoverDraft}
+        onFieldChange={(key, value) =>
+          setHeroCoverDraft((prev) => ({ ...prev, [key]: value }))
+        }
+        onClose={() => setHeroCoverOpen(false)}
         onSave={() => {
-          setHeroImageOpen(false)
+          setForm((prev) => applyHeroCoverToOfertaContent(prev, heroCoverDraft))
+          setHeroCoverOpen(false)
           setToast({
             variant: 'success',
             message: 'Portada actualizada en el borrador. Guardá los cambios para publicarla.',
@@ -177,6 +198,7 @@ export function AdminOfertaAcademica() {
         saving={saving}
         disabled={loading || saving}
         saveLabel="Aplicar al borrador"
+        imageHelpText="Subí la imagen principal de Oferta académica o importala por URL."
       />
 
       <AdminPageShell
@@ -207,7 +229,10 @@ export function AdminOfertaAcademica() {
             loading={loading}
             saving={saving}
             error={error}
-            onChangeCover={() => setHeroImageOpen(true)}
+            onChangeCover={() => {
+              setHeroCoverDraft(ofertaContentToHeroCover(form))
+              setHeroCoverOpen(true)
+            }}
             onSubmit={() => void handleSubmit()}
             apiAvailable={apiAvailable}
           />

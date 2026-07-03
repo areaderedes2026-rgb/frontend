@@ -18,6 +18,52 @@ export const DEFAULT_AREAS_PAGE_HERO = {
   secondaryHref: '#areas-grid',
 }
 
+export const EVENTS_LIST_DEFAULT_HERO_IMAGE =
+  'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1900&q=80'
+
+export const TOURISM_LIST_DEFAULT_HERO_IMAGE =
+  'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1800&q=80'
+
+export const DEFAULT_EVENTS_PAGE_HERO = {
+  heroImageUrl: '',
+  overlayOpacity: 65,
+  heroBadge: 'Agenda municipal',
+  heroTitle: 'Eventos en Trancas',
+  heroSubtitle:
+    'Conoce actividades culturales, deportivas e institucionales para toda la comunidad.',
+  heroSearchPlaceholder: '',
+  showHeroBadge: true,
+  showHeroTitle: true,
+  showHeroSubtitle: true,
+  showSearch: false,
+  showPrimaryButton: true,
+  primaryLabel: 'Ver agenda',
+  primaryHref: '#proximos-eventos',
+  showSecondaryButton: true,
+  secondaryLabel: 'Consultar un evento',
+  secondaryHref: '/atencion-ciudadano',
+}
+
+export const DEFAULT_TOURISM_PAGE_HERO = {
+  heroImageUrl: '',
+  overlayOpacity: 65,
+  heroBadge: 'Nuestra Ciudad',
+  heroTitle: 'Turismo en Trancas',
+  heroSubtitle:
+    'Descubrí paisajes, patrimonio y experiencias del departamento. Recorré los puntos turísticos y planificá tu visita.',
+  heroSearchPlaceholder: '',
+  showHeroBadge: true,
+  showHeroTitle: true,
+  showHeroSubtitle: true,
+  showSearch: false,
+  showPrimaryButton: true,
+  primaryLabel: 'Ver puntos turísticos',
+  primaryHref: '#puntos-turisticos',
+  showSecondaryButton: true,
+  secondaryLabel: 'Conocer la historia',
+  secondaryHref: '/history',
+}
+
 export const DEFAULT_NEWS_PAGE_HERO = {
   heroImageUrl: '',
   overlayOpacity: 65,

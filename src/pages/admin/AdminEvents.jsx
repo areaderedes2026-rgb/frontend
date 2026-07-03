@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
-import { HeroImageModal } from '../../components/admin/HeroImageModal.jsx'
+import { PageCoverModal } from '../../components/admin/PageCoverModal.jsx'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
 import { Modal } from '../../components/ui/Modal.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
@@ -21,6 +21,10 @@ import {
   fetchSitePageBanner,
   updateSitePageBanner,
 } from '../../services/sitePageBannerService.js'
+import {
+  DEFAULT_EVENTS_PAGE_HERO,
+  mergePageHeroCover,
+} from '../../data/pageHeroCoverContent.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
 
 const PAGE_SIZE = 20
@@ -143,7 +147,7 @@ export function AdminEvents() {
 
   const [bannerOpen, setBannerOpen] = useState(false)
   const [bannerSaving, setBannerSaving] = useState(false)
-  const [bannerImageUrl, setBannerImageUrl] = useState('')
+  const [bannerDraft, setBannerDraft] = useState(DEFAULT_EVENTS_PAGE_HERO)
   const [bannerUpdatedAt, setBannerUpdatedAt] = useState(null)
 
   const [search, setSearch] = useState('')
@@ -176,7 +180,7 @@ export function AdminEvents() {
 
   const loadBannerFromServer = useCallback(async () => {
     const content = await fetchSitePageBanner('events')
-    setBannerImageUrl(String(content?.heroImageUrl || ''))
+    setBannerDraft(mergePageHeroCover(DEFAULT_EVENTS_PAGE_HERO, content))
     setBannerUpdatedAt(content?.updatedAt || null)
   }, [])
 
@@ -214,17 +218,17 @@ export function AdminEvents() {
   const persistBanner = useCallback(
     async ({ forceOverwrite = false } = {}) => {
       const saved = await updateSitePageBanner('events', {
-        heroImageUrl: bannerImageUrl.trim(),
+        ...bannerDraft,
         expectedUpdatedAt: bannerUpdatedAt,
         forceOverwrite,
       })
-      setBannerImageUrl(String(saved?.heroImageUrl || ''))
+      setBannerDraft(mergePageHeroCover(DEFAULT_EVENTS_PAGE_HERO, saved))
       setBannerUpdatedAt(saved?.updatedAt || null)
       setBannerOpen(false)
       setFlash('Se actualizó la portada de Eventos.')
       setToast({ type: 'success', message: 'Portada actualizada.' })
     },
-    [bannerImageUrl, bannerUpdatedAt],
+    [bannerDraft, bannerUpdatedAt],
   )
 
   const { conflictDialog: eventConflictDialog, handleConflict: handleEventConflict } =
@@ -294,12 +298,12 @@ export function AdminEvents() {
     fetchSitePageBanner('events')
       .then((content) => {
         if (cancelled) return
-        setBannerImageUrl(String(content?.heroImageUrl || ''))
+        setBannerDraft(mergePageHeroCover(DEFAULT_EVENTS_PAGE_HERO, content))
         setBannerUpdatedAt(content?.updatedAt || null)
       })
       .catch(() => {
         if (!cancelled) {
-          setBannerImageUrl('')
+          setBannerDraft(DEFAULT_EVENTS_PAGE_HERO)
           setBannerUpdatedAt(null)
         }
       })
@@ -470,15 +474,19 @@ export function AdminEvents() {
 
       {eventConflictDialog}
       {bannerConflictDialog}
-      <HeroImageModal
+      <PageCoverModal
         open={bannerOpen}
         title="Portada de Eventos"
-        value={bannerImageUrl}
-        onChange={setBannerImageUrl}
+        description="Imagen, overlay, textos y botones del header público del listado de eventos."
+        draft={bannerDraft}
+        onFieldChange={(key, value) =>
+          setBannerDraft((prev) => ({ ...prev, [key]: value }))
+        }
         onClose={() => setBannerOpen(false)}
         onSave={handleSaveBanner}
         saving={bannerSaving}
         disabled={!isApiConfigured()}
+        imageHelpText="Subí la imagen principal del listado de eventos o importala por URL."
       />
       <ConfirmDialog
         open={deleteTarget != null}

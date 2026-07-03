@@ -7,6 +7,8 @@ import {
   OFERTA_OFFER_INSCRIPTION_MAX,
   OFERTA_OFFER_SUMMARY_MAX,
 } from '../utils/ofertaAcademicaLimits.js'
+import { mergePageHeroCover, pageHeroToHeaderProps } from './pageHeroCoverContent.js'
+import { normalizeHeroToggle } from './servicesPageContent.js'
 
 export const OFERTA_ACADEMICA_CATEGORIES = [
   'Todos',
@@ -60,6 +62,18 @@ export const DEFAULT_OFERTA_ACADEMICA_CONTENT = {
     'Un espacio para conocer títulos, trayectos formativos y propuestas de capacitación con presencia local o articuladas con la región.',
   heroImageUrl:
     'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1600&q=80',
+  overlayOpacity: 65,
+  heroSearchPlaceholder: '',
+  showHeroBadge: true,
+  showHeroTitle: true,
+  showHeroSubtitle: true,
+  showSearch: false,
+  showPrimaryButton: true,
+  heroPrimaryLabel: 'Ver ofertas',
+  heroPrimaryHref: '#ofertas-lista',
+  showSecondaryButton: true,
+  heroSecondaryLabel: 'Áreas municipales',
+  heroSecondaryHref: '/areas',
   introTitle: 'Estudiar y capacitarse cerca de casa',
   introParagraphs: [
     'Trancas cuenta con instituciones y programas que acercan el derecho a la educación: desde trayectos técnicos y terciarios hasta cursos cortos, idiomas y articulaciones con universidades.',
@@ -246,6 +260,31 @@ export function mergeOfertaAcademicaContent(base, remote) {
     heroTitle: String(remote.heroTitle ?? base.heroTitle ?? ''),
     heroSubtitle: String(remote.heroSubtitle ?? base.heroSubtitle ?? ''),
     heroImageUrl: String(remote.heroImageUrl ?? base.heroImageUrl ?? ''),
+    overlayOpacity: Math.min(
+      90,
+      Math.max(
+        0,
+        Math.round(
+          Number.isFinite(Number(remote.overlayOpacity))
+            ? Number(remote.overlayOpacity)
+            : base.overlayOpacity ?? 65,
+        ),
+      ),
+    ),
+    heroSearchPlaceholder: String(remote.heroSearchPlaceholder ?? base.heroSearchPlaceholder ?? ''),
+    showHeroBadge: normalizeHeroToggle(remote.showHeroBadge, base.showHeroBadge !== false),
+    showHeroTitle: normalizeHeroToggle(remote.showHeroTitle, base.showHeroTitle !== false),
+    showHeroSubtitle: normalizeHeroToggle(remote.showHeroSubtitle, base.showHeroSubtitle !== false),
+    showSearch: normalizeHeroToggle(remote.showSearch, base.showSearch === true),
+    showPrimaryButton: normalizeHeroToggle(remote.showPrimaryButton, base.showPrimaryButton !== false),
+    heroPrimaryLabel: String(remote.heroPrimaryLabel ?? base.heroPrimaryLabel ?? ''),
+    heroPrimaryHref: String(remote.heroPrimaryHref ?? base.heroPrimaryHref ?? ''),
+    showSecondaryButton: normalizeHeroToggle(
+      remote.showSecondaryButton,
+      base.showSecondaryButton !== false,
+    ),
+    heroSecondaryLabel: String(remote.heroSecondaryLabel ?? base.heroSecondaryLabel ?? ''),
+    heroSecondaryHref: String(remote.heroSecondaryHref ?? base.heroSecondaryHref ?? ''),
     introTitle: String(remote.introTitle ?? base.introTitle ?? ''),
     introParagraphs: Array.isArray(remote.introParagraphs)
       ? remote.introParagraphs.map((p) => String(p || '').trim()).filter(Boolean)
@@ -266,4 +305,75 @@ export function mergeOfertaAcademicaContent(base, remote) {
     ctaTitle: String(remote.ctaTitle ?? base.ctaTitle ?? ''),
     ctaBody: String(remote.ctaBody ?? base.ctaBody ?? ''),
   }
+}
+
+function ofertaHeroDefaults() {
+  const d = DEFAULT_OFERTA_ACADEMICA_CONTENT
+  return {
+    heroImageUrl: d.heroImageUrl,
+    overlayOpacity: d.overlayOpacity ?? 65,
+    heroBadge: d.heroEyebrow,
+    heroTitle: d.heroTitle,
+    heroSubtitle: d.heroSubtitle,
+    heroSearchPlaceholder: d.heroSearchPlaceholder,
+    showHeroBadge: d.showHeroBadge !== false,
+    showHeroTitle: d.showHeroTitle !== false,
+    showHeroSubtitle: d.showHeroSubtitle !== false,
+    showSearch: d.showSearch === true,
+    showPrimaryButton: d.showPrimaryButton !== false,
+    primaryLabel: d.heroPrimaryLabel,
+    primaryHref: d.heroPrimaryHref,
+    showSecondaryButton: d.showSecondaryButton !== false,
+    secondaryLabel: d.heroSecondaryLabel,
+    secondaryHref: d.heroSecondaryHref,
+  }
+}
+
+export function ofertaContentToHeroCover(content) {
+  const c = content && typeof content === 'object' ? content : {}
+  return mergePageHeroCover(ofertaHeroDefaults(), {
+    heroImageUrl: c.heroImageUrl,
+    overlayOpacity: c.overlayOpacity,
+    heroBadge: c.heroEyebrow,
+    heroTitle: c.heroTitle,
+    heroSubtitle: c.heroSubtitle,
+    heroSearchPlaceholder: c.heroSearchPlaceholder,
+    showHeroBadge: c.showHeroBadge,
+    showHeroTitle: c.showHeroTitle,
+    showHeroSubtitle: c.showHeroSubtitle,
+    showSearch: c.showSearch,
+    showPrimaryButton: c.showPrimaryButton,
+    primaryLabel: c.heroPrimaryLabel,
+    primaryHref: c.heroPrimaryHref,
+    showSecondaryButton: c.showSecondaryButton,
+    secondaryLabel: c.heroSecondaryLabel,
+    secondaryHref: c.heroSecondaryHref,
+  })
+}
+
+export function applyHeroCoverToOfertaContent(content, draft) {
+  const merged = mergePageHeroCover(ofertaHeroDefaults(), draft)
+  return {
+    ...(content && typeof content === 'object' ? content : {}),
+    heroImageUrl: merged.heroImageUrl,
+    overlayOpacity: merged.overlayOpacity,
+    heroEyebrow: merged.heroBadge,
+    heroTitle: merged.heroTitle,
+    heroSubtitle: merged.heroSubtitle,
+    heroSearchPlaceholder: merged.heroSearchPlaceholder,
+    showHeroBadge: merged.showHeroBadge,
+    showHeroTitle: merged.showHeroTitle,
+    showHeroSubtitle: merged.showHeroSubtitle,
+    showSearch: merged.showSearch,
+    showPrimaryButton: merged.showPrimaryButton,
+    heroPrimaryLabel: merged.primaryLabel,
+    heroPrimaryHref: merged.primaryHref,
+    showSecondaryButton: merged.showSecondaryButton,
+    heroSecondaryLabel: merged.secondaryLabel,
+    heroSecondaryHref: merged.secondaryHref,
+  }
+}
+
+export function ofertaHeroToHeaderProps(content, options) {
+  return pageHeroToHeaderProps(ofertaContentToHeroCover(content), ofertaHeroDefaults(), options)
 }

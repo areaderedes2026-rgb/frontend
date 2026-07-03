@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
+import { PageCoverModal } from '../../components/admin/PageCoverModal.jsx'
 import { NewsImageFields } from '../../components/admin/NewsImageFields.jsx'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
 import { Modal } from '../../components/ui/Modal.jsx'
@@ -17,6 +18,14 @@ import {
   fetchTourismPlacesAdmin,
   updateTourismPlace,
 } from '../../services/tourismPlacesService.js'
+import {
+  fetchSitePageBanner,
+  updateSitePageBanner,
+} from '../../services/sitePageBannerService.js'
+import {
+  DEFAULT_TOURISM_PAGE_HERO,
+  mergePageHeroCover,
+} from '../../data/pageHeroCoverContent.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
 import { ROUTES } from '../../utils/constants.js'
@@ -172,6 +181,11 @@ export function AdminTourismPlaces() {
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleting, setDeleting] = useState(false)
 
+  const [bannerOpen, setBannerOpen] = useState(false)
+  const [bannerSaving, setBannerSaving] = useState(false)
+  const [bannerDraft, setBannerDraft] = useState(DEFAULT_TOURISM_PAGE_HERO)
+  const [bannerUpdatedAt, setBannerUpdatedAt] = useState(null)
+
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -257,6 +271,46 @@ export function AdminTourismPlaces() {
     },
   })
 
+  const loadBannerFromServer = useCallback(async () => {
+    const content = await fetchSitePageBanner('tourism')
+    setBannerDraft(mergePageHeroCover(DEFAULT_TOURISM_PAGE_HERO, content))
+    setBannerUpdatedAt(content?.updatedAt || null)
+  }, [])
+
+  const persistBanner = useCallback(
+    async ({ forceOverwrite = false } = {}) => {
+      const saved = await updateSitePageBanner('tourism', {
+        ...bannerDraft,
+        expectedUpdatedAt: bannerUpdatedAt,
+        forceOverwrite,
+      })
+      setBannerDraft(mergePageHeroCover(DEFAULT_TOURISM_PAGE_HERO, saved))
+      setBannerUpdatedAt(saved?.updatedAt || null)
+      setBannerOpen(false)
+      setToast({ type: 'success', message: 'Se actualizó la portada de Turismo.' })
+    },
+    [bannerDraft, bannerUpdatedAt],
+  )
+
+  const { conflictDialog: bannerConflictDialog, handleConflict: handleBannerConflict } =
+    useContentEditorConcurrencyConflict({
+      reloadFromServer: loadBannerFromServer,
+      persistContent: persistBanner,
+      entityLabel: 'la portada de Turismo',
+      onReloadSuccess: () =>
+        setToast({ type: 'success', message: 'Se cargó la última versión de la portada.' }),
+      onReloadError: (e) =>
+        setToast({
+          type: 'error',
+          message: e.message || 'No se pudo recargar la portada.',
+        }),
+      onForceSaveError: (e) =>
+        setToast({
+          type: 'error',
+          message: e.message || 'No se pudo guardar la portada de Turismo.',
+        }),
+    })
+
   const loadPlaces = useCallback(
     async (showToast = false) => {
       if (!isApiConfigured()) {
@@ -283,6 +337,26 @@ export function AdminTourismPlaces() {
   useEffect(() => {
     loadPlaces()
   }, [loadPlaces])
+
+  useEffect(() => {
+    let cancelled = false
+    if (!isApiConfigured()) return () => {}
+    fetchSitePageBanner('tourism')
+      .then((content) => {
+        if (cancelled) return
+        setBannerDraft(mergePageHeroCover(DEFAULT_TOURISM_PAGE_HERO, content))
+        setBannerUpdatedAt(content?.updatedAt || null)
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setBannerDraft(DEFAULT_TOURISM_PAGE_HERO)
+          setBannerUpdatedAt(null)
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const sortedPlaces = useMemo(
     () =>
@@ -419,12 +493,46 @@ export function AdminTourismPlaces() {
     }
   }
 
+  async function handleSaveBanner() {
+    if (!isApiConfigured()) {
+      setToast({ type: 'error', message: 'No hay conexión disponible con el backend.' })
+      return
+    }
+    setBannerSaving(true)
+    try {
+      await persistBanner()
+    } catch (e) {
+      if (handleBannerConflict(e)) return
+      setToast({
+        type: 'error',
+        message: e.message || 'No se pudo guardar la portada de Turismo.',
+      })
+    } finally {
+      setBannerSaving(false)
+    }
+  }
+
   return (
     <>
       {toast ? (
         <Toast variant={toast.type} message={toast.message} onDismiss={dismissToast} />
       ) : null}
       {conflictDialog}
+      {bannerConflictDialog}
+      <PageCoverModal
+        open={bannerOpen}
+        title="Portada de Turismo"
+        description="Imagen, overlay, textos y botones del header público de la página de turismo."
+        draft={bannerDraft}
+        onFieldChange={(key, value) =>
+          setBannerDraft((prev) => ({ ...prev, [key]: value }))
+        }
+        onClose={() => setBannerOpen(false)}
+        onSave={handleSaveBanner}
+        saving={bannerSaving}
+        disabled={!isApiConfigured()}
+        imageHelpText="Subí la imagen principal de Turismo o importala por URL."
+      />
       <ConfirmDialog
         open={deleteTarget != null}
         onClose={() => {
@@ -700,6 +808,13 @@ export function AdminTourismPlaces() {
         variant="plain"
         actions={
           <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end sm:gap-3">
+            <button
+              type="button"
+              onClick={() => setBannerOpen(true)}
+              className={ACTION_BTN_NEUTRAL}
+            >
+              Cambiar portada
+            </button>
             <button
               type="button"
               onClick={() => loadPlaces(true)}

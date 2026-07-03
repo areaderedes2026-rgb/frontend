@@ -3,19 +3,45 @@ import { Link } from 'react-router-dom'
 import { RevealOnScroll } from '../../components/home/RevealOnScroll.jsx'
 import { NewsCoverMedia } from '../../components/news/NewsCoverMedia.jsx'
 import { Container } from '../../components/ui/Container.jsx'
+import { PageListHeroHeader } from '../../components/shared/PageListHeroHeader.jsx'
 import { DEFAULT_TOURISM_PAGE_CONTENT } from '../../data/tourismPageContent.js'
-import { fetchTourismPlacesPublic } from '../../services/tourismPlacesService.js'
-import { ROUTES } from '../../utils/constants.js'
 import {
-  HydrationHeroDarkBackdrop,
-  HydrationHeroLightTextBlock,
-} from '../../components/skeleton/PageHydrationSkeleton.jsx'
+  DEFAULT_TOURISM_PAGE_HERO,
+  TOURISM_LIST_DEFAULT_HERO_IMAGE,
+  mergePageHeroCover,
+  pageHeroToHeaderProps,
+} from '../../data/pageHeroCoverContent.js'
+import { fetchSitePageBanner } from '../../services/sitePageBannerService.js'
+import { fetchTourismPlacesPublic } from '../../services/tourismPlacesService.js'
+import { isApiConfigured } from '../../utils/apiConfig.js'
+import { ROUTES } from '../../utils/constants.js'
 
 export function Turismo() {
   const page = DEFAULT_TOURISM_PAGE_CONTENT
+  const apiEnabled = isApiConfigured()
   const [tourismPlaces, setTourismPlaces] = useState([])
   const [activeCategory, setActiveCategory] = useState('all')
   const [loadingPlaces, setLoadingPlaces] = useState(true)
+  const [pageContent, setPageContent] = useState(DEFAULT_TOURISM_PAGE_HERO)
+  const [pageContentHydrated, setPageContentHydrated] = useState(!apiEnabled)
+
+  useEffect(() => {
+    let cancelled = false
+    if (!apiEnabled) return () => {}
+    fetchSitePageBanner('tourism')
+      .then((content) => {
+        if (!cancelled) setPageContent(mergePageHeroCover(DEFAULT_TOURISM_PAGE_HERO, content))
+      })
+      .catch(() => {
+        if (!cancelled) setPageContent(DEFAULT_TOURISM_PAGE_HERO)
+      })
+      .finally(() => {
+        if (!cancelled) setPageContentHydrated(true)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [apiEnabled])
 
   useEffect(() => {
     let cancelled = false
@@ -54,7 +80,15 @@ export function Turismo() {
   }, [effectiveCategory, tourismPlaces])
 
   const heroImage =
-    tourismPlaces.find((place) => place.imageUrl)?.imageUrl || page.heroImageUrl
+    pageContent.heroImageUrl?.trim() ||
+    page.heroImageUrl?.trim() ||
+    TOURISM_LIST_DEFAULT_HERO_IMAGE
+
+  const heroProps = {
+    ...(pageContentHydrated ? pageHeroToHeaderProps(pageContent, DEFAULT_TOURISM_PAGE_HERO) : {}),
+    imageUrl: pageContentHydrated ? heroImage : '',
+    contentReady: pageContentHydrated,
+  }
 
   return (
     <section className="relative -mt-[calc(var(--navbar-h,5rem)+1.5rem)] overflow-hidden bg-linear-to-b from-[#f1eee8] via-[#f7f7f5] to-[#fcfcfa] pb-10 sm:-mt-[calc(var(--navbar-h,5rem)+2rem)] sm:pb-14">
@@ -67,51 +101,7 @@ export function Turismo() {
         aria-hidden
       />
 
-      <div className="relative min-h-[46dvh] overflow-hidden border-b border-white/10 bg-[#171b22] sm:min-h-[50dvh] lg:min-h-[52dvh]">
-        <header className="relative overflow-hidden">
-          {loadingPlaces ? (
-            <HydrationHeroDarkBackdrop />
-          ) : (
-            <img
-              src={heroImage}
-              alt=""
-              className="absolute inset-0 h-full w-full object-cover object-center"
-            />
-          )}
-          <div className="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-900/55 to-slate-900/15" />
-          <Container className="relative z-10 flex min-h-[46dvh] flex-col justify-center pt-[calc(var(--navbar-h,5rem)+0.75rem)] pb-8 sm:min-h-[50dvh] sm:pb-10 lg:min-h-[52dvh] lg:pb-12">
-            {loadingPlaces ? (
-              <HydrationHeroLightTextBlock />
-            ) : (
-              <>
-                <p className="hero-enter-eyebrow text-xs font-bold uppercase tracking-[0.24em] text-sky-200">
-                  {page.heroBadge}
-                </p>
-                <h1 className="hero-enter-title mt-3 max-w-4xl font-serif text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl">
-                  {page.heroTitle}
-                </h1>
-                <p className="hero-enter-subtitle mt-3 max-w-3xl text-sm leading-relaxed text-slate-100 sm:text-base">
-                  {page.heroSubtitle}
-                </p>
-              </>
-            )}
-            <div className="hero-enter-actions mt-5 flex flex-wrap gap-3">
-              <a
-                href="#puntos-turisticos"
-                className="inline-flex min-h-11 items-center justify-center rounded-xl bg-white px-5 text-sm font-semibold text-[#171b22] shadow-sm transition hover:bg-slate-100"
-              >
-                Ver puntos turísticos
-              </a>
-              <Link
-                to={ROUTES.history}
-                className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/40 bg-white/10 px-5 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white/70 hover:bg-white/15"
-              >
-                Conocer la historia
-              </Link>
-            </div>
-          </Container>
-        </header>
-      </div>
+      <PageListHeroHeader {...heroProps} />
 
       <Container className="relative">
         <article
@@ -155,68 +145,64 @@ export function Turismo() {
             ) : null}
 
             {loadingPlaces ? (
-              <ul className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-                {Array.from({ length: 4 }, (_, idx) => (
-                  <li key={idx}>
-                    <div className="animate-pulse overflow-hidden rounded-2xl border border-[#ddd7ca] bg-white">
-                      <div className="aspect-video bg-slate-100" />
-                      <div className="space-y-3 p-4">
-                        <div className="h-5 w-3/4 rounded bg-slate-100" />
-                        <div className="h-4 w-full rounded bg-slate-50" />
-                      </div>
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="animate-pulse overflow-hidden rounded-2xl border border-[#ddd7ca] bg-white"
+                  >
+                    <div className="aspect-4/3 bg-slate-200" />
+                    <div className="p-4">
+                      <div className="h-4 w-2/3 rounded bg-slate-200" />
+                      <div className="mt-2 h-3 w-full rounded bg-slate-100" />
                     </div>
-                  </li>
+                  </div>
                 ))}
-              </ul>
-            ) : visiblePlaces.length > 0 ? (
-              <ul className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-                {visiblePlaces.map((spot, idx) => (
-                  <li key={spot.id}>
-                    <RevealOnScroll variant="newsCardSlow" delayMs={idx * 80}>
-                      <Link
-                        to={ROUTES.tourismPlaceDetail(spot.slug)}
-                        className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm ring-1 ring-[#1a1d24]/5 transition-all duration-300 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-lg hover:shadow-sky-500/8"
-                      >
-                        <NewsCoverMedia
-                          imageUrl={spot.imageUrl}
-                          className="aspect-video w-full shrink-0"
-                          imgClassName="transition duration-500 group-hover:scale-[1.03]"
-                          loading="lazy"
-                          iconScale="md"
-                        />
-                        <div className="flex flex-1 flex-col p-4">
-                          {spot.category ? (
-                            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-sky-800">
-                              {spot.category}
-                            </p>
-                          ) : null}
-                          <h3 className="mt-1 text-lg font-bold tracking-tight text-[#171b22]">
-                            {spot.name}
-                          </h3>
-                          <p className="mt-2 flex-1 text-sm leading-relaxed text-[#4b505a]">
-                            {spot.shortDescription}
-                          </p>
-                          <span className="mt-3 inline-flex text-sm font-semibold text-sky-800">
-                            Ver detalle →
-                          </span>
-                        </div>
-                      </Link>
-                    </RevealOnScroll>
-                  </li>
-                ))}
-              </ul>
+              </div>
+            ) : visiblePlaces.length === 0 ? (
+              <p className="rounded-2xl border border-dashed border-[#d8d5cd] bg-[#f8f7f3] px-5 py-8 text-center text-sm text-[#4b505a]">
+                Todavía no hay puntos turísticos publicados. Volvé pronto para descubrir Trancas.
+              </p>
             ) : (
-              <div className="rounded-2xl border border-dashed border-[#ddd7ca] bg-[#f8f7f3] px-6 py-10 text-center">
-                <p className="text-base font-semibold text-[#171b22]">
-                  Próximamente sumaremos nuevos puntos turísticos.
-                </p>
-                <p className="mt-2 text-sm text-[#4b505a]">
-                  Volvé más adelante para descubrir destinos destacados de la región.
-                </p>
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {visiblePlaces.map((spot) => (
+                  <RevealOnScroll key={spot.id} variant="slow">
+                    <Link
+                      to={ROUTES.tourismPlaceDetail(spot.slug)}
+                      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#ddd7ca] bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-md"
+                    >
+                      <NewsCoverMedia
+                        imageUrl={spot.imageUrl}
+                        className="aspect-4/3 w-full"
+                        imgClassName="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
+                      />
+                      <div className="flex flex-1 flex-col p-4 sm:p-5">
+                        <p className="text-[11px] font-bold uppercase tracking-wide text-sky-800">
+                          {spot.category}
+                        </p>
+                        <h3 className="mt-1 font-serif text-lg font-bold text-[#171b22] group-hover:text-sky-900">
+                          {spot.name}
+                        </h3>
+                        <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-[#4b505a]">
+                          {spot.shortDescription}
+                        </p>
+                        <span className="mt-4 text-sm font-semibold text-sky-800">
+                          Ver detalle →
+                        </span>
+                      </div>
+                    </Link>
+                  </RevealOnScroll>
+                ))}
               </div>
             )}
           </div>
         </article>
+
+        <p className="mt-8 text-center text-sm text-[#4b505a]">
+          <Link to={ROUTES.home} className="font-semibold text-sky-800 transition hover:text-sky-900">
+            ← Volver al inicio
+          </Link>
+        </p>
       </Container>
     </section>
   )
