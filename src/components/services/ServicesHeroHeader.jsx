@@ -56,7 +56,11 @@ export function ServicesHeroHeader({
           {badge}
         </p>
       ) : null}
-      <h1 className="hero-enter-title mt-2 max-w-4xl font-serif text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-[2.75rem] lg:leading-tight">
+      <h1
+        className={`hero-enter-title max-w-4xl font-serif text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-[2.75rem] lg:leading-tight ${
+          badge ? 'mt-2' : ''
+        }`}
+      >
         {title}
       </h1>
       {subtitle ? (
@@ -68,7 +72,7 @@ export function ServicesHeroHeader({
       {showSearch ? (
         <form
           onSubmit={handleSubmit}
-          className="hero-enter-actions mt-6 w-full max-w-2xl sm:mt-8"
+          className="hero-enter-actions mx-auto mt-6 w-full max-w-2xl sm:mt-8"
           role="search"
         >
           <label htmlFor={inputId} className="sr-only">
@@ -99,7 +103,7 @@ export function ServicesHeroHeader({
       ) : null}
 
       {primaryCta?.label || secondaryCta?.label ? (
-        <div className="hero-enter-actions mt-5 flex flex-wrap justify-center gap-3">
+        <div className="hero-enter-actions mx-auto mt-5 flex w-full max-w-2xl flex-wrap justify-center gap-3">
           {primaryCta?.label ? (
             String(primaryCta.href || '').startsWith('#') ? (
               <a

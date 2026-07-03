@@ -62,7 +62,9 @@ export function PageListHeroBackdrop({
         {!ready ? (
           <HydrationPageListHeroSkeleton />
         ) : (
-          <div className="page-list-hero-enter w-full">{children}</div>
+          <div className="page-list-hero-enter flex w-full flex-col items-center text-center">
+            {children}
+          </div>
         )}
       </Container>
     </header>
