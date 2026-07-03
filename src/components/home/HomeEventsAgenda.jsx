@@ -131,13 +131,15 @@ function MiniMonthCalendar({ eventsByDay, visibleMonth, selectedDay, onSelectDay
   )
 }
 
-function EventFlyer({ event, className = '' }) {
+function EventFlyer({ event, className = '', contain = false }) {
   if (event.flyerUrl) {
     return (
       <img
         src={event.flyerUrl}
         alt=""
-        className={`h-full w-full object-cover transition duration-500 group-hover:scale-[1.03] ${className}`.trim()}
+        className={`h-full w-full transition duration-500 group-hover:scale-[1.02] ${
+          contain ? 'object-contain object-center' : 'object-cover'
+        } ${className}`.trim()}
         loading="lazy"
         decoding="async"
       />
@@ -156,7 +158,7 @@ function EventFlyer({ event, className = '' }) {
 }
 
 function EventDetailCard({ event, index, total }) {
-  const date = parseEventDate(event.eventDate)
+  const date = parseEventDate(event.eventDate ?? event.date)
   const day = date ? date.getDate() : '—'
   const month = date ? MONTH_LABELS[date.getMonth()] : ''
   const weekday = date
@@ -164,11 +166,7 @@ function EventDetailCard({ event, index, total }) {
     : ''
 
   return (
-    <article
-      key={event.id}
-      className="group grid h-full gap-4 overflow-hidden rounded-3xl border border-white/12 bg-white/[0.07] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] backdrop-blur transition duration-300 hover:border-sky-200/35 hover:bg-white/10 sm:grid-cols-[minmax(0,1fr)_11rem] sm:gap-5 sm:p-5 lg:grid-cols-[minmax(0,1fr)_12.5rem]"
-      style={{ animationDelay: `${index * 40}ms` }}
-    >
+    <article className="group grid h-full min-h-72 gap-4 overflow-hidden rounded-3xl border border-white/12 bg-white/[0.07] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] backdrop-blur transition duration-300 hover:border-sky-200/35 hover:bg-white/10 sm:min-h-80 sm:grid-cols-[minmax(0,1fr)_11rem] sm:gap-5 sm:p-5 lg:grid-cols-[minmax(0,1fr)_12.5rem]">
       <div className="flex min-w-0 flex-col">
         <div className="flex flex-wrap items-center gap-2">
           <span className="inline-flex items-center gap-2 rounded-full border border-sky-300/30 bg-sky-400/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-100">
@@ -210,10 +208,106 @@ function EventDetailCard({ event, index, total }) {
         </Link>
       </div>
 
-      <div className="relative min-h-44 overflow-hidden rounded-2xl border border-white/10 bg-[#0f1319] sm:min-h-0 sm:h-full">
-        <EventFlyer event={event} />
+      <div className="relative flex min-h-44 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-[#0f1319] p-2 sm:min-h-52 sm:p-3 lg:min-h-0 lg:h-full">
+        <EventFlyer event={event} contain />
       </div>
     </article>
+  )
+}
+
+function CarouselArrow({ direction, onClick, disabled }) {
+  const label = direction === 'prev' ? 'Evento anterior' : 'Evento siguiente'
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/14 bg-white/8 text-sky-100 transition hover:border-sky-300/40 hover:bg-white/12 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+    >
+      {direction === 'prev' ? '←' : '→'}
+    </button>
+  )
+}
+
+function EventDetailCarousel({ events, carouselKey }) {
+  const [index, setIndex] = useState(0)
+  const total = events.length
+
+  useEffect(() => {
+    setIndex(0)
+  }, [carouselKey, events])
+
+  useEffect(() => {
+    if (total <= 1) return undefined
+    function onKeyDown(e) {
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault()
+        setIndex((current) => (current - 1 + total) % total)
+      }
+      if (e.key === 'ArrowRight') {
+        e.preventDefault()
+        setIndex((current) => (current + 1) % total)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [total])
+
+  if (total === 0) return null
+
+  if (total === 1) {
+    return <EventDetailCard event={events[0]} index={0} total={1} />
+  }
+
+  function goPrev() {
+    setIndex((current) => (current - 1 + total) % total)
+  }
+
+  function goNext() {
+    setIndex((current) => (current + 1) % total)
+  }
+
+  return (
+    <div className="flex h-full flex-col gap-3">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-100/85">
+          {total} eventos este día
+        </p>
+        <div className="flex items-center gap-2">
+          <CarouselArrow direction="prev" onClick={goPrev} disabled={false} />
+          <div className="flex items-center gap-1.5" role="tablist" aria-label="Eventos del día">
+            {events.map((event, dotIndex) => (
+              <button
+                key={event.id}
+                type="button"
+                role="tab"
+                aria-selected={dotIndex === index}
+                aria-label={`Evento ${dotIndex + 1}: ${event.title}`}
+                onClick={() => setIndex(dotIndex)}
+                className={`h-2 rounded-full transition-all duration-200 ${
+                  dotIndex === index ? 'w-5 bg-sky-300' : 'w-2 bg-white/25 hover:bg-white/40'
+                }`}
+              />
+            ))}
+          </div>
+          <CarouselArrow direction="next" onClick={goNext} disabled={false} />
+        </div>
+      </div>
+
+      <div className="relative overflow-hidden" aria-live="polite">
+        <div
+          className="flex transition-transform duration-300 ease-out motion-reduce:transition-none"
+          style={{ transform: `translateX(-${index * 100}%)` }}
+        >
+          {events.map((event, eventIndex) => (
+            <div key={event.id} className="w-full shrink-0">
+              <EventDetailCard event={event} index={eventIndex} total={total} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -356,20 +450,13 @@ export function HomeEventsAgenda({ events = [], loading = false }) {
           </RevealOnScroll>
 
           <RevealOnScroll variant="slow" delayMs={100} className="lg:col-span-8">
-            <div key={detailKey} className="news-fade-up h-full space-y-3">
+            <div key={detailKey} className="news-fade-up h-full">
               {displayEvents.length === 0 ? (
                 <div className="flex h-full min-h-72 items-center justify-center rounded-3xl border border-dashed border-white/16 bg-white/[0.04] px-6 text-center text-sm text-slate-300">
                   No hay eventos para esta fecha. Elegí otro día con actividades en el calendario.
                 </div>
               ) : (
-                displayEvents.map((event, index) => (
-                  <EventDetailCard
-                    key={event.id}
-                    event={event}
-                    index={index}
-                    total={displayEvents.length}
-                  />
-                ))
+                <EventDetailCarousel events={displayEvents} carouselKey={`${selectedDay}-${detailKey}`} />
               )}
             </div>
           </RevealOnScroll>
