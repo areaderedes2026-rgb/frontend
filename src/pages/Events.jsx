@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Container } from '../components/ui/Container.jsx'
+import { LinkButton } from '../components/ui/LinkButton.jsx'
 import { RevealOnScroll } from '../components/home/RevealOnScroll.jsx'
 import { PageListHeroHeader } from '../components/shared/PageListHeroHeader.jsx'
 import { EventsInteractiveCalendar } from '../components/events/EventsInteractiveCalendar.jsx'
