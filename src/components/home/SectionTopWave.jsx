@@ -12,6 +12,15 @@ const WAVE_MASK_SVG = encodeURIComponent(
 
 const WAVE_MASK_URL = `url("data:image/svg+xml,${WAVE_MASK_SVG}")`
 
+/** Altura de la onda (igual que StorySection: h-12 / 3rem). */
+export const SECTION_WAVE_HEIGHT = '3rem'
+
+/** Solapamiento hacia la sección anterior: menor valor = más aire entre bloques. */
+export const SECTION_WAVE_OVERLAP_CLASS = '-mt-6'
+
+/** Extensión del fondo hacia arriba para dibujar la curva ondulada. */
+export const SECTION_WAVE_EXTEND_CLASS = '-top-12'
+
 /** Cuando la sección anterior es oscura, la imagen sube con borde ondulado (sin franja de color). */
 export function usesImageWaveEdge(tone = 'light', previousTone = 'light') {
   const current = TONE_WAVE_COLOR[tone] ?? TONE_WAVE_COLOR.light
@@ -30,15 +39,16 @@ export function getSectionWaveColor(tone = 'light', previousTone = 'light') {
   return current
 }
 
-/** Máscara: franja ondulada fija arriba (3rem) + resto rectangular. */
+/** Máscara: franja ondulada fija arriba + resto rectangular. */
 export function getSectionImageWaveMaskStyle() {
+  const waveHeight = SECTION_WAVE_HEIGHT
   return {
     maskImage: `linear-gradient(#fff,#fff), ${WAVE_MASK_URL}`,
     WebkitMaskImage: `linear-gradient(#fff,#fff), ${WAVE_MASK_URL}`,
-    maskSize: '100% calc(100% - 3rem), 100% 3rem',
-    WebkitMaskSize: '100% calc(100% - 3rem), 100% 3rem',
-    maskPosition: '0 3rem, 0 0',
-    WebkitMaskPosition: '0 3rem, 0 0',
+    maskSize: `100% calc(100% - ${waveHeight}), 100% ${waveHeight}`,
+    WebkitMaskSize: `100% calc(100% - ${waveHeight}), 100% ${waveHeight}`,
+    maskPosition: `0 ${waveHeight}, 0 0`,
+    WebkitMaskPosition: `0 ${waveHeight}, 0 0`,
     maskRepeat: 'no-repeat',
     WebkitMaskRepeat: 'no-repeat',
   }

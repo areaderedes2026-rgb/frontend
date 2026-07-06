@@ -243,6 +243,7 @@ export function Home() {
         subtitle="Explorá ubicaciones importantes y conocé información útil directamente desde el mapa interactivo."
         tone={mapTone}
         className="relative"
+        contentClassName="pb-6 sm:pb-8"
       >
         <RevealOnScroll variant="slow">
           <HomeInteractiveMap content={homeMapContent} />

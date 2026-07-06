@@ -11,6 +11,8 @@ import { heroOverlayGradientStyle } from '../../utils/heroOverlay.js'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
 import {
   SectionTopWave,
+  SECTION_WAVE_EXTEND_CLASS,
+  SECTION_WAVE_OVERLAP_CLASS,
   getSectionImageWaveMaskStyle,
   usesImageWaveEdge,
 } from './SectionTopWave.jsx'
@@ -40,7 +42,7 @@ function EmergencyBackdrop({ imageUrl, overlayOpacity, imageWave = false }) {
 
   return (
     <div
-      className={`absolute inset-x-0 bottom-0 z-0 overflow-hidden ${imageWave ? '-top-12' : 'inset-y-0'}`}
+      className={`absolute inset-x-0 bottom-0 z-0 overflow-hidden ${imageWave ? SECTION_WAVE_EXTEND_CLASS : 'inset-y-0'}`}
       style={waveMaskStyle}
       aria-hidden
     >
@@ -65,7 +67,7 @@ function EmergencySkeleton({ previousTone = 'light' }) {
   return (
     <section
       className={`relative isolate overflow-visible border-b border-white/10 bg-[#171b22] py-14 text-white sm:py-16 ${
-        imageWave ? '-mt-12 z-1' : ''
+        imageWave ? `${SECTION_WAVE_OVERLAP_CLASS} z-1` : 'mt-4 sm:mt-6'
       }`}
     >
       {!imageWave ? <SectionTopWave tone="accent" previousTone={previousTone} /> : null}
@@ -103,7 +105,7 @@ export function HomeEmergencyNumbers({ content, loading = false, previousTone = 
   return (
     <section
       className={`relative isolate overflow-visible border-b border-white/10 bg-[#171b22] py-14 text-white sm:py-16 lg:py-20 ${
-        imageWave ? '-mt-12 z-1' : ''
+        imageWave ? `${SECTION_WAVE_OVERLAP_CLASS} z-1` : 'mt-4 sm:mt-6'
       }`}
       aria-labelledby="titulo-emergencias-inicio"
     >
