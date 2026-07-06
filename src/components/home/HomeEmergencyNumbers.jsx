@@ -9,7 +9,11 @@ import {
 } from '../../data/homeEmergencyContent.js'
 import { heroOverlayGradientStyle } from '../../utils/heroOverlay.js'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
-import { SectionTopWave } from './SectionTopWave.jsx'
+import {
+  SectionTopWave,
+  getSectionImageWaveMaskStyle,
+  usesImageWaveEdge,
+} from './SectionTopWave.jsx'
 
 function PhoneIcon({ className = 'h-5 w-5' }) {
   return (
@@ -28,10 +32,43 @@ function telHref(phone) {
   return digits ? `tel:${digits}` : null
 }
 
-function EmergencySkeleton({ previousTone = 'light' }) {
+function EmergencyBackdrop({ imageUrl, overlayOpacity, imageWave = false }) {
+  const waveMaskStyle = useMemo(
+    () => (imageWave ? getSectionImageWaveMaskStyle() : undefined),
+    [imageWave],
+  )
+
   return (
-    <section className="relative isolate overflow-visible border-b border-white/10 bg-[#171b22] py-14 text-white sm:py-16">
-      <SectionTopWave tone="accent" previousTone={previousTone} />
+    <div
+      className={`absolute inset-x-0 bottom-0 z-0 overflow-hidden ${imageWave ? '-top-12' : 'inset-y-0'}`}
+      style={waveMaskStyle}
+      aria-hidden
+    >
+      <img
+        src={imageUrl}
+        alt=""
+        className="absolute inset-0 h-full w-full object-cover object-center"
+        loading="lazy"
+        decoding="async"
+      />
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={heroOverlayGradientStyle(overlayOpacity, 65)}
+      />
+    </div>
+  )
+}
+
+function EmergencySkeleton({ previousTone = 'light' }) {
+  const imageWave = usesImageWaveEdge('accent', previousTone)
+
+  return (
+    <section
+      className={`relative isolate overflow-visible border-b border-white/10 bg-[#171b22] py-14 text-white sm:py-16 ${
+        imageWave ? '-mt-12 z-1' : ''
+      }`}
+    >
+      {!imageWave ? <SectionTopWave tone="accent" previousTone={previousTone} /> : null}
       <Container className="relative z-10">
         <div className="mx-auto max-w-2xl text-center">
           <div className="mx-auto h-6 w-36 animate-pulse rounded-full bg-white/10" />
@@ -54,6 +91,7 @@ export function HomeEmergencyNumbers({ content, loading = false, previousTone = 
     [content],
   )
   const numbers = useMemo(() => getActiveEmergencyNumbers(merged), [merged])
+  const imageWave = usesImageWaveEdge('accent', previousTone)
 
   if (loading) return <EmergencySkeleton previousTone={previousTone} />
   if (numbers.length === 0) return null
@@ -64,24 +102,18 @@ export function HomeEmergencyNumbers({ content, loading = false, previousTone = 
 
   return (
     <section
-      className="relative isolate overflow-visible border-b border-white/10 bg-[#171b22] py-14 text-white sm:py-16 lg:py-20"
+      className={`relative isolate overflow-visible border-b border-white/10 bg-[#171b22] py-14 text-white sm:py-16 lg:py-20 ${
+        imageWave ? '-mt-12 z-1' : ''
+      }`}
       aria-labelledby="titulo-emergencias-inicio"
     >
-      <SectionTopWave tone="accent" previousTone={previousTone} />
+      {!imageWave ? <SectionTopWave tone="accent" previousTone={previousTone} /> : null}
 
-      <div className="absolute inset-0 z-0 overflow-hidden" aria-hidden>
-        <img
-          src={imageUrl}
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover object-center"
-          loading="lazy"
-          decoding="async"
-        />
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={heroOverlayGradientStyle(merged.overlayOpacity, 65)}
-        />
-      </div>
+      <EmergencyBackdrop
+        imageUrl={imageUrl}
+        overlayOpacity={merged.overlayOpacity}
+        imageWave={imageWave}
+      />
 
       <Container className="relative z-10">
         <RevealOnScroll variant="slow">
