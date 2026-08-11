@@ -15,6 +15,7 @@ export const SITE_SEARCH_STATIC_ENTRIES = [
   { path: '/gobierno/legislador-este', title: 'Legislador por el Este', hints: ['legislador', 'este', 'diputado'] },
   { path: '/gobierno/concejo-deliberante', title: 'Concejo Deliberante', hints: ['concejo', 'deliberante', 'concejales'] },
   { path: '/gobierno/oferta-academica', title: 'Oferta académica', hints: ['oferta', 'academica', 'académica', 'educación', 'escuelas'] },
+  { path: '/catalogo-gastronomico', title: 'Catálogo gastronómico', hints: ['gastronomia', 'gastronómico', 'bares', 'cafeterias', 'cafeterías', 'restaurantes', 'comida', 'catalogo'] },
 ]
 
 export function filterStaticSiteSearch(query) {

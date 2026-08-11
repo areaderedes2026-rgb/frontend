@@ -36,6 +36,10 @@ export const publicRouteLoaders = {
     () => import('../pages/government/OfertaAcademica.jsx'),
     'OfertaAcademica',
   ),
+  gastronomy: namedLazy(
+    () => import('../pages/gastronomy/CatalogoGastronomico.jsx'),
+    'CatalogoGastronomico',
+  ),
   newsList: namedLazy(() => import('../pages/news/NewsList.jsx'), 'NewsList'),
   newsDetail: namedLazy(() => import('../pages/news/NewsDetail.jsx'), 'NewsDetail'),
 }

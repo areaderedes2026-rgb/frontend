@@ -14,6 +14,7 @@ export const ROUTES = {
   legisladorEste: '/gobierno/legislador-este',
   concejoDeliberante: '/gobierno/concejo-deliberante',
   ofertaAcademica: '/gobierno/oferta-academica',
+  catalogoGastronomico: '/catalogo-gastronomico',
   areas: '/areas',
   area: (slug) => `/areas/${slug}`,
   areaServiceDetail: (areaSlug, serviceId) =>
@@ -36,6 +37,7 @@ export const ROUTES = {
   adminServices: '/admin/services',
   adminTourismPlaces: '/admin/tourism-places',
   adminOfertaAcademica: '/admin/oferta-academica',
+  adminCatalogoGastronomico: '/admin/catalogo-gastronomico',
   adminNewsCreate: '/admin/news/create',
   adminNewsEdit: (id) => `/admin/news/edit/${id}`,
   adminUsers: '/admin/settings/users',

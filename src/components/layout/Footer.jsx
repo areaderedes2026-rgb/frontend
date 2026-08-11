@@ -67,6 +67,14 @@ export function Footer() {
               </li>
               <li>
                 <Link
+                  to={ROUTES.catalogoGastronomico}
+                  className="text-white/88 transition-colors hover:text-white"
+                >
+                  Catálogo gastronómico
+                </Link>
+              </li>
+              <li>
+                <Link
                   to={ROUTES.atencionCiudadano}
                   className="text-white/88 transition-colors hover:text-white"
                 >

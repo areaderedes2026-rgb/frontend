@@ -127,6 +127,13 @@ function routeSeo(pathname) {
         'Oferta academica y formativa en Trancas: terciaria, cursos, idiomas y articulacion universitaria. Informacion orientativa para vecinos.',
     }
   }
+  if (pathname === '/catalogo-gastronomico') {
+    return {
+      title: 'Catalogo gastronomico | Municipalidad de Trancas',
+      description:
+        'Bares, cafeterias, restaurantes y propuestas gastronomicas de Trancas: nombre, ubicacion, telefono y descripcion de cada local.',
+    }
+  }
   if (pathname === '/history') {
     return {
       title: 'Historia y patrimonio | Municipalidad de Trancas',

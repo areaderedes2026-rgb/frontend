@@ -38,6 +38,7 @@ const AdminIntendencia = lazy(adminRouteLoaders.settingsIntendencia)
 const AdminLegisladorEste = lazy(adminRouteLoaders.settingsLegisladorEste)
 const AdminConcejoDeliberante = lazy(adminRouteLoaders.settingsConcejoDeliberante)
 const AdminOfertaAcademica = lazy(adminRouteLoaders.ofertaAcademica)
+const AdminGastronomicCatalog = lazy(adminRouteLoaders.gastronomicCatalog)
 const AdminUsers = lazy(adminRouteLoaders.settingsUsers)
 const AdminMyAreaServices = lazy(adminRouteLoaders.myAreaServices)
 const AdminAreaServiceEditor = lazy(adminRouteLoaders.areaServiceEditor)
@@ -53,6 +54,7 @@ const Intendencia = lazy(publicRouteLoaders.governmentIntendencia)
 const LegisladorEste = lazy(publicRouteLoaders.governmentLegisladorEste)
 const ConcejoDeliberante = lazy(publicRouteLoaders.governmentConcejoDeliberante)
 const OfertaAcademica = lazy(publicRouteLoaders.governmentOfertaAcademica)
+const CatalogoGastronomico = lazy(publicRouteLoaders.gastronomy)
 const NewsList = lazy(publicRouteLoaders.newsList)
 const NewsDetail = lazy(publicRouteLoaders.newsDetail)
 
@@ -191,6 +193,14 @@ export function AppRouter() {
             }
           />
           <Route
+            path="catalogo-gastronomico"
+            element={
+              <Suspense fallback={<AdminRouteFallback />}>
+                <AdminGastronomicCatalog />
+              </Suspense>
+            }
+          />
+          <Route
             path="news/create"
             element={
               <Suspense fallback={<AdminRouteFallback />}>
@@ -282,6 +292,10 @@ export function AppRouter() {
               path="oferta-academica"
               element={<Navigate to="/admin/oferta-academica" replace />}
             />
+            <Route
+              path="catalogo-gastronomico"
+              element={<Navigate to="/admin/catalogo-gastronomico" replace />}
+            />
             <Route path="history" element={<Navigate to="/admin/history" replace />} />
             <Route element={<RequireAdminOutlet />}>
               <Route
@@ -367,6 +381,14 @@ export function AppRouter() {
           element={
             <Suspense fallback={<PublicRouteFallback />}>
               <OfertaAcademica />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/catalogo-gastronomico"
+          element={
+            <Suspense fallback={<PublicRouteFallback />}>
+              <CatalogoGastronomico />
             </Suspense>
           }
         />

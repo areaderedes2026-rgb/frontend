@@ -50,6 +50,9 @@ export function AdminLayout() {
   const ofertaAcademicaActive =
     pathname === ROUTES.adminOfertaAcademica ||
     pathname.startsWith(`${ROUTES.adminOfertaAcademica}/`)
+  const gastronomicCatalogActive =
+    pathname === ROUTES.adminCatalogoGastronomico ||
+    pathname.startsWith(`${ROUTES.adminCatalogoGastronomico}/`)
 
   useEffect(() => {
     const run = () => {
@@ -186,6 +189,16 @@ export function AdminLayout() {
               }
             >
               Oferta académica
+            </NavLink>
+            <NavLink
+              to={ROUTES.adminCatalogoGastronomico}
+              onMouseEnter={() => preloadAdminRoute('gastronomicCatalog')}
+              onFocus={() => preloadAdminRoute('gastronomicCatalog')}
+              className={({ isActive }) =>
+                navClass({ isActive: isActive || gastronomicCatalogActive })
+              }
+            >
+              Gastronomía
             </NavLink>
             <NavLink
               to={ROUTES.adminServices}
