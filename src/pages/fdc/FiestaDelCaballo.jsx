@@ -187,26 +187,30 @@ export function FiestaDelCaballo() {
           aria-hidden
         />
 
-        <PageListHeroHeader {...heroProps} />
+        <PageListHeroHeader
+          {...heroProps}
+          className="border-b-0!"
+          containerClassName="pb-6! sm:pb-7! lg:pb-8!"
+        />
 
-        {page.heroDateBadge || page.heroSlogan ? (
-          <Container className="relative pt-5 text-center sm:pt-7">
+        <FdcSectionNav items={page.sectionNav} />
+
+        {(page.heroDateBadge || page.heroSlogan) && (
+          <Container className="relative pt-6 text-center sm:pt-8">
             {page.heroDateBadge ? (
               <span className="inline-flex items-center rounded-full border border-amber-200/90 bg-amber-50/90 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-amber-950 sm:text-sm">
                 {page.heroDateBadge}
               </span>
             ) : null}
             {page.heroSlogan ? (
-              <p className="mx-auto mt-3 max-w-2xl font-serif text-base italic leading-relaxed text-[#4b505a] sm:text-lg">
+              <p className="mx-auto mt-3 max-w-3xl font-serif text-base italic leading-relaxed text-[#4b505a] sm:text-lg">
                 {page.heroSlogan}
               </p>
             ) : null}
           </Container>
-        ) : null}
+        )}
 
-        <FdcSectionNav items={page.sectionNav} />
-
-        <Container className="relative max-w-[min(100%,72rem)]!">
+        <Container className="relative max-w-[min(100%,96rem)]!">
           <p className="pt-5 text-sm font-medium text-sky-700 sm:pt-7">
             <Link to={ROUTES.home} className="transition-colors hover:text-sky-900">
               ← Volver al inicio
@@ -249,54 +253,52 @@ export function FiestaDelCaballo() {
             <RevealOnScroll variant="slow">
               <FdcSponsorsSection sponsors={page.sponsors} />
             </RevealOnScroll>
+
+            <RevealOnScroll variant="slow">
+              <section className="scroll-mt-[calc(var(--navbar-h,5rem)+4rem)] rounded-3xl border border-[#ddd7ca] bg-[#fcfcfa] p-5 shadow-sm sm:mx-auto sm:max-w-3xl sm:p-7 lg:max-w-4xl">
+                {page.ctaTitle ? (
+                  <h2 className="font-serif text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
+                    {page.ctaTitle}
+                  </h2>
+                ) : null}
+                {page.ctaBody ? (
+                  <p className="mt-3 text-sm leading-relaxed text-[#4b505a] sm:text-base">{page.ctaBody}</p>
+                ) : null}
+
+                {fromLabel && untilLabel ? (
+                  <p className="mt-4 text-center text-xs font-medium text-[#4b505a] sm:text-sm">
+                    Periodo de preinscripción:{' '}
+                    <span className="font-semibold text-[#171b22]">
+                      {fromLabel} al {untilLabel}
+                    </span>
+                  </p>
+                ) : null}
+
+                <div className="mt-5">
+                  <FdcStallApplicationForm
+                    formNotice={page.formNotice}
+                    formOpen={formOpen}
+                    windowMessage={windowMessage}
+                    onSuccess={(result) => {
+                      const id = result?.application?.id
+                      const email = String(result?.application?.email || '').trim()
+                      setSubmitSuccess({
+                        id,
+                        email,
+                        emailQueued: Boolean(result?.emailQueued || result?.emailSent),
+                      })
+                      setToast({
+                        variant: 'success',
+                        message: id
+                          ? `Preinscripción enviada. Número de solicitud: #${id}.`
+                          : 'Preinscripción enviada correctamente.',
+                      })
+                    }}
+                  />
+                </div>
+              </section>
+            </RevealOnScroll>
           </div>
-        </Container>
-
-        <Container className="relative max-w-[min(100%,42rem)]!">
-          <section className="scroll-mt-[calc(var(--navbar-h,5rem)+4rem)] rounded-3xl border border-[#ddd7ca] bg-[#fcfcfa] p-5 shadow-sm sm:p-7">
-            {page.ctaTitle ? (
-              <h2 className="font-serif text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
-                {page.ctaTitle}
-              </h2>
-            ) : null}
-            {page.ctaBody ? (
-              <p className="mt-3 text-sm leading-relaxed text-[#4b505a] sm:text-base">{page.ctaBody}</p>
-            ) : null}
-
-            {fromLabel && untilLabel ? (
-              <p className="mt-4 text-center text-xs font-medium text-[#4b505a] sm:text-sm">
-                Periodo de preinscripción:{' '}
-                <span className="font-semibold text-[#171b22]">
-                  {fromLabel} al {untilLabel}
-                </span>
-              </p>
-            ) : null}
-
-            <div className="mt-5">
-              <RevealOnScroll variant="slow">
-                <FdcStallApplicationForm
-                  formNotice={page.formNotice}
-                  formOpen={formOpen}
-                  windowMessage={windowMessage}
-                  onSuccess={(result) => {
-                    const id = result?.application?.id
-                    const email = String(result?.application?.email || '').trim()
-                    setSubmitSuccess({
-                      id,
-                      email,
-                      emailQueued: Boolean(result?.emailQueued || result?.emailSent),
-                    })
-                    setToast({
-                      variant: 'success',
-                      message: id
-                        ? `Preinscripción enviada. Número de solicitud: #${id}.`
-                        : 'Preinscripción enviada correctamente.',
-                    })
-                  }}
-                />
-              </RevealOnScroll>
-            </div>
-          </section>
         </Container>
       </section>
     </>

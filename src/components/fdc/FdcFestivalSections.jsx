@@ -102,21 +102,23 @@ export function FdcSectionNav({ items = [] }) {
   return (
     <nav
       aria-label="Secciones del festival"
-      className="sticky top-[calc(var(--navbar-h,5rem))] z-30 border-b border-[#ddd7ca] bg-[#fcfcfa]/95 shadow-sm backdrop-blur-md"
+      className="sticky top-[calc(var(--navbar-h,5rem))] z-30 border-b border-white/10 bg-[#171b22]"
     >
-      <div className="mx-auto flex max-w-[min(100%,72rem)] gap-1 overflow-x-auto px-4 py-2.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-2 sm:px-6 sm:py-3 lg:px-8 [&::-webkit-scrollbar]:hidden">
-        {navItems.map((item) => (
-          <a
-            key={item.id || item.href}
-            href={item.href}
-            className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-transparent px-3.5 py-2 text-sm font-semibold text-[#4b505a] transition hover:border-[#ddd7ca] hover:bg-white hover:text-[#171b22] sm:px-4"
-          >
-            <span className="text-amber-700">
-              <NavIcon name={item.icon} />
-            </span>
-            {item.label}
-          </a>
-        ))}
+      <div className="mx-auto flex w-full max-w-[min(100%,90rem)] justify-center px-4 sm:px-6 lg:px-8 xl:px-10">
+        <div className="flex w-full max-w-5xl flex-wrap items-center justify-center gap-1 py-2.5 sm:gap-1.5 sm:py-3">
+          {navItems.map((item) => (
+            <a
+              key={item.id || item.href}
+              href={item.href}
+              className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold tracking-wide text-white/85 transition hover:bg-white/10 hover:text-white sm:px-4 sm:text-sm"
+            >
+              <span className="text-amber-300">
+                <NavIcon name={item.icon} />
+              </span>
+              <span className="whitespace-nowrap">{item.label}</span>
+            </a>
+          ))}
+        </div>
       </div>
     </nav>
   )

@@ -38,6 +38,7 @@ export function PageListHeroHeader({
   subtitleClassName = '',
   searchAriaLabel = 'Buscar',
   className = '',
+  containerClassName = '',
 }) {
   const inputId = useId()
 
@@ -67,6 +68,7 @@ export function PageListHeroHeader({
       imageUrl={imageUrl}
       overlayOpacity={overlayOpacity}
       className={className}
+      containerClassName={containerClassName}
     >
       {badge ? (
         <p className="hero-enter-eyebrow text-xs font-bold uppercase tracking-[0.24em] text-sky-200">
