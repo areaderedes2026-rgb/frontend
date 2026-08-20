@@ -95,29 +95,33 @@ function SmartLink({ href, className, children, ...rest }) {
   )
 }
 
-export function FdcSectionNav({ items = [] }) {
+export function FdcSectionNav({ items = [], className = '' }) {
   const navItems = (items || []).filter((n) => n?.label && n?.href)
   if (navItems.length === 0) return null
 
   return (
     <nav
       aria-label="Secciones del festival"
-      className="sticky top-[calc(var(--navbar-h,5rem))] z-30 border-b border-white/10 bg-[#171b22]"
+      className={`sticky top-[calc(var(--navbar-h,5rem))] z-30 shrink-0 border-b border-white/10 bg-[#0c1017] ${className}`.trim()}
     >
-      <div className="mx-auto flex w-full max-w-[min(100%,90rem)] justify-center px-4 sm:px-6 lg:px-8 xl:px-10">
-        <div className="flex w-full max-w-5xl flex-wrap items-center justify-center gap-1 py-2.5 sm:gap-1.5 sm:py-3">
-          {navItems.map((item) => (
-            <a
-              key={item.id || item.href}
-              href={item.href}
-              className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold tracking-wide text-white/85 transition hover:bg-white/10 hover:text-white sm:px-4 sm:text-sm"
-            >
-              <span className="text-amber-300">
-                <NavIcon name={item.icon} />
-              </span>
-              <span className="whitespace-nowrap">{item.label}</span>
-            </a>
-          ))}
+      <div className="mx-auto w-full max-w-[min(100%,90rem)] px-3 sm:px-6 lg:px-8 xl:px-10">
+        <div className="-mx-1 flex gap-1 overflow-x-auto px-1 py-2.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:mx-0 sm:gap-0 sm:overflow-visible sm:px-0 sm:py-3 [&::-webkit-scrollbar]:hidden lg:justify-center">
+          <div className="flex min-w-max items-stretch justify-center gap-1 sm:w-full sm:min-w-0 sm:max-w-5xl sm:flex-wrap sm:gap-1.5 lg:flex-nowrap lg:gap-0">
+            {navItems.map((item) => (
+              <a
+                key={item.id || item.href}
+                href={item.href}
+                className="group flex min-w-[5.5rem] flex-col items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-center transition hover:bg-white/8 sm:min-w-0 sm:flex-1 sm:px-3 lg:px-4"
+              >
+                <span className="text-[#d4b483] transition group-hover:text-amber-200">
+                  <NavIcon name={item.icon} className="h-5 w-5" />
+                </span>
+                <span className="max-w-[7.5rem] text-[10px] font-bold uppercase leading-tight tracking-[0.08em] text-[#d4b483]/95 transition group-hover:text-amber-100 sm:max-w-none sm:text-[11px] lg:text-xs">
+                  {item.label}
+                </span>
+              </a>
+            ))}
+          </div>
         </div>
       </div>
     </nav>

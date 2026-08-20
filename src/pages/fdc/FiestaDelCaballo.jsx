@@ -11,16 +11,15 @@ import {
   FdcTicketsSection,
   FdcUsefulInfoSection,
 } from '../../components/fdc/FdcFestivalSections.jsx'
+import { FdcFestivalHero } from '../../components/fdc/FdcFestivalHero.jsx'
 import { FdcStallApplicationForm } from '../../components/fdc/FdcStallApplicationForm.jsx'
 import { RevealOnScroll } from '../../components/home/RevealOnScroll.jsx'
 import { StorySection } from '../../components/home/StorySection.jsx'
-import { PageListHeroHeader } from '../../components/shared/PageListHeroHeader.jsx'
 import { Container } from '../../components/ui/Container.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
 import {
   DEFAULT_FDC_CONTENT,
   FDC_DEFAULT_HERO_IMAGE,
-  fdcHeroToHeaderProps,
   formatFdcDateLabel,
   getFdcFormWindowState,
   mergeFdcContent,
@@ -155,11 +154,14 @@ export function FiestaDelCaballo() {
   const heroImage =
     page.heroImageUrl?.trim() || DEFAULT_FDC_CONTENT.heroImageUrl?.trim() || FDC_DEFAULT_HERO_IMAGE
 
-  const heroProps = {
-    ...(hydrated ? fdcHeroToHeaderProps(page) : {}),
-    imageUrl: hydrated ? heroImage : '',
-    contentReady: hydrated,
-  }
+  const primaryCta =
+    page.showPrimaryButton !== false && page.heroPrimaryLabel
+      ? { label: page.heroPrimaryLabel, href: page.heroPrimaryHref || '#solicitud-puestos' }
+      : null
+  const secondaryCta =
+    page.showSecondaryButton !== false && page.heroSecondaryLabel
+      ? { label: page.heroSecondaryLabel, href: page.heroSecondaryHref || '#cronograma' }
+      : null
 
   if (submitSuccess) {
     return (
@@ -178,53 +180,31 @@ export function FiestaDelCaballo() {
     <>
       {toast ? <Toast variant={toast.variant} message={toast.message} onDismiss={dismissToast} /> : null}
 
-      <div className="relative -mt-[calc(var(--navbar-h,5rem)+1.5rem)] sm:-mt-[calc(var(--navbar-h,5rem)+2rem)]">
-        <PageListHeroHeader
-          {...heroProps}
-          className="border-b-0!"
-          containerClassName="pb-6! sm:pb-7! lg:pb-8!"
+      <div className="relative -mt-[calc(var(--navbar-h,5rem)+1.5rem)] flex h-dvh max-h-dvh flex-col sm:-mt-[calc(var(--navbar-h,5rem)+2rem)]">
+        <FdcFestivalHero
+          contentReady={hydrated}
+          imageUrl={hydrated ? heroImage : ''}
+          overlayOpacity={page.overlayOpacity}
+          eyebrow={page.showHeroBadge !== false ? page.heroEyebrow : ''}
+          title={page.showHeroTitle !== false ? page.heroTitle : ''}
+          subtitle={page.showHeroSubtitle !== false ? page.heroSubtitle : ''}
+          slogan={page.heroSlogan}
+          dateBadge={page.heroDateBadge}
+          primaryCta={hydrated ? primaryCta : null}
+          secondaryCta={hydrated ? secondaryCta : null}
         />
         <FdcSectionNav items={page.sectionNav} />
       </div>
-
-      {(page.heroDateBadge || page.heroSlogan) && (
-        <section className="relative isolate overflow-visible border-y border-[#e8e5dd] bg-[#f7f7f5] py-8 sm:py-10">
-          <svg
-            className="pointer-events-none absolute inset-x-0 -top-12 z-0 h-12 w-full text-[#f7f7f5]"
-            viewBox="0 0 1440 96"
-            preserveAspectRatio="none"
-            aria-hidden
-          >
-            <path
-              fill="currentColor"
-              d="M0 58L60 52C120 46 240 34 360 42C480 50 600 78 720 74C840 70 960 34 1080 30C1200 26 1320 54 1380 68L1440 82V96H0V58Z"
-            />
-          </svg>
-          <Container className="relative z-10 text-center">
-            {page.heroDateBadge ? (
-              <span className="inline-flex items-center rounded-full border border-amber-200/90 bg-amber-50/90 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-amber-950 sm:text-sm">
-                {page.heroDateBadge}
-              </span>
-            ) : null}
-            {page.heroSlogan ? (
-              <p className="mx-auto mt-3 max-w-3xl font-serif text-base italic leading-relaxed text-[#4b505a] sm:text-lg">
-                {page.heroSlogan}
-              </p>
-            ) : null}
-          </Container>
-        </section>
-      )}
 
       {(page.introTitle ||
         (page.introParagraphs || []).some((p) => String(p || '').trim()) ||
         (page.highlights || []).some((h) => h?.label || h?.value)) && (
         <StorySection
+          id="sobre-la-fiesta"
           eyebrow="La fiesta"
           title={page.introTitle || 'Fiesta del Caballo'}
           tone="light"
-          showWave={!(page.heroDateBadge || page.heroSlogan)}
-          showBorder={!(page.heroDateBadge || page.heroSlogan)}
-          className="relative"
+          className="relative scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
         >
           <FdcIntroBlock
             title={page.introTitle}

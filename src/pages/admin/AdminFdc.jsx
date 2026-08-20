@@ -3,14 +3,13 @@ import { Link } from 'react-router-dom'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
 import { PageCoverModal } from '../../components/admin/PageCoverModal.jsx'
 import { SingleImageUploadField } from '../../components/admin/SingleImageUploadField.jsx'
-import { PageListHeroHeader } from '../../components/shared/PageListHeroHeader.jsx'
+import { FdcFestivalHero } from '../../components/fdc/FdcFestivalHero.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
 import { inputClass, labelClass, textareaClass } from '../../components/ui/formStyles.js'
 import {
   DEFAULT_FDC_CONTENT,
   applyHeroCoverToFdcContent,
   fdcContentToHeroCover,
-  fdcHeroToHeaderProps,
   makeFdcItemId,
   mergeFdcContent,
 } from '../../data/fdcContent.js'
@@ -329,7 +328,14 @@ export function AdminFdc() {
     }
   }
 
-  const heroProps = fdcHeroToHeaderProps(form)
+  const heroPrimaryCta =
+    form.showPrimaryButton !== false && form.heroPrimaryLabel
+      ? { label: form.heroPrimaryLabel, href: form.heroPrimaryHref || '#cronograma' }
+      : null
+  const heroSecondaryCta =
+    form.showSecondaryButton !== false && form.heroSecondaryLabel
+      ? { label: form.heroSecondaryLabel, href: form.heroSecondaryHref || '#cronograma' }
+      : null
 
   function updateSchedule(updater) {
     setForm((p) => ({
@@ -433,7 +439,7 @@ export function AdminFdc() {
           <div className="h-64 animate-pulse rounded-3xl bg-slate-100" />
         ) : (
           <div className="space-y-6">
-            <div className="overflow-hidden rounded-3xl border border-[#ddd7ca] bg-[#171b22]">
+            <div className="overflow-hidden rounded-3xl border border-[#ddd7ca] bg-[#0c1017]">
               <div className="flex items-center justify-between gap-3 px-4 py-3">
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-100">
                   Portada pública
@@ -450,13 +456,27 @@ export function AdminFdc() {
                   Cambiar portada
                 </button>
               </div>
-              <PageListHeroHeader {...heroProps} previewMode contentReady />
+              <div className="flex h-[min(70vh,36rem)] flex-col">
+                <FdcFestivalHero
+                  previewMode
+                  contentReady
+                  imageUrl={form.heroImageUrl || ''}
+                  overlayOpacity={form.overlayOpacity}
+                  eyebrow={form.showHeroBadge !== false ? form.heroEyebrow : ''}
+                  title={form.showHeroTitle !== false ? form.heroTitle : ''}
+                  subtitle={form.showHeroSubtitle !== false ? form.heroSubtitle : ''}
+                  slogan={form.heroSlogan}
+                  dateBadge={form.heroDateBadge}
+                  primaryCta={heroPrimaryCta}
+                  secondaryCta={heroSecondaryCta}
+                />
+              </div>
             </div>
 
             <section className={SECTION_CARD}>
               <SectionTitle
-                title="Textos bajo la portada"
-                description="Frase y fecha que aparecen debajo del hero en la página pública."
+                title="Eslogan y fecha en el hero"
+                description="Aparecen sobre la imagen de portada, junto al título y los botones."
               />
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 <label className={labelClass}>
