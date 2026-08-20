@@ -827,31 +827,3 @@ export function FdcSponsorsSection({ sponsors, hideHeading = false }) {
     </div>
   )
 }
-
-export function FdcUsefulInfoSection({ usefulInfo, hideHeading = false }) {
-  const items = (usefulInfo?.items || []).filter((i) => i?.title || i?.body)
-  if (items.length === 0) return null
-
-  return (
-    <div id={hideHeading ? undefined : 'info-util'} className="scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]">
-      {!hideHeading ? <SectionHeading eyebrow="Para visitantes" title={usefulInfo?.title} /> : null}
-      <ul className={`${hideHeading ? '' : 'mt-6 '}grid gap-4 sm:grid-cols-2 lg:grid-cols-3`}>
-        {items.map((item, idx) => (
-          <li
-            key={item.id || item.title || idx}
-            className="rounded-2xl border border-[#ddd7ca] bg-white/90 p-5 shadow-sm"
-          >
-            {item.title ? (
-              <h3 className="font-serif text-lg font-bold text-[#171b22]">{item.title}</h3>
-            ) : null}
-            {item.body ? (
-              <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-[#4b505a]">
-                {item.body}
-              </p>
-            ) : null}
-          </li>
-        ))}
-      </ul>
-    </div>
-  )
-}

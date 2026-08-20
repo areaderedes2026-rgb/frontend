@@ -152,24 +152,8 @@ export const DEFAULT_FDC_SPONSORS = {
 }
 
 export const DEFAULT_FDC_USEFUL_INFO = {
-  title: 'Información útil',
-  items: [
-    {
-      id: 'info-1',
-      title: 'Ubicación',
-      body: 'Predio ferial · Trancas, Tucumán',
-    },
-    {
-      id: 'info-2',
-      title: 'Horarios',
-      body: 'Consultá el cronograma día por día',
-    },
-    {
-      id: 'info-3',
-      title: 'Puestos comerciales',
-      body: 'Preinscribite online desde esta página',
-    },
-  ],
+  title: '',
+  items: [],
 }
 
 export const DEFAULT_FDC_SECTION_NAV = [
@@ -177,7 +161,6 @@ export const DEFAULT_FDC_SECTION_NAV = [
   { id: 'nav-cartelera', label: 'Cartelera', href: '#cartelera', icon: 'music' },
   { id: 'nav-entradas', label: 'Entradas', href: '#entradas', icon: 'ticket' },
   { id: 'nav-noticias', label: 'Noticias', href: '#noticias', icon: 'news' },
-  { id: 'nav-info', label: 'Info útil', href: '#info-util', icon: 'info' },
   { id: 'nav-puestos', label: 'Puestos', href: '#solicitud-puestos', icon: 'store' },
 ]
 
@@ -283,9 +266,13 @@ export function mergeFdcContent(base, remote) {
           }))
           .filter((h) => h.label || h.value)
       : [...(defaults.highlights || [])],
-    sectionNav: Array.isArray(remote.sectionNav)
+    sectionNav: (Array.isArray(remote.sectionNav)
       ? remote.sectionNav.map((n) => ({ ...n }))
-      : [...(defaults.sectionNav || [])],
+      : [...(defaults.sectionNav || [])]
+    ).filter((n) => {
+      const href = String(n?.href || '').trim().toLowerCase()
+      return href !== '#info-util'
+    }),
     schedule: (() => {
       const merged = mergeNamedSection(defaults.schedule, remote.schedule, [
         'title',
@@ -324,7 +311,7 @@ export function mergeFdcContent(base, remote) {
     ]),
     gallery: mergeNamedSection(defaults.gallery, remote.gallery, ['title', 'items']),
     sponsors: mergeNamedSection(defaults.sponsors, remote.sponsors, ['title', 'items']),
-    usefulInfo: mergeNamedSection(defaults.usefulInfo, remote.usefulInfo, ['title', 'items']),
+    usefulInfo: { title: '', items: [] },
     formNotice: String(remote.formNotice ?? defaults.formNotice ?? ''),
     formOpenFrom: remote.formOpenFrom
       ? String(remote.formOpenFrom).slice(0, 10)

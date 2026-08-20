@@ -8,7 +8,6 @@ import {
   FdcSectionNav,
   FdcSponsorsSection,
   FdcTicketsSection,
-  FdcUsefulInfoSection,
 } from '../../components/fdc/FdcFestivalSections.jsx'
 import { FdcFestivalHero } from '../../components/fdc/FdcFestivalHero.jsx'
 import { FdcStallApplicationForm } from '../../components/fdc/FdcStallApplicationForm.jsx'
@@ -196,19 +195,8 @@ export function FiestaDelCaballo() {
       {(page.artists?.items || []).some((a) => a?.name) ? (
         <section
           id="cartelera"
-          className="relative isolate overflow-visible border-y border-white/10 bg-[#171b22] py-14 text-white sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
+          className="relative isolate border-y border-white/10 bg-[#171b22] py-14 text-white sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
         >
-          <svg
-            className="pointer-events-none absolute inset-x-0 -top-12 z-0 h-12 w-full text-[#171b22]"
-            viewBox="0 0 1440 96"
-            preserveAspectRatio="none"
-            aria-hidden
-          >
-            <path
-              fill="currentColor"
-              d="M0 58L60 52C120 46 240 34 360 42C480 50 600 78 720 74C840 70 960 34 1080 30C1200 26 1320 54 1380 68L1440 82V96H0V58Z"
-            />
-          </svg>
           <Container className="relative z-10">
             <RevealOnScroll variant="slow">
               <FdcArtistsSection artists={page.artists} />
@@ -220,19 +208,8 @@ export function FiestaDelCaballo() {
       {(page.schedule?.days || []).length > 0 ? (
         <section
           id="cronograma"
-          className="relative isolate overflow-visible border-y border-[#e8e5dd] bg-[#f7f7f5] py-14 sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
+          className="relative isolate border-y border-[#e8e5dd] bg-[#f7f7f5] py-14 sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
         >
-          <svg
-            className="pointer-events-none absolute inset-x-0 -top-12 z-0 h-12 w-full text-[#f7f7f5]"
-            viewBox="0 0 1440 96"
-            preserveAspectRatio="none"
-            aria-hidden
-          >
-            <path
-              fill="currentColor"
-              d="M0 58L60 52C120 46 240 34 360 42C480 50 600 78 720 74C840 70 960 34 1080 30C1200 26 1320 54 1380 68L1440 82V96H0V58Z"
-            />
-          </svg>
           <Container className="relative z-10">
             <RevealOnScroll variant="slow">
               <FdcScheduleSection schedule={page.schedule} />
@@ -247,6 +224,7 @@ export function FiestaDelCaballo() {
           eyebrow="Acceso"
           title={page.tickets.title}
           tone="accent"
+          showWave={false}
           className="relative scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
         >
           <FdcTicketsSection tickets={page.tickets} hideHeading embedded />
@@ -256,19 +234,8 @@ export function FiestaDelCaballo() {
       {(page.news?.items || []).some((n) => n?.title) ? (
         <section
           id="noticias"
-          className="relative isolate overflow-visible border-y border-[#e8e5dd] bg-[#f7f7f5] py-14 sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
+          className="relative isolate border-y border-[#e8e5dd] bg-[#f7f7f5] py-14 sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
         >
-          <svg
-            className="pointer-events-none absolute inset-x-0 -top-12 z-0 h-12 w-full text-[#f7f7f5]"
-            viewBox="0 0 1440 96"
-            preserveAspectRatio="none"
-            aria-hidden
-          >
-            <path
-              fill="currentColor"
-              d="M0 58L60 52C120 46 240 34 360 42C480 50 600 78 720 74C840 70 960 34 1080 30C1200 26 1320 54 1380 68L1440 82V96H0V58Z"
-            />
-          </svg>
           <Container className="relative z-10">
             <RevealOnScroll variant="slow">
               <FdcNewsSection news={page.news} />
@@ -283,21 +250,10 @@ export function FiestaDelCaballo() {
           eyebrow="Imágenes"
           title={page.gallery?.title || 'Viví la fiesta'}
           tone="accent"
+          showWave={false}
           className="relative scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
         >
           <FdcGallerySection gallery={page.gallery} hideHeading />
-        </StorySection>
-      ) : null}
-
-      {(page.usefulInfo?.items || []).some((i) => i?.title || i?.body) ? (
-        <StorySection
-          id="info-util"
-          eyebrow="Para visitantes"
-          title={page.usefulInfo?.title || 'Información útil'}
-          tone="light"
-          className="relative scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
-        >
-          <FdcUsefulInfoSection usefulInfo={page.usefulInfo} hideHeading />
         </StorySection>
       ) : null}
 
@@ -306,12 +262,7 @@ export function FiestaDelCaballo() {
           eyebrow="Patrocinios"
           title={page.sponsors?.title || 'Auspician y acompañan'}
           tone="light"
-          showWave={
-            !(page.usefulInfo?.items || []).some((i) => i?.title || i?.body)
-          }
-          showBorder={
-            !(page.usefulInfo?.items || []).some((i) => i?.title || i?.body)
-          }
+          showWave={false}
           className="relative"
         >
           <FdcSponsorsSection sponsors={page.sponsors} hideHeading />
@@ -324,6 +275,7 @@ export function FiestaDelCaballo() {
         title={page.ctaTitle || 'Solicitud de puestos comerciales'}
         subtitle={page.ctaBody || undefined}
         tone="accent"
+        showWave={false}
         className="relative scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
         contentClassName="w-full max-w-6xl mx-auto"
       >

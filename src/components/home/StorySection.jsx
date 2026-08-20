@@ -45,7 +45,7 @@ export function StorySection({
   children,
   actions = null,
   tone = 'light',
-  showWave = true,
+  showWave = false,
   showBorder = true,
   className = '',
   contentClassName = '',

@@ -35,7 +35,9 @@ function mapContentToForm(content) {
     ...merged,
     introParagraphs: [...(merged.introParagraphs || [])],
     highlights: (merged.highlights || []).map((h) => ({ ...h })),
-    sectionNav: (merged.sectionNav || []).map((n) => ({ ...n })),
+    sectionNav: (merged.sectionNav || [])
+      .map((n) => ({ ...n }))
+      .filter((n) => String(n?.href || '').trim().toLowerCase() !== '#info-util'),
     schedule: {
       ...merged.schedule,
       images: (merged.schedule?.images || []).map((img) => ({ ...img })),
@@ -64,10 +66,7 @@ function mapContentToForm(content) {
       ...merged.sponsors,
       items: (merged.sponsors?.items || []).map((it) => ({ ...it })),
     },
-    usefulInfo: {
-      ...merged.usefulInfo,
-      items: (merged.usefulInfo?.items || []).map((it) => ({ ...it })),
-    },
+    usefulInfo: { title: '', items: [] },
     overlayOpacity: normalizeOverlay(merged.overlayOpacity, 65),
     showHeroBadge: normalizeHeroToggle(merged.showHeroBadge, true),
     showHeroTitle: normalizeHeroToggle(merged.showHeroTitle, true),
@@ -184,7 +183,7 @@ export function AdminFdc() {
           href: String(n?.href || '').trim(),
           icon: String(n?.icon || 'link').trim(),
         }))
-        .filter((n) => n.label || n.href),
+        .filter((n) => (n.label || n.href) && String(n.href || '').toLowerCase() !== '#info-util'),
       schedule: {
         title: String(form.schedule?.title || '').trim(),
         featuredImageUrl: String(
@@ -273,16 +272,7 @@ export function AdminFdc() {
           }))
           .filter((it) => it.name || it.logoUrl),
       },
-      usefulInfo: {
-        title: String(form.usefulInfo?.title || '').trim(),
-        items: (form.usefulInfo?.items || [])
-          .map((it) => ({
-            id: String(it?.id || '').trim() || makeFdcItemId('info'),
-            title: String(it?.title || '').trim(),
-            body: String(it?.body || ''),
-          }))
-          .filter((it) => it.title || it.body),
-      },
+      usefulInfo: { title: '', items: [] },
       formNotice: String(form.formNotice || ''),
       formOpenFrom: form.formOpenFrom || null,
       formOpenUntil: form.formOpenUntil || null,
@@ -385,13 +375,6 @@ export function AdminFdc() {
     setForm((p) => ({
       ...p,
       sponsors: typeof updater === 'function' ? updater(p.sponsors) : updater,
-    }))
-  }
-
-  function updateUsefulInfo(updater) {
-    setForm((p) => ({
-      ...p,
-      usefulInfo: typeof updater === 'function' ? updater(p.usefulInfo) : updater,
     }))
   }
 
@@ -1390,88 +1373,6 @@ export function AdminFdc() {
                     }
                   >
                     + Agregar auspiciante
-                  </button>
-                </div>
-              </div>
-            </section>
-
-            <section className={SECTION_CARD}>
-              <SectionTitle title="Información útil" />
-              <div className="mt-4 grid gap-4">
-                <label className={labelClass}>
-                  Título
-                  <input
-                    className={inputClass}
-                    value={form.usefulInfo?.title || ''}
-                    disabled={saving}
-                    onChange={(e) => updateUsefulInfo((u) => ({ ...u, title: e.target.value }))}
-                  />
-                </label>
-                <div className="space-y-3">
-                  {(form.usefulInfo?.items || []).map((item, idx) => (
-                    <div key={item.id || idx} className={ITEM_CARD}>
-                      <label className={labelClass}>
-                        Título
-                        <input
-                          className={inputClass}
-                          value={item.title || ''}
-                          disabled={saving}
-                          onChange={(e) =>
-                            updateUsefulInfo((u) => {
-                              const items = [...(u.items || [])]
-                              items[idx] = { ...items[idx], title: e.target.value }
-                              return { ...u, items }
-                            })
-                          }
-                        />
-                      </label>
-                      <label className={`${labelClass} mt-3`}>
-                        Texto
-                        <textarea
-                          className={textareaClass}
-                          value={item.body || ''}
-                          disabled={saving}
-                          onChange={(e) =>
-                            updateUsefulInfo((u) => {
-                              const items = [...(u.items || [])]
-                              items[idx] = { ...items[idx], body: e.target.value }
-                              return { ...u, items }
-                            })
-                          }
-                        />
-                      </label>
-                      <div className="mt-3 flex justify-end">
-                        <button
-                          type="button"
-                          className={ACTION_DANGER}
-                          disabled={saving}
-                          onClick={() =>
-                            updateUsefulInfo((u) => ({
-                              ...u,
-                              items: (u.items || []).filter((_, i) => i !== idx),
-                            }))
-                          }
-                        >
-                          Quitar ítem
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    className={ACTION_ADD}
-                    disabled={saving}
-                    onClick={() =>
-                      updateUsefulInfo((u) => ({
-                        ...u,
-                        items: [
-                          ...(u.items || []),
-                          { id: makeFdcItemId('info'), title: '', body: '' },
-                        ],
-                      }))
-                    }
-                  >
-                    + Agregar ítem
                   </button>
                 </div>
               </div>
