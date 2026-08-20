@@ -24,7 +24,7 @@ export const DEFAULT_FDC_CONTENT = {
   heroEyebrow: 'Nuestra ciudad',
   heroTitle: 'Fiesta Nacional e Internacional del Caballo 2026',
   heroSubtitle:
-    'Trancas se prepara para una de las celebraciones más importantes del año. Conocé la agenda, preinscribí tu puesto comercial y viví la fiesta.',
+    'Preinscribí tu puesto comercial para la Fiesta Nacional e Internacional del Caballo 2026.',
   heroImageUrl: FDC_DEFAULT_HERO_IMAGE,
   overlayOpacity: 65,
   heroSearchPlaceholder: '',

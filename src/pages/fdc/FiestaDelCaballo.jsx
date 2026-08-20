@@ -69,7 +69,7 @@ export function FiestaDelCaballo() {
     <>
       {toast ? <Toast variant={toast.variant} message={toast.message} onDismiss={dismissToast} /> : null}
 
-      <section className="relative -mt-[calc(var(--navbar-h,5rem)+1.5rem)] overflow-hidden bg-linear-to-b from-[#efe8dc] via-[#f7f7f5] to-[#fcfcfa] pb-12 sm:-mt-[calc(var(--navbar-h,5rem)+2rem)] sm:pb-16">
+      <section className="relative -mt-[calc(var(--navbar-h,5rem)+1.5rem)] overflow-hidden bg-linear-to-b from-[#efe8dc] via-[#f7f7f5] to-[#fcfcfa] pb-10 sm:-mt-[calc(var(--navbar-h,5rem)+2rem)] sm:pb-14">
         <div
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_15%_-10%,rgba(180,83,9,0.16),transparent_60%)]"
           aria-hidden
@@ -81,115 +81,44 @@ export function FiestaDelCaballo() {
 
         <PageListHeroHeader {...heroProps} />
 
-        <Container className="relative max-w-[min(100%,96rem)]!">
-          <p className="pt-6 text-sm font-medium text-sky-700 sm:pt-8">
+        <Container className="relative max-w-[min(100%,42rem)]!">
+          <p className="pt-5 text-sm font-medium text-sky-700 sm:pt-7">
             <Link to={ROUTES.home} className="transition-colors hover:text-sky-900">
               ← Volver al inicio
             </Link>
           </p>
 
-          <article className="mt-5 overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm">
-            <div className="space-y-10 p-5 sm:p-7 lg:p-10">
-              <RevealOnScroll variant="slow">
-                <section className="rounded-3xl border border-[#ddd7ca] bg-[#f8f7f3] p-6 sm:p-8">
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-amber-800">
-                    Fiesta del Caballo
-                  </p>
-                  <h2 className="mt-2 font-serif text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
-                    {page.introTitle}
-                  </h2>
-                  <div className="mt-4 space-y-3 text-sm leading-relaxed text-[#4b505a] sm:text-base">
-                    {(page.introParagraphs || []).map((paragraph) => (
-                      <p key={paragraph.slice(0, 48)}>{paragraph}</p>
-                    ))}
-                  </div>
-                  {page.highlights?.length > 0 ? (
-                    <dl className="mt-6 grid gap-3 sm:grid-cols-3">
-                      {page.highlights.map((item) => (
-                        <div
-                          key={`${item.label}-${item.value}`}
-                          className="rounded-2xl border border-[#ddd7ca] bg-white px-4 py-3"
-                        >
-                          <dt className="text-[11px] font-bold uppercase tracking-wide text-amber-800">
-                            {item.label}
-                          </dt>
-                          <dd className="mt-1 text-sm font-semibold text-[#171b22]">{item.value}</dd>
-                        </div>
-                      ))}
-                    </dl>
-                  ) : null}
-                  <div className="mt-6 flex flex-wrap gap-3">
-                    <a
-                      href="#solicitud-puestos"
-                      className="inline-flex min-h-11 items-center justify-center rounded-2xl bg-[#171b22] px-5 text-sm font-semibold text-white transition hover:bg-black"
-                    >
-                      Ir al formulario de puestos
-                    </a>
-                    <Link
-                      to={ROUTES.events}
-                      className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-[#ddd7ca] bg-white px-5 text-sm font-semibold text-[#171b22] transition hover:border-sky-200 hover:bg-sky-50"
-                    >
-                      Ver agenda municipal
-                    </Link>
-                  </div>
-                </section>
-              </RevealOnScroll>
+          {fromLabel && untilLabel ? (
+            <p className="mt-3 text-center text-xs font-medium text-[#4b505a] sm:text-sm">
+              Periodo de preinscripción:{' '}
+              <span className="font-semibold text-[#171b22]">
+                {fromLabel} al {untilLabel}
+              </span>
+            </p>
+          ) : null}
 
-              <RevealOnScroll variant="slow">
-                <section>
-                  <div className="mb-5 border-b border-[#ddd7ca] pb-4">
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-800">
-                      Preinscripción
-                    </p>
-                    <h2 className="mt-1 font-serif text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
-                      Solicitud de puestos comerciales
-                    </h2>
-                    <p className="mt-2 max-w-3xl text-sm leading-relaxed text-[#4b505a]">
-                      Completá el formulario. Al enviarlo vas a recibir una constancia automática en tu
-                      correo con el número de solicitud.
-                      {fromLabel && untilLabel
-                        ? ` Periodo de preinscripción: ${fromLabel} al ${untilLabel}.`
-                        : ''}
-                    </p>
-                  </div>
-
-                  <FdcStallApplicationForm
-                    formNotice={page.formNotice}
-                    formOpen={formOpen}
-                    windowMessage={windowMessage}
-                    onSuccess={(result) => {
-                      const id = result?.application?.id
-                      const emailNote = result?.emailSent
-                        ? ' Te enviamos la constancia a tu correo.'
-                        : ' La solicitud quedó registrada; si no llega el mail, revisá spam o consultanos.'
-                      setToast({
-                        variant: 'success',
-                        message: id
-                          ? `Preinscripción enviada. Número de solicitud: #${id}.${emailNote}`
-                          : `Preinscripción enviada.${emailNote}`,
-                      })
-                      window.scrollTo({ top: 0, behavior: 'smooth' })
-                    }}
-                  />
-                </section>
-              </RevealOnScroll>
-
-              {page.ctaTitle || page.ctaBody ? (
-                <RevealOnScroll variant="slow">
-                  <section className="rounded-3xl border border-[#ddd7ca] bg-linear-to-br from-amber-50/90 via-white to-[#f8f7f3] p-6 sm:p-8">
-                    <h2 className="font-serif text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
-                      {page.ctaTitle}
-                    </h2>
-                    {page.ctaBody ? (
-                      <p className="mt-3 max-w-3xl whitespace-pre-wrap text-sm leading-relaxed text-[#4b505a] sm:text-base">
-                        {page.ctaBody}
-                      </p>
-                    ) : null}
-                  </section>
-                </RevealOnScroll>
-              ) : null}
-            </div>
-          </article>
+          <div className="mt-4 sm:mt-5">
+            <RevealOnScroll variant="slow">
+              <FdcStallApplicationForm
+                formNotice={page.formNotice}
+                formOpen={formOpen}
+                windowMessage={windowMessage}
+                onSuccess={(result) => {
+                  const id = result?.application?.id
+                  const emailNote = result?.emailSent
+                    ? ' Te enviamos la constancia a tu correo.'
+                    : ' La solicitud quedó registrada; si no llega el mail, revisá spam o consultanos.'
+                  setToast({
+                    variant: 'success',
+                    message: id
+                      ? `Preinscripción enviada. Número de solicitud: #${id}.${emailNote}`
+                      : `Preinscripción enviada.${emailNote}`,
+                  })
+                  window.scrollTo({ top: 0, behavior: 'smooth' })
+                }}
+              />
+            </RevealOnScroll>
+          </div>
         </Container>
       </section>
     </>
