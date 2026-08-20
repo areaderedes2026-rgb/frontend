@@ -6,13 +6,13 @@ import {
   FdcNewsSection,
   FdcScheduleSection,
   FdcSectionNav,
+  FdcSectionTitle,
   FdcSponsorsSection,
   FdcTicketsSection,
 } from '../../components/fdc/FdcFestivalSections.jsx'
 import { FdcFestivalHero } from '../../components/fdc/FdcFestivalHero.jsx'
 import { FdcStallApplicationForm } from '../../components/fdc/FdcStallApplicationForm.jsx'
 import { RevealOnScroll } from '../../components/home/RevealOnScroll.jsx'
-import { StorySection } from '../../components/home/StorySection.jsx'
 import { Container } from '../../components/ui/Container.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
 import {
@@ -219,16 +219,16 @@ export function FiestaDelCaballo() {
       ) : null}
 
       {String(page.tickets?.title || '').trim() ? (
-        <StorySection
+        <section
           id="entradas"
-          eyebrow="Acceso"
-          title={page.tickets.title}
-          tone="accent"
-          showWave={false}
-          className="relative scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
+          className="relative isolate border-y border-white/10 bg-[#171b22] py-14 text-white sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
         >
-          <FdcTicketsSection tickets={page.tickets} hideHeading embedded />
-        </StorySection>
+          <Container className="relative z-10">
+            <RevealOnScroll variant="slow">
+              <FdcTicketsSection tickets={page.tickets} embedded tone="dark" />
+            </RevealOnScroll>
+          </Container>
+        </section>
       ) : null}
 
       {(page.news?.items || []).some((n) => n?.title) ? (
@@ -245,71 +245,72 @@ export function FiestaDelCaballo() {
       ) : null}
 
       {(page.gallery?.items || []).some((g) => g?.imageUrl) ? (
-        <StorySection
+        <section
           id="galeria"
-          eyebrow="Imágenes"
-          title={page.gallery?.title || 'Viví la fiesta'}
-          tone="accent"
-          showWave={false}
-          className="relative scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
+          className="relative isolate border-y border-white/10 bg-[#171b22] py-14 text-white sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
         >
-          <FdcGallerySection gallery={page.gallery} hideHeading />
-        </StorySection>
+          <Container className="relative z-10">
+            <RevealOnScroll variant="slow">
+              <FdcGallerySection gallery={page.gallery} tone="dark" />
+            </RevealOnScroll>
+          </Container>
+        </section>
       ) : null}
 
       {(page.sponsors?.items || []).some((s) => s?.logoUrl || s?.name) ? (
-        <StorySection
-          eyebrow="Patrocinios"
-          title={page.sponsors?.title || 'Auspician y acompañan'}
-          tone="light"
-          showWave={false}
-          className="relative"
-        >
-          <FdcSponsorsSection sponsors={page.sponsors} hideHeading />
-        </StorySection>
+        <section className="relative isolate border-y border-[#e8e5dd] bg-[#f7f7f5] py-14 sm:py-16 lg:py-20">
+          <Container className="relative z-10">
+            <RevealOnScroll variant="slow">
+              <FdcSponsorsSection sponsors={page.sponsors} tone="light" />
+            </RevealOnScroll>
+          </Container>
+        </section>
       ) : null}
 
-      <StorySection
+      <section
         id="solicitud-puestos"
-        eyebrow="Preinscripción"
-        title={page.ctaTitle || 'Solicitud de puestos comerciales'}
-        subtitle={page.ctaBody || undefined}
-        tone="accent"
-        showWave={false}
-        className="relative scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
-        contentClassName="w-full max-w-6xl mx-auto"
+        className="relative isolate border-y border-white/10 bg-[#171b22] py-14 text-white sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
       >
-        {fromLabel && untilLabel ? (
-          <p className="mb-5 text-center text-xs font-medium text-slate-300 sm:mb-6 sm:text-sm">
-            Periodo de preinscripción:{' '}
-            <span className="font-semibold text-white">
-              {fromLabel} al {untilLabel}
-            </span>
-          </p>
-        ) : null}
-        <RevealOnScroll variant="slow">
-          <FdcStallApplicationForm
-            formNotice={page.formNotice}
-            formOpen={formOpen}
-            windowMessage={windowMessage}
-            onSuccess={(result) => {
-              const id = result?.application?.id
-              const email = String(result?.application?.email || '').trim()
-              setSubmitSuccess({
-                id,
-                email,
-                emailQueued: Boolean(result?.emailQueued || result?.emailSent),
-              })
-              setToast({
-                variant: 'success',
-                message: id
-                  ? `Preinscripción enviada. Número de solicitud: #${id}.`
-                  : 'Preinscripción enviada correctamente.',
-              })
-            }}
-          />
-        </RevealOnScroll>
-      </StorySection>
+        <Container className="relative z-10">
+          <RevealOnScroll variant="slow">
+            <FdcSectionTitle
+              title={page.ctaTitle || 'Solicitud de puestos comerciales'}
+              subtitle={page.ctaBody || undefined}
+              tone="dark"
+            />
+            {fromLabel && untilLabel ? (
+              <p className="mb-5 text-center text-xs font-medium text-slate-300 sm:mb-6 sm:text-sm">
+                Periodo de preinscripción:{' '}
+                <span className="font-semibold text-white">
+                  {fromLabel} al {untilLabel}
+                </span>
+              </p>
+            ) : null}
+            <div className="mx-auto w-full max-w-6xl">
+              <FdcStallApplicationForm
+                formNotice={page.formNotice}
+                formOpen={formOpen}
+                windowMessage={windowMessage}
+                onSuccess={(result) => {
+                  const id = result?.application?.id
+                  const email = String(result?.application?.email || '').trim()
+                  setSubmitSuccess({
+                    id,
+                    email,
+                    emailQueued: Boolean(result?.emailQueued || result?.emailSent),
+                  })
+                  setToast({
+                    variant: 'success',
+                    message: id
+                      ? `Preinscripción enviada. Número de solicitud: #${id}.`
+                      : 'Preinscripción enviada correctamente.',
+                  })
+                }}
+              />
+            </div>
+          </RevealOnScroll>
+        </Container>
+      </section>
     </>
   )
 }
