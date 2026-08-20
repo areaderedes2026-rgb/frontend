@@ -13,6 +13,7 @@ import {
 } from '../../components/fdc/FdcFestivalSections.jsx'
 import { FdcStallApplicationForm } from '../../components/fdc/FdcStallApplicationForm.jsx'
 import { RevealOnScroll } from '../../components/home/RevealOnScroll.jsx'
+import { StorySection } from '../../components/home/StorySection.jsx'
 import { PageListHeroHeader } from '../../components/shared/PageListHeroHeader.jsx'
 import { Container } from '../../components/ui/Container.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
@@ -177,26 +178,29 @@ export function FiestaDelCaballo() {
     <>
       {toast ? <Toast variant={toast.variant} message={toast.message} onDismiss={dismissToast} /> : null}
 
-      <section className="relative -mt-[calc(var(--navbar-h,5rem)+1.5rem)] overflow-hidden bg-linear-to-b from-[#efe8dc] via-[#f7f7f5] to-[#fcfcfa] pb-10 sm:-mt-[calc(var(--navbar-h,5rem)+2rem)] sm:pb-14">
-        <div
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_15%_-10%,rgba(180,83,9,0.16),transparent_60%)]"
-          aria-hidden
-        />
-        <div
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_55%_45%_at_100%_5%,rgba(15,23,42,0.14),transparent_70%)]"
-          aria-hidden
-        />
-
+      <div className="relative -mt-[calc(var(--navbar-h,5rem)+1.5rem)] sm:-mt-[calc(var(--navbar-h,5rem)+2rem)]">
         <PageListHeroHeader
           {...heroProps}
           className="border-b-0!"
           containerClassName="pb-6! sm:pb-7! lg:pb-8!"
         />
-
         <FdcSectionNav items={page.sectionNav} />
+      </div>
 
-        {(page.heroDateBadge || page.heroSlogan) && (
-          <Container className="relative pt-6 text-center sm:pt-8">
+      {(page.heroDateBadge || page.heroSlogan) && (
+        <section className="relative isolate overflow-visible border-y border-[#e8e5dd] bg-[#f7f7f5] py-8 sm:py-10">
+          <svg
+            className="pointer-events-none absolute inset-x-0 -top-12 z-0 h-12 w-full text-[#f7f7f5]"
+            viewBox="0 0 1440 96"
+            preserveAspectRatio="none"
+            aria-hidden
+          >
+            <path
+              fill="currentColor"
+              d="M0 58L60 52C120 46 240 34 360 42C480 50 600 78 720 74C840 70 960 34 1080 30C1200 26 1320 54 1380 68L1440 82V96H0V58Z"
+            />
+          </svg>
+          <Container className="relative z-10 text-center">
             {page.heroDateBadge ? (
               <span className="inline-flex items-center rounded-full border border-amber-200/90 bg-amber-50/90 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-amber-950 sm:text-sm">
                 {page.heroDateBadge}
@@ -208,99 +212,160 @@ export function FiestaDelCaballo() {
               </p>
             ) : null}
           </Container>
-        )}
+        </section>
+      )}
 
-        <Container className="relative max-w-[min(100%,96rem)]!">
-          <p className="pt-5 text-sm font-medium text-sky-700 sm:pt-7">
-            <Link to={ROUTES.home} className="transition-colors hover:text-sky-900">
-              ← Volver al inicio
-            </Link>
+      {(page.introTitle ||
+        (page.introParagraphs || []).some((p) => String(p || '').trim()) ||
+        (page.highlights || []).some((h) => h?.label || h?.value)) && (
+        <StorySection
+          eyebrow="La fiesta"
+          title={page.introTitle || 'Fiesta del Caballo'}
+          tone="light"
+          showWave={!(page.heroDateBadge || page.heroSlogan)}
+          showBorder={!(page.heroDateBadge || page.heroSlogan)}
+          className="relative"
+        >
+          <FdcIntroBlock
+            title={page.introTitle}
+            paragraphs={page.introParagraphs}
+            highlights={page.highlights}
+            hideHeading
+          />
+        </StorySection>
+      )}
+
+      {(page.schedule?.days || []).length > 0 ? (
+        <StorySection
+          id="cronograma"
+          eyebrow="Programación"
+          title={page.schedule?.title || 'Cronograma de actividades'}
+          tone="accent"
+          className="relative scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
+        >
+          <FdcScheduleSection schedule={page.schedule} hideHeading tone="accent" />
+        </StorySection>
+      ) : null}
+
+      {(page.artists?.items || []).some((a) => a?.name) ? (
+        <StorySection
+          id="cartelera"
+          eyebrow="Shows"
+          title={page.artists?.title || 'Cartelera artística'}
+          tone="light"
+          className="relative scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
+        >
+          <FdcArtistsSection artists={page.artists} hideHeading />
+        </StorySection>
+      ) : null}
+
+      {String(page.tickets?.title || '').trim() ? (
+        <StorySection
+          id="entradas"
+          eyebrow="Acceso"
+          title={page.tickets.title}
+          tone="accent"
+          className="relative scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
+        >
+          <FdcTicketsSection tickets={page.tickets} hideHeading embedded />
+        </StorySection>
+      ) : null}
+
+      {(page.news?.items || []).some((n) => n?.title) ? (
+        <StorySection
+          id="noticias"
+          eyebrow="Novedades"
+          title={page.news?.title || 'Noticias del festival'}
+          tone="light"
+          className="relative scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
+        >
+          <FdcNewsSection news={page.news} hideHeading />
+        </StorySection>
+      ) : null}
+
+      {(page.gallery?.items || []).some((g) => g?.imageUrl) ? (
+        <StorySection
+          id="galeria"
+          eyebrow="Imágenes"
+          title={page.gallery?.title || 'Viví la fiesta'}
+          tone="accent"
+          className="relative scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
+        >
+          <FdcGallerySection gallery={page.gallery} hideHeading />
+        </StorySection>
+      ) : null}
+
+      {(page.usefulInfo?.items || []).some((i) => i?.title || i?.body) ? (
+        <StorySection
+          id="info-util"
+          eyebrow="Para visitantes"
+          title={page.usefulInfo?.title || 'Información útil'}
+          tone="light"
+          className="relative scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
+        >
+          <FdcUsefulInfoSection usefulInfo={page.usefulInfo} hideHeading />
+        </StorySection>
+      ) : null}
+
+      {(page.sponsors?.items || []).some((s) => s?.logoUrl || s?.name) ? (
+        <StorySection
+          eyebrow="Patrocinios"
+          title={page.sponsors?.title || 'Auspician y acompañan'}
+          tone="light"
+          showWave={
+            !(page.usefulInfo?.items || []).some((i) => i?.title || i?.body)
+          }
+          showBorder={
+            !(page.usefulInfo?.items || []).some((i) => i?.title || i?.body)
+          }
+          className="relative"
+        >
+          <FdcSponsorsSection sponsors={page.sponsors} hideHeading />
+        </StorySection>
+      ) : null}
+
+      <StorySection
+        id="solicitud-puestos"
+        eyebrow="Preinscripción"
+        title={page.ctaTitle || 'Solicitud de puestos comerciales'}
+        subtitle={page.ctaBody || undefined}
+        tone="accent"
+        className="relative scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
+        contentClassName="max-w-3xl mx-auto"
+      >
+        {fromLabel && untilLabel ? (
+          <p className="mb-5 text-center text-xs font-medium text-slate-300 sm:text-sm">
+            Periodo de preinscripción:{' '}
+            <span className="font-semibold text-white">
+              {fromLabel} al {untilLabel}
+            </span>
           </p>
-
-          <div className="mt-5 space-y-10 pb-8 sm:mt-6 sm:space-y-12 sm:pb-10">
-            <RevealOnScroll variant="slow">
-              <FdcIntroBlock
-                title={page.introTitle}
-                paragraphs={page.introParagraphs}
-                highlights={page.highlights}
-              />
-            </RevealOnScroll>
-
-            <RevealOnScroll variant="slow">
-              <FdcScheduleSection schedule={page.schedule} />
-            </RevealOnScroll>
-
-            <RevealOnScroll variant="slow">
-              <FdcArtistsSection artists={page.artists} />
-            </RevealOnScroll>
-
-            <RevealOnScroll variant="slow">
-              <FdcTicketsSection tickets={page.tickets} />
-            </RevealOnScroll>
-
-            <RevealOnScroll variant="slow">
-              <FdcNewsSection news={page.news} />
-            </RevealOnScroll>
-
-            <RevealOnScroll variant="slow">
-              <FdcGallerySection gallery={page.gallery} />
-            </RevealOnScroll>
-
-            <RevealOnScroll variant="slow">
-              <FdcUsefulInfoSection usefulInfo={page.usefulInfo} />
-            </RevealOnScroll>
-
-            <RevealOnScroll variant="slow">
-              <FdcSponsorsSection sponsors={page.sponsors} />
-            </RevealOnScroll>
-
-            <RevealOnScroll variant="slow">
-              <section className="scroll-mt-[calc(var(--navbar-h,5rem)+4rem)] rounded-3xl border border-[#ddd7ca] bg-[#fcfcfa] p-5 shadow-sm sm:mx-auto sm:max-w-3xl sm:p-7 lg:max-w-4xl">
-                {page.ctaTitle ? (
-                  <h2 className="font-serif text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
-                    {page.ctaTitle}
-                  </h2>
-                ) : null}
-                {page.ctaBody ? (
-                  <p className="mt-3 text-sm leading-relaxed text-[#4b505a] sm:text-base">{page.ctaBody}</p>
-                ) : null}
-
-                {fromLabel && untilLabel ? (
-                  <p className="mt-4 text-center text-xs font-medium text-[#4b505a] sm:text-sm">
-                    Periodo de preinscripción:{' '}
-                    <span className="font-semibold text-[#171b22]">
-                      {fromLabel} al {untilLabel}
-                    </span>
-                  </p>
-                ) : null}
-
-                <div className="mt-5">
-                  <FdcStallApplicationForm
-                    formNotice={page.formNotice}
-                    formOpen={formOpen}
-                    windowMessage={windowMessage}
-                    onSuccess={(result) => {
-                      const id = result?.application?.id
-                      const email = String(result?.application?.email || '').trim()
-                      setSubmitSuccess({
-                        id,
-                        email,
-                        emailQueued: Boolean(result?.emailQueued || result?.emailSent),
-                      })
-                      setToast({
-                        variant: 'success',
-                        message: id
-                          ? `Preinscripción enviada. Número de solicitud: #${id}.`
-                          : 'Preinscripción enviada correctamente.',
-                      })
-                    }}
-                  />
-                </div>
-              </section>
-            </RevealOnScroll>
+        ) : null}
+        <RevealOnScroll variant="slow">
+          <div className="overflow-hidden rounded-3xl border border-white/10 bg-[#fcfcfa] shadow-[0_24px_60px_-28px_rgba(0,0,0,0.45)]">
+            <FdcStallApplicationForm
+              formNotice={page.formNotice}
+              formOpen={formOpen}
+              windowMessage={windowMessage}
+              onSuccess={(result) => {
+                const id = result?.application?.id
+                const email = String(result?.application?.email || '').trim()
+                setSubmitSuccess({
+                  id,
+                  email,
+                  emailQueued: Boolean(result?.emailQueued || result?.emailSent),
+                })
+                setToast({
+                  variant: 'success',
+                  message: id
+                    ? `Preinscripción enviada. Número de solicitud: #${id}.`
+                    : 'Preinscripción enviada correctamente.',
+                })
+              }}
+            />
           </div>
-        </Container>
-      </section>
+        </RevealOnScroll>
+      </StorySection>
     </>
   )
 }

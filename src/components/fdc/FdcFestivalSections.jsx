@@ -124,14 +124,14 @@ export function FdcSectionNav({ items = [] }) {
   )
 }
 
-export function FdcIntroBlock({ title, paragraphs = [], highlights = [] }) {
+export function FdcIntroBlock({ title, paragraphs = [], highlights = [], hideHeading = false }) {
   const hasParagraphs = (paragraphs || []).some((p) => String(p || '').trim())
   const validHighlights = (highlights || []).filter((h) => h?.label || h?.value)
   if (!title && !hasParagraphs && validHighlights.length === 0) return null
 
   return (
-    <section className="rounded-3xl border border-[#ddd7ca] bg-[#f8f7f3] p-6 sm:p-8">
-      {title ? (
+    <div>
+      {!hideHeading && title ? (
         <>
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-800">La fiesta</p>
           <h2 className="mt-2 font-serif text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
@@ -140,7 +140,9 @@ export function FdcIntroBlock({ title, paragraphs = [], highlights = [] }) {
         </>
       ) : null}
       {hasParagraphs ? (
-        <div className="mt-4 space-y-3 text-sm leading-relaxed text-[#4b505a] sm:text-base">
+        <div
+          className={`${hideHeading || !title ? '' : 'mt-4 '}space-y-3 text-sm leading-relaxed text-[#4b505a] sm:text-base`}
+        >
           {(paragraphs || []).map((paragraph) =>
             String(paragraph || '').trim() ? (
               <p key={paragraph.slice(0, 48)}>{paragraph}</p>
@@ -153,7 +155,7 @@ export function FdcIntroBlock({ title, paragraphs = [], highlights = [] }) {
           {validHighlights.map((item) => (
             <div
               key={`${item.label}-${item.value}`}
-              className="rounded-2xl border border-[#ddd7ca] bg-white px-4 py-3"
+              className="rounded-2xl border border-[#ddd7ca] bg-white/80 px-4 py-3 shadow-sm"
             >
               <dt className="text-[11px] font-bold uppercase tracking-wide text-sky-800">
                 {item.label}
@@ -163,11 +165,11 @@ export function FdcIntroBlock({ title, paragraphs = [], highlights = [] }) {
           ))}
         </dl>
       ) : null}
-    </section>
+    </div>
   )
 }
 
-export function FdcScheduleSection({ schedule }) {
+export function FdcScheduleSection({ schedule, hideHeading = false, tone = 'light' }) {
   const days = schedule?.days || []
   if (days.length === 0) return null
 
@@ -175,11 +177,24 @@ export function FdcScheduleSection({ schedule }) {
   const safeIdx = Math.min(activeIdx, Math.max(0, days.length - 1))
   const activeDay = days[safeIdx]
   const featuredSrc = resolveMediaUrl(schedule?.featuredImageUrl)
+  const isAccent = tone === 'accent'
+  const itemClass = isAccent
+    ? 'flex gap-4 rounded-2xl border border-white/12 bg-white/8 px-4 py-3.5 sm:px-5'
+    : 'flex gap-4 rounded-2xl border border-[#ddd7ca] bg-white px-4 py-3.5 sm:px-5'
+  const textClass = isAccent ? 'text-slate-200' : 'text-[#4b505a]'
+  const tabActive = isAccent
+    ? 'border-amber-300/80 bg-amber-400/15 text-amber-100'
+    : 'border-amber-300 bg-amber-50 text-amber-950'
+  const tabIdle = isAccent
+    ? 'border-white/15 bg-white/5 text-slate-300 hover:border-white/30 hover:text-white'
+    : 'border-[#ddd7ca] bg-white text-[#4b505a] hover:border-sky-200 hover:text-[#171b22]'
+
+  const Wrapper = hideHeading ? 'div' : 'section'
 
   return (
-    <section id="cronograma" className="scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]">
-      <SectionHeading eyebrow="Programación" title={schedule?.title} />
-      <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] lg:items-start">
+    <Wrapper id={hideHeading ? undefined : 'cronograma'} className="scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]">
+      {!hideHeading ? <SectionHeading eyebrow="Programación" title={schedule?.title} /> : null}
+      <div className={`${hideHeading ? '' : 'mt-6 '}grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] lg:items-start`}>
         <div>
           {days.length > 1 ? (
             <div
@@ -195,9 +210,7 @@ export function FdcScheduleSection({ schedule }) {
                   aria-selected={idx === safeIdx}
                   onClick={() => setActiveIdx(idx)}
                   className={`shrink-0 rounded-xl border px-4 py-2 text-sm font-semibold transition ${
-                    idx === safeIdx
-                      ? 'border-amber-300 bg-amber-50 text-amber-950'
-                      : 'border-[#ddd7ca] bg-white text-[#4b505a] hover:border-sky-200 hover:text-[#171b22]'
+                    idx === safeIdx ? tabActive : tabIdle
                   }`}
                 >
                   {day.label || `Día ${idx + 1}`}
@@ -208,23 +221,24 @@ export function FdcScheduleSection({ schedule }) {
 
           <ul className="space-y-3" role="tabpanel">
             {(activeDay?.items || []).map((item, idx) => (
-              <li
-                key={item.id || `${item.time}-${idx}`}
-                className="flex gap-4 rounded-2xl border border-[#ddd7ca] bg-white px-4 py-3.5 sm:px-5"
-              >
+              <li key={item.id || `${item.time}-${idx}`} className={itemClass}>
                 {item.time ? (
-                  <time className="shrink-0 pt-0.5 text-sm font-bold tabular-nums text-amber-800">
+                  <time className="shrink-0 pt-0.5 text-sm font-bold tabular-nums text-amber-400">
                     {item.time}
                   </time>
                 ) : null}
-                <p className="text-sm leading-relaxed text-[#4b505a] sm:text-base">{item.text}</p>
+                <p className={`text-sm leading-relaxed sm:text-base ${textClass}`}>{item.text}</p>
               </li>
             ))}
           </ul>
         </div>
 
         {featuredSrc ? (
-          <figure className="overflow-hidden rounded-3xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm lg:sticky lg:top-[calc(var(--navbar-h,5rem)+5rem)]">
+          <figure
+            className={`overflow-hidden rounded-3xl shadow-sm lg:sticky lg:top-[calc(var(--navbar-h,5rem)+5rem)] ${
+              isAccent ? 'border border-white/12' : 'border border-[#ddd7ca] bg-[#fcfcfa]'
+            }`}
+          >
             <img
               src={featuredSrc}
               alt=""
@@ -235,11 +249,11 @@ export function FdcScheduleSection({ schedule }) {
           </figure>
         ) : null}
       </div>
-    </section>
+    </Wrapper>
   )
 }
 
-export function FdcArtistsSection({ artists }) {
+export function FdcArtistsSection({ artists, hideHeading = false }) {
   const items = (artists?.items || []).filter((a) => a?.name)
   if (items.length === 0) return null
 
@@ -250,34 +264,38 @@ export function FdcArtistsSection({ artists }) {
   }
 
   return (
-    <section id="cartelera" className="scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <SectionHeading eyebrow="Shows" title={artists?.title} className="flex-1 border-0 pb-0" />
-        {items.length > 2 ? (
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => scrollBy(-280)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#ddd7ca] bg-white text-[#171b22] transition hover:border-sky-200 hover:bg-sky-50"
-              aria-label="Anterior"
-            >
-              ←
-            </button>
-            <button
-              type="button"
-              onClick={() => scrollBy(280)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#ddd7ca] bg-white text-[#171b22] transition hover:border-sky-200 hover:bg-sky-50"
-              aria-label="Siguiente"
-            >
-              →
-            </button>
-          </div>
-        ) : null}
-      </div>
+    <div id={hideHeading ? undefined : 'cartelera'} className="scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]">
+      {(items.length > 2 || !hideHeading) && (
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          {!hideHeading ? (
+            <SectionHeading eyebrow="Shows" title={artists?.title} className="flex-1 border-0 pb-0" />
+          ) : null}
+          {items.length > 2 ? (
+            <div className={`flex gap-2 ${hideHeading ? 'ml-auto' : ''}`}>
+              <button
+                type="button"
+                onClick={() => scrollBy(-280)}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#ddd7ca] bg-white text-[#171b22] transition hover:border-sky-200 hover:bg-sky-50"
+                aria-label="Anterior"
+              >
+                ←
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollBy(280)}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#ddd7ca] bg-white text-[#171b22] transition hover:border-sky-200 hover:bg-sky-50"
+                aria-label="Siguiente"
+              >
+                →
+              </button>
+            </div>
+          ) : null}
+        </div>
+      )}
 
       <div
         ref={scrollRef}
-        className="mt-6 flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className={`${!hideHeading || items.length > 2 ? 'mt-6 ' : ''}flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden`}
       >
         {items.map((artist, idx) => {
           const src = resolveMediaUrl(artist.photoUrl)
@@ -313,11 +331,11 @@ export function FdcArtistsSection({ artists }) {
           )
         })}
       </div>
-    </section>
+    </div>
   )
 }
 
-export function FdcTicketsSection({ tickets }) {
+export function FdcTicketsSection({ tickets, hideHeading = false, embedded = false }) {
   const title = String(tickets?.title || '').trim()
   if (!title) return null
 
@@ -325,73 +343,104 @@ export function FdcTicketsSection({ tickets }) {
   const imageSrc = resolveMediaUrl(tickets?.imageUrl)
   const ctaUrl = String(tickets?.ctaUrl || '').trim()
 
-  return (
-    <section id="entradas" className="scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]">
-      <div className="overflow-hidden rounded-3xl border border-[#171b22] bg-[#171b22] shadow-[0_20px_50px_-24px_rgba(23,27,34,0.55)]">
-        <div className="grid lg:grid-cols-2">
-          <div className="flex flex-col justify-center p-6 sm:p-8 lg:p-10">
+  const inner = (
+    <div className={`grid ${imageSrc ? 'lg:grid-cols-2' : ''} ${embedded ? 'gap-8' : ''}`}>
+      <div className={`flex flex-col justify-center ${embedded ? '' : 'p-6 sm:p-8 lg:p-10'}`}>
+        {!hideHeading ? (
+          <>
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-amber-300">Acceso</p>
             <h2 className="mt-2 font-serif text-2xl font-bold tracking-tight text-white sm:text-3xl">
               {title}
             </h2>
-            {tickets?.body ? (
-              <p className="mt-3 text-sm leading-relaxed text-slate-300 sm:text-base">{tickets.body}</p>
-            ) : null}
-            {bullets.length > 0 ? (
-              <ul className="mt-5 space-y-2">
-                {bullets.map((bullet) => (
-                  <li key={bullet} className="flex items-start gap-2 text-sm text-slate-200">
-                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" aria-hidden />
-                    {bullet}
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-            {ctaUrl && tickets?.ctaLabel ? (
-              <SmartLink
-                href={ctaUrl}
-                className="mt-6 inline-flex min-h-11 w-fit items-center justify-center rounded-2xl bg-amber-500 px-5 text-sm font-semibold text-[#171b22] transition hover:bg-amber-400"
-              >
-                {tickets.ctaLabel}
-              </SmartLink>
-            ) : null}
-          </div>
-          {imageSrc ? (
-            <div className="relative min-h-[220px] lg:min-h-full">
-              <img
-                src={imageSrc}
-                alt=""
-                className="absolute inset-0 h-full w-full object-cover"
-                loading="lazy"
-                decoding="async"
-              />
-              <div className="absolute inset-0 bg-linear-to-t from-[#171b22]/40 via-transparent to-transparent lg:bg-linear-to-l lg:from-[#171b22]/30" aria-hidden />
-            </div>
-          ) : null}
-        </div>
+          </>
+        ) : null}
+        {tickets?.body ? (
+          <p className={`${hideHeading ? '' : 'mt-3 '}text-sm leading-relaxed text-slate-300 sm:text-base`}>
+            {tickets.body}
+          </p>
+        ) : null}
+        {bullets.length > 0 ? (
+          <ul className="mt-5 space-y-2">
+            {bullets.map((bullet) => (
+              <li key={bullet} className="flex items-start gap-2 text-sm text-slate-200">
+                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" aria-hidden />
+                {bullet}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        {ctaUrl && tickets?.ctaLabel ? (
+          <SmartLink
+            href={ctaUrl}
+            className="mt-6 inline-flex min-h-11 w-fit items-center justify-center rounded-2xl bg-amber-500 px-5 text-sm font-semibold text-[#171b22] transition hover:bg-amber-400"
+          >
+            {tickets.ctaLabel}
+          </SmartLink>
+        ) : null}
       </div>
-    </section>
+      {imageSrc ? (
+        <div
+          className={`relative overflow-hidden ${
+            embedded
+              ? 'min-h-[240px] rounded-3xl border border-white/12'
+              : 'min-h-[220px] lg:min-h-full'
+          }`}
+        >
+          <img
+            src={imageSrc}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+            loading="lazy"
+            decoding="async"
+          />
+          <div
+            className="absolute inset-0 bg-linear-to-t from-[#171b22]/40 via-transparent to-transparent lg:bg-linear-to-l lg:from-[#171b22]/30"
+            aria-hidden
+          />
+        </div>
+      ) : null}
+    </div>
+  )
+
+  if (embedded) {
+    return (
+      <div id={hideHeading ? undefined : 'entradas'} className="scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]">
+        {inner}
+      </div>
+    )
+  }
+
+  return (
+    <div id={hideHeading ? undefined : 'entradas'} className="scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]">
+      <div className="overflow-hidden rounded-3xl border border-[#171b22] bg-[#171b22] shadow-[0_20px_50px_-24px_rgba(23,27,34,0.55)]">
+        {inner}
+      </div>
+    </div>
   )
 }
 
-export function FdcNewsSection({ news }) {
+export function FdcNewsSection({ news, hideHeading = false }) {
   const items = (news?.items || []).filter((n) => n?.title)
   if (items.length === 0) return null
 
   return (
-    <section id="noticias" className="scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <SectionHeading eyebrow="Novedades" title={news?.title} className="flex-1" />
-        {news?.ctaLabel && news?.ctaHref ? (
-          <SmartLink
-            href={news.ctaHref}
-            className="mb-1 text-sm font-semibold text-sky-800 transition hover:text-sky-950"
-          >
-            {news.ctaLabel} →
-          </SmartLink>
-        ) : null}
-      </div>
-      <ul className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    <div id={hideHeading ? undefined : 'noticias'} className="scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]">
+      {(!hideHeading || (news?.ctaLabel && news?.ctaHref)) && (
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          {!hideHeading ? (
+            <SectionHeading eyebrow="Novedades" title={news?.title} className="flex-1" />
+          ) : null}
+          {news?.ctaLabel && news?.ctaHref ? (
+            <SmartLink
+              href={news.ctaHref}
+              className={`mb-1 text-sm font-semibold text-sky-800 transition hover:text-sky-950 ${hideHeading ? 'ml-auto' : ''}`}
+            >
+              {news.ctaLabel} →
+            </SmartLink>
+          ) : null}
+        </div>
+      )}
+      <ul className={`${!hideHeading || (news?.ctaLabel && news?.ctaHref) ? 'mt-6 ' : ''}grid gap-5 sm:grid-cols-2 lg:grid-cols-3`}>
         {items.map((item, idx) => {
           const src = resolveMediaUrl(item.imageUrl)
           const card = (
@@ -450,25 +499,27 @@ export function FdcNewsSection({ news }) {
           )
         })}
       </ul>
-    </section>
+    </div>
   )
 }
 
-export function FdcGallerySection({ gallery }) {
+export function FdcGallerySection({ gallery, hideHeading = false }) {
   const items = (gallery?.items || []).filter((g) => g?.imageUrl)
   if (items.length === 0) return null
 
   return (
-    <section id="galeria" className="scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]">
-      <SectionHeading eyebrow="Imágenes" title={gallery?.title} />
-      <div className="mt-6 flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div id={hideHeading ? undefined : 'galeria'} className="scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]">
+      {!hideHeading ? <SectionHeading eyebrow="Imágenes" title={gallery?.title} /> : null}
+      <div
+        className={`${hideHeading ? '' : 'mt-6 '}flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden`}
+      >
         {items.map((item, idx) => {
           const src = resolveMediaUrl(item.imageUrl)
           const caption = String(item.caption || '').trim()
           return (
             <figure
               key={item.id || idx}
-              className="w-[min(85vw,18rem)] shrink-0 snap-start overflow-hidden rounded-2xl border border-[#ddd7ca] bg-white shadow-sm sm:w-[min(70vw,20rem)]"
+              className="w-[min(85vw,18rem)] shrink-0 snap-start overflow-hidden rounded-2xl border border-white/12 bg-white/95 shadow-sm sm:w-[min(70vw,20rem)]"
             >
               <img
                 src={src}
@@ -486,18 +537,18 @@ export function FdcGallerySection({ gallery }) {
           )
         })}
       </div>
-    </section>
+    </div>
   )
 }
 
-export function FdcSponsorsSection({ sponsors }) {
+export function FdcSponsorsSection({ sponsors, hideHeading = false }) {
   const items = (sponsors?.items || []).filter((s) => s?.logoUrl || s?.name)
   if (items.length === 0) return null
 
   return (
-    <section className="scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]">
-      <SectionHeading eyebrow="Patrocinios" title={sponsors?.title} />
-      <ul className="mt-6 flex flex-wrap items-center justify-center gap-4 sm:gap-6">
+    <div className="scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]">
+      {!hideHeading ? <SectionHeading eyebrow="Patrocinios" title={sponsors?.title} /> : null}
+      <ul className={`${hideHeading ? '' : 'mt-6 '}flex flex-wrap items-center justify-center gap-4 sm:gap-6`}>
         {items.map((sponsor, idx) => {
           const src = resolveMediaUrl(sponsor.logoUrl)
           const inner = (
@@ -534,22 +585,22 @@ export function FdcSponsorsSection({ sponsors }) {
           )
         })}
       </ul>
-    </section>
+    </div>
   )
 }
 
-export function FdcUsefulInfoSection({ usefulInfo }) {
+export function FdcUsefulInfoSection({ usefulInfo, hideHeading = false }) {
   const items = (usefulInfo?.items || []).filter((i) => i?.title || i?.body)
   if (items.length === 0) return null
 
   return (
-    <section id="info-util" className="scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]">
-      <SectionHeading eyebrow="Para visitantes" title={usefulInfo?.title} />
-      <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div id={hideHeading ? undefined : 'info-util'} className="scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]">
+      {!hideHeading ? <SectionHeading eyebrow="Para visitantes" title={usefulInfo?.title} /> : null}
+      <ul className={`${hideHeading ? '' : 'mt-6 '}grid gap-4 sm:grid-cols-2 lg:grid-cols-3`}>
         {items.map((item, idx) => (
           <li
             key={item.id || item.title || idx}
-            className="rounded-2xl border border-[#ddd7ca] bg-white p-5 shadow-sm"
+            className="rounded-2xl border border-[#ddd7ca] bg-white/90 p-5 shadow-sm"
           >
             {item.title ? (
               <h3 className="font-serif text-lg font-bold text-[#171b22]">{item.title}</h3>
@@ -562,6 +613,6 @@ export function FdcUsefulInfoSection({ usefulInfo }) {
           </li>
         ))}
       </ul>
-    </section>
+    </div>
   )
 }
