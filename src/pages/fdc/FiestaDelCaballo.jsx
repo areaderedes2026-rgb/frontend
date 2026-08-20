@@ -105,18 +105,12 @@ export function FiestaDelCaballo() {
                 windowMessage={windowMessage}
                 onSuccess={(result) => {
                   const id = result?.application?.id
-                  const emailNote = result?.emailSent
-                    ? ' Te enviamos la constancia a tu correo.'
-                    : result?.emailQueued
-                      ? ' La solicitud quedó registrada; el correo puede demorar unos minutos. Revisá también spam.'
-                      : ' La solicitud quedó registrada, pero el correo de constancia no se pudo enviar ahora. Revisá spam o pedí el reenvío en la municipalidad.'
                   setToast({
                     variant: 'success',
                     message: id
-                      ? `Preinscripción enviada. Número de solicitud: #${id}.${emailNote}`
-                      : `Preinscripción enviada.${emailNote}`,
+                      ? `Preinscripción enviada. Número de solicitud: #${id}.`
+                      : 'Preinscripción enviada correctamente.',
                   })
-                  window.scrollTo({ top: 0, behavior: 'smooth' })
                 }}
               />
             </RevealOnScroll>
