@@ -173,87 +173,230 @@ export function FdcIntroBlock({ title, paragraphs = [], highlights = [], hideHea
   )
 }
 
-export function FdcScheduleSection({ schedule, hideHeading = false, tone = 'light' }) {
+export function FdcScheduleSection({ schedule }) {
   const days = schedule?.days || []
   if (days.length === 0) return null
 
   const [activeIdx, setActiveIdx] = useState(0)
-  const safeIdx = Math.min(activeIdx, Math.max(0, days.length - 1))
-  const activeDay = days[safeIdx]
-  const featuredSrc = resolveMediaUrl(schedule?.featuredImageUrl)
-  const isAccent = tone === 'accent'
-  const itemClass = isAccent
-    ? 'flex gap-4 rounded-2xl border border-white/12 bg-white/8 px-4 py-3.5 sm:px-5'
-    : 'flex gap-4 rounded-2xl border border-[#ddd7ca] bg-white px-4 py-3.5 sm:px-5'
-  const textClass = isAccent ? 'text-slate-200' : 'text-[#4b505a]'
-  const tabActive = isAccent
-    ? 'border-amber-300/80 bg-amber-400/15 text-amber-100'
-    : 'border-amber-300 bg-amber-50 text-amber-950'
-  const tabIdle = isAccent
-    ? 'border-white/15 bg-white/5 text-slate-300 hover:border-white/30 hover:text-white'
-    : 'border-[#ddd7ca] bg-white text-[#4b505a] hover:border-sky-200 hover:text-[#171b22]'
+  const [imageIdx, setImageIdx] = useState(0)
+  const [showAllDays, setShowAllDays] = useState(false)
 
-  const Wrapper = hideHeading ? 'div' : 'section'
+  const safeDayIdx = Math.min(activeIdx, Math.max(0, days.length - 1))
+  const activeDay = days[safeDayIdx]
+
+  const images = (schedule?.images || [])
+    .map((img) => ({
+      id: img?.id,
+      src: resolveMediaUrl(img?.imageUrl) || String(img?.imageUrl || '').trim(),
+      caption: String(img?.caption || '').trim(),
+    }))
+    .filter((img) => img.src)
+  const safeImageIdx = images.length ? Math.min(imageIdx, images.length - 1) : 0
+  const activeImage = images[safeImageIdx] || null
+
+  const titleRaw = String(schedule?.title || 'Cronograma de actividades').trim()
+  const titleMatch = titleRaw.match(/^(cronograma)\s+(.+)$/i)
+  const eyebrow = titleMatch ? titleMatch[1] : 'Cronograma'
+  const heading = titleMatch ? titleMatch[2] : titleRaw
+
+  const ctaLabel = String(schedule?.ctaLabel || '').trim()
+  const ctaHref = String(schedule?.ctaHref || '').trim()
+
+  function goNextImage() {
+    if (images.length < 2) return
+    setImageIdx((prev) => (prev + 1) % images.length)
+  }
+
+  function goPrevImage() {
+    if (images.length < 2) return
+    setImageIdx((prev) => (prev - 1 + images.length) % images.length)
+  }
+
+  function formatTime(time) {
+    const t = String(time || '').trim()
+    if (!t) return ''
+    if (/hs$/i.test(t)) return t
+    return `${t} hs`
+  }
 
   return (
-    <Wrapper id={hideHeading ? undefined : 'cronograma'} className="scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]">
-      {!hideHeading ? <SectionHeading eyebrow="Programación" title={schedule?.title} /> : null}
-      <div className={`${hideHeading ? '' : 'mt-6 '}grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] lg:items-start`}>
-        <div>
-          {days.length > 1 ? (
-            <div
-              className="mb-5 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-              role="tablist"
-              aria-label="Días del cronograma"
-            >
-              {days.map((day, idx) => (
-                <button
-                  key={day.id || day.label || idx}
-                  type="button"
-                  role="tab"
-                  aria-selected={idx === safeIdx}
-                  onClick={() => setActiveIdx(idx)}
-                  className={`shrink-0 rounded-xl border px-4 py-2 text-sm font-semibold transition ${
-                    idx === safeIdx ? tabActive : tabIdle
-                  }`}
-                >
-                  {day.label || `Día ${idx + 1}`}
-                </button>
-              ))}
-            </div>
-          ) : null}
+    <div>
+      <header className="mb-6 sm:mb-8">
+        <p className="font-serif text-sm font-semibold uppercase tracking-[0.22em] text-[#b08948] sm:text-base">
+          {eyebrow}
+        </p>
+        <div className="mt-1 flex flex-wrap items-center gap-3">
+          <h2 className="font-serif text-3xl font-bold uppercase tracking-tight text-[#171b22] sm:text-4xl lg:text-[2.75rem]">
+            {heading}
+          </h2>
+          <span className="hidden h-px w-10 bg-[#d4b483] sm:inline-block" aria-hidden />
+        </div>
+      </header>
 
-          <ul className="space-y-3" role="tabpanel">
-            {(activeDay?.items || []).map((item, idx) => (
-              <li key={item.id || `${item.time}-${idx}`} className={itemClass}>
-                {item.time ? (
-                  <time className="shrink-0 pt-0.5 text-sm font-bold tabular-nums text-amber-400">
-                    {item.time}
-                  </time>
-                ) : null}
-                <p className={`text-sm leading-relaxed sm:text-base ${textClass}`}>{item.text}</p>
-              </li>
-            ))}
-          </ul>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-stretch lg:gap-8">
+        <div className="flex flex-col overflow-hidden rounded-2xl border border-[#e4dfd4] bg-white shadow-[0_18px_48px_-28px_rgba(23,27,34,0.35)] sm:rounded-3xl">
+          <div className="flex min-h-0 flex-1 flex-col sm:flex-row">
+            {days.length > 1 && !showAllDays ? (
+              <div
+                className="flex shrink-0 gap-1 overflow-x-auto border-b border-[#ebe7df] bg-[#faf9f6] p-2 sm:w-[9.5rem] sm:flex-col sm:overflow-visible sm:border-b-0 sm:border-r sm:p-3"
+                role="tablist"
+                aria-label="Días del cronograma"
+              >
+                {days.map((day, idx) => {
+                  const active = idx === safeDayIdx
+                  return (
+                    <button
+                      key={day.id || day.label || idx}
+                      type="button"
+                      role="tab"
+                      aria-selected={active}
+                      onClick={() => setActiveIdx(idx)}
+                      className={`shrink-0 rounded-lg px-3 py-2.5 text-left text-[11px] font-bold uppercase leading-snug tracking-wide transition sm:w-full sm:px-3 sm:py-3 sm:text-xs ${
+                        active
+                          ? 'bg-linear-to-b from-[#e2c28a] to-[#c9a46a] text-[#171b22] shadow-sm'
+                          : 'text-[#6b7280] hover:bg-white hover:text-[#171b22]'
+                      }`}
+                    >
+                      {day.label || `Día ${idx + 1}`}
+                    </button>
+                  )
+                })}
+              </div>
+            ) : null}
+
+            <div className="flex min-w-0 flex-1 flex-col" role="tabpanel">
+              {showAllDays ? (
+                <ul className="flex-1 divide-y divide-[#ebe7df] px-4 sm:px-6">
+                  {days.map((day) => (
+                    <li key={day?.id || day?.label} className="py-4 first:pt-5 last:pb-5">
+                      <p className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-[#b08948]">
+                        {day?.label}
+                      </p>
+                      <ul className="divide-y divide-[#ebe7df]">
+                        {(day?.items || []).map((item, idx) => (
+                          <li
+                            key={item.id || `${item.time}-${idx}`}
+                            className="flex gap-4 py-3.5 sm:gap-5 sm:py-4"
+                          >
+                            {item.time ? (
+                              <time className="w-[4.75rem] shrink-0 text-sm font-bold tabular-nums text-[#171b22] sm:w-[5.25rem]">
+                                {formatTime(item.time)}
+                              </time>
+                            ) : (
+                              <span className="w-[4.75rem] shrink-0 sm:w-[5.25rem]" aria-hidden />
+                            )}
+                            <p className="min-w-0 flex-1 text-sm leading-relaxed text-[#4b505a] sm:text-[15px]">
+                              {item.text}
+                            </p>
+                          </li>
+                        ))}
+                      </ul>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <ul className="flex-1 divide-y divide-[#ebe7df] px-4 sm:px-6">
+                  {(activeDay?.items || []).map((item, idx) => (
+                    <li
+                      key={item.id || `${item.time}-${idx}`}
+                      className="flex gap-4 py-3.5 sm:gap-5 sm:py-4"
+                    >
+                      {item.time ? (
+                        <time className="w-[4.75rem] shrink-0 text-sm font-bold tabular-nums text-[#171b22] sm:w-[5.25rem]">
+                          {formatTime(item.time)}
+                        </time>
+                      ) : (
+                        <span className="w-[4.75rem] shrink-0 sm:w-[5.25rem]" aria-hidden />
+                      )}
+                      <p className="min-w-0 flex-1 text-sm leading-relaxed text-[#4b505a] sm:text-[15px]">
+                        {item.text}
+                      </p>
+                    </li>
+                  ))}
+                  {(activeDay?.items || []).length === 0 ? (
+                    <li className="py-8 text-sm text-[#6b7280]">
+                      Sin actividades cargadas para este día.
+                    </li>
+                  ) : null}
+                </ul>
+              )}
+
+              {ctaLabel ? (
+                <div className="border-t border-[#ebe7df] px-4 py-4 text-center sm:px-6 sm:py-5">
+                  {ctaHref ? (
+                    <SmartLink
+                      href={ctaHref}
+                      className="inline-flex min-h-11 items-center justify-center rounded-md border border-[#171b22] px-5 text-[11px] font-bold uppercase tracking-[0.14em] text-[#171b22] transition hover:bg-[#171b22] hover:text-white sm:text-xs"
+                    >
+                      {ctaLabel}
+                    </SmartLink>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllDays((v) => !v)}
+                      className="inline-flex min-h-11 items-center justify-center rounded-md border border-[#171b22] px-5 text-[11px] font-bold uppercase tracking-[0.14em] text-[#171b22] transition hover:bg-[#171b22] hover:text-white sm:text-xs"
+                    >
+                      {showAllDays ? 'Ver por día' : ctaLabel}
+                    </button>
+                  )}
+                </div>
+              ) : null}
+            </div>
+          </div>
         </div>
 
-        {featuredSrc ? (
-          <figure
-            className={`overflow-hidden rounded-3xl shadow-sm lg:sticky lg:top-[calc(var(--navbar-h,5rem)+5rem)] ${
-              isAccent ? 'border border-white/12' : 'border border-[#ddd7ca] bg-[#fcfcfa]'
-            }`}
-          >
+        {activeImage ? (
+          <div className="relative min-h-[240px] overflow-hidden rounded-2xl sm:min-h-[320px] sm:rounded-3xl lg:min-h-full">
             <img
-              src={featuredSrc}
-              alt=""
-              className="aspect-4/3 w-full object-cover lg:aspect-[3/4]"
+              key={activeImage.src}
+              src={activeImage.src}
+              alt={activeImage.caption || ''}
+              className="absolute inset-0 h-full w-full object-cover"
               loading="lazy"
               decoding="async"
             />
-          </figure>
+            <div
+              className="absolute inset-0 bg-linear-to-t from-black/25 via-transparent to-transparent"
+              aria-hidden
+            />
+            {images.length > 1 ? (
+              <>
+                <button
+                  type="button"
+                  onClick={goPrevImage}
+                  className="absolute left-3 top-1/2 z-10 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-[#171b22]/85 text-white shadow-md transition hover:bg-[#171b22] sm:left-4"
+                  aria-label="Imagen anterior"
+                >
+                  <span aria-hidden>←</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={goNextImage}
+                  className="absolute right-3 top-1/2 z-10 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-[#171b22]/85 text-white shadow-md transition hover:bg-[#171b22] sm:right-4"
+                  aria-label="Imagen siguiente"
+                >
+                  <span aria-hidden>→</span>
+                </button>
+                <div className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 gap-1.5">
+                  {images.map((img, idx) => (
+                    <button
+                      key={img.id || img.src}
+                      type="button"
+                      aria-label={`Ir a imagen ${idx + 1}`}
+                      aria-current={idx === safeImageIdx}
+                      onClick={() => setImageIdx(idx)}
+                      className={`h-1.5 rounded-full transition ${
+                        idx === safeImageIdx ? 'w-5 bg-white' : 'w-1.5 bg-white/55 hover:bg-white/80'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </>
+            ) : null}
+          </div>
         ) : null}
       </div>
-    </Wrapper>
+    </div>
   )
 }
 

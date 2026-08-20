@@ -37,18 +37,6 @@ function HeroLink({ href, className, children, previewMode = false }) {
   )
 }
 
-function CalendarIcon({ className = 'h-4 w-4' }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden>
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M6.75 3v2.25M17.25 3v2.25M4.5 9.75h15M5.25 5.25h13.5A1.5 1.5 0 0 1 20.25 6.75v12A1.5 1.5 0 0 1 18.75 20.25H5.25A1.5 1.5 0 0 1 3.75 18.75v-12A1.5 1.5 0 0 1 5.25 5.25Z"
-      />
-    </svg>
-  )
-}
-
 /**
  * Hero a viewport completo para Fiesta del Caballo (imagen + contenido tipográfico).
  * Pensado para vivir en un contenedor flex con la barra de secciones debajo.
@@ -61,8 +49,6 @@ export function FdcFestivalHero({
   eyebrow = '',
   title = '',
   subtitle = '',
-  slogan = '',
-  dateBadge = '',
   primaryCta,
   secondaryCta,
   className = '',
@@ -151,20 +137,9 @@ export function FdcFestivalHero({
                 </h1>
               ) : null}
 
-              {slogan ? (
-                <p className="mt-4 max-w-xl font-serif text-sm italic leading-relaxed text-white/90 sm:text-base md:text-lg">
-                  {slogan}
-                </p>
-              ) : subtitle ? (
+              {subtitle ? (
                 <p className="mt-4 max-w-xl text-sm leading-relaxed text-slate-100/95 sm:text-base">
                   {subtitle}
-                </p>
-              ) : null}
-
-              {dateBadge ? (
-                <p className="mt-4 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-amber-300 sm:text-sm">
-                  <CalendarIcon className="h-4 w-4 shrink-0 text-amber-300" />
-                  <span>{dateBadge}</span>
                 </p>
               ) : null}
 

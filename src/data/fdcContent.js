@@ -20,32 +20,76 @@ export const FDC_RUBROS = [
 export const FDC_DEFAULT_HERO_IMAGE =
   'https://images.unsplash.com/photo-1553284965-83fd3e82fa5a?auto=format&fit=crop&w=1800&q=80'
 
+export const FDC_SCHEDULE_MAX_IMAGES = 10
+
 export const DEFAULT_FDC_SCHEDULE = {
   title: 'Cronograma de actividades',
-  featuredImageUrl:
-    'https://images.unsplash.com/photo-1553284965-83fd3e82fa5a?auto=format&fit=crop&w=1200&q=80',
-  ctaLabel: '',
-  ctaHref: '#cronograma',
+  featuredImageUrl: '',
+  images: [
+    {
+      id: 'sch-img-1',
+      imageUrl:
+        'https://images.unsplash.com/photo-1553284965-83fd3e82fa5a?auto=format&fit=crop&w=1200&q=80',
+      caption: '',
+    },
+  ],
+  ctaLabel: 'Ver cronograma completo',
+  ctaHref: '',
   days: [
     {
       id: 'day-1',
-      label: 'Jueves 9',
+      label: 'Jueves 9 Jul',
       items: [
-        { id: 'd1-1', time: '08:00', text: 'Acreditación y apertura del predio' },
-        { id: 'd1-2', time: '18:00', text: 'Acto de apertura oficial' },
-        { id: 'd1-3', time: '22:00', text: 'Inicio de la cartelera artística' },
+        { id: 'd1-1', time: '08:00', text: 'Acreditaciones y apertura del predio' },
+        { id: 'd1-2', time: '09:00', text: 'Concurso de Riendas' },
+        { id: 'd1-3', time: '11:00', text: 'Desfile de Agrupaciones Gauchas' },
+        { id: 'd1-4', time: '16:00', text: 'Pruebas de Campo' },
+        { id: 'd1-5', time: '22:00', text: 'Peña de Apertura — Artistas invitados' },
       ],
     },
     {
       id: 'day-2',
-      label: 'Viernes 10',
+      label: 'Viernes 10 Jul',
       items: [
         { id: 'd2-1', time: '10:00', text: 'Competencias ecuestres' },
         { id: 'd2-2', time: '17:00', text: 'Desfile tradicional' },
         { id: 'd2-3', time: '22:30', text: 'Shows en el escenario principal' },
       ],
     },
+    {
+      id: 'day-3',
+      label: 'Sábado 11 Jul',
+      items: [
+        { id: 'd3-1', time: '10:00', text: 'Jornadas equinas' },
+        { id: 'd3-2', time: '18:00', text: 'Espectáculo folklórico' },
+        { id: 'd3-3', time: '22:00', text: 'Cartelera artística' },
+      ],
+    },
   ],
+}
+
+/** Normaliza imágenes del cronograma (máx. 10). Migra `featuredImageUrl` legacy. */
+export function normalizeFdcScheduleImages(schedule) {
+  const src = schedule && typeof schedule === 'object' ? schedule : {}
+  const raw = Array.isArray(src.images) ? src.images : []
+  const images = []
+  for (const item of raw) {
+    if (images.length >= FDC_SCHEDULE_MAX_IMAGES) break
+    const imageUrl = String(item?.imageUrl || '').trim()
+    if (!imageUrl) continue
+    images.push({
+      id: String(item?.id || '').trim() || `sch-img-${images.length + 1}`,
+      imageUrl,
+      caption: String(item?.caption || '').trim(),
+    })
+  }
+  if (images.length === 0) {
+    const legacy = String(src.featuredImageUrl || '').trim()
+    if (legacy) {
+      images.push({ id: 'sch-img-legacy', imageUrl: legacy, caption: '' })
+    }
+  }
+  return images
 }
 
 export const DEFAULT_FDC_ARTISTS = {
@@ -117,8 +161,8 @@ export const DEFAULT_FDC_CONTENT = {
   heroTitle: 'Fiesta Nacional e Internacional del Caballo 2026',
   heroSubtitle:
     'Una celebración de tradición, cultura y encuentro para toda la familia.',
-  heroSlogan: 'Tradición que nos une, cultura que nos identifica',
-  heroDateBadge: 'Del 9 al 13 de julio de 2026',
+  heroSlogan: '',
+  heroDateBadge: '',
   heroImageUrl: FDC_DEFAULT_HERO_IMAGE,
   overlayOpacity: 58,
   heroSearchPlaceholder: '',
@@ -223,13 +267,22 @@ export function mergeFdcContent(base, remote) {
     sectionNav: Array.isArray(remote.sectionNav)
       ? remote.sectionNav.map((n) => ({ ...n }))
       : [...(defaults.sectionNav || [])],
-    schedule: mergeNamedSection(defaults.schedule, remote.schedule, [
-      'title',
-      'featuredImageUrl',
-      'ctaLabel',
-      'ctaHref',
-      'days',
-    ]),
+    schedule: (() => {
+      const merged = mergeNamedSection(defaults.schedule, remote.schedule, [
+        'title',
+        'featuredImageUrl',
+        'ctaLabel',
+        'ctaHref',
+        'days',
+        'images',
+      ])
+      const images = normalizeFdcScheduleImages(merged)
+      return {
+        ...merged,
+        images,
+        featuredImageUrl: images[0]?.imageUrl || String(merged.featuredImageUrl || '').trim(),
+      }
+    })(),
     artists: mergeNamedSection(defaults.artists, remote.artists, [
       'title',
       'ctaLabel',

@@ -8,6 +8,7 @@ import { Toast } from '../../components/ui/Toast.jsx'
 import { inputClass, labelClass, textareaClass } from '../../components/ui/formStyles.js'
 import {
   DEFAULT_FDC_CONTENT,
+  FDC_SCHEDULE_MAX_IMAGES,
   applyHeroCoverToFdcContent,
   fdcContentToHeroCover,
   makeFdcItemId,
@@ -37,6 +38,7 @@ function mapContentToForm(content) {
     sectionNav: (merged.sectionNav || []).map((n) => ({ ...n })),
     schedule: {
       ...merged.schedule,
+      images: (merged.schedule?.images || []).map((img) => ({ ...img })),
       days: (merged.schedule?.days || []).map((d) => ({
         ...d,
         items: (d.items || []).map((it) => ({ ...it })),
@@ -157,8 +159,8 @@ export function AdminFdc() {
       heroEyebrow: String(form.heroEyebrow || '').trim(),
       heroTitle: String(form.heroTitle || '').trim(),
       heroSubtitle: String(form.heroSubtitle || ''),
-      heroSlogan: String(form.heroSlogan || '').trim(),
-      heroDateBadge: String(form.heroDateBadge || '').trim(),
+      heroSlogan: '',
+      heroDateBadge: '',
       heroImageUrl: String(form.heroImageUrl || '').trim(),
       overlayOpacity: normalizeOverlay(form.overlayOpacity, 65),
       heroSearchPlaceholder: String(form.heroSearchPlaceholder || ''),
@@ -190,7 +192,19 @@ export function AdminFdc() {
         .filter((n) => n.label || n.href),
       schedule: {
         title: String(form.schedule?.title || '').trim(),
-        featuredImageUrl: String(form.schedule?.featuredImageUrl || '').trim(),
+        featuredImageUrl: String(
+          (form.schedule?.images || []).find((img) => String(img?.imageUrl || '').trim())?.imageUrl ||
+            form.schedule?.featuredImageUrl ||
+            '',
+        ).trim(),
+        images: (form.schedule?.images || [])
+          .map((img) => ({
+            id: String(img?.id || '').trim() || makeFdcItemId('schimg'),
+            imageUrl: String(img?.imageUrl || '').trim(),
+            caption: String(img?.caption || '').trim(),
+          }))
+          .filter((img) => img.imageUrl)
+          .slice(0, 10),
         ctaLabel: String(form.schedule?.ctaLabel || '').trim(),
         ctaHref: String(form.schedule?.ctaHref || '').trim(),
         days: (form.schedule?.days || [])
@@ -465,42 +479,11 @@ export function AdminFdc() {
                   eyebrow={form.showHeroBadge !== false ? form.heroEyebrow : ''}
                   title={form.showHeroTitle !== false ? form.heroTitle : ''}
                   subtitle={form.showHeroSubtitle !== false ? form.heroSubtitle : ''}
-                  slogan={form.heroSlogan}
-                  dateBadge={form.heroDateBadge}
                   primaryCta={heroPrimaryCta}
                   secondaryCta={heroSecondaryCta}
                 />
               </div>
             </div>
-
-            <section className={SECTION_CARD}>
-              <SectionTitle
-                title="Eslogan y fecha en el hero"
-                description="Aparecen sobre la imagen de portada, junto al título y los botones."
-              />
-              <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                <label className={labelClass}>
-                  Eslogan (itálica)
-                  <input
-                    className={inputClass}
-                    value={form.heroSlogan || ''}
-                    onChange={(e) => setForm((p) => ({ ...p, heroSlogan: e.target.value }))}
-                    disabled={saving}
-                    placeholder="Tradición que nos une…"
-                  />
-                </label>
-                <label className={labelClass}>
-                  Badge de fechas
-                  <input
-                    className={inputClass}
-                    value={form.heroDateBadge || ''}
-                    onChange={(e) => setForm((p) => ({ ...p, heroDateBadge: e.target.value }))}
-                    disabled={saving}
-                    placeholder="Del 9 al 13 de julio de 2026"
-                  />
-                </label>
-              </div>
-            </section>
 
             <section className={SECTION_CARD}>
               <SectionTitle title="Navegación por secciones" description="Enlaces rápidos bajo la portada." />
@@ -679,7 +662,10 @@ export function AdminFdc() {
             </section>
 
             <section className={SECTION_CARD}>
-              <SectionTitle title="Cronograma" description="Programación por días con imagen destacada." />
+              <SectionTitle
+                title="Cronograma"
+                description="Programación por días y carrusel de hasta 10 fotos."
+              />
               <div className="mt-4 grid gap-4">
                 <label className={labelClass}>
                   Título de sección
@@ -688,16 +674,119 @@ export function AdminFdc() {
                     value={form.schedule?.title || ''}
                     disabled={saving}
                     onChange={(e) => updateSchedule((s) => ({ ...s, title: e.target.value }))}
+                    placeholder="Cronograma de actividades"
                   />
                 </label>
-                <SingleImageUploadField
-                  label="Imagen destacada"
-                  value={form.schedule?.featuredImageUrl || ''}
-                  disabled={saving}
-                  kind="cover"
-                  onChange={(url) => updateSchedule((s) => ({ ...s, featuredImageUrl: url }))}
-                  onNotify={setToast}
-                />
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className={labelClass}>
+                    Texto del botón
+                    <input
+                      className={inputClass}
+                      value={form.schedule?.ctaLabel || ''}
+                      disabled={saving}
+                      onChange={(e) => updateSchedule((s) => ({ ...s, ctaLabel: e.target.value }))}
+                      placeholder="Ver cronograma completo"
+                    />
+                  </label>
+                  <label className={labelClass}>
+                    Enlace del botón (opcional)
+                    <input
+                      className={inputClass}
+                      value={form.schedule?.ctaHref || ''}
+                      disabled={saving}
+                      onChange={(e) => updateSchedule((s) => ({ ...s, ctaHref: e.target.value }))}
+                      placeholder="Vacío = expandir todos los días en la página"
+                    />
+                  </label>
+                </div>
+
+                <div>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-medium text-slate-700">
+                      Fotos del carrusel{' '}
+                      <span className="font-normal text-slate-500">
+                        ({(form.schedule?.images || []).length}/{FDC_SCHEDULE_MAX_IMAGES})
+                      </span>
+                    </p>
+                    <button
+                      type="button"
+                      className={ACTION_ADD}
+                      disabled={saving || (form.schedule?.images || []).length >= FDC_SCHEDULE_MAX_IMAGES}
+                      onClick={() =>
+                        updateSchedule((s) => ({
+                          ...s,
+                          images: [
+                            ...(s.images || []),
+                            { id: makeFdcItemId('schimg'), imageUrl: '', caption: '' },
+                          ].slice(0, FDC_SCHEDULE_MAX_IMAGES),
+                        }))
+                      }
+                    >
+                      + Agregar foto
+                    </button>
+                  </div>
+                  <div className="mt-3 space-y-3">
+                    {(form.schedule?.images || []).length === 0 ? (
+                      <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+                        Todavía no hay fotos. Agregá hasta {FDC_SCHEDULE_MAX_IMAGES} para el carrusel.
+                      </p>
+                    ) : null}
+                    {(form.schedule?.images || []).map((img, imgIdx) => (
+                      <div key={img.id || imgIdx} className={ITEM_CARD}>
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                            Foto {imgIdx + 1}
+                          </p>
+                          <button
+                            type="button"
+                            className={ACTION_DANGER}
+                            disabled={saving}
+                            onClick={() =>
+                              updateSchedule((s) => ({
+                                ...s,
+                                images: (s.images || []).filter((_, i) => i !== imgIdx),
+                              }))
+                            }
+                          >
+                            Quitar
+                          </button>
+                        </div>
+                        <div className="mt-3">
+                          <SingleImageUploadField
+                            label="Imagen"
+                            value={img.imageUrl || ''}
+                            disabled={saving}
+                            kind="cover"
+                            onChange={(url) =>
+                              updateSchedule((s) => {
+                                const images = [...(s.images || [])]
+                                images[imgIdx] = { ...images[imgIdx], imageUrl: url }
+                                return { ...s, images }
+                              })
+                            }
+                            onNotify={setToast}
+                          />
+                        </div>
+                        <label className={`${labelClass} mt-3`}>
+                          Epígrafe (opcional)
+                          <input
+                            className={inputClass}
+                            value={img.caption || ''}
+                            disabled={saving}
+                            onChange={(e) =>
+                              updateSchedule((s) => {
+                                const images = [...(s.images || [])]
+                                images[imgIdx] = { ...images[imgIdx], caption: e.target.value }
+                                return { ...s, images }
+                              })
+                            }
+                          />
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="space-y-4">
                   {(form.schedule?.days || []).map((day, dayIdx) => (
                     <div key={day.id || dayIdx} className={ITEM_CARD}>
@@ -708,6 +797,7 @@ export function AdminFdc() {
                             className={inputClass}
                             value={day.label || ''}
                             disabled={saving}
+                            placeholder="Jueves 9 Jul"
                             onChange={(e) =>
                               updateSchedule((s) => {
                                 const days = [...(s.days || [])]

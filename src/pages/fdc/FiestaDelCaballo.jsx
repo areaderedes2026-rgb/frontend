@@ -188,8 +188,6 @@ export function FiestaDelCaballo() {
           eyebrow={page.showHeroBadge !== false ? page.heroEyebrow : ''}
           title={page.showHeroTitle !== false ? page.heroTitle : ''}
           subtitle={page.showHeroSubtitle !== false ? page.heroSubtitle : ''}
-          slogan={page.heroSlogan}
-          dateBadge={page.heroDateBadge}
           primaryCta={hydrated ? primaryCta : null}
           secondaryCta={hydrated ? secondaryCta : null}
         />
@@ -216,15 +214,39 @@ export function FiestaDelCaballo() {
       )}
 
       {(page.schedule?.days || []).length > 0 ? (
-        <StorySection
+        <section
           id="cronograma"
-          eyebrow="Programación"
-          title={page.schedule?.title || 'Cronograma de actividades'}
-          tone="accent"
-          className="relative scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
+          className={`relative isolate overflow-visible bg-[#f7f7f5] py-14 sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)] ${
+            page.introTitle ||
+            (page.introParagraphs || []).some((p) => String(p || '').trim()) ||
+            (page.highlights || []).some((h) => h?.label || h?.value)
+              ? ''
+              : 'border-y border-[#e8e5dd]'
+          }`}
         >
-          <FdcScheduleSection schedule={page.schedule} hideHeading tone="accent" />
-        </StorySection>
+          {!(
+            page.introTitle ||
+            (page.introParagraphs || []).some((p) => String(p || '').trim()) ||
+            (page.highlights || []).some((h) => h?.label || h?.value)
+          ) ? (
+            <svg
+              className="pointer-events-none absolute inset-x-0 -top-12 z-0 h-12 w-full text-[#f7f7f5]"
+              viewBox="0 0 1440 96"
+              preserveAspectRatio="none"
+              aria-hidden
+            >
+              <path
+                fill="currentColor"
+                d="M0 58L60 52C120 46 240 34 360 42C480 50 600 78 720 74C840 70 960 34 1080 30C1200 26 1320 54 1380 68L1440 82V96H0V58Z"
+              />
+            </svg>
+          ) : null}
+          <Container className="relative z-10">
+            <RevealOnScroll variant="slow">
+              <FdcScheduleSection schedule={page.schedule} />
+            </RevealOnScroll>
+          </Container>
+        </section>
       ) : null}
 
       {(page.artists?.items || []).some((a) => a?.name) ? (
@@ -233,6 +255,8 @@ export function FiestaDelCaballo() {
           eyebrow="Shows"
           title={page.artists?.title || 'Cartelera artística'}
           tone="light"
+          showWave={false}
+          showBorder={false}
           className="relative scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
         >
           <FdcArtistsSection artists={page.artists} hideHeading />
