@@ -94,9 +94,34 @@ export function normalizeFdcScheduleImages(schedule) {
 
 export const DEFAULT_FDC_ARTISTS = {
   title: 'Cartelera artística',
-  ctaLabel: '',
-  ctaHref: '#cartelera',
-  items: [],
+  ctaLabel: 'Ver cartelera completa',
+  ctaHref: '',
+  items: [
+    {
+      id: 'art-1',
+      name: 'Chaqueño Palavecino',
+      dateTag: 'JUE 9',
+      photoUrl:
+        'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=800&q=80',
+      sortOrder: 0,
+    },
+    {
+      id: 'art-2',
+      name: 'Soledad Pastorutti',
+      dateTag: 'VIE 10',
+      photoUrl:
+        'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=800&q=80',
+      sortOrder: 1,
+    },
+    {
+      id: 'art-3',
+      name: 'Los Manseros Santiagueños',
+      dateTag: 'SÁB 11',
+      photoUrl:
+        'https://images.unsplash.com/photo-1501386761570-0cd26b3f3200?auto=format&fit=crop&w=800&q=80',
+      sortOrder: 2,
+    },
+  ],
 }
 
 export const DEFAULT_FDC_TICKETS = {
@@ -172,19 +197,13 @@ export const DEFAULT_FDC_CONTENT = {
   showSearch: false,
   showPrimaryButton: true,
   heroPrimaryLabel: 'Conocer más',
-  heroPrimaryHref: '#sobre-la-fiesta',
+  heroPrimaryHref: '#cartelera',
   showSecondaryButton: true,
   heroSecondaryLabel: 'Ver cronograma',
   heroSecondaryHref: '#cronograma',
-  introTitle: 'Una fiesta que marca a Trancas',
-  introParagraphs: [
-    'La Fiesta Nacional e Internacional del Caballo reúne tradición, turismo, deportes equinos y una fuerte propuesta comercial para vecinos y visitantes.',
-  ],
-  highlights: [
-    { label: 'Preinscripción', value: '20/08 al 10/09' },
-    { label: 'Puestos', value: 'Solicitud comercial' },
-    { label: 'Organiza', value: 'Municipalidad de Trancas' },
-  ],
+  introTitle: '',
+  introParagraphs: [],
+  highlights: [],
   sectionNav: DEFAULT_FDC_SECTION_NAV,
   schedule: DEFAULT_FDC_SCHEDULE,
   artists: DEFAULT_FDC_ARTISTS,

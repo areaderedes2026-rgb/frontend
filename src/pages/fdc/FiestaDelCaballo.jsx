@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import {
   FdcArtistsSection,
   FdcGallerySection,
-  FdcIntroBlock,
   FdcNewsSection,
   FdcScheduleSection,
   FdcSectionNav,
@@ -194,73 +193,52 @@ export function FiestaDelCaballo() {
         <FdcSectionNav items={page.sectionNav} />
       </div>
 
-      {(page.introTitle ||
-        (page.introParagraphs || []).some((p) => String(p || '').trim()) ||
-        (page.highlights || []).some((h) => h?.label || h?.value)) && (
-        <StorySection
-          id="sobre-la-fiesta"
-          eyebrow="La fiesta"
-          title={page.introTitle || 'Fiesta del Caballo'}
-          tone="light"
-          className="relative scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
+      {(page.artists?.items || []).some((a) => a?.name) ? (
+        <section
+          id="cartelera"
+          className="relative isolate overflow-visible border-y border-white/10 bg-[#171b22] py-14 text-white sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
         >
-          <FdcIntroBlock
-            title={page.introTitle}
-            paragraphs={page.introParagraphs}
-            highlights={page.highlights}
-            hideHeading
-          />
-        </StorySection>
-      )}
+          <svg
+            className="pointer-events-none absolute inset-x-0 -top-12 z-0 h-12 w-full text-[#171b22]"
+            viewBox="0 0 1440 96"
+            preserveAspectRatio="none"
+            aria-hidden
+          >
+            <path
+              fill="currentColor"
+              d="M0 58L60 52C120 46 240 34 360 42C480 50 600 78 720 74C840 70 960 34 1080 30C1200 26 1320 54 1380 68L1440 82V96H0V58Z"
+            />
+          </svg>
+          <Container className="relative z-10">
+            <RevealOnScroll variant="slow">
+              <FdcArtistsSection artists={page.artists} />
+            </RevealOnScroll>
+          </Container>
+        </section>
+      ) : null}
 
       {(page.schedule?.days || []).length > 0 ? (
         <section
           id="cronograma"
-          className={`relative isolate overflow-visible bg-[#f7f7f5] py-14 sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)] ${
-            page.introTitle ||
-            (page.introParagraphs || []).some((p) => String(p || '').trim()) ||
-            (page.highlights || []).some((h) => h?.label || h?.value)
-              ? ''
-              : 'border-y border-[#e8e5dd]'
-          }`}
+          className="relative isolate overflow-visible border-y border-[#e8e5dd] bg-[#f7f7f5] py-14 sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
         >
-          {!(
-            page.introTitle ||
-            (page.introParagraphs || []).some((p) => String(p || '').trim()) ||
-            (page.highlights || []).some((h) => h?.label || h?.value)
-          ) ? (
-            <svg
-              className="pointer-events-none absolute inset-x-0 -top-12 z-0 h-12 w-full text-[#f7f7f5]"
-              viewBox="0 0 1440 96"
-              preserveAspectRatio="none"
-              aria-hidden
-            >
-              <path
-                fill="currentColor"
-                d="M0 58L60 52C120 46 240 34 360 42C480 50 600 78 720 74C840 70 960 34 1080 30C1200 26 1320 54 1380 68L1440 82V96H0V58Z"
-              />
-            </svg>
-          ) : null}
+          <svg
+            className="pointer-events-none absolute inset-x-0 -top-12 z-0 h-12 w-full text-[#f7f7f5]"
+            viewBox="0 0 1440 96"
+            preserveAspectRatio="none"
+            aria-hidden
+          >
+            <path
+              fill="currentColor"
+              d="M0 58L60 52C120 46 240 34 360 42C480 50 600 78 720 74C840 70 960 34 1080 30C1200 26 1320 54 1380 68L1440 82V96H0V58Z"
+            />
+          </svg>
           <Container className="relative z-10">
             <RevealOnScroll variant="slow">
               <FdcScheduleSection schedule={page.schedule} />
             </RevealOnScroll>
           </Container>
         </section>
-      ) : null}
-
-      {(page.artists?.items || []).some((a) => a?.name) ? (
-        <StorySection
-          id="cartelera"
-          eyebrow="Shows"
-          title={page.artists?.title || 'Cartelera artística'}
-          tone="light"
-          showWave={false}
-          showBorder={false}
-          className="relative scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
-        >
-          <FdcArtistsSection artists={page.artists} hideHeading />
-        </StorySection>
       ) : null}
 
       {String(page.tickets?.title || '').trim() ? (

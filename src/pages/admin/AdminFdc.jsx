@@ -174,14 +174,9 @@ export function AdminFdc() {
       showSecondaryButton: normalizeHeroToggle(form.showSecondaryButton, true),
       heroSecondaryLabel: String(form.heroSecondaryLabel || '').trim(),
       heroSecondaryHref: String(form.heroSecondaryHref || '').trim(),
-      introTitle: String(form.introTitle || '').trim(),
-      introParagraphs: (form.introParagraphs || []).map((p) => String(p || '').trim()).filter(Boolean),
-      highlights: (form.highlights || [])
-        .map((h) => ({
-          label: String(h?.label || '').trim(),
-          value: String(h?.value || '').trim(),
-        }))
-        .filter((h) => h.label || h.value),
+      introTitle: '',
+      introParagraphs: [],
+      highlights: [],
       sectionNav: (form.sectionNav || [])
         .map((n) => ({
           id: String(n?.id || '').trim() || makeFdcItemId('nav'),
@@ -578,85 +573,140 @@ export function AdminFdc() {
             </section>
 
             <section className={SECTION_CARD}>
-              <SectionTitle title="Introducción" />
+              <SectionTitle
+                title="Cartelera artística"
+                description="Carrusel de artistas con foto, nombre y fecha. Se muestra justo debajo del hero."
+              />
               <div className="mt-4 grid gap-4">
                 <label className={labelClass}>
-                  Título
+                  Título de sección
                   <input
                     className={inputClass}
-                    value={form.introTitle}
-                    onChange={(e) => setForm((p) => ({ ...p, introTitle: e.target.value }))}
+                    value={form.artists?.title || ''}
                     disabled={saving}
+                    onChange={(e) => updateArtists((a) => ({ ...a, title: e.target.value }))}
+                    placeholder="Cartelera artística"
                   />
                 </label>
-                <label className={labelClass}>
-                  Párrafos (uno por línea)
-                  <textarea
-                    className={textareaClass}
-                    value={(form.introParagraphs || []).join('\n\n')}
-                    onChange={(e) =>
-                      setForm((p) => ({
-                        ...p,
-                        introParagraphs: e.target.value
-                          .split(/\n\s*\n/)
-                          .map((x) => x.trim())
-                          .filter(Boolean),
-                      }))
-                    }
-                    disabled={saving}
-                  />
-                </label>
-                <div>
-                  <p className="mb-2 text-sm font-semibold text-slate-800">Destacados</p>
-                  <div className="space-y-2">
-                    {(form.highlights || []).map((h, idx) => (
-                      <div key={idx} className={`${ITEM_CARD} grid gap-3 sm:grid-cols-2`}>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className={labelClass}>
+                    Texto del botón
+                    <input
+                      className={inputClass}
+                      value={form.artists?.ctaLabel || ''}
+                      disabled={saving}
+                      onChange={(e) => updateArtists((a) => ({ ...a, ctaLabel: e.target.value }))}
+                      placeholder="Ver cartelera completa"
+                    />
+                  </label>
+                  <label className={labelClass}>
+                    Enlace del botón (opcional)
+                    <input
+                      className={inputClass}
+                      value={form.artists?.ctaHref || ''}
+                      disabled={saving}
+                      onChange={(e) => updateArtists((a) => ({ ...a, ctaHref: e.target.value }))}
+                      placeholder="#cronograma o URL externa"
+                    />
+                  </label>
+                </div>
+                <div className="space-y-3">
+                  {(form.artists?.items || []).map((artist, idx) => (
+                    <div key={artist.id || idx} className={ITEM_CARD}>
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Artista {idx + 1}
+                        </p>
+                        <button
+                          type="button"
+                          className={ACTION_DANGER}
+                          disabled={saving}
+                          onClick={() =>
+                            updateArtists((a) => ({
+                              ...a,
+                              items: (a.items || []).filter((_, i) => i !== idx),
+                            }))
+                          }
+                        >
+                          Quitar
+                        </button>
+                      </div>
+                      <div className="mt-3 grid gap-3 sm:grid-cols-2">
                         <label className={labelClass}>
-                          Etiqueta
+                          Nombre
                           <input
                             className={inputClass}
-                            value={h.label || ''}
+                            value={artist.name || ''}
                             disabled={saving}
                             onChange={(e) =>
-                              setForm((p) => {
-                                const next = [...(p.highlights || [])]
-                                next[idx] = { ...next[idx], label: e.target.value }
-                                return { ...p, highlights: next }
+                              updateArtists((a) => {
+                                const items = [...(a.items || [])]
+                                items[idx] = { ...items[idx], name: e.target.value }
+                                return { ...a, items }
                               })
                             }
                           />
                         </label>
                         <label className={labelClass}>
-                          Valor
+                          Badge de fecha
                           <input
                             className={inputClass}
-                            value={h.value || ''}
+                            value={artist.dateTag || ''}
                             disabled={saving}
+                            placeholder="JUE 9"
                             onChange={(e) =>
-                              setForm((p) => {
-                                const next = [...(p.highlights || [])]
-                                next[idx] = { ...next[idx], value: e.target.value }
-                                return { ...p, highlights: next }
+                              updateArtists((a) => {
+                                const items = [...(a.items || [])]
+                                items[idx] = { ...items[idx], dateTag: e.target.value }
+                                return { ...a, items }
                               })
                             }
                           />
+                          <span className="mt-1 text-xs font-normal text-slate-500">
+                            Formato sugerido: día + número (ej. JUE 9, VIE 10).
+                          </span>
                         </label>
                       </div>
-                    ))}
-                    <button
-                      type="button"
-                      className={ACTION_ADD}
-                      disabled={saving}
-                      onClick={() =>
-                        setForm((p) => ({
-                          ...p,
-                          highlights: [...(p.highlights || []), { label: '', value: '' }],
-                        }))
-                      }
-                    >
-                      + Agregar destacado
-                    </button>
-                  </div>
+                      <div className="mt-3">
+                        <SingleImageUploadField
+                          label="Foto del artista"
+                          value={artist.photoUrl || ''}
+                          disabled={saving}
+                          kind="cover"
+                          onChange={(url) =>
+                            updateArtists((a) => {
+                              const items = [...(a.items || [])]
+                              items[idx] = { ...items[idx], photoUrl: url }
+                              return { ...a, items }
+                            })
+                          }
+                          onNotify={setToast}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    className={ACTION_ADD}
+                    disabled={saving}
+                    onClick={() =>
+                      updateArtists((a) => ({
+                        ...a,
+                        items: [
+                          ...(a.items || []),
+                          {
+                            id: makeFdcItemId('art'),
+                            name: '',
+                            dateTag: '',
+                            photoUrl: '',
+                            sortOrder: (a.items || []).length,
+                          },
+                        ],
+                      }))
+                    }
+                  >
+                    + Agregar artista
+                  </button>
                 </div>
               </div>
             </section>
@@ -918,108 +968,6 @@ export function AdminFdc() {
                     }
                   >
                     + Agregar día
-                  </button>
-                </div>
-              </div>
-            </section>
-
-            <section className={SECTION_CARD}>
-              <SectionTitle title="Cartelera artística" description="Artistas en carrusel horizontal." />
-              <div className="mt-4 grid gap-4">
-                <label className={labelClass}>
-                  Título
-                  <input
-                    className={inputClass}
-                    value={form.artists?.title || ''}
-                    disabled={saving}
-                    onChange={(e) => updateArtists((a) => ({ ...a, title: e.target.value }))}
-                  />
-                </label>
-                <div className="space-y-3">
-                  {(form.artists?.items || []).map((artist, idx) => (
-                    <div key={artist.id || idx} className={ITEM_CARD}>
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <label className={labelClass}>
-                          Nombre
-                          <input
-                            className={inputClass}
-                            value={artist.name || ''}
-                            disabled={saving}
-                            onChange={(e) =>
-                              updateArtists((a) => {
-                                const items = [...(a.items || [])]
-                                items[idx] = { ...items[idx], name: e.target.value }
-                                return { ...a, items }
-                              })
-                            }
-                          />
-                        </label>
-                        <label className={labelClass}>
-                          Etiqueta de fecha
-                          <input
-                            className={inputClass}
-                            value={artist.dateTag || ''}
-                            disabled={saving}
-                            placeholder="Viernes 10"
-                            onChange={(e) =>
-                              updateArtists((a) => {
-                                const items = [...(a.items || [])]
-                                items[idx] = { ...items[idx], dateTag: e.target.value }
-                                return { ...a, items }
-                              })
-                            }
-                          />
-                        </label>
-                      </div>
-                      <div className="mt-3">
-                        <SingleImageUploadField
-                          label="Foto"
-                          value={artist.photoUrl || ''}
-                          disabled={saving}
-                          kind="cover"
-                          compact
-                          onChange={(url) =>
-                            updateArtists((a) => {
-                              const items = [...(a.items || [])]
-                              items[idx] = { ...items[idx], photoUrl: url }
-                              return { ...a, items }
-                            })
-                          }
-                          onNotify={setToast}
-                        />
-                      </div>
-                      <div className="mt-3 flex justify-end">
-                        <button
-                          type="button"
-                          className={ACTION_DANGER}
-                          disabled={saving}
-                          onClick={() =>
-                            updateArtists((a) => ({
-                              ...a,
-                              items: (a.items || []).filter((_, i) => i !== idx),
-                            }))
-                          }
-                        >
-                          Quitar artista
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    className={ACTION_ADD}
-                    disabled={saving}
-                    onClick={() =>
-                      updateArtists((a) => ({
-                        ...a,
-                        items: [
-                          ...(a.items || []),
-                          { id: makeFdcItemId('art'), name: '', dateTag: '', photoUrl: '' },
-                        ],
-                      }))
-                    }
-                  >
-                    + Agregar artista
                   </button>
                 </div>
               </div>

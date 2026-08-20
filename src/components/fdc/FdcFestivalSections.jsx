@@ -128,51 +128,6 @@ export function FdcSectionNav({ items = [], className = '' }) {
   )
 }
 
-export function FdcIntroBlock({ title, paragraphs = [], highlights = [], hideHeading = false }) {
-  const hasParagraphs = (paragraphs || []).some((p) => String(p || '').trim())
-  const validHighlights = (highlights || []).filter((h) => h?.label || h?.value)
-  if (!title && !hasParagraphs && validHighlights.length === 0) return null
-
-  return (
-    <div>
-      {!hideHeading && title ? (
-        <>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-800">La fiesta</p>
-          <h2 className="mt-2 font-serif text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
-            {title}
-          </h2>
-        </>
-      ) : null}
-      {hasParagraphs ? (
-        <div
-          className={`${hideHeading || !title ? '' : 'mt-4 '}space-y-3 text-sm leading-relaxed text-[#4b505a] sm:text-base`}
-        >
-          {(paragraphs || []).map((paragraph) =>
-            String(paragraph || '').trim() ? (
-              <p key={paragraph.slice(0, 48)}>{paragraph}</p>
-            ) : null,
-          )}
-        </div>
-      ) : null}
-      {validHighlights.length > 0 ? (
-        <dl className="mt-6 grid gap-3 sm:grid-cols-3">
-          {validHighlights.map((item) => (
-            <div
-              key={`${item.label}-${item.value}`}
-              className="rounded-2xl border border-[#ddd7ca] bg-white/80 px-4 py-3 shadow-sm"
-            >
-              <dt className="text-[11px] font-bold uppercase tracking-wide text-sky-800">
-                {item.label}
-              </dt>
-              <dd className="mt-1 text-sm font-semibold text-[#171b22]">{item.value}</dd>
-            </div>
-          ))}
-        </dl>
-      ) : null}
-    </div>
-  )
-}
-
 export function FdcScheduleSection({ schedule }) {
   const days = schedule?.days || []
   if (days.length === 0) return null
@@ -400,83 +355,173 @@ export function FdcScheduleSection({ schedule }) {
   )
 }
 
-export function FdcArtistsSection({ artists, hideHeading = false }) {
+export function FdcArtistsSection({ artists }) {
   const items = (artists?.items || []).filter((a) => a?.name)
   if (items.length === 0) return null
 
   const scrollRef = useRef(null)
+  const titleRaw = String(artists?.title || 'Cartelera artística').trim()
+  const titleMatch = titleRaw.match(/^(cartelera)\s+(.+)$/i)
+  const eyebrow = titleMatch ? titleMatch[1] : 'Cartelera'
+  const heading = titleMatch ? titleMatch[2] : titleRaw
+  const ctaLabel = String(artists?.ctaLabel || '').trim()
+  const ctaHref = String(artists?.ctaHref || '').trim()
 
   function scrollBy(delta) {
     scrollRef.current?.scrollBy({ left: delta, behavior: 'smooth' })
   }
 
-  return (
-    <div id={hideHeading ? undefined : 'cartelera'} className="scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]">
-      {(items.length > 2 || !hideHeading) && (
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          {!hideHeading ? (
-            <SectionHeading eyebrow="Shows" title={artists?.title} className="flex-1 border-0 pb-0" />
-          ) : null}
-          {items.length > 2 ? (
-            <div className={`flex gap-2 ${hideHeading ? 'ml-auto' : ''}`}>
-              <button
-                type="button"
-                onClick={() => scrollBy(-280)}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#ddd7ca] bg-white text-[#171b22] transition hover:border-sky-200 hover:bg-sky-50"
-                aria-label="Anterior"
-              >
-                ←
-              </button>
-              <button
-                type="button"
-                onClick={() => scrollBy(280)}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#ddd7ca] bg-white text-[#171b22] transition hover:border-sky-200 hover:bg-sky-50"
-                aria-label="Siguiente"
-              >
-                →
-              </button>
-            </div>
-          ) : null}
-        </div>
-      )}
+  function parseDateBadge(tag) {
+    const raw = String(tag || '').trim()
+    if (!raw) return { day: '', num: '' }
+    const spaced = raw.match(/^([A-Za-zÁÉÍÓÚÜÑáéíóúüñ.]{2,6})\s*[.\-]?\s*(\d{1,2})$/u)
+    if (spaced) {
+      return {
+        day: spaced[1].replace(/\./g, '').toUpperCase().slice(0, 3),
+        num: spaced[2],
+      }
+    }
+    const flipped = raw.match(/^(\d{1,2})\s+([A-Za-zÁÉÍÓÚÜÑáéíóúüñ.]{2,6})$/u)
+    if (flipped) {
+      return {
+        day: flipped[2].replace(/\./g, '').toUpperCase().slice(0, 3),
+        num: flipped[1],
+      }
+    }
+    return { day: raw.toUpperCase(), num: '' }
+  }
 
-      <div
-        ref={scrollRef}
-        className={`${!hideHeading || items.length > 2 ? 'mt-6 ' : ''}flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden`}
-      >
-        {items.map((artist, idx) => {
-          const src = resolveMediaUrl(artist.photoUrl)
-          return (
-            <article
-              key={artist.id || artist.name || idx}
-              className="w-[min(78vw,16rem)] shrink-0 snap-start overflow-hidden rounded-2xl border border-[#ddd7ca] bg-white shadow-sm"
+  return (
+    <div>
+      <header className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#d4b483]">
+            {eyebrow}
+          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-3">
+            <h2 className="font-serif text-3xl font-bold uppercase tracking-tight text-white sm:text-4xl lg:text-[2.75rem]">
+              {heading}
+            </h2>
+            <span className="hidden items-center gap-1 text-[#d4b483] sm:inline-flex" aria-hidden>
+              <span className="h-px w-8 bg-current" />
+              <span className="text-[10px]">◆</span>
+            </span>
+          </div>
+        </div>
+        {ctaLabel ? (
+          ctaHref ? (
+            <SmartLink
+              href={ctaHref}
+              className="inline-flex min-h-11 shrink-0 items-center justify-center self-start rounded-md border border-[#d4b483] px-5 text-[11px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-[#d4b483] hover:text-[#171b22] sm:self-auto sm:text-xs"
             >
-              <div className="relative aspect-3/4 bg-[#efe8dc]">
-                {src ? (
-                  <img
-                    src={src}
-                    alt={artist.name}
-                    className="h-full w-full object-cover"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center text-4xl text-amber-700/40" aria-hidden>
-                    ♪
-                  </div>
-                )}
-                {artist.dateTag ? (
-                  <span className="absolute left-3 top-3 rounded-full bg-[#171b22]/85 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white backdrop-blur-sm">
-                    {artist.dateTag}
-                  </span>
-                ) : null}
-              </div>
-              <div className="border-t border-[#e8e4dc] px-4 py-3">
-                <h3 className="font-serif text-lg font-bold text-[#171b22]">{artist.name}</h3>
-              </div>
-            </article>
+              {ctaLabel}
+            </SmartLink>
+          ) : (
+            <span className="inline-flex min-h-11 shrink-0 items-center justify-center self-start rounded-md border border-[#d4b483] px-5 text-[11px] font-bold uppercase tracking-[0.14em] text-white sm:self-auto sm:text-xs">
+              {ctaLabel}
+            </span>
           )
-        })}
+        ) : null}
+      </header>
+
+      <div className="relative">
+        {items.length > 1 ? (
+          <>
+            <button
+              type="button"
+              onClick={() => scrollBy(-300)}
+              className="absolute left-0 top-1/2 z-20 hidden h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-[#2a2f38] text-white/90 shadow-lg transition hover:bg-[#3a404c] hover:text-white md:inline-flex lg:-translate-x-1/3"
+              aria-label="Artistas anteriores"
+            >
+              ←
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollBy(300)}
+              className="absolute right-0 top-1/2 z-20 hidden h-11 w-11 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-[#2a2f38] text-white/90 shadow-lg transition hover:bg-[#3a404c] hover:text-white md:inline-flex lg:translate-x-1/3"
+              aria-label="Artistas siguientes"
+            >
+              →
+            </button>
+          </>
+        ) : null}
+
+        <div
+          ref={scrollRef}
+          className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] md:gap-5 [&::-webkit-scrollbar]:hidden"
+        >
+          {items.map((artist, idx) => {
+            const src = resolveMediaUrl(artist.photoUrl)
+            const badge = parseDateBadge(artist.dateTag)
+            return (
+              <article
+                key={artist.id || artist.name || idx}
+                className="group relative w-[min(72vw,14.5rem)] shrink-0 snap-start overflow-hidden rounded-xl sm:w-[min(42vw,15.5rem)] lg:w-[13.75rem]"
+              >
+                <div className="relative aspect-3/4 bg-[#1c2129]">
+                  {src ? (
+                    <img
+                      src={src}
+                      alt={artist.name}
+                      className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  ) : (
+                    <div
+                      className="flex h-full items-center justify-center text-4xl text-[#d4b483]/35"
+                      aria-hidden
+                    >
+                      ♪
+                    </div>
+                  )}
+                  <div
+                    className="absolute inset-0 bg-linear-to-t from-black/85 via-black/15 to-transparent"
+                    aria-hidden
+                  />
+                  {badge.day || badge.num ? (
+                    <div className="absolute left-0 top-0 flex min-w-[2.75rem] flex-col items-center bg-[#d4b483] px-2 py-1.5 text-[#171b22]">
+                      {badge.day ? (
+                        <span className="text-[10px] font-bold uppercase leading-none tracking-wide">
+                          {badge.day}
+                        </span>
+                      ) : null}
+                      {badge.num ? (
+                        <span className="mt-0.5 font-serif text-lg font-bold leading-none">
+                          {badge.num}
+                        </span>
+                      ) : null}
+                    </div>
+                  ) : null}
+                  <h3 className="absolute inset-x-0 bottom-0 px-3 pb-4 text-center font-serif text-sm font-bold uppercase leading-snug tracking-wide text-white sm:text-[15px]">
+                    {artist.name}
+                  </h3>
+                </div>
+              </article>
+            )
+          })}
+        </div>
+
+        {items.length > 1 ? (
+          <div className="mt-4 flex justify-center gap-2 md:hidden">
+            <button
+              type="button"
+              onClick={() => scrollBy(-260)}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#2a2f38] text-white/90"
+              aria-label="Anterior"
+            >
+              ←
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollBy(260)}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#2a2f38] text-white/90"
+              aria-label="Siguiente"
+            >
+              →
+            </button>
+          </div>
+        ) : null}
       </div>
     </div>
   )
