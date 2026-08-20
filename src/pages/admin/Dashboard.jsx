@@ -158,18 +158,18 @@ export function Dashboard() {
               </span>
             </Link>
             <Link
-              to={ROUTES.adminFdcSolicitudes}
+              to={ROUTES.adminFdc}
               className="group rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-md sm:p-6"
             >
               <p className="text-xs font-bold uppercase tracking-wide text-amber-800">
                 Fiesta del Caballo
               </p>
-              <p className="mt-2 text-lg font-semibold text-slate-900">Solicitudes de puestos</p>
+              <p className="mt-2 text-lg font-semibold text-slate-900">Contenido del festival</p>
               <p className="mt-1 text-sm leading-relaxed text-slate-600">
-                Bandeja de preinscripciones comerciales, WhatsApp y constancia por correo.
+                Portada, cronograma, cartelera, entradas, noticias, galería y preinscripción. Las solicitudes se gestionan en la bandeja.
               </p>
               <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-sky-700 group-hover:text-sky-900">
-                Abrir bandeja <span aria-hidden>→</span>
+                Abrir sección <span aria-hidden>→</span>
               </span>
             </Link>
             <Link

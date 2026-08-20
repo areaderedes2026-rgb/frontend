@@ -206,9 +206,9 @@ export function AdminLayout() {
               Gastronomía
             </NavLink>
             <NavLink
-              to={ROUTES.adminFdcSolicitudes}
-              onMouseEnter={() => preloadAdminRoute('fdcSolicitudes')}
-              onFocus={() => preloadAdminRoute('fdcSolicitudes')}
+              to={ROUTES.adminFdc}
+              onMouseEnter={() => preloadAdminRoute('fdc')}
+              onFocus={() => preloadAdminRoute('fdc')}
               className={({ isActive }) => navClass({ isActive: isActive || fdcActive })}
             >
               Fiesta Caballo

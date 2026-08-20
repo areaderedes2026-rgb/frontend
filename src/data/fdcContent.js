@@ -20,13 +20,107 @@ export const FDC_RUBROS = [
 export const FDC_DEFAULT_HERO_IMAGE =
   'https://images.unsplash.com/photo-1553284965-83fd3e82fa5a?auto=format&fit=crop&w=1800&q=80'
 
+export const DEFAULT_FDC_SCHEDULE = {
+  title: 'Cronograma de actividades',
+  featuredImageUrl:
+    'https://images.unsplash.com/photo-1553284965-83fd3e82fa5a?auto=format&fit=crop&w=1200&q=80',
+  ctaLabel: '',
+  ctaHref: '#cronograma',
+  days: [
+    {
+      id: 'day-1',
+      label: 'Jueves 9',
+      items: [
+        { id: 'd1-1', time: '08:00', text: 'Acreditación y apertura del predio' },
+        { id: 'd1-2', time: '18:00', text: 'Acto de apertura oficial' },
+        { id: 'd1-3', time: '22:00', text: 'Inicio de la cartelera artística' },
+      ],
+    },
+    {
+      id: 'day-2',
+      label: 'Viernes 10',
+      items: [
+        { id: 'd2-1', time: '10:00', text: 'Competencias ecuestres' },
+        { id: 'd2-2', time: '17:00', text: 'Desfile tradicional' },
+        { id: 'd2-3', time: '22:30', text: 'Shows en el escenario principal' },
+      ],
+    },
+  ],
+}
+
+export const DEFAULT_FDC_ARTISTS = {
+  title: 'Cartelera artística',
+  ctaLabel: '',
+  ctaHref: '#cartelera',
+  items: [],
+}
+
+export const DEFAULT_FDC_TICKETS = {
+  title: 'Entradas online',
+  body: 'Comprá tus entradas de forma segura y accedé al predio sin filas innecesarias.',
+  bullets: ['Acceso al predio', 'Promociones y beneficios', 'Compra 100% online'],
+  ctaLabel: 'Comprar entradas',
+  ctaUrl: '',
+  imageUrl:
+    'https://images.unsplash.com/photo-1556740738-b6a63e27c4df?auto=format&fit=crop&w=1200&q=80',
+}
+
+export const DEFAULT_FDC_NEWS = {
+  title: 'Noticias del festival',
+  ctaLabel: 'Ver noticias municipales',
+  ctaHref: '/noticias',
+  items: [],
+}
+
+export const DEFAULT_FDC_GALLERY = {
+  title: 'Viví la fiesta',
+  items: [],
+}
+
+export const DEFAULT_FDC_SPONSORS = {
+  title: 'Auspician y acompañan',
+  items: [],
+}
+
+export const DEFAULT_FDC_USEFUL_INFO = {
+  title: 'Información útil',
+  items: [
+    {
+      id: 'info-1',
+      title: 'Ubicación',
+      body: 'Predio ferial · Trancas, Tucumán',
+    },
+    {
+      id: 'info-2',
+      title: 'Horarios',
+      body: 'Consultá el cronograma día por día',
+    },
+    {
+      id: 'info-3',
+      title: 'Puestos comerciales',
+      body: 'Preinscribite online desde esta página',
+    },
+  ],
+}
+
+export const DEFAULT_FDC_SECTION_NAV = [
+  { id: 'nav-cronograma', label: 'Cronograma', href: '#cronograma', icon: 'calendar' },
+  { id: 'nav-cartelera', label: 'Cartelera', href: '#cartelera', icon: 'music' },
+  { id: 'nav-entradas', label: 'Entradas', href: '#entradas', icon: 'ticket' },
+  { id: 'nav-noticias', label: 'Noticias', href: '#noticias', icon: 'news' },
+  { id: 'nav-info', label: 'Info útil', href: '#info-util', icon: 'info' },
+  { id: 'nav-puestos', label: 'Puestos', href: '#solicitud-puestos', icon: 'store' },
+]
+
 export const DEFAULT_FDC_CONTENT = {
-  heroEyebrow: 'Nuestra ciudad',
+  heroEyebrow: 'Trancas · Tucumán · Argentina',
   heroTitle: 'Fiesta Nacional e Internacional del Caballo 2026',
   heroSubtitle:
-    'Preinscribí tu puesto comercial para la Fiesta Nacional e Internacional del Caballo 2026.',
+    'Una celebración de tradición, cultura y encuentro para toda la familia.',
+  heroSlogan: 'Tradición que nos une, cultura que nos identifica',
+  heroDateBadge: 'Del 9 al 13 de julio de 2026',
   heroImageUrl: FDC_DEFAULT_HERO_IMAGE,
-  overlayOpacity: 65,
+  overlayOpacity: 58,
   heroSearchPlaceholder: '',
   showHeroBadge: true,
   showHeroTitle: true,
@@ -36,18 +130,25 @@ export const DEFAULT_FDC_CONTENT = {
   heroPrimaryLabel: 'Solicitar puesto comercial',
   heroPrimaryHref: '#solicitud-puestos',
   showSecondaryButton: true,
-  heroSecondaryLabel: 'Ver agenda de eventos',
-  heroSecondaryHref: '/eventos',
+  heroSecondaryLabel: 'Ver cronograma',
+  heroSecondaryHref: '#cronograma',
   introTitle: 'Una fiesta que marca a Trancas',
   introParagraphs: [
     'La Fiesta Nacional e Internacional del Caballo reúne tradición, turismo, deportes equinos y una fuerte propuesta comercial para vecinos y visitantes.',
-    'Desde este espacio podés preinscribirte para un puesto comercial. La organización evaluará cada solicitud según disponibilidad y requisitos.',
   ],
   highlights: [
     { label: 'Preinscripción', value: '20/08 al 10/09' },
     { label: 'Puestos', value: 'Solicitud comercial' },
     { label: 'Organiza', value: 'Municipalidad de Trancas' },
   ],
+  sectionNav: DEFAULT_FDC_SECTION_NAV,
+  schedule: DEFAULT_FDC_SCHEDULE,
+  artists: DEFAULT_FDC_ARTISTS,
+  tickets: DEFAULT_FDC_TICKETS,
+  news: DEFAULT_FDC_NEWS,
+  gallery: DEFAULT_FDC_GALLERY,
+  sponsors: DEFAULT_FDC_SPONSORS,
+  usefulInfo: DEFAULT_FDC_USEFUL_INFO,
   formNotice:
     'IMPORTANTE: La presente preinscripción no implica la adjudicación del espacio. La organización evaluará cada solicitud de acuerdo con la disponibilidad de lugares y el cumplimiento de los requisitos establecidos.',
   formOpenFrom: '2026-08-20',
@@ -59,16 +160,28 @@ export const DEFAULT_FDC_CONTENT = {
   updatedAt: null,
 }
 
+function mergeNamedSection(defaults, remote, keys) {
+  const base = defaults && typeof defaults === 'object' ? defaults : {}
+  const src = remote && typeof remote === 'object' ? remote : {}
+  const out = { ...base }
+  for (const key of keys) {
+    if (src[key] !== undefined && src[key] !== null) out[key] = src[key]
+  }
+  return out
+}
+
 export function mergeFdcContent(base, remote) {
   const defaults = base || DEFAULT_FDC_CONTENT
   if (!remote || typeof remote !== 'object') {
-    return { ...defaults }
+    return JSON.parse(JSON.stringify(defaults))
   }
   return {
     ...defaults,
     heroEyebrow: String(remote.heroEyebrow ?? defaults.heroEyebrow ?? ''),
     heroTitle: String(remote.heroTitle ?? defaults.heroTitle ?? ''),
     heroSubtitle: String(remote.heroSubtitle ?? defaults.heroSubtitle ?? ''),
+    heroSlogan: String(remote.heroSlogan ?? defaults.heroSlogan ?? ''),
+    heroDateBadge: String(remote.heroDateBadge ?? defaults.heroDateBadge ?? ''),
     heroImageUrl: String(remote.heroImageUrl ?? defaults.heroImageUrl ?? ''),
     overlayOpacity: Number.isFinite(Number(remote.overlayOpacity))
       ? Math.min(90, Math.max(0, Math.round(Number(remote.overlayOpacity))))
@@ -107,6 +220,39 @@ export function mergeFdcContent(base, remote) {
           }))
           .filter((h) => h.label || h.value)
       : [...(defaults.highlights || [])],
+    sectionNav: Array.isArray(remote.sectionNav)
+      ? remote.sectionNav.map((n) => ({ ...n }))
+      : [...(defaults.sectionNav || [])],
+    schedule: mergeNamedSection(defaults.schedule, remote.schedule, [
+      'title',
+      'featuredImageUrl',
+      'ctaLabel',
+      'ctaHref',
+      'days',
+    ]),
+    artists: mergeNamedSection(defaults.artists, remote.artists, [
+      'title',
+      'ctaLabel',
+      'ctaHref',
+      'items',
+    ]),
+    tickets: mergeNamedSection(defaults.tickets, remote.tickets, [
+      'title',
+      'body',
+      'bullets',
+      'ctaLabel',
+      'ctaUrl',
+      'imageUrl',
+    ]),
+    news: mergeNamedSection(defaults.news, remote.news, [
+      'title',
+      'ctaLabel',
+      'ctaHref',
+      'items',
+    ]),
+    gallery: mergeNamedSection(defaults.gallery, remote.gallery, ['title', 'items']),
+    sponsors: mergeNamedSection(defaults.sponsors, remote.sponsors, ['title', 'items']),
+    usefulInfo: mergeNamedSection(defaults.usefulInfo, remote.usefulInfo, ['title', 'items']),
     formNotice: String(remote.formNotice ?? defaults.formNotice ?? ''),
     formOpenFrom: remote.formOpenFrom
       ? String(remote.formOpenFrom).slice(0, 10)
@@ -212,4 +358,8 @@ export function formatFdcDateLabel(ymd) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return ''
   const [y, m, d] = raw.split('-')
   return `${d}/${m}/${y}`
+}
+
+export function makeFdcItemId(prefix = 'item') {
+  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`
 }
