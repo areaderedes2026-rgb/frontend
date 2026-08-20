@@ -128,6 +128,58 @@ export function FdcSectionNav({ items = [], className = '' }) {
   )
 }
 
+function ScheduleClockIcon({ className = 'h-5 w-5' }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="12" cy="12" r="8.25" stroke="currentColor" strokeWidth="1.5" />
+      <path
+        d="M12 8.25V12l2.5 1.75"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+function ScheduleTitleOrnament({ className = '' }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 160 18"
+      fill="none"
+      aria-hidden
+      preserveAspectRatio="xMidYMid meet"
+    >
+      <path
+        d="M8 9H58M102 9H152"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M68 9c4-5 8-5 12 0 4 5 8 5 12 0"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="80" cy="9" r="2" fill="currentColor" />
+    </svg>
+  )
+}
+
+function splitScheduleText(text) {
+  const raw = String(text || '').trim()
+  if (!raw) return { title: '', note: '' }
+  const parts = raw.split(/\s+[—–-]\s+/)
+  if (parts.length >= 2) {
+    return { title: parts[0].trim(), note: parts.slice(1).join(' — ').trim() }
+  }
+  return { title: raw, note: '' }
+}
+
 export function FdcScheduleSection({ schedule }) {
   const days = schedule?.days || []
   if (days.length === 0) return null
@@ -149,11 +201,7 @@ export function FdcScheduleSection({ schedule }) {
   const safeImageIdx = images.length ? Math.min(imageIdx, images.length - 1) : 0
   const activeImage = images[safeImageIdx] || null
 
-  const titleRaw = String(schedule?.title || 'Cronograma de actividades').trim()
-  const titleMatch = titleRaw.match(/^(cronograma)\s+(.+)$/i)
-  const eyebrow = titleMatch ? titleMatch[1] : 'Cronograma'
-  const heading = titleMatch ? titleMatch[2] : titleRaw
-
+  const title = String(schedule?.title || 'Cronograma de actividades').trim()
   const ctaLabel = String(schedule?.ctaLabel || '').trim()
   const ctaHref = String(schedule?.ctaHref || '').trim()
 
@@ -174,134 +222,117 @@ export function FdcScheduleSection({ schedule }) {
     return `${t} hs`
   }
 
+  function renderActivityRow(item, idx) {
+    const { title: itemTitle, note } = splitScheduleText(item.text)
+    return (
+      <li key={item.id || `${item.time}-${idx}`} className="flex gap-3 py-3.5 sm:gap-4 sm:py-4">
+        <span className="mt-0.5 shrink-0 text-[#d4b483]" aria-hidden>
+          <ScheduleClockIcon className="h-[1.15rem] w-[1.15rem] sm:h-5 sm:w-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+            {item.time ? (
+              <time className="shrink-0 text-sm font-bold tabular-nums text-white sm:text-[15px]">
+                {formatTime(item.time)}
+              </time>
+            ) : null}
+            <p className="min-w-0 text-sm leading-relaxed text-white/90 sm:text-[15px]">
+              {itemTitle}
+            </p>
+          </div>
+          {note ? (
+            <p className="mt-0.5 text-xs leading-relaxed text-white/50 sm:text-[13px]">{note}</p>
+          ) : null}
+        </div>
+      </li>
+    )
+  }
+
+  const ctaClassName =
+    'inline-flex min-h-11 items-center justify-center rounded-sm bg-[#d4b483] px-5 text-[11px] font-bold uppercase tracking-[0.14em] text-[#171b22] transition hover:bg-[#e2c28a] sm:text-xs'
+
   return (
     <div>
-      <header className="mb-6 sm:mb-8">
-        <p className="font-serif text-sm font-semibold uppercase tracking-[0.22em] text-[#b08948] sm:text-base">
-          {eyebrow}
-        </p>
-        <div className="mt-1 flex flex-wrap items-center gap-3">
-          <h2 className="font-serif text-3xl font-bold uppercase tracking-tight text-[#171b22] sm:text-4xl lg:text-[2.75rem]">
-            {heading}
-          </h2>
-          <span className="hidden h-px w-10 bg-[#d4b483] sm:inline-block" aria-hidden />
-        </div>
+      <header className="mb-7 text-center sm:mb-9">
+        <h2 className="font-serif text-2xl font-bold uppercase tracking-[0.04em] text-white sm:text-3xl lg:text-[2.35rem]">
+          {title}
+        </h2>
+        <ScheduleTitleOrnament className="mx-auto mt-3 h-4 w-36 text-[#d4b483] sm:mt-4 sm:h-[1.125rem] sm:w-40" />
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-stretch lg:gap-8">
-        <div className="flex flex-col overflow-hidden rounded-2xl border border-[#e4dfd4] bg-white shadow-[0_18px_48px_-28px_rgba(23,27,34,0.35)] sm:rounded-3xl">
-          <div className="flex min-h-0 flex-1 flex-col sm:flex-row">
-            {days.length > 1 && !showAllDays ? (
-              <div
-                className="flex shrink-0 gap-1 overflow-x-auto border-b border-[#ebe7df] bg-[#faf9f6] p-2 sm:w-[9.5rem] sm:flex-col sm:overflow-visible sm:border-b-0 sm:border-r sm:p-3"
-                role="tablist"
-                aria-label="Días del cronograma"
+      {days.length > 1 && !showAllDays ? (
+        <div
+          className="mb-6 flex overflow-x-auto rounded-sm border border-white/15 [-ms-overflow-style:none] [scrollbar-width:none] sm:mb-8 [&::-webkit-scrollbar]:hidden"
+          role="tablist"
+          aria-label="Días del cronograma"
+        >
+          {days.map((day, idx) => {
+            const active = idx === safeDayIdx
+            return (
+              <button
+                key={day.id || day.label || idx}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setActiveIdx(idx)}
+                className={`min-h-11 shrink-0 flex-1 border-r border-white/15 px-3 py-2.5 text-center text-[10px] font-bold uppercase tracking-[0.1em] transition last:border-r-0 sm:min-h-12 sm:px-4 sm:text-[11px] lg:text-xs ${
+                  active
+                    ? 'bg-[#d4b483] text-[#171b22]'
+                    : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
+                }`}
               >
-                {days.map((day, idx) => {
-                  const active = idx === safeDayIdx
-                  return (
-                    <button
-                      key={day.id || day.label || idx}
-                      type="button"
-                      role="tab"
-                      aria-selected={active}
-                      onClick={() => setActiveIdx(idx)}
-                      className={`shrink-0 rounded-lg px-3 py-2.5 text-left text-[11px] font-bold uppercase leading-snug tracking-wide transition sm:w-full sm:px-3 sm:py-3 sm:text-xs ${
-                        active
-                          ? 'bg-linear-to-b from-[#e2c28a] to-[#c9a46a] text-[#171b22] shadow-sm'
-                          : 'text-[#6b7280] hover:bg-white hover:text-[#171b22]'
-                      }`}
-                    >
-                      {day.label || `Día ${idx + 1}`}
-                    </button>
-                  )
-                })}
-              </div>
-            ) : null}
+                {day.label || `Día ${idx + 1}`}
+              </button>
+            )
+          })}
+        </div>
+      ) : null}
 
-            <div className="flex min-w-0 flex-1 flex-col" role="tabpanel">
-              {showAllDays ? (
-                <ul className="flex-1 divide-y divide-[#ebe7df] px-4 sm:px-6">
-                  {days.map((day) => (
-                    <li key={day?.id || day?.label} className="py-4 first:pt-5 last:pb-5">
-                      <p className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-[#b08948]">
-                        {day?.label}
-                      </p>
-                      <ul className="divide-y divide-[#ebe7df]">
-                        {(day?.items || []).map((item, idx) => (
-                          <li
-                            key={item.id || `${item.time}-${idx}`}
-                            className="flex gap-4 py-3.5 sm:gap-5 sm:py-4"
-                          >
-                            {item.time ? (
-                              <time className="w-[4.75rem] shrink-0 text-sm font-bold tabular-nums text-[#171b22] sm:w-[5.25rem]">
-                                {formatTime(item.time)}
-                              </time>
-                            ) : (
-                              <span className="w-[4.75rem] shrink-0 sm:w-[5.25rem]" aria-hidden />
-                            )}
-                            <p className="min-w-0 flex-1 text-sm leading-relaxed text-[#4b505a] sm:text-[15px]">
-                              {item.text}
-                            </p>
-                          </li>
-                        ))}
-                      </ul>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <ul className="flex-1 divide-y divide-[#ebe7df] px-4 sm:px-6">
-                  {(activeDay?.items || []).map((item, idx) => (
-                    <li
-                      key={item.id || `${item.time}-${idx}`}
-                      className="flex gap-4 py-3.5 sm:gap-5 sm:py-4"
-                    >
-                      {item.time ? (
-                        <time className="w-[4.75rem] shrink-0 text-sm font-bold tabular-nums text-[#171b22] sm:w-[5.25rem]">
-                          {formatTime(item.time)}
-                        </time>
-                      ) : (
-                        <span className="w-[4.75rem] shrink-0 sm:w-[5.25rem]" aria-hidden />
-                      )}
-                      <p className="min-w-0 flex-1 text-sm leading-relaxed text-[#4b505a] sm:text-[15px]">
-                        {item.text}
-                      </p>
-                    </li>
-                  ))}
-                  {(activeDay?.items || []).length === 0 ? (
-                    <li className="py-8 text-sm text-[#6b7280]">
-                      Sin actividades cargadas para este día.
-                    </li>
-                  ) : null}
-                </ul>
-              )}
-
-              {ctaLabel ? (
-                <div className="border-t border-[#ebe7df] px-4 py-4 text-center sm:px-6 sm:py-5">
-                  {ctaHref ? (
-                    <SmartLink
-                      href={ctaHref}
-                      className="inline-flex min-h-11 items-center justify-center rounded-md border border-[#171b22] px-5 text-[11px] font-bold uppercase tracking-[0.14em] text-[#171b22] transition hover:bg-[#171b22] hover:text-white sm:text-xs"
-                    >
-                      {ctaLabel}
-                    </SmartLink>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setShowAllDays((v) => !v)}
-                      className="inline-flex min-h-11 items-center justify-center rounded-md border border-[#171b22] px-5 text-[11px] font-bold uppercase tracking-[0.14em] text-[#171b22] transition hover:bg-[#171b22] hover:text-white sm:text-xs"
-                    >
-                      {showAllDays ? 'Ver por día' : ctaLabel}
-                    </button>
-                  )}
-                </div>
+      <div
+        className={`grid gap-8 lg:items-stretch lg:gap-10 ${
+          activeImage ? 'lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]' : ''
+        }`}
+      >
+        <div className="flex min-w-0 flex-col" role="tabpanel">
+          {showAllDays ? (
+            <ul className="flex-1 divide-y divide-white/12">
+              {days.map((day) => (
+                <li key={day?.id || day?.label} className="py-4 first:pt-0 last:pb-0">
+                  <p className="mb-1 text-xs font-bold uppercase tracking-[0.14em] text-[#d4b483]">
+                    {day?.label}
+                  </p>
+                  <ul className="divide-y divide-white/12">
+                    {(day?.items || []).map((item, idx) => renderActivityRow(item, idx))}
+                  </ul>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <ul className="flex-1 divide-y divide-white/12">
+              {(activeDay?.items || []).map((item, idx) => renderActivityRow(item, idx))}
+              {(activeDay?.items || []).length === 0 ? (
+                <li className="py-8 text-sm text-white/55">Sin actividades cargadas para este día.</li>
               ) : null}
+            </ul>
+          )}
+
+          {ctaLabel ? (
+            <div className="mt-6 sm:mt-8">
+              {ctaHref ? (
+                <SmartLink href={ctaHref} className={ctaClassName}>
+                  {ctaLabel}
+                </SmartLink>
+              ) : (
+                <button type="button" onClick={() => setShowAllDays((v) => !v)} className={ctaClassName}>
+                  {showAllDays ? 'Ver por día' : ctaLabel}
+                </button>
+              )}
             </div>
-          </div>
+          ) : null}
         </div>
 
         {activeImage ? (
-          <div className="relative min-h-[240px] overflow-hidden rounded-2xl sm:min-h-[320px] sm:rounded-3xl lg:min-h-full">
+          <div className="relative min-h-[220px] overflow-hidden rounded-lg sm:min-h-[300px] sm:rounded-xl lg:min-h-full">
             <img
               key={activeImage.src}
               src={activeImage.src}
@@ -310,16 +341,12 @@ export function FdcScheduleSection({ schedule }) {
               loading="lazy"
               decoding="async"
             />
-            <div
-              className="absolute inset-0 bg-linear-to-t from-black/25 via-transparent to-transparent"
-              aria-hidden
-            />
             {images.length > 1 ? (
               <>
                 <button
                   type="button"
                   onClick={goPrevImage}
-                  className="absolute left-3 top-1/2 z-10 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-[#171b22]/85 text-white shadow-md transition hover:bg-[#171b22] sm:left-4"
+                  className="absolute left-3 top-1/2 z-10 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-[#171b22]/80 text-white shadow-md transition hover:bg-[#171b22] sm:left-4"
                   aria-label="Imagen anterior"
                 >
                   <span aria-hidden>←</span>
@@ -327,7 +354,7 @@ export function FdcScheduleSection({ schedule }) {
                 <button
                   type="button"
                   onClick={goNextImage}
-                  className="absolute right-3 top-1/2 z-10 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-[#171b22]/85 text-white shadow-md transition hover:bg-[#171b22] sm:right-4"
+                  className="absolute right-3 top-1/2 z-10 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-[#171b22]/80 text-white shadow-md transition hover:bg-[#171b22] sm:right-4"
                   aria-label="Imagen siguiente"
                 >
                   <span aria-hidden>→</span>
@@ -395,14 +422,14 @@ export function FdcArtistsSection({ artists }) {
     <div>
       <header className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#d4b483]">
+          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#b08948]">
             {eyebrow}
           </p>
           <div className="mt-1 flex flex-wrap items-center gap-3">
-            <h2 className="font-serif text-3xl font-bold uppercase tracking-tight text-white sm:text-4xl lg:text-[2.75rem]">
+            <h2 className="font-serif text-3xl font-bold uppercase tracking-tight text-[#171b22] sm:text-4xl lg:text-[2.75rem]">
               {heading}
             </h2>
-            <span className="hidden items-center gap-1 text-[#d4b483] sm:inline-flex" aria-hidden>
+            <span className="hidden items-center gap-1 text-[#b08948] sm:inline-flex" aria-hidden>
               <span className="h-px w-8 bg-current" />
               <span className="text-[10px]">◆</span>
             </span>
@@ -412,12 +439,12 @@ export function FdcArtistsSection({ artists }) {
           ctaHref ? (
             <SmartLink
               href={ctaHref}
-              className="inline-flex min-h-11 shrink-0 items-center justify-center self-start rounded-md border border-[#d4b483] px-5 text-[11px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-[#d4b483] hover:text-[#171b22] sm:self-auto sm:text-xs"
+              className="inline-flex min-h-11 shrink-0 items-center justify-center self-start rounded-md border border-[#171b22]/80 px-5 text-[11px] font-bold uppercase tracking-[0.14em] text-[#171b22] transition hover:bg-[#171b22] hover:text-white sm:self-auto sm:text-xs"
             >
               {ctaLabel}
             </SmartLink>
           ) : (
-            <span className="inline-flex min-h-11 shrink-0 items-center justify-center self-start rounded-md border border-[#d4b483] px-5 text-[11px] font-bold uppercase tracking-[0.14em] text-white sm:self-auto sm:text-xs">
+            <span className="inline-flex min-h-11 shrink-0 items-center justify-center self-start rounded-md border border-[#171b22]/80 px-5 text-[11px] font-bold uppercase tracking-[0.14em] text-[#171b22] sm:self-auto sm:text-xs">
               {ctaLabel}
             </span>
           )
@@ -430,7 +457,7 @@ export function FdcArtistsSection({ artists }) {
             <button
               type="button"
               onClick={() => scrollBy(-300)}
-              className="absolute left-0 top-1/2 z-20 hidden h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-[#2a2f38] text-white/90 shadow-lg transition hover:bg-[#3a404c] hover:text-white md:inline-flex lg:-translate-x-1/3"
+              className="absolute left-0 top-1/2 z-20 hidden h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-[#ddd7ca] bg-white text-[#171b22] shadow-md transition hover:bg-[#f7f7f5] md:inline-flex lg:-translate-x-1/3"
               aria-label="Artistas anteriores"
             >
               ←
@@ -438,7 +465,7 @@ export function FdcArtistsSection({ artists }) {
             <button
               type="button"
               onClick={() => scrollBy(300)}
-              className="absolute right-0 top-1/2 z-20 hidden h-11 w-11 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-[#2a2f38] text-white/90 shadow-lg transition hover:bg-[#3a404c] hover:text-white md:inline-flex lg:translate-x-1/3"
+              className="absolute right-0 top-1/2 z-20 hidden h-11 w-11 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-[#ddd7ca] bg-white text-[#171b22] shadow-md transition hover:bg-[#f7f7f5] md:inline-flex lg:translate-x-1/3"
               aria-label="Artistas siguientes"
             >
               →
@@ -456,9 +483,9 @@ export function FdcArtistsSection({ artists }) {
             return (
               <article
                 key={artist.id || artist.name || idx}
-                className="group relative w-[min(72vw,14.5rem)] shrink-0 snap-start overflow-hidden rounded-xl sm:w-[min(42vw,15.5rem)] lg:w-[13.75rem]"
+                className="group relative w-[min(72vw,14.5rem)] shrink-0 snap-start overflow-hidden rounded-xl shadow-[0_12px_36px_-24px_rgba(23,27,34,0.4)] ring-1 ring-[#e8e4dc] sm:w-[min(42vw,15.5rem)] lg:w-[13.75rem]"
               >
-                <div className="relative aspect-3/4 bg-[#1c2129]">
+                <div className="relative aspect-3/4 bg-[#efe8dc]">
                   {src ? (
                     <img
                       src={src}
@@ -469,7 +496,7 @@ export function FdcArtistsSection({ artists }) {
                     />
                   ) : (
                     <div
-                      className="flex h-full items-center justify-center text-4xl text-[#d4b483]/35"
+                      className="flex h-full items-center justify-center text-4xl text-[#b08948]/40"
                       aria-hidden
                     >
                       ♪
@@ -507,7 +534,7 @@ export function FdcArtistsSection({ artists }) {
             <button
               type="button"
               onClick={() => scrollBy(-260)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#2a2f38] text-white/90"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#ddd7ca] bg-white text-[#171b22]"
               aria-label="Anterior"
             >
               ←
@@ -515,7 +542,7 @@ export function FdcArtistsSection({ artists }) {
             <button
               type="button"
               onClick={() => scrollBy(260)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#2a2f38] text-white/90"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#ddd7ca] bg-white text-[#171b22]"
               aria-label="Siguiente"
             >
               →

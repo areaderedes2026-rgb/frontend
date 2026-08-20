@@ -195,7 +195,7 @@ export function FiestaDelCaballo() {
       {(page.artists?.items || []).some((a) => a?.name) ? (
         <section
           id="cartelera"
-          className="relative isolate border-y border-white/10 bg-[#171b22] py-14 text-white sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
+          className="relative isolate border-y border-[#e8e5dd] bg-[#f7f7f5] py-14 sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
         >
           <Container className="relative z-10">
             <RevealOnScroll variant="slow">
@@ -208,7 +208,7 @@ export function FiestaDelCaballo() {
       {(page.schedule?.days || []).length > 0 ? (
         <section
           id="cronograma"
-          className="relative isolate border-y border-[#e8e5dd] bg-[#f7f7f5] py-14 sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
+          className="relative isolate border-y border-white/10 bg-[#171b22] py-14 text-white sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
         >
           <Container className="relative z-10">
             <RevealOnScroll variant="slow">
