@@ -164,18 +164,204 @@ export function FdcStallApplicationForm({
         </div>
 
         <div className="px-4 py-5 sm:px-6 sm:py-7 lg:px-8 lg:py-8 xl:px-10 xl:py-9">
-          <div className="grid gap-6 lg:grid-cols-12 lg:gap-8 xl:gap-10">
-            <aside className="order-1 space-y-4 lg:order-2 lg:col-span-3 xl:col-span-3 lg:sticky lg:top-[calc(var(--navbar-h,5rem)+5.5rem)] lg:self-start">
-              {!formOpen ? (
-                <div
-                  className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3.5 text-sm leading-relaxed text-amber-950 sm:px-5"
-                  role="status"
-                >
-                  {windowMessage || 'La preinscripción no está abierta en este momento.'}
-                </div>
-              ) : null}
+          <div className="space-y-7 lg:space-y-8">
+            {!formOpen ? (
+              <div
+                className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3.5 text-sm leading-relaxed text-amber-950 sm:px-5"
+                role="status"
+              >
+                {windowMessage || 'La preinscripción no está abierta en este momento.'}
+              </div>
+            ) : null}
 
-              <div className="rounded-2xl border border-amber-200/90 bg-amber-50/95 px-4 py-4 text-sm leading-relaxed text-amber-950 sm:px-5">
+            <section className="space-y-4">
+              <SectionTitle>Datos personales</SectionTitle>
+
+              <fieldset
+                disabled={disabled}
+                className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6 xl:grid-cols-12"
+              >
+                <label className={`${labelClass} sm:col-span-2 lg:col-span-4 xl:col-span-8`}>
+                  <FieldLabel required>Apellido y nombre</FieldLabel>
+                  <input
+                    className={fieldInputClass}
+                    value={form.fullName}
+                    onChange={(e) => updateField('fullName', e.target.value)}
+                    autoComplete="name"
+                    required
+                    placeholder="Ej. Pérez, María"
+                  />
+                </label>
+
+                <label className={`${labelClass} lg:col-span-2 xl:col-span-4`}>
+                  <FieldLabel required>DNI</FieldLabel>
+                  <input
+                    className={fieldInputClass}
+                    value={form.dni}
+                    onChange={(e) => updateField('dni', e.target.value)}
+                    inputMode="numeric"
+                    required
+                    placeholder="Solo números"
+                  />
+                </label>
+
+                <label className={`${labelClass} sm:col-span-2 lg:col-span-4 xl:col-span-8`}>
+                  <FieldLabel required>Domicilio</FieldLabel>
+                  <input
+                    className={fieldInputClass}
+                    value={form.address}
+                    onChange={(e) => updateField('address', e.target.value)}
+                    autoComplete="street-address"
+                    required
+                    placeholder="Calle y número"
+                  />
+                </label>
+
+                <label className={`${labelClass} lg:col-span-2 xl:col-span-4`}>
+                  <FieldLabel required>Localidad</FieldLabel>
+                  <input
+                    className={fieldInputClass}
+                    value={form.locality}
+                    onChange={(e) => updateField('locality', e.target.value)}
+                    required
+                    placeholder="Ej. Trancas"
+                  />
+                </label>
+
+                <label className={`${labelClass} sm:col-span-1 lg:col-span-3 xl:col-span-6`}>
+                  <FieldLabel required>Teléfono</FieldLabel>
+                  <input
+                    className={fieldInputClass}
+                    value={form.phone}
+                    onChange={(e) => updateField('phone', e.target.value)}
+                    autoComplete="tel"
+                    required
+                    placeholder="Con código de área"
+                  />
+                </label>
+
+                <label className={`${labelClass} sm:col-span-1 lg:col-span-3 xl:col-span-6`}>
+                  <FieldLabel required>Correo electrónico</FieldLabel>
+                  <input
+                    type="email"
+                    className={fieldInputClass}
+                    value={form.email}
+                    onChange={(e) => updateField('email', e.target.value)}
+                    autoComplete="email"
+                    required
+                    placeholder="tu@email.com"
+                  />
+                </label>
+              </fieldset>
+            </section>
+
+            <div className="grid gap-7 sm:gap-8 md:grid-cols-2 md:gap-6 xl:gap-8">
+              <section className="space-y-4">
+                <SectionTitle>Rubro</SectionTitle>
+
+                <fieldset disabled={disabled} className="space-y-4">
+                  <label className={labelClass}>
+                    <FieldLabel required>Seleccioná el rubro de tu puesto</FieldLabel>
+                    <select
+                      className={`${selectClass} min-h-12 text-base sm:min-h-11 sm:text-sm`}
+                      style={{ backgroundImage: selectChevron }}
+                      value={form.rubro}
+                      onChange={(e) => updateField('rubro', e.target.value)}
+                      required
+                    >
+                      <option value="">Elegí una opción…</option>
+                      {FDC_RUBROS.map((rubro) => (
+                        <option key={rubro} value={rubro}>
+                          {rubro}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  {form.rubro === 'Otro' ? (
+                    <label className={labelClass}>
+                      <FieldLabel required>Especificá el rubro</FieldLabel>
+                      <input
+                        className={fieldInputClass}
+                        value={form.rubroOther}
+                        onChange={(e) => updateField('rubroOther', e.target.value)}
+                        placeholder="Describí tu actividad"
+                      />
+                    </label>
+                  ) : null}
+                </fieldset>
+              </section>
+
+              <section className="space-y-4">
+                <SectionTitle>Experiencia</SectionTitle>
+
+                <fieldset disabled={disabled} className="space-y-4">
+                  <div>
+                    <p className="text-sm font-medium text-slate-700">
+                      ¿Participaste anteriormente en la Fiesta Nacional e Internacional del Caballo?{' '}
+                      <span className="text-amber-800" aria-hidden>
+                        *
+                      </span>
+                    </p>
+                    <div className="mt-3 grid grid-cols-2 gap-2.5">
+                      {[
+                        { value: true, label: 'Sí' },
+                        { value: false, label: 'No' },
+                      ].map((opt) => {
+                        const active = form.participatedBefore === opt.value
+                        return (
+                          <button
+                            key={String(opt.value)}
+                            type="button"
+                            disabled={disabled}
+                            onClick={() => updateField('participatedBefore', opt.value)}
+                            className={`min-h-12 rounded-xl border text-sm font-semibold transition sm:min-h-11 ${
+                              active
+                                ? 'border-[#171b22] bg-[#171b22] text-white shadow-sm'
+                                : 'border-[#ddd7ca] bg-[#fcfcfa] text-[#171b22] hover:border-sky-300 hover:bg-sky-50'
+                            } disabled:cursor-not-allowed disabled:opacity-60`}
+                            aria-pressed={active}
+                          >
+                            {opt.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {form.participatedBefore ? (
+                    <label className={labelClass}>
+                      <FieldLabel required>Indicá el/los año/s</FieldLabel>
+                      <input
+                        className={fieldInputClass}
+                        value={form.participationYears}
+                        onChange={(e) => updateField('participationYears', e.target.value)}
+                        placeholder="Ej. 2022, 2024"
+                      />
+                    </label>
+                  ) : null}
+                </fieldset>
+              </section>
+            </div>
+
+            {formError ? (
+              <div className={formErrorClass} role="alert">
+                {formError}
+              </div>
+            ) : null}
+
+            <div className="flex justify-stretch border-t border-[#ebe7df] pt-5 sm:justify-end">
+              <button
+                type="submit"
+                disabled={disabled}
+                className="inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-[#171b22] px-8 text-sm font-semibold text-white shadow-sm transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:min-w-56"
+              >
+                {sending ? 'Enviando…' : 'Enviar preinscripción'}
+              </button>
+            </div>
+
+            <div className="grid gap-4 border-t border-[#ebe7df] pt-6 sm:gap-5 md:grid-cols-2">
+              <div className="rounded-2xl border border-amber-200/90 bg-amber-50/95 px-4 py-4 text-sm leading-relaxed text-amber-950 sm:px-5 sm:py-5">
                 <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-amber-900">
                   Aviso importante
                 </p>
@@ -198,195 +384,6 @@ export function FdcStallApplicationForm({
                     </span>
                   </li>
                 </ul>
-              </div>
-            </aside>
-
-            <div className="order-2 space-y-7 lg:order-1 lg:col-span-9 lg:space-y-8">
-              <section className="space-y-4">
-                <SectionTitle>Datos personales</SectionTitle>
-
-                <fieldset
-                  disabled={disabled}
-                  className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6 xl:grid-cols-12"
-                >
-                  <label className={`${labelClass} sm:col-span-2 lg:col-span-4 xl:col-span-8`}>
-                    <FieldLabel required>Apellido y nombre</FieldLabel>
-                    <input
-                      className={fieldInputClass}
-                      value={form.fullName}
-                      onChange={(e) => updateField('fullName', e.target.value)}
-                      autoComplete="name"
-                      required
-                      placeholder="Ej. Pérez, María"
-                    />
-                  </label>
-
-                  <label className={`${labelClass} lg:col-span-2 xl:col-span-4`}>
-                    <FieldLabel required>DNI</FieldLabel>
-                    <input
-                      className={fieldInputClass}
-                      value={form.dni}
-                      onChange={(e) => updateField('dni', e.target.value)}
-                      inputMode="numeric"
-                      required
-                      placeholder="Solo números"
-                    />
-                  </label>
-
-                  <label className={`${labelClass} sm:col-span-2 lg:col-span-4 xl:col-span-8`}>
-                    <FieldLabel required>Domicilio</FieldLabel>
-                    <input
-                      className={fieldInputClass}
-                      value={form.address}
-                      onChange={(e) => updateField('address', e.target.value)}
-                      autoComplete="street-address"
-                      required
-                      placeholder="Calle y número"
-                    />
-                  </label>
-
-                  <label className={`${labelClass} lg:col-span-2 xl:col-span-4`}>
-                    <FieldLabel required>Localidad</FieldLabel>
-                    <input
-                      className={fieldInputClass}
-                      value={form.locality}
-                      onChange={(e) => updateField('locality', e.target.value)}
-                      required
-                      placeholder="Ej. Trancas"
-                    />
-                  </label>
-
-                  <label className={`${labelClass} sm:col-span-1 lg:col-span-3 xl:col-span-6`}>
-                    <FieldLabel required>Teléfono</FieldLabel>
-                    <input
-                      className={fieldInputClass}
-                      value={form.phone}
-                      onChange={(e) => updateField('phone', e.target.value)}
-                      autoComplete="tel"
-                      required
-                      placeholder="Con código de área"
-                    />
-                  </label>
-
-                  <label className={`${labelClass} sm:col-span-1 lg:col-span-3 xl:col-span-6`}>
-                    <FieldLabel required>Correo electrónico</FieldLabel>
-                    <input
-                      type="email"
-                      className={fieldInputClass}
-                      value={form.email}
-                      onChange={(e) => updateField('email', e.target.value)}
-                      autoComplete="email"
-                      required
-                      placeholder="tu@email.com"
-                    />
-                  </label>
-                </fieldset>
-              </section>
-
-              <div className="grid gap-7 sm:gap-8 md:grid-cols-2 md:gap-6 xl:gap-8">
-                <section className="space-y-4">
-                  <SectionTitle>Rubro</SectionTitle>
-
-                  <fieldset disabled={disabled} className="space-y-4">
-                    <label className={labelClass}>
-                      <FieldLabel required>Seleccioná el rubro de tu puesto</FieldLabel>
-                      <select
-                        className={`${selectClass} min-h-12 text-base sm:min-h-11 sm:text-sm`}
-                        style={{ backgroundImage: selectChevron }}
-                        value={form.rubro}
-                        onChange={(e) => updateField('rubro', e.target.value)}
-                        required
-                      >
-                        <option value="">Elegí una opción…</option>
-                        {FDC_RUBROS.map((rubro) => (
-                          <option key={rubro} value={rubro}>
-                            {rubro}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-
-                    {form.rubro === 'Otro' ? (
-                      <label className={labelClass}>
-                        <FieldLabel required>Especificá el rubro</FieldLabel>
-                        <input
-                          className={fieldInputClass}
-                          value={form.rubroOther}
-                          onChange={(e) => updateField('rubroOther', e.target.value)}
-                          placeholder="Describí tu actividad"
-                        />
-                      </label>
-                    ) : null}
-                  </fieldset>
-                </section>
-
-                <section className="space-y-4">
-                  <SectionTitle>Experiencia</SectionTitle>
-
-                  <fieldset disabled={disabled} className="space-y-4">
-                    <div>
-                      <p className="text-sm font-medium text-slate-700">
-                        ¿Participaste anteriormente en la Fiesta Nacional e Internacional del
-                        Caballo?{' '}
-                        <span className="text-amber-800" aria-hidden>
-                          *
-                        </span>
-                      </p>
-                      <div className="mt-3 grid grid-cols-2 gap-2.5">
-                        {[
-                          { value: true, label: 'Sí' },
-                          { value: false, label: 'No' },
-                        ].map((opt) => {
-                          const active = form.participatedBefore === opt.value
-                          return (
-                            <button
-                              key={String(opt.value)}
-                              type="button"
-                              disabled={disabled}
-                              onClick={() => updateField('participatedBefore', opt.value)}
-                              className={`min-h-12 rounded-xl border text-sm font-semibold transition sm:min-h-11 ${
-                                active
-                                  ? 'border-[#171b22] bg-[#171b22] text-white shadow-sm'
-                                  : 'border-[#ddd7ca] bg-[#fcfcfa] text-[#171b22] hover:border-sky-300 hover:bg-sky-50'
-                              } disabled:cursor-not-allowed disabled:opacity-60`}
-                              aria-pressed={active}
-                            >
-                              {opt.label}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-
-                    {form.participatedBefore ? (
-                      <label className={labelClass}>
-                        <FieldLabel required>Indicá el/los año/s</FieldLabel>
-                        <input
-                          className={fieldInputClass}
-                          value={form.participationYears}
-                          onChange={(e) => updateField('participationYears', e.target.value)}
-                          placeholder="Ej. 2022, 2024"
-                        />
-                      </label>
-                    ) : null}
-                  </fieldset>
-                </section>
-              </div>
-
-              {formError ? (
-                <div className={formErrorClass} role="alert">
-                  {formError}
-                </div>
-              ) : null}
-
-              <div className="flex justify-stretch border-t border-[#ebe7df] pt-5 sm:justify-end">
-                <button
-                  type="submit"
-                  disabled={disabled}
-                  className="inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-[#171b22] px-8 text-sm font-semibold text-white shadow-sm transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:min-w-56"
-                >
-                  {sending ? 'Enviando…' : 'Enviar preinscripción'}
-                </button>
               </div>
             </div>
           </div>
