@@ -79,7 +79,7 @@ export async function createFdcStallApplication(payload) {
   const b = base()
   if (!b) throw new Error('Configurá VITE_API_URL para enviar la preinscripción.')
   const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), 25_000)
+  const timer = setTimeout(() => controller.abort(), 35_000)
   try {
     const res = await fetch(`${b}/api/fdc/stall-applications`, {
       method: 'POST',
@@ -95,6 +95,7 @@ export async function createFdcStallApplication(payload) {
       application: mapApplication(data.application),
       emailSent: Boolean(data.emailSent),
       emailQueued: Boolean(data.emailQueued),
+      emailError: String(data.emailError || ''),
     }
   } catch (err) {
     if (err?.name === 'AbortError') {

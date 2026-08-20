@@ -77,6 +77,7 @@ export function AdminFdcStallApplications() {
   const [detailOpen, setDetailOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [pendingDelete, setPendingDelete] = useState(null)
   const [whatsappTemplate, setWhatsappTemplate] = useState('')
   const [whatsappUpdatedAt, setWhatsappUpdatedAt] = useState(null)
   const [whatsappModalOpen, setWhatsappModalOpen] = useState(false)
@@ -181,20 +182,33 @@ export function AdminFdcStallApplications() {
   }
 
   async function handleDelete() {
-    if (!selected) return
+    const target = pendingDelete || selected
+    if (!target?.id) return
     setBusy(true)
     try {
-      await deleteFdcStallApplication(selected.id)
+      await deleteFdcStallApplication(target.id)
       setConfirmDelete(false)
-      setDetailOpen(false)
-      setSelected(null)
+      setPendingDelete(null)
+      if (selected?.id === target.id) {
+        setDetailOpen(false)
+        setSelected(null)
+      }
       await load()
-      setToast({ variant: 'success', message: 'Solicitud eliminada.' })
+      setToast({
+        variant: 'success',
+        message: `Solicitud #${target.id} eliminada. Ese correo/teléfono y el N° correlativo quedan libres para una nueva preinscripción.`,
+      })
     } catch (e) {
       setToast({ variant: 'error', message: e.message || 'No se pudo eliminar.' })
     } finally {
       setBusy(false)
     }
+  }
+
+  function askDelete(app) {
+    if (!app?.id) return
+    setPendingDelete(app)
+    setConfirmDelete(true)
   }
 
   async function handleResendEmail() {
@@ -244,9 +258,17 @@ export function AdminFdcStallApplications() {
 
       <ConfirmDialog
         open={confirmDelete}
-        onClose={() => setConfirmDelete(false)}
-        title="¿Eliminar esta solicitud?"
-        description="Se borrará de forma permanente de la bandeja FDC."
+        onClose={() => {
+          if (busy) return
+          setConfirmDelete(false)
+          setPendingDelete(null)
+        }}
+        title={
+          pendingDelete?.id
+            ? `¿Eliminar la solicitud #${pendingDelete.id}?`
+            : '¿Eliminar esta solicitud?'
+        }
+        description="Se borra de forma permanente. Ese correo y teléfono podrán volver a usarse, y el número correlativo se libera para la próxima preinscripción (si era la última)."
         confirmLabel="Eliminar"
         onConfirm={() => void handleDelete()}
         loading={busy}
@@ -352,7 +374,7 @@ export function AdminFdcStallApplications() {
                 type="button"
                 className={`${ACTION_BTN} border border-red-200 bg-white text-red-700 hover:bg-red-50`}
                 disabled={busy}
-                onClick={() => setConfirmDelete(true)}
+                onClick={() => askDelete(selected)}
               >
                 Eliminar
               </button>
@@ -483,6 +505,14 @@ export function AdminFdcStallApplications() {
                           onClick={() => handleWhatsapp(app)}
                         >
                           WhatsApp
+                        </button>
+                        <button
+                          type="button"
+                          className={`${ACTION_BTN} border border-red-200 bg-white text-red-700 hover:bg-red-50`}
+                          disabled={busy}
+                          onClick={() => askDelete(app)}
+                        >
+                          Eliminar
                         </button>
                       </div>
                     </li>
