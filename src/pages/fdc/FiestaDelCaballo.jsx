@@ -107,7 +107,9 @@ export function FiestaDelCaballo() {
                   const id = result?.application?.id
                   const emailNote = result?.emailSent
                     ? ' Te enviamos la constancia a tu correo.'
-                    : ' La solicitud quedó registrada; si no llega el mail, revisá spam o consultanos.'
+                    : result?.emailQueued
+                      ? ' En unos segundos te llega la constancia al correo.'
+                      : ' La solicitud quedó registrada; si no llega el mail, revisá spam o consultanos.'
                   setToast({
                     variant: 'success',
                     message: id

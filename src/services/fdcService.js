@@ -78,18 +78,33 @@ export async function updateFdcContent(payload) {
 export async function createFdcStallApplication(payload) {
   const b = base()
   if (!b) throw new Error('Configurá VITE_API_URL para enviar la preinscripción.')
-  const res = await fetch(`${b}/api/fdc/stall-applications`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  })
-  if (!res.ok) {
-    throw new Error((await apiErrorMessage(res)) || 'No se pudo enviar la preinscripción.')
-  }
-  const data = await res.json().catch(() => ({}))
-  return {
-    application: mapApplication(data.application),
-    emailSent: Boolean(data.emailSent),
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 25_000)
+  try {
+    const res = await fetch(`${b}/api/fdc/stall-applications`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    })
+    if (!res.ok) {
+      throw new Error((await apiErrorMessage(res)) || 'No se pudo enviar la preinscripción.')
+    }
+    const data = await res.json().catch(() => ({}))
+    return {
+      application: mapApplication(data.application),
+      emailSent: Boolean(data.emailSent),
+      emailQueued: Boolean(data.emailQueued),
+    }
+  } catch (err) {
+    if (err?.name === 'AbortError') {
+      throw new Error(
+        'La solicitud tardó demasiado. Revisá tu conexión e intentá de nuevo en unos segundos.',
+      )
+    }
+    throw err
+  } finally {
+    clearTimeout(timer)
   }
 }
 
