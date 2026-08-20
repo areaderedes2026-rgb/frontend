@@ -331,10 +331,10 @@ export function FiestaDelCaballo() {
         subtitle={page.ctaBody || undefined}
         tone="accent"
         className="relative scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
-        contentClassName="max-w-3xl mx-auto"
+        contentClassName="w-full max-w-6xl mx-auto"
       >
         {fromLabel && untilLabel ? (
-          <p className="mb-5 text-center text-xs font-medium text-slate-300 sm:text-sm">
+          <p className="mb-5 text-center text-xs font-medium text-slate-300 sm:mb-6 sm:text-sm">
             Periodo de preinscripción:{' '}
             <span className="font-semibold text-white">
               {fromLabel} al {untilLabel}
@@ -342,28 +342,26 @@ export function FiestaDelCaballo() {
           </p>
         ) : null}
         <RevealOnScroll variant="slow">
-          <div className="overflow-hidden rounded-3xl border border-white/10 bg-[#fcfcfa] shadow-[0_24px_60px_-28px_rgba(0,0,0,0.45)]">
-            <FdcStallApplicationForm
-              formNotice={page.formNotice}
-              formOpen={formOpen}
-              windowMessage={windowMessage}
-              onSuccess={(result) => {
-                const id = result?.application?.id
-                const email = String(result?.application?.email || '').trim()
-                setSubmitSuccess({
-                  id,
-                  email,
-                  emailQueued: Boolean(result?.emailQueued || result?.emailSent),
-                })
-                setToast({
-                  variant: 'success',
-                  message: id
-                    ? `Preinscripción enviada. Número de solicitud: #${id}.`
-                    : 'Preinscripción enviada correctamente.',
-                })
-              }}
-            />
-          </div>
+          <FdcStallApplicationForm
+            formNotice={page.formNotice}
+            formOpen={formOpen}
+            windowMessage={windowMessage}
+            onSuccess={(result) => {
+              const id = result?.application?.id
+              const email = String(result?.application?.email || '').trim()
+              setSubmitSuccess({
+                id,
+                email,
+                emailQueued: Boolean(result?.emailQueued || result?.emailSent),
+              })
+              setToast({
+                variant: 'success',
+                message: id
+                  ? `Preinscripción enviada. Número de solicitud: #${id}.`
+                  : 'Preinscripción enviada correctamente.',
+              })
+            }}
+          />
         </RevealOnScroll>
       </StorySection>
     </>

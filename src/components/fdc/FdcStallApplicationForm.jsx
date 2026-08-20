@@ -20,6 +20,7 @@ const EMPTY_FORM = {
 const selectClass = `${inputClass} appearance-none bg-[length:1rem] bg-[right_0.85rem_center] bg-no-repeat pr-10`
 const selectChevron =
   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%234b505a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E\")"
+const fieldInputClass = `${inputClass} min-h-12 text-base sm:min-h-11 sm:text-sm`
 
 function FieldLabel({ children, required = false, hint = null }) {
   return (
@@ -32,6 +33,14 @@ function FieldLabel({ children, required = false, hint = null }) {
       ) : null}
       {hint ? <span className="w-full text-xs font-normal text-slate-500">{hint}</span> : null}
     </span>
+  )
+}
+
+function SectionTitle({ children }) {
+  return (
+    <header className="border-b border-[#ebe7df] pb-2.5">
+      <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-sky-800">{children}</h3>
+    </header>
   )
 }
 
@@ -144,263 +153,267 @@ export function FdcStallApplicationForm({
   }
 
   return (
-    <form
-      id="solicitud-puestos"
-      onSubmit={handleSubmit}
-      className="scroll-mt-[calc(var(--navbar-h,5rem)+1.25rem)]"
-      noValidate
-    >
-      <div className="overflow-hidden rounded-2xl border border-[#ddd7ca] bg-white shadow-[0_12px_40px_-24px_rgba(23,27,34,0.35)] sm:rounded-3xl">
-        <div className="border-b border-[#e8e5dd] bg-linear-to-br from-[#f8f4ec] via-white to-[#f3f7fb] px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-amber-800 sm:text-xs">
-            Preinscripción 2026
-          </p>
-          <h2 className="mt-1.5 font-serif text-xl font-bold tracking-tight text-[#171b22] sm:text-2xl lg:text-[1.75rem]">
-            Solicitud de puestos comerciales
-          </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[#4b505a]">
-            Completá tus datos. Al enviar vas a recibir la constancia en tu correo con el número de
-            solicitud.
-          </p>
-          <p className="mt-3 text-xs text-slate-500">
-            Los campos marcados con <span className="font-semibold text-amber-800">*</span> son
-            obligatorios.
-          </p>
+    <form onSubmit={handleSubmit} className="w-full" noValidate>
+      <div className="overflow-hidden rounded-2xl border border-[#ddd7ca] bg-white shadow-[0_20px_50px_-28px_rgba(23,27,34,0.4)] sm:rounded-3xl">
+        <div className="border-b border-[#e8e5dd] bg-linear-to-br from-[#f8f4ec] via-white to-[#f3f7fb] px-4 py-5 sm:px-7 sm:py-6 lg:px-10 lg:py-7">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between lg:gap-8">
+            <div className="min-w-0 max-w-3xl">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-amber-800 sm:text-xs">
+                Preinscripción 2026
+              </p>
+              <h2 className="mt-1.5 font-serif text-xl font-bold tracking-tight text-[#171b22] sm:text-2xl lg:text-3xl">
+                Completá tus datos
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-[#4b505a] sm:text-base">
+                Al enviar vas a recibir la constancia en tu correo con el número de solicitud.
+              </p>
+            </div>
+            <p className="shrink-0 text-xs text-slate-500 lg:pb-1 lg:text-right">
+              Campos con <span className="font-semibold text-amber-800">*</span> obligatorios
+            </p>
+          </div>
         </div>
 
-        <div className="space-y-6 px-4 py-5 sm:space-y-7 sm:px-6 sm:py-7 lg:px-8 lg:py-8">
-          {!formOpen ? (
-            <div
-              className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3.5 text-sm leading-relaxed text-amber-950 sm:px-5"
-              role="status"
-            >
-              {windowMessage || 'La preinscripción no está abierta en este momento.'}
-            </div>
-          ) : null}
-
-          <div className="rounded-2xl border border-amber-200/90 bg-amber-50/95 px-4 py-3.5 text-sm leading-relaxed text-amber-950 sm:px-5">
-            {notice}
-          </div>
-
-          <section className="space-y-4">
-            <header className="border-b border-[#ebe7df] pb-2">
-              <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-sky-800">
-                Datos personales
-              </h3>
-            </header>
-
-            <fieldset disabled={disabled} className="grid gap-4 sm:grid-cols-2">
-              <label className={`${labelClass} sm:col-span-2`}>
-                <FieldLabel required>Apellido y nombre</FieldLabel>
-                <input
-                  className={`${inputClass} min-h-12 text-base sm:min-h-11 sm:text-sm`}
-                  value={form.fullName}
-                  onChange={(e) => updateField('fullName', e.target.value)}
-                  autoComplete="name"
-                  required
-                  placeholder="Ej. Pérez, María"
-                />
-              </label>
-
-              <label className={labelClass}>
-                <FieldLabel required>DNI</FieldLabel>
-                <input
-                  className={`${inputClass} min-h-12 text-base sm:min-h-11 sm:text-sm`}
-                  value={form.dni}
-                  onChange={(e) => updateField('dni', e.target.value)}
-                  inputMode="numeric"
-                  required
-                  placeholder="Solo números"
-                />
-              </label>
-
-              <label className={labelClass}>
-                <FieldLabel required>Teléfono</FieldLabel>
-                <input
-                  className={`${inputClass} min-h-12 text-base sm:min-h-11 sm:text-sm`}
-                  value={form.phone}
-                  onChange={(e) => updateField('phone', e.target.value)}
-                  autoComplete="tel"
-                  required
-                  placeholder="Con código de área"
-                />
-              </label>
-
-              <label className={`${labelClass} sm:col-span-2`}>
-                <FieldLabel required>Domicilio</FieldLabel>
-                <input
-                  className={`${inputClass} min-h-12 text-base sm:min-h-11 sm:text-sm`}
-                  value={form.address}
-                  onChange={(e) => updateField('address', e.target.value)}
-                  autoComplete="street-address"
-                  required
-                  placeholder="Calle y número"
-                />
-              </label>
-
-              <label className={labelClass}>
-                <FieldLabel required>Localidad</FieldLabel>
-                <input
-                  className={`${inputClass} min-h-12 text-base sm:min-h-11 sm:text-sm`}
-                  value={form.locality}
-                  onChange={(e) => updateField('locality', e.target.value)}
-                  required
-                  placeholder="Ej. Trancas"
-                />
-              </label>
-
-              <label className={labelClass}>
-                <FieldLabel
-                  required
-                  hint="Vas a recibir la constancia automática con el número de solicitud."
+        <div className="px-4 py-5 sm:px-7 sm:py-7 lg:px-10 lg:py-9">
+          <div className="grid gap-6 lg:grid-cols-12 lg:gap-8 xl:gap-10">
+            <aside className="order-1 space-y-4 lg:order-2 lg:col-span-4 lg:sticky lg:top-[calc(var(--navbar-h,5rem)+5.5rem)] lg:self-start">
+              {!formOpen ? (
+                <div
+                  className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3.5 text-sm leading-relaxed text-amber-950 sm:px-5"
+                  role="status"
                 >
-                  Correo electrónico
-                </FieldLabel>
-                <input
-                  type="email"
-                  className={`${inputClass} min-h-12 text-base sm:min-h-11 sm:text-sm`}
-                  value={form.email}
-                  onChange={(e) => updateField('email', e.target.value)}
-                  autoComplete="email"
-                  required
-                  placeholder="tu@email.com"
-                />
-              </label>
-            </fieldset>
-          </section>
-
-          <section className="space-y-4">
-            <header className="border-b border-[#ebe7df] pb-2">
-              <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-sky-800">Rubro</h3>
-            </header>
-
-            <fieldset disabled={disabled} className="space-y-4">
-              <label className={labelClass}>
-                <FieldLabel required>Seleccioná el rubro de tu puesto</FieldLabel>
-                <select
-                  className={`${selectClass} min-h-12 text-base sm:min-h-11 sm:text-sm`}
-                  style={{ backgroundImage: selectChevron }}
-                  value={form.rubro}
-                  onChange={(e) => updateField('rubro', e.target.value)}
-                  required
-                >
-                  <option value="">Elegí una opción…</option>
-                  {FDC_RUBROS.map((rubro) => (
-                    <option key={rubro} value={rubro}>
-                      {rubro}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              {form.rubro === 'Otro' ? (
-                <label className={labelClass}>
-                  <FieldLabel required>Especificá el rubro</FieldLabel>
-                  <input
-                    className={`${inputClass} min-h-12 text-base sm:min-h-11 sm:text-sm`}
-                    value={form.rubroOther}
-                    onChange={(e) => updateField('rubroOther', e.target.value)}
-                    placeholder="Describí tu actividad"
-                  />
-                </label>
-              ) : null}
-            </fieldset>
-          </section>
-
-          <section className="space-y-4">
-            <header className="border-b border-[#ebe7df] pb-2">
-              <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-sky-800">
-                Experiencia
-              </h3>
-            </header>
-
-            <fieldset disabled={disabled} className="space-y-4">
-              <div>
-                <p className="text-sm font-medium text-slate-700">
-                  ¿Participaste anteriormente en la Fiesta Nacional e Internacional del Caballo?{' '}
-                  <span className="text-amber-800" aria-hidden>
-                    *
-                  </span>
-                </p>
-                <div className="mt-3 grid grid-cols-2 gap-2.5 sm:max-w-xs">
-                  {[
-                    { value: true, label: 'Sí' },
-                    { value: false, label: 'No' },
-                  ].map((opt) => {
-                    const active = form.participatedBefore === opt.value
-                    return (
-                      <button
-                        key={String(opt.value)}
-                        type="button"
-                        disabled={disabled}
-                        onClick={() => updateField('participatedBefore', opt.value)}
-                        className={`min-h-12 rounded-xl border text-sm font-semibold transition sm:min-h-11 ${
-                          active
-                            ? 'border-[#171b22] bg-[#171b22] text-white shadow-sm'
-                            : 'border-[#ddd7ca] bg-[#fcfcfa] text-[#171b22] hover:border-sky-300 hover:bg-sky-50'
-                        } disabled:cursor-not-allowed disabled:opacity-60`}
-                        aria-pressed={active}
-                      >
-                        {opt.label}
-                      </button>
-                    )
-                  })}
+                  {windowMessage || 'La preinscripción no está abierta en este momento.'}
                 </div>
+              ) : null}
+
+              <div className="rounded-2xl border border-amber-200/90 bg-amber-50/95 px-4 py-4 text-sm leading-relaxed text-amber-950 sm:px-5">
+                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-amber-900">
+                  Aviso importante
+                </p>
+                <p className="mt-2">{notice}</p>
               </div>
 
-              {form.participatedBefore ? (
-                <label className={labelClass}>
-                  <FieldLabel required>Indicá el/los año/s</FieldLabel>
-                  <input
-                    className={`${inputClass} min-h-12 text-base sm:min-h-11 sm:text-sm`}
-                    value={form.participationYears}
-                    onChange={(e) => updateField('participationYears', e.target.value)}
-                    placeholder="Ej. 2022, 2024"
-                  />
-                </label>
+              <div className="rounded-2xl border border-[#ddd7ca] bg-[#f8f7f3] px-4 py-4 sm:px-5 sm:py-5">
+                <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-sky-800">
+                  Documentación a presentar
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-[#4b505a]">
+                  Solo orientativo: no tenés que adjuntar ni marcar nada para enviar la preinscripción
+                  online.
+                </p>
+                <ul className="mt-3 space-y-2 text-sm text-[#171b22]">
+                  <li className="flex gap-2.5">
+                    <span
+                      className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-700"
+                      aria-hidden
+                    />
+                    <span>
+                      <strong className="font-semibold">Fotocopia de DNI</strong> — se solicitará en
+                      el proceso de evaluación / adjudicación.
+                    </span>
+                  </li>
+                </ul>
+              </div>
+
+              <p className="hidden text-xs leading-relaxed text-slate-500 lg:block">
+                Al enviar, registramos tu solicitud y te enviamos la constancia al correo indicado.
+              </p>
+            </aside>
+
+            <div className="order-2 space-y-7 lg:order-1 lg:col-span-8 lg:space-y-8">
+              <section className="space-y-4">
+                <SectionTitle>Datos personales</SectionTitle>
+
+                <fieldset disabled={disabled} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
+                  <label className={`${labelClass} sm:col-span-2 xl:col-span-4`}>
+                    <FieldLabel required>Apellido y nombre</FieldLabel>
+                    <input
+                      className={fieldInputClass}
+                      value={form.fullName}
+                      onChange={(e) => updateField('fullName', e.target.value)}
+                      autoComplete="name"
+                      required
+                      placeholder="Ej. Pérez, María"
+                    />
+                  </label>
+
+                  <label className={`${labelClass} xl:col-span-2`}>
+                    <FieldLabel required>DNI</FieldLabel>
+                    <input
+                      className={fieldInputClass}
+                      value={form.dni}
+                      onChange={(e) => updateField('dni', e.target.value)}
+                      inputMode="numeric"
+                      required
+                      placeholder="Solo números"
+                    />
+                  </label>
+
+                  <label className={`${labelClass} sm:col-span-2 xl:col-span-4`}>
+                    <FieldLabel required>Domicilio</FieldLabel>
+                    <input
+                      className={fieldInputClass}
+                      value={form.address}
+                      onChange={(e) => updateField('address', e.target.value)}
+                      autoComplete="street-address"
+                      required
+                      placeholder="Calle y número"
+                    />
+                  </label>
+
+                  <label className={`${labelClass} xl:col-span-2`}>
+                    <FieldLabel required>Localidad</FieldLabel>
+                    <input
+                      className={fieldInputClass}
+                      value={form.locality}
+                      onChange={(e) => updateField('locality', e.target.value)}
+                      required
+                      placeholder="Ej. Trancas"
+                    />
+                  </label>
+
+                  <label className={`${labelClass} xl:col-span-3`}>
+                    <FieldLabel required>Teléfono</FieldLabel>
+                    <input
+                      className={fieldInputClass}
+                      value={form.phone}
+                      onChange={(e) => updateField('phone', e.target.value)}
+                      autoComplete="tel"
+                      required
+                      placeholder="Con código de área"
+                    />
+                  </label>
+
+                  <label className={`${labelClass} xl:col-span-3`}>
+                    <FieldLabel
+                      required
+                      hint="Vas a recibir la constancia automática con el número de solicitud."
+                    >
+                      Correo electrónico
+                    </FieldLabel>
+                    <input
+                      type="email"
+                      className={fieldInputClass}
+                      value={form.email}
+                      onChange={(e) => updateField('email', e.target.value)}
+                      autoComplete="email"
+                      required
+                      placeholder="tu@email.com"
+                    />
+                  </label>
+                </fieldset>
+              </section>
+
+              <div className="grid gap-7 sm:gap-8 xl:grid-cols-2 xl:gap-6">
+                <section className="space-y-4">
+                  <SectionTitle>Rubro</SectionTitle>
+
+                  <fieldset disabled={disabled} className="space-y-4">
+                    <label className={labelClass}>
+                      <FieldLabel required>Seleccioná el rubro de tu puesto</FieldLabel>
+                      <select
+                        className={`${selectClass} min-h-12 text-base sm:min-h-11 sm:text-sm`}
+                        style={{ backgroundImage: selectChevron }}
+                        value={form.rubro}
+                        onChange={(e) => updateField('rubro', e.target.value)}
+                        required
+                      >
+                        <option value="">Elegí una opción…</option>
+                        {FDC_RUBROS.map((rubro) => (
+                          <option key={rubro} value={rubro}>
+                            {rubro}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    {form.rubro === 'Otro' ? (
+                      <label className={labelClass}>
+                        <FieldLabel required>Especificá el rubro</FieldLabel>
+                        <input
+                          className={fieldInputClass}
+                          value={form.rubroOther}
+                          onChange={(e) => updateField('rubroOther', e.target.value)}
+                          placeholder="Describí tu actividad"
+                        />
+                      </label>
+                    ) : null}
+                  </fieldset>
+                </section>
+
+                <section className="space-y-4">
+                  <SectionTitle>Experiencia</SectionTitle>
+
+                  <fieldset disabled={disabled} className="space-y-4">
+                    <div>
+                      <p className="text-sm font-medium text-slate-700">
+                        ¿Participaste anteriormente en la Fiesta Nacional e Internacional del
+                        Caballo?{' '}
+                        <span className="text-amber-800" aria-hidden>
+                          *
+                        </span>
+                      </p>
+                      <div className="mt-3 grid grid-cols-2 gap-2.5">
+                        {[
+                          { value: true, label: 'Sí' },
+                          { value: false, label: 'No' },
+                        ].map((opt) => {
+                          const active = form.participatedBefore === opt.value
+                          return (
+                            <button
+                              key={String(opt.value)}
+                              type="button"
+                              disabled={disabled}
+                              onClick={() => updateField('participatedBefore', opt.value)}
+                              className={`min-h-12 rounded-xl border text-sm font-semibold transition sm:min-h-11 ${
+                                active
+                                  ? 'border-[#171b22] bg-[#171b22] text-white shadow-sm'
+                                  : 'border-[#ddd7ca] bg-[#fcfcfa] text-[#171b22] hover:border-sky-300 hover:bg-sky-50'
+                              } disabled:cursor-not-allowed disabled:opacity-60`}
+                              aria-pressed={active}
+                            >
+                              {opt.label}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    {form.participatedBefore ? (
+                      <label className={labelClass}>
+                        <FieldLabel required>Indicá el/los año/s</FieldLabel>
+                        <input
+                          className={fieldInputClass}
+                          value={form.participationYears}
+                          onChange={(e) => updateField('participationYears', e.target.value)}
+                          placeholder="Ej. 2022, 2024"
+                        />
+                      </label>
+                    ) : null}
+                  </fieldset>
+                </section>
+              </div>
+
+              {formError ? (
+                <div className={formErrorClass} role="alert">
+                  {formError}
+                </div>
               ) : null}
-            </fieldset>
-          </section>
 
-          <section className="rounded-2xl border border-[#ddd7ca] bg-[#f8f7f3] px-4 py-4 sm:px-5 sm:py-5">
-            <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-sky-800">
-              Documentación a presentar
-            </h3>
-            <p className="mt-2 text-sm leading-relaxed text-[#4b505a]">
-              Esta información es solo orientativa. No tenés que adjuntar ni marcar nada para enviar
-              la preinscripción online.
-            </p>
-            <ul className="mt-3 space-y-2 text-sm text-[#171b22]">
-              <li className="flex gap-2.5">
-                <span
-                  className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-700"
-                  aria-hidden
-                />
-                <span>
-                  <strong className="font-semibold">Fotocopia de DNI</strong> — se solicitará en el
-                  proceso de evaluación / adjudicación.
-                </span>
-              </li>
-            </ul>
-          </section>
-
-          {formError ? (
-            <div className={formErrorClass} role="alert">
-              {formError}
+              <div className="flex flex-col gap-3 border-t border-[#ebe7df] pt-5 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+                <p className="order-2 text-center text-xs leading-relaxed text-slate-500 sm:order-1 sm:max-w-md sm:text-left lg:hidden">
+                  Al enviar, registramos tu solicitud y te enviamos la constancia al correo
+                  indicado.
+                </p>
+                <button
+                  type="submit"
+                  disabled={disabled}
+                  className="order-1 inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-[#171b22] px-8 text-sm font-semibold text-white shadow-sm transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60 sm:order-2 sm:ml-auto sm:w-auto sm:min-w-56"
+                >
+                  {sending ? 'Enviando…' : 'Enviar preinscripción'}
+                </button>
+              </div>
             </div>
-          ) : null}
-
-          <div className="flex flex-col gap-3 border-t border-[#ebe7df] pt-5 sm:flex-row sm:items-center sm:justify-between">
-            <p className="order-2 text-center text-xs leading-relaxed text-slate-500 sm:order-1 sm:text-left sm:max-w-md">
-              Al enviar, registramos tu solicitud y te enviamos la constancia al correo indicado.
-            </p>
-            <button
-              type="submit"
-              disabled={disabled}
-              className="order-1 inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-[#171b22] px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60 sm:order-2 sm:w-auto sm:min-w-52"
-            >
-              {sending ? 'Enviando…' : 'Enviar preinscripción'}
-            </button>
           </div>
         </div>
       </div>
