@@ -17,6 +17,7 @@ const areasLink = { to: '/areas', label: 'Áreas', preload: 'areasIndex', end: t
 const servicesLink = { to: '/services', label: 'Servicios' }
 
 const ourCityLinks = [
+  { to: '/fiesta-del-caballo', label: 'Fiesta del Caballo', preload: 'fdc', end: true },
   { to: '/eventos', label: 'Eventos', preload: 'events' },
   {
     to: '/gobierno/oferta-academica',

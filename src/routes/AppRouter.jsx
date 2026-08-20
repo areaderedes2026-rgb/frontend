@@ -39,6 +39,8 @@ const AdminLegisladorEste = lazy(adminRouteLoaders.settingsLegisladorEste)
 const AdminConcejoDeliberante = lazy(adminRouteLoaders.settingsConcejoDeliberante)
 const AdminOfertaAcademica = lazy(adminRouteLoaders.ofertaAcademica)
 const AdminGastronomicCatalog = lazy(adminRouteLoaders.gastronomicCatalog)
+const AdminFdc = lazy(adminRouteLoaders.fdc)
+const AdminFdcStallApplications = lazy(adminRouteLoaders.fdcSolicitudes)
 const AdminUsers = lazy(adminRouteLoaders.settingsUsers)
 const AdminMyAreaServices = lazy(adminRouteLoaders.myAreaServices)
 const AdminAreaServiceEditor = lazy(adminRouteLoaders.areaServiceEditor)
@@ -55,6 +57,7 @@ const LegisladorEste = lazy(publicRouteLoaders.governmentLegisladorEste)
 const ConcejoDeliberante = lazy(publicRouteLoaders.governmentConcejoDeliberante)
 const OfertaAcademica = lazy(publicRouteLoaders.governmentOfertaAcademica)
 const CatalogoGastronomico = lazy(publicRouteLoaders.gastronomy)
+const FiestaDelCaballo = lazy(publicRouteLoaders.fdc)
 const NewsList = lazy(publicRouteLoaders.newsList)
 const NewsDetail = lazy(publicRouteLoaders.newsDetail)
 
@@ -197,6 +200,22 @@ export function AppRouter() {
             element={
               <Suspense fallback={<AdminRouteFallback />}>
                 <AdminGastronomicCatalog />
+              </Suspense>
+            }
+          />
+          <Route
+            path="fdc"
+            element={
+              <Suspense fallback={<AdminRouteFallback />}>
+                <AdminFdc />
+              </Suspense>
+            }
+          />
+          <Route
+            path="fdc-solicitudes"
+            element={
+              <Suspense fallback={<AdminRouteFallback />}>
+                <AdminFdcStallApplications />
               </Suspense>
             }
           />
@@ -389,6 +408,14 @@ export function AppRouter() {
           element={
             <Suspense fallback={<PublicRouteFallback />}>
               <CatalogoGastronomico />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/fiesta-del-caballo"
+          element={
+            <Suspense fallback={<PublicRouteFallback />}>
+              <FiestaDelCaballo />
             </Suspense>
           }
         />

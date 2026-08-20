@@ -120,6 +120,13 @@ function routeSeo(pathname) {
         'Informacion institucional de la Intendencia de Trancas: gestion, contacto y articulacion con las areas.',
     }
   }
+  if (pathname === '/fiesta-del-caballo') {
+    return {
+      title: 'Fiesta del Caballo 2026 | Municipalidad de Trancas',
+      description:
+        'Fiesta Nacional e Internacional del Caballo en Trancas. Preinscripcion de puestos comerciales y novedades del evento.',
+    }
+  }
   if (pathname === '/gobierno/oferta-academica') {
     return {
       title: 'Oferta academica | Municipalidad de Trancas',

@@ -15,6 +15,7 @@ export const ROUTES = {
   concejoDeliberante: '/gobierno/concejo-deliberante',
   ofertaAcademica: '/gobierno/oferta-academica',
   catalogoGastronomico: '/catalogo-gastronomico',
+  fiestaDelCaballo: '/fiesta-del-caballo',
   areas: '/areas',
   area: (slug) => `/areas/${slug}`,
   areaServiceDetail: (areaSlug, serviceId) =>
@@ -38,6 +39,8 @@ export const ROUTES = {
   adminTourismPlaces: '/admin/tourism-places',
   adminOfertaAcademica: '/admin/oferta-academica',
   adminCatalogoGastronomico: '/admin/catalogo-gastronomico',
+  adminFdc: '/admin/fdc',
+  adminFdcSolicitudes: '/admin/fdc-solicitudes',
   adminNewsCreate: '/admin/news/create',
   adminNewsEdit: (id) => `/admin/news/edit/${id}`,
   adminUsers: '/admin/settings/users',

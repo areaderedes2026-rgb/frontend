@@ -53,6 +53,11 @@ export function AdminLayout() {
   const gastronomicCatalogActive =
     pathname === ROUTES.adminCatalogoGastronomico ||
     pathname.startsWith(`${ROUTES.adminCatalogoGastronomico}/`)
+  const fdcActive =
+    pathname === ROUTES.adminFdc ||
+    pathname.startsWith(`${ROUTES.adminFdc}/`) ||
+    pathname === ROUTES.adminFdcSolicitudes ||
+    pathname.startsWith(`${ROUTES.adminFdcSolicitudes}/`)
 
   useEffect(() => {
     const run = () => {
@@ -199,6 +204,14 @@ export function AdminLayout() {
               }
             >
               Gastronomía
+            </NavLink>
+            <NavLink
+              to={ROUTES.adminFdcSolicitudes}
+              onMouseEnter={() => preloadAdminRoute('fdcSolicitudes')}
+              onFocus={() => preloadAdminRoute('fdcSolicitudes')}
+              className={({ isActive }) => navClass({ isActive: isActive || fdcActive })}
+            >
+              Fiesta Caballo
             </NavLink>
             <NavLink
               to={ROUTES.adminServices}
