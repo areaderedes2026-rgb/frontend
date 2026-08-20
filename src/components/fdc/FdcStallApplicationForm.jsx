@@ -22,7 +22,7 @@ const selectChevron =
   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%234b505a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E\")"
 const fieldInputClass = `${inputClass} min-h-12 text-base sm:min-h-11 sm:text-sm`
 
-function FieldLabel({ children, required = false, hint = null }) {
+function FieldLabel({ children, required = false }) {
   return (
     <span className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
       <span>{children}</span>
@@ -31,7 +31,6 @@ function FieldLabel({ children, required = false, hint = null }) {
           *
         </span>
       ) : null}
-      {hint ? <span className="w-full text-xs font-normal text-slate-500">{hint}</span> : null}
     </span>
   )
 }
@@ -98,7 +97,7 @@ export function FdcStallApplicationForm({
     }
     const email = form.email.trim().toLowerCase()
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setFormError('Ingresá un correo electrónico válido (vas a recibir la constancia ahí).')
+      setFormError('Ingresá un correo electrónico válido.')
       return
     }
     if (!form.rubro) {
@@ -118,7 +117,7 @@ export function FdcStallApplicationForm({
       return
     }
     if (!isApiConfigured()) {
-      setFormError('No hay conexión con el backend para enviar la preinscripción.')
+      setFormError('El servicio no está disponible en este momento. Intentá más tarde.')
       return
     }
 
@@ -133,9 +132,9 @@ export function FdcStallApplicationForm({
         phone,
         email,
         rubro: form.rubro,
-        rubroOther: form.rubroOther.trim(),
+        rubroOther: form.rubro === 'Otro' ? form.rubroOther.trim() : '',
         participatedBefore: Boolean(form.participatedBefore),
-        participationYears: form.participationYears.trim(),
+        participationYears: form.participatedBefore ? form.participationYears.trim() : '',
       })
       setForm(EMPTY_FORM)
       onSuccess?.({
@@ -155,28 +154,18 @@ export function FdcStallApplicationForm({
   return (
     <form onSubmit={handleSubmit} className="w-full" noValidate>
       <div className="overflow-hidden rounded-2xl border border-[#ddd7ca] bg-white shadow-[0_20px_50px_-28px_rgba(23,27,34,0.4)] sm:rounded-3xl">
-        <div className="border-b border-[#e8e5dd] bg-linear-to-br from-[#f8f4ec] via-white to-[#f3f7fb] px-4 py-5 sm:px-7 sm:py-6 lg:px-10 lg:py-7">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between lg:gap-8">
-            <div className="min-w-0 max-w-3xl">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-amber-800 sm:text-xs">
-                Preinscripción 2026
-              </p>
-              <h2 className="mt-1.5 font-serif text-xl font-bold tracking-tight text-[#171b22] sm:text-2xl lg:text-3xl">
-                Completá tus datos
-              </h2>
-              <p className="mt-2 text-sm leading-relaxed text-[#4b505a] sm:text-base">
-                Al enviar vas a recibir la constancia en tu correo con el número de solicitud.
-              </p>
-            </div>
-            <p className="shrink-0 text-xs text-slate-500 lg:pb-1 lg:text-right">
-              Campos con <span className="font-semibold text-amber-800">*</span> obligatorios
-            </p>
-          </div>
+        <div className="border-b border-[#e8e5dd] bg-linear-to-br from-[#f8f4ec] via-white to-[#f3f7fb] px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-7 xl:px-10">
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-amber-800 sm:text-xs">
+            Preinscripción 2026
+          </p>
+          <h2 className="mt-1.5 font-serif text-xl font-bold tracking-tight text-[#171b22] sm:text-2xl lg:text-3xl">
+            Completá tus datos
+          </h2>
         </div>
 
-        <div className="px-4 py-5 sm:px-7 sm:py-7 lg:px-10 lg:py-9">
+        <div className="px-4 py-5 sm:px-6 sm:py-7 lg:px-8 lg:py-8 xl:px-10 xl:py-9">
           <div className="grid gap-6 lg:grid-cols-12 lg:gap-8 xl:gap-10">
-            <aside className="order-1 space-y-4 lg:order-2 lg:col-span-4 lg:sticky lg:top-[calc(var(--navbar-h,5rem)+5.5rem)] lg:self-start">
+            <aside className="order-1 space-y-4 lg:order-2 lg:col-span-3 xl:col-span-3 lg:sticky lg:top-[calc(var(--navbar-h,5rem)+5.5rem)] lg:self-start">
               {!formOpen ? (
                 <div
                   className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3.5 text-sm leading-relaxed text-amber-950 sm:px-5"
@@ -197,10 +186,6 @@ export function FdcStallApplicationForm({
                 <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-sky-800">
                   Documentación a presentar
                 </h3>
-                <p className="mt-2 text-sm leading-relaxed text-[#4b505a]">
-                  Solo orientativo: no tenés que adjuntar ni marcar nada para enviar la preinscripción
-                  online.
-                </p>
                 <ul className="mt-3 space-y-2 text-sm text-[#171b22]">
                   <li className="flex gap-2.5">
                     <span
@@ -214,18 +199,17 @@ export function FdcStallApplicationForm({
                   </li>
                 </ul>
               </div>
-
-              <p className="hidden text-xs leading-relaxed text-slate-500 lg:block">
-                Al enviar, registramos tu solicitud y te enviamos la constancia al correo indicado.
-              </p>
             </aside>
 
-            <div className="order-2 space-y-7 lg:order-1 lg:col-span-8 lg:space-y-8">
+            <div className="order-2 space-y-7 lg:order-1 lg:col-span-9 lg:space-y-8">
               <section className="space-y-4">
                 <SectionTitle>Datos personales</SectionTitle>
 
-                <fieldset disabled={disabled} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
-                  <label className={`${labelClass} sm:col-span-2 xl:col-span-4`}>
+                <fieldset
+                  disabled={disabled}
+                  className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6 xl:grid-cols-12"
+                >
+                  <label className={`${labelClass} sm:col-span-2 lg:col-span-4 xl:col-span-8`}>
                     <FieldLabel required>Apellido y nombre</FieldLabel>
                     <input
                       className={fieldInputClass}
@@ -237,7 +221,7 @@ export function FdcStallApplicationForm({
                     />
                   </label>
 
-                  <label className={`${labelClass} xl:col-span-2`}>
+                  <label className={`${labelClass} lg:col-span-2 xl:col-span-4`}>
                     <FieldLabel required>DNI</FieldLabel>
                     <input
                       className={fieldInputClass}
@@ -249,7 +233,7 @@ export function FdcStallApplicationForm({
                     />
                   </label>
 
-                  <label className={`${labelClass} sm:col-span-2 xl:col-span-4`}>
+                  <label className={`${labelClass} sm:col-span-2 lg:col-span-4 xl:col-span-8`}>
                     <FieldLabel required>Domicilio</FieldLabel>
                     <input
                       className={fieldInputClass}
@@ -261,7 +245,7 @@ export function FdcStallApplicationForm({
                     />
                   </label>
 
-                  <label className={`${labelClass} xl:col-span-2`}>
+                  <label className={`${labelClass} lg:col-span-2 xl:col-span-4`}>
                     <FieldLabel required>Localidad</FieldLabel>
                     <input
                       className={fieldInputClass}
@@ -272,7 +256,7 @@ export function FdcStallApplicationForm({
                     />
                   </label>
 
-                  <label className={`${labelClass} xl:col-span-3`}>
+                  <label className={`${labelClass} sm:col-span-1 lg:col-span-3 xl:col-span-6`}>
                     <FieldLabel required>Teléfono</FieldLabel>
                     <input
                       className={fieldInputClass}
@@ -284,13 +268,8 @@ export function FdcStallApplicationForm({
                     />
                   </label>
 
-                  <label className={`${labelClass} xl:col-span-3`}>
-                    <FieldLabel
-                      required
-                      hint="Vas a recibir la constancia automática con el número de solicitud."
-                    >
-                      Correo electrónico
-                    </FieldLabel>
+                  <label className={`${labelClass} sm:col-span-1 lg:col-span-3 xl:col-span-6`}>
+                    <FieldLabel required>Correo electrónico</FieldLabel>
                     <input
                       type="email"
                       className={fieldInputClass}
@@ -304,7 +283,7 @@ export function FdcStallApplicationForm({
                 </fieldset>
               </section>
 
-              <div className="grid gap-7 sm:gap-8 xl:grid-cols-2 xl:gap-6">
+              <div className="grid gap-7 sm:gap-8 md:grid-cols-2 md:gap-6 xl:gap-8">
                 <section className="space-y-4">
                   <SectionTitle>Rubro</SectionTitle>
 
@@ -400,15 +379,11 @@ export function FdcStallApplicationForm({
                 </div>
               ) : null}
 
-              <div className="flex flex-col gap-3 border-t border-[#ebe7df] pt-5 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-                <p className="order-2 text-center text-xs leading-relaxed text-slate-500 sm:order-1 sm:max-w-md sm:text-left lg:hidden">
-                  Al enviar, registramos tu solicitud y te enviamos la constancia al correo
-                  indicado.
-                </p>
+              <div className="flex justify-stretch border-t border-[#ebe7df] pt-5 sm:justify-end">
                 <button
                   type="submit"
                   disabled={disabled}
-                  className="order-1 inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-[#171b22] px-8 text-sm font-semibold text-white shadow-sm transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60 sm:order-2 sm:ml-auto sm:w-auto sm:min-w-56"
+                  className="inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-[#171b22] px-8 text-sm font-semibold text-white shadow-sm transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:min-w-56"
                 >
                   {sending ? 'Enviando…' : 'Enviar preinscripción'}
                 </button>

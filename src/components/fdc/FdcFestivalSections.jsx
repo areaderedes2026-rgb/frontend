@@ -597,7 +597,9 @@ export function FdcTicketsSection({ tickets, hideHeading = false, embedded = fal
         <div
           className={`relative overflow-hidden ${
             embedded
-              ? 'min-h-[240px] rounded-xl border border-white/12'
+              ? `min-h-[240px] rounded-xl border ${
+                  titleTone === 'dark' ? 'border-white/12' : 'border-[#e8e4dc]'
+                }`
               : 'min-h-[220px] lg:min-h-full'
           }`}
         >

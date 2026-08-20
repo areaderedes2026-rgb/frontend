@@ -200,8 +200,7 @@ export const DEFAULT_FDC_CONTENT = {
   formOpenFrom: '2026-08-20',
   formOpenUntil: '2026-09-10',
   ctaTitle: '¿Querés sumar tu puesto?',
-  ctaBody:
-    'Completá el formulario de preinscripción. Vas a recibir una constancia automática en tu correo electrónico con el número de solicitud.',
+  ctaBody: '',
   whatsappMessage: '',
   updatedAt: null,
 }

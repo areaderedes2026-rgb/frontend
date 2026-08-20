@@ -221,11 +221,11 @@ export function FiestaDelCaballo() {
       {String(page.tickets?.title || '').trim() ? (
         <section
           id="entradas"
-          className="relative isolate border-y border-white/10 bg-[#171b22] py-14 text-white sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
+          className="relative isolate border-y border-[#e8e5dd] bg-[#f7f7f5] py-14 sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
         >
           <Container className="relative z-10">
             <RevealOnScroll variant="slow">
-              <FdcTicketsSection tickets={page.tickets} embedded tone="dark" />
+              <FdcTicketsSection tickets={page.tickets} embedded tone="light" />
             </RevealOnScroll>
           </Container>
         </section>
@@ -271,11 +271,10 @@ export function FiestaDelCaballo() {
         id="solicitud-puestos"
         className="relative isolate border-y border-white/10 bg-[#171b22] py-14 text-white sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
       >
-        <Container className="relative z-10">
+        <Container className="relative z-10 max-w-[min(100%,96rem)]!">
           <RevealOnScroll variant="slow">
             <FdcSectionTitle
               title={page.ctaTitle || 'Solicitud de puestos comerciales'}
-              subtitle={page.ctaBody || undefined}
               tone="dark"
             />
             {fromLabel && untilLabel ? (
@@ -286,28 +285,26 @@ export function FiestaDelCaballo() {
                 </span>
               </p>
             ) : null}
-            <div className="mx-auto w-full max-w-6xl">
-              <FdcStallApplicationForm
-                formNotice={page.formNotice}
-                formOpen={formOpen}
-                windowMessage={windowMessage}
-                onSuccess={(result) => {
-                  const id = result?.application?.id
-                  const email = String(result?.application?.email || '').trim()
-                  setSubmitSuccess({
-                    id,
-                    email,
-                    emailQueued: Boolean(result?.emailQueued || result?.emailSent),
-                  })
-                  setToast({
-                    variant: 'success',
-                    message: id
-                      ? `Preinscripción enviada. Número de solicitud: #${id}.`
-                      : 'Preinscripción enviada correctamente.',
-                  })
-                }}
-              />
-            </div>
+            <FdcStallApplicationForm
+              formNotice={page.formNotice}
+              formOpen={formOpen}
+              windowMessage={windowMessage}
+              onSuccess={(result) => {
+                const id = result?.application?.id
+                const email = String(result?.application?.email || '').trim()
+                setSubmitSuccess({
+                  id,
+                  email,
+                  emailQueued: Boolean(result?.emailQueued || result?.emailSent),
+                })
+                setToast({
+                  variant: 'success',
+                  message: id
+                    ? `Preinscripción enviada. Número de solicitud: #${id}.`
+                    : 'Preinscripción enviada correctamente.',
+                })
+              }}
+            />
           </RevealOnScroll>
         </Container>
       </section>
