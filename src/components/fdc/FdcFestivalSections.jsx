@@ -611,38 +611,79 @@ export function FdcTicketsSection({ tickets, hideHeading = false, embedded = fal
   )
 }
 
-export function FdcNewsSection({ news, hideHeading = false }) {
+export function FdcNewsSection({ news }) {
   const items = (news?.items || []).filter((n) => n?.title)
   if (items.length === 0) return null
 
+  const titleRaw = String(news?.title || 'Noticias del festival').trim()
+  const titleMatch = titleRaw.match(/^(noticias)\s+(.+)$/i)
+  const eyebrow = titleMatch ? titleMatch[1] : 'Noticias'
+  const heading = titleMatch ? titleMatch[2] : titleRaw
+  const ctaLabel = String(news?.ctaLabel || '').trim()
+  const ctaHref = String(news?.ctaHref || '').trim()
+
+  function parseNewsDate(dateStr) {
+    const raw = String(dateStr || '').trim()
+    if (!raw) return { day: '', month: '' }
+    const named = raw.match(/^(\d{1,2})\s+([A-Za-zÁÉÍÓÚÜÑáéíóúüñ.]{3,})$/u)
+    if (named) {
+      return {
+        day: String(Number(named[1])),
+        month: named[2].replace(/\./g, '').slice(0, 3).toUpperCase(),
+      }
+    }
+    const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/)
+    if (iso) {
+      const months = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC']
+      return { day: String(Number(iso[3])), month: months[Number(iso[2]) - 1] || '' }
+    }
+    const slash = raw.match(/^(\d{1,2})[/-](\d{1,2})(?:[/-]\d{2,4})?$/)
+    if (slash) {
+      const months = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC']
+      return { day: String(Number(slash[1])), month: months[Number(slash[2]) - 1] || '' }
+    }
+    return { day: '', month: raw.toUpperCase().slice(0, 6) }
+  }
+
   return (
-    <div id={hideHeading ? undefined : 'noticias'} className="scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]">
-      {(!hideHeading || (news?.ctaLabel && news?.ctaHref)) && (
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          {!hideHeading ? (
-            <SectionHeading eyebrow="Novedades" title={news?.title} className="flex-1" />
-          ) : null}
-          {news?.ctaLabel && news?.ctaHref ? (
-            <SmartLink
-              href={news.ctaHref}
-              className={`mb-1 text-sm font-semibold text-sky-800 transition hover:text-sky-950 ${hideHeading ? 'ml-auto' : ''}`}
-            >
-              {news.ctaLabel} →
-            </SmartLink>
-          ) : null}
+    <div>
+      <header className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#b08948]">
+            {eyebrow}
+          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-3">
+            <h2 className="font-serif text-3xl font-bold uppercase tracking-tight text-[#171b22] sm:text-4xl lg:text-[2.75rem]">
+              {heading}
+            </h2>
+            <span className="hidden items-center gap-1 text-[#b08948] sm:inline-flex" aria-hidden>
+              <span className="h-px w-8 bg-current" />
+              <span className="text-[10px]">▸</span>
+            </span>
+          </div>
         </div>
-      )}
-      <ul className={`${!hideHeading || (news?.ctaLabel && news?.ctaHref) ? 'mt-6 ' : ''}grid gap-5 sm:grid-cols-2 lg:grid-cols-3`}>
+        {ctaLabel && ctaHref ? (
+          <SmartLink
+            href={ctaHref}
+            className="inline-flex min-h-11 shrink-0 items-center justify-center self-start rounded-md border border-[#171b22]/80 px-5 text-[11px] font-bold uppercase tracking-[0.14em] text-[#171b22] transition hover:bg-[#171b22] hover:text-white sm:self-auto sm:text-xs"
+          >
+            {ctaLabel}
+          </SmartLink>
+        ) : null}
+      </header>
+
+      <ul className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
         {items.map((item, idx) => {
           const src = resolveMediaUrl(item.imageUrl)
-          const card = (
+          const badge = parseNewsDate(item.date)
+          const cardInner = (
             <>
-              <div className="aspect-16/10 overflow-hidden bg-[#efe8dc]">
+              <div className="relative aspect-16/10 overflow-hidden bg-[#efe8dc]">
                 {src ? (
                   <img
                     src={src}
                     alt=""
-                    className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                    className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
                     loading="lazy"
                     decoding="async"
                   />
@@ -651,24 +692,30 @@ export function FdcNewsSection({ news, hideHeading = false }) {
                     Noticia
                   </div>
                 )}
-              </div>
-              <div className="flex flex-1 flex-col p-4 sm:p-5">
-                {item.date ? (
-                  <time className="text-[11px] font-bold uppercase tracking-wide text-amber-800">
-                    {item.date}
-                  </time>
+                {badge.day || badge.month ? (
+                  <div className="absolute bottom-0 left-0 flex min-w-[3rem] flex-col items-center bg-[#c4a574] px-2.5 py-1.5 text-white">
+                    {badge.day ? (
+                      <span className="font-serif text-lg font-bold leading-none">{badge.day}</span>
+                    ) : null}
+                    {badge.month ? (
+                      <span className="mt-0.5 text-[10px] font-bold uppercase leading-none tracking-wide">
+                        {badge.month}
+                      </span>
+                    ) : null}
+                  </div>
                 ) : null}
-                <h3 className="mt-1.5 line-clamp-2 font-serif text-lg font-bold leading-snug text-[#171b22] group-hover:text-sky-900">
+              </div>
+              <div className="flex flex-1 flex-col px-4 pb-4 pt-5 sm:px-5 sm:pb-5">
+                <h3 className="line-clamp-3 text-[15px] font-bold leading-snug text-[#171b22] transition group-hover:text-[#3a414d] sm:text-base">
                   {item.title}
                 </h3>
-                {item.excerpt ? (
-                  <p className="mt-2 line-clamp-3 flex-1 text-sm leading-relaxed text-[#4b505a]">
-                    {item.excerpt}
-                  </p>
-                ) : null}
                 {item.link ? (
-                  <span className="mt-3 text-sm font-semibold text-sky-800">Leer más →</span>
-                ) : null}
+                  <span className="mt-auto pt-4 text-sm font-medium text-[#6b7280] transition group-hover:text-[#171b22]">
+                    Leer más →
+                  </span>
+                ) : (
+                  <span className="mt-auto pt-4" aria-hidden />
+                )}
               </div>
             </>
           )
@@ -678,13 +725,13 @@ export function FdcNewsSection({ news, hideHeading = false }) {
               {item.link ? (
                 <SmartLink
                   href={item.link}
-                  className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#ddd7ca] bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-md"
+                  className="group flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-[0_12px_36px_-24px_rgba(23,27,34,0.35)] ring-1 ring-[#e8e4dc] transition hover:-translate-y-0.5 hover:shadow-[0_18px_44px_-22px_rgba(23,27,34,0.4)]"
                 >
-                  {card}
+                  {cardInner}
                 </SmartLink>
               ) : (
-                <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#ddd7ca] bg-white shadow-sm">
-                  {card}
+                <article className="group flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-[0_12px_36px_-24px_rgba(23,27,34,0.35)] ring-1 ring-[#e8e4dc]">
+                  {cardInner}
                 </article>
               )}
             </li>

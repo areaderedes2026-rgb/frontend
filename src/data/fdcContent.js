@@ -136,7 +136,7 @@ export const DEFAULT_FDC_TICKETS = {
 
 export const DEFAULT_FDC_NEWS = {
   title: 'Noticias del festival',
-  ctaLabel: 'Ver noticias municipales',
+  ctaLabel: 'Ver todas las noticias',
   ctaHref: '/noticias',
   items: [],
 }

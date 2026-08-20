@@ -254,15 +254,27 @@ export function FiestaDelCaballo() {
       ) : null}
 
       {(page.news?.items || []).some((n) => n?.title) ? (
-        <StorySection
+        <section
           id="noticias"
-          eyebrow="Novedades"
-          title={page.news?.title || 'Noticias del festival'}
-          tone="light"
-          className="relative scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
+          className="relative isolate overflow-visible border-y border-[#e8e5dd] bg-[#f7f7f5] py-14 sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
         >
-          <FdcNewsSection news={page.news} hideHeading />
-        </StorySection>
+          <svg
+            className="pointer-events-none absolute inset-x-0 -top-12 z-0 h-12 w-full text-[#f7f7f5]"
+            viewBox="0 0 1440 96"
+            preserveAspectRatio="none"
+            aria-hidden
+          >
+            <path
+              fill="currentColor"
+              d="M0 58L60 52C120 46 240 34 360 42C480 50 600 78 720 74C840 70 960 34 1080 30C1200 26 1320 54 1380 68L1440 82V96H0V58Z"
+            />
+          </svg>
+          <Container className="relative z-10">
+            <RevealOnScroll variant="slow">
+              <FdcNewsSection news={page.news} />
+            </RevealOnScroll>
+          </Container>
+        </section>
       ) : null}
 
       {(page.gallery?.items || []).some((g) => g?.imageUrl) ? (

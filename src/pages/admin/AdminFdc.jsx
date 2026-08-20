@@ -1044,7 +1044,10 @@ export function AdminFdc() {
             </section>
 
             <section className={SECTION_CARD}>
-              <SectionTitle title="Noticias del festival" />
+              <SectionTitle
+                title="Noticias del festival"
+                description="Tarjetas con imagen, fecha (ej. 15 MAY) y enlace. En desktop se muestran hasta 4 por fila."
+              />
               <div className="mt-4 grid gap-4">
                 <div className="grid gap-4 sm:grid-cols-3">
                   <label className={labelClass}>
@@ -1054,31 +1057,52 @@ export function AdminFdc() {
                       value={form.news?.title || ''}
                       disabled={saving}
                       onChange={(e) => updateNews((n) => ({ ...n, title: e.target.value }))}
+                      placeholder="Noticias del festival"
                     />
                   </label>
                   <label className={labelClass}>
-                    CTA etiqueta
+                    Texto del botón
                     <input
                       className={inputClass}
                       value={form.news?.ctaLabel || ''}
                       disabled={saving}
                       onChange={(e) => updateNews((n) => ({ ...n, ctaLabel: e.target.value }))}
+                      placeholder="Ver todas las noticias"
                     />
                   </label>
                   <label className={labelClass}>
-                    CTA enlace
+                    Enlace del botón
                     <input
                       className={inputClass}
                       value={form.news?.ctaHref || ''}
                       disabled={saving}
                       onChange={(e) => updateNews((n) => ({ ...n, ctaHref: e.target.value }))}
+                      placeholder="/noticias"
                     />
                   </label>
                 </div>
                 <div className="space-y-3">
                   {(form.news?.items || []).map((item, idx) => (
                     <div key={item.id || idx} className={ITEM_CARD}>
-                      <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Noticia {idx + 1}
+                        </p>
+                        <button
+                          type="button"
+                          className={ACTION_DANGER}
+                          disabled={saving}
+                          onClick={() =>
+                            updateNews((n) => ({
+                              ...n,
+                              items: (n.items || []).filter((_, i) => i !== idx),
+                            }))
+                          }
+                        >
+                          Quitar
+                        </button>
+                      </div>
+                      <div className="mt-3 grid gap-3 sm:grid-cols-2">
                         <label className={labelClass}>
                           Título
                           <input
@@ -1095,11 +1119,12 @@ export function AdminFdc() {
                           />
                         </label>
                         <label className={labelClass}>
-                          Fecha
+                          Fecha (badge)
                           <input
                             className={inputClass}
                             value={item.date || ''}
                             disabled={saving}
+                            placeholder="15 MAY  ·  o  2026-05-15"
                             onChange={(e) =>
                               updateNews((n) => {
                                 const items = [...(n.items || [])]
@@ -1110,7 +1135,23 @@ export function AdminFdc() {
                           />
                         </label>
                         <label className={`${labelClass} sm:col-span-2`}>
-                          Extracto
+                          Enlace «Leer más»
+                          <input
+                            className={inputClass}
+                            value={item.link || ''}
+                            disabled={saving}
+                            placeholder="/noticias/... o URL"
+                            onChange={(e) =>
+                              updateNews((n) => {
+                                const items = [...(n.items || [])]
+                                items[idx] = { ...items[idx], link: e.target.value }
+                                return { ...n, items }
+                              })
+                            }
+                          />
+                        </label>
+                        <label className={`${labelClass} sm:col-span-2`}>
+                          Extracto (opcional, no se muestra en la tarjeta nueva)
                           <textarea
                             className={textareaClass}
                             value={item.excerpt || ''}
@@ -1124,21 +1165,6 @@ export function AdminFdc() {
                             }
                           />
                         </label>
-                        <label className={labelClass}>
-                          Enlace
-                          <input
-                            className={inputClass}
-                            value={item.link || ''}
-                            disabled={saving}
-                            onChange={(e) =>
-                              updateNews((n) => {
-                                const items = [...(n.items || [])]
-                                items[idx] = { ...items[idx], link: e.target.value }
-                                return { ...n, items }
-                              })
-                            }
-                          />
-                        </label>
                       </div>
                       <div className="mt-3">
                         <SingleImageUploadField
@@ -1146,7 +1172,6 @@ export function AdminFdc() {
                           value={item.imageUrl || ''}
                           disabled={saving}
                           kind="cover"
-                          compact
                           onChange={(url) =>
                             updateNews((n) => {
                               const items = [...(n.items || [])]
@@ -1156,21 +1181,6 @@ export function AdminFdc() {
                           }
                           onNotify={setToast}
                         />
-                      </div>
-                      <div className="mt-3 flex justify-end">
-                        <button
-                          type="button"
-                          className={ACTION_DANGER}
-                          disabled={saving}
-                          onClick={() =>
-                            updateNews((n) => ({
-                              ...n,
-                              items: (n.items || []).filter((_, i) => i !== idx),
-                            }))
-                          }
-                        >
-                          Quitar noticia
-                        </button>
                       </div>
                     </div>
                   ))}
