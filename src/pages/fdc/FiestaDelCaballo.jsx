@@ -219,16 +219,9 @@ export function FiestaDelCaballo() {
       ) : null}
 
       {String(page.tickets?.title || '').trim() ? (
-        <section
-          id="entradas"
-          className="relative isolate border-y border-[#e8e5dd] bg-[#f7f7f5] py-14 sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
-        >
-          <Container className="relative z-10">
-            <RevealOnScroll variant="slow">
-              <FdcTicketsSection tickets={page.tickets} embedded tone="light" />
-            </RevealOnScroll>
-          </Container>
-        </section>
+        <RevealOnScroll variant="slow">
+          <FdcTicketsSection tickets={page.tickets} />
+        </RevealOnScroll>
       ) : null}
 
       {(page.news?.items || []).some((n) => n?.title) ? (

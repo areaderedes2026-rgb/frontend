@@ -53,6 +53,7 @@ function mapContentToForm(content) {
     tickets: {
       ...merged.tickets,
       bullets: [...(merged.tickets?.bullets || [])],
+      overlayOpacity: normalizeOverlay(merged.tickets?.overlayOpacity, 55),
     },
     news: {
       ...merged.news,
@@ -235,6 +236,7 @@ export function AdminFdc() {
         ctaLabel: String(form.tickets?.ctaLabel || '').trim(),
         ctaUrl: String(form.tickets?.ctaUrl || '').trim(),
         imageUrl: String(form.tickets?.imageUrl || '').trim(),
+        overlayOpacity: normalizeOverlay(form.tickets?.overlayOpacity, 55),
       },
       news: {
         title: String(form.news?.title || '').trim(),
@@ -957,7 +959,10 @@ export function AdminFdc() {
             </section>
 
             <section className={SECTION_CARD}>
-              <SectionTitle title="Entradas" description="Banner oscuro con beneficios y CTA." />
+              <SectionTitle
+                title="Entradas"
+                description="Sección centrada con imagen de fondo, overlay y CTA."
+              />
               <div className="mt-4 grid gap-4">
                 <label className={labelClass}>
                   Título
@@ -1016,13 +1021,34 @@ export function AdminFdc() {
                   </label>
                 </div>
                 <SingleImageUploadField
-                  label="Imagen lateral"
+                  label="Imagen de fondo"
                   value={form.tickets?.imageUrl || ''}
                   disabled={saving}
                   kind="cover"
                   onChange={(url) => updateTickets((t) => ({ ...t, imageUrl: url }))}
                   onNotify={setToast}
                 />
+                <label className={labelClass}>
+                  Opacidad del overlay: {normalizeOverlay(form.tickets?.overlayOpacity, 55)}%
+                  <input
+                    type="range"
+                    min={0}
+                    max={90}
+                    step={1}
+                    className="mt-2 w-full accent-sky-700"
+                    value={normalizeOverlay(form.tickets?.overlayOpacity, 55)}
+                    disabled={saving || !String(form.tickets?.imageUrl || '').trim()}
+                    onChange={(e) =>
+                      updateTickets((t) => ({
+                        ...t,
+                        overlayOpacity: normalizeOverlay(e.target.value, 55),
+                      }))
+                    }
+                  />
+                  <span className="mt-1 block text-xs font-normal text-slate-500">
+                    Más alto = fondo más oscuro y texto más legible.
+                  </span>
+                </label>
               </div>
             </section>
 

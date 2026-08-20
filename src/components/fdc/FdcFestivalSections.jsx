@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
+import { Container } from '../ui/Container.jsx'
 
 function FdcTitleOrnament({ className = '' }) {
   return (
@@ -146,19 +147,19 @@ export function FdcSectionNav({ items = [], className = '' }) {
       aria-label="Secciones del festival"
       className={`sticky top-[calc(var(--navbar-h,5rem))] z-30 shrink-0 border-b border-white/10 bg-[#0c1017] ${className}`.trim()}
     >
-      <div className="mx-auto w-full max-w-[min(100%,90rem)] px-3 sm:px-6 lg:px-8 xl:px-10">
-        <div className="-mx-1 flex gap-1 overflow-x-auto px-1 py-2.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:mx-0 sm:gap-0 sm:overflow-visible sm:px-0 sm:py-3 [&::-webkit-scrollbar]:hidden lg:justify-center">
-          <div className="flex min-w-max items-stretch justify-center gap-1 sm:w-full sm:min-w-0 sm:max-w-5xl sm:flex-wrap sm:gap-1.5 lg:flex-nowrap lg:gap-0">
+      <div className="mx-auto w-full max-w-[min(100%,90rem)] px-2 sm:px-6 lg:px-8 xl:px-10">
+        <div className="flex justify-center overflow-x-auto py-2.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:py-3 [&::-webkit-scrollbar]:hidden">
+          <div className="flex w-max max-w-none shrink-0 items-stretch justify-center gap-0.5 sm:w-full sm:max-w-5xl sm:flex-wrap sm:gap-1.5 lg:flex-nowrap lg:gap-0">
             {navItems.map((item) => (
               <a
                 key={item.id || item.href}
                 href={item.href}
-                className="group flex min-w-[5.5rem] flex-col items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-center transition hover:bg-white/8 sm:min-w-0 sm:flex-1 sm:px-3 lg:px-4"
+                className="group flex min-w-[4.75rem] flex-col items-center justify-center gap-1 rounded-lg px-2 py-2 text-center transition hover:bg-white/8 sm:min-w-0 sm:flex-1 sm:gap-1.5 sm:px-3 lg:px-4"
               >
                 <span className="text-[#d4b483] transition group-hover:text-amber-200">
                   <NavIcon name={item.icon} className="h-5 w-5" />
                 </span>
-                <span className="max-w-[7.5rem] text-[10px] font-bold uppercase leading-tight tracking-[0.08em] text-[#d4b483]/95 transition group-hover:text-amber-100 sm:max-w-none sm:text-[11px] lg:text-xs">
+                <span className="max-w-[6.5rem] text-[10px] font-bold uppercase leading-tight tracking-[0.08em] text-[#d4b483]/95 transition group-hover:text-amber-100 sm:max-w-none sm:text-[11px] lg:text-xs">
                   {item.label}
                 </span>
               </a>
@@ -548,61 +549,29 @@ export function FdcArtistsSection({ artists }) {
   )
 }
 
-export function FdcTicketsSection({ tickets, hideHeading = false, embedded = false, tone = 'dark' }) {
+export function FdcTicketsSection({ tickets, hideHeading = false }) {
   const title = String(tickets?.title || '').trim()
   if (!title) return null
 
   const bullets = (tickets?.bullets || []).filter(Boolean)
-  const imageSrc = resolveMediaUrl(tickets?.imageUrl)
+  const imageSrc = resolveMediaUrl(tickets?.imageUrl) || String(tickets?.imageUrl || '').trim()
   const ctaUrl = String(tickets?.ctaUrl || '').trim()
-  const titleTone = tone === 'light' ? 'light' : 'dark'
+  const overlayRaw = Number(tickets?.overlayOpacity)
+  const overlayOpacity = Number.isFinite(overlayRaw)
+    ? Math.min(90, Math.max(0, Math.round(overlayRaw)))
+    : 55
+  const hasBg = Boolean(imageSrc)
+  const titleTone = hasBg ? 'dark' : 'light'
 
-  const body = (
-    <div className={`grid ${imageSrc ? 'lg:grid-cols-2' : ''} ${embedded ? 'gap-8' : ''}`}>
-      <div className={`flex flex-col justify-center ${embedded ? '' : 'p-6 sm:p-8 lg:p-10'}`}>
-        {tickets?.body ? (
-          <p
-            className={`text-sm leading-relaxed sm:text-base ${
-              titleTone === 'dark' ? 'text-slate-300' : 'text-[#4b505a]'
-            }`}
-          >
-            {tickets.body}
-          </p>
-        ) : null}
-        {bullets.length > 0 ? (
-          <ul className={`${tickets?.body ? 'mt-5' : ''} space-y-2`}>
-            {bullets.map((bullet) => (
-              <li
-                key={bullet}
-                className={`flex items-start gap-2 text-sm ${
-                  titleTone === 'dark' ? 'text-slate-200' : 'text-[#3e434d]'
-                }`}
-              >
-                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#d4b483]" aria-hidden />
-                {bullet}
-              </li>
-            ))}
-          </ul>
-        ) : null}
-        {ctaUrl && tickets?.ctaLabel ? (
-          <SmartLink
-            href={ctaUrl}
-            className="mt-6 inline-flex min-h-11 w-fit items-center justify-center rounded-sm bg-[#d4b483] px-5 text-[11px] font-bold uppercase tracking-[0.14em] text-[#171b22] transition hover:bg-[#e2c28a] sm:text-xs"
-          >
-            {tickets.ctaLabel}
-          </SmartLink>
-        ) : null}
-      </div>
-      {imageSrc ? (
-        <div
-          className={`relative overflow-hidden ${
-            embedded
-              ? `min-h-[240px] rounded-xl border ${
-                  titleTone === 'dark' ? 'border-white/12' : 'border-[#e8e4dc]'
-                }`
-              : 'min-h-[220px] lg:min-h-full'
-          }`}
-        >
+  return (
+    <section
+      id={hideHeading ? undefined : 'entradas'}
+      className={`relative isolate overflow-hidden border-y py-14 sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)] ${
+        hasBg ? 'border-white/10 text-white' : 'border-[#e8e5dd] bg-[#f7f7f5]'
+      }`}
+    >
+      {hasBg ? (
+        <>
           <img
             src={imageSrc}
             alt=""
@@ -611,30 +580,59 @@ export function FdcTicketsSection({ tickets, hideHeading = false, embedded = fal
             decoding="async"
           />
           <div
-            className="absolute inset-0 bg-linear-to-t from-[#171b22]/40 via-transparent to-transparent lg:bg-linear-to-l lg:from-[#171b22]/30"
+            className="absolute inset-0 bg-[#171b22]"
+            style={{ opacity: overlayOpacity / 100 }}
             aria-hidden
           />
-        </div>
+        </>
       ) : null}
-    </div>
-  )
 
-  if (embedded) {
-    return (
-      <div id={hideHeading ? undefined : 'entradas'} className="scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]">
+      <Container className="relative z-10">
         {!hideHeading ? <FdcSectionTitle title={title} tone={titleTone} /> : null}
-        {body}
-      </div>
-    )
-  }
 
-  return (
-    <div id={hideHeading ? undefined : 'entradas'} className="scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]">
-      {!hideHeading ? <FdcSectionTitle title={title} tone={titleTone} /> : null}
-      <div className="overflow-hidden rounded-3xl border border-[#171b22] bg-[#171b22] shadow-[0_20px_50px_-24px_rgba(23,27,34,0.55)]">
-        {body}
-      </div>
-    </div>
+        <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
+          {tickets?.body ? (
+            <p
+              className={`text-sm leading-relaxed sm:text-base ${
+                hasBg ? 'text-white/85' : 'text-[#4b505a]'
+              }`}
+            >
+              {tickets.body}
+            </p>
+          ) : null}
+
+          {bullets.length > 0 ? (
+            <ul
+              className={`${tickets?.body ? 'mt-5' : ''} flex w-full max-w-lg flex-col items-center gap-2.5`}
+            >
+              {bullets.map((bullet) => (
+                <li
+                  key={bullet}
+                  className={`flex w-full items-start justify-center gap-2 text-sm sm:text-[15px] ${
+                    hasBg ? 'text-white/90' : 'text-[#3e434d]'
+                  }`}
+                >
+                  <span
+                    className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#d4b483]"
+                    aria-hidden
+                  />
+                  <span className="text-left">{bullet}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          {ctaUrl && tickets?.ctaLabel ? (
+            <SmartLink
+              href={ctaUrl}
+              className="mt-7 inline-flex min-h-11 items-center justify-center rounded-sm bg-[#d4b483] px-6 text-[11px] font-bold uppercase tracking-[0.14em] text-[#171b22] transition hover:bg-[#e2c28a] sm:text-xs"
+            >
+              {tickets.ctaLabel}
+            </SmartLink>
+          ) : null}
+        </div>
+      </Container>
+    </section>
   )
 }
 

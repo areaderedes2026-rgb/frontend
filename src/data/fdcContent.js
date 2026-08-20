@@ -131,7 +131,8 @@ export const DEFAULT_FDC_TICKETS = {
   ctaLabel: 'Comprar entradas',
   ctaUrl: '',
   imageUrl:
-    'https://images.unsplash.com/photo-1556740738-b6a63e27c4df?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1556740738-b6a63e27c4df?auto=format&fit=crop&w=1600&q=80',
+  overlayOpacity: 55,
 }
 
 export const DEFAULT_FDC_NEWS = {
@@ -294,14 +295,24 @@ export function mergeFdcContent(base, remote) {
       'ctaHref',
       'items',
     ]),
-    tickets: mergeNamedSection(defaults.tickets, remote.tickets, [
-      'title',
-      'body',
-      'bullets',
-      'ctaLabel',
-      'ctaUrl',
-      'imageUrl',
-    ]),
+    tickets: (() => {
+      const merged = mergeNamedSection(defaults.tickets, remote.tickets, [
+        'title',
+        'body',
+        'bullets',
+        'ctaLabel',
+        'ctaUrl',
+        'imageUrl',
+        'overlayOpacity',
+      ])
+      const overlayRaw = Number(merged.overlayOpacity)
+      return {
+        ...merged,
+        overlayOpacity: Number.isFinite(overlayRaw)
+          ? Math.min(90, Math.max(0, Math.round(overlayRaw)))
+          : defaults.tickets?.overlayOpacity ?? 55,
+      }
+    })(),
     news: mergeNamedSection(defaults.news, remote.news, [
       'title',
       'ctaLabel',
