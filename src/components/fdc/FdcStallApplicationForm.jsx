@@ -44,7 +44,6 @@ export function FdcStallApplicationForm({
   const [form, setForm] = useState(EMPTY_FORM)
   const [sending, setSending] = useState(false)
   const [formError, setFormError] = useState('')
-  const [success, setSuccess] = useState(null)
 
   const disabled = !formOpen || sending
 
@@ -88,7 +87,8 @@ export function FdcStallApplicationForm({
       setFormError('Completá un teléfono válido (mínimo 6 caracteres).')
       return
     }
-    if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+    const email = form.email.trim().toLowerCase()
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setFormError('Ingresá un correo electrónico válido (vas a recibir la constancia ahí).')
       return
     }
@@ -122,76 +122,25 @@ export function FdcStallApplicationForm({
         address: form.address.trim(),
         locality: form.locality.trim(),
         phone,
-        email: form.email.trim().toLowerCase(),
+        email,
         rubro: form.rubro,
         rubroOther: form.rubroOther.trim(),
         participatedBefore: Boolean(form.participatedBefore),
         participationYears: form.participationYears.trim(),
       })
-      const id = result?.application?.id
-      const email = form.email.trim().toLowerCase()
       setForm(EMPTY_FORM)
-      setSuccess({
-        id,
-        email,
-        emailQueued: Boolean(result?.emailQueued || result?.emailSent),
-      })
-      onSuccess?.(result)
-      requestAnimationFrame(() => {
-        document.getElementById('solicitud-puestos')?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start',
-        })
+      onSuccess?.({
+        ...result,
+        application: {
+          ...(result?.application || {}),
+          email: result?.application?.email || email,
+        },
       })
     } catch (err) {
       setFormError(err.message || 'No se pudo enviar la preinscripción.')
     } finally {
       setSending(false)
     }
-  }
-
-  if (success) {
-    return (
-      <div
-        id="solicitud-puestos"
-        className="scroll-mt-[calc(var(--navbar-h,5rem)+1.25rem)]"
-        role="status"
-        aria-live="polite"
-      >
-        <div className="overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-[0_12px_40px_-24px_rgba(23,27,34,0.35)] sm:rounded-3xl">
-          <div className="border-b border-emerald-100 bg-linear-to-br from-emerald-50 via-white to-[#f3f7fb] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-800 sm:text-xs">
-              Listo
-            </p>
-            <h2 className="mt-1.5 font-serif text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
-              ¡Preinscripción enviada!
-            </h2>
-            <p className="mt-3 text-sm leading-relaxed text-[#4b505a] sm:text-base">
-              Recibimos tu solicitud de puesto comercial. Guardá el número de comprobante.
-            </p>
-          </div>
-          <div className="space-y-4 px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 px-4 py-4 text-center sm:px-5">
-              <p className="text-xs font-bold uppercase tracking-wide text-emerald-800">
-                Número de solicitud
-              </p>
-              <p className="mt-1 font-serif text-3xl font-bold tabular-nums text-[#171b22] sm:text-4xl">
-                #{success.id ?? '—'}
-              </p>
-            </div>
-            <p className="text-sm leading-relaxed text-[#4b505a]">
-              {success.emailQueued
-                ? `La constancia se está enviando a ${success.email}. Revisá la bandeja de entrada y spam en unos minutos.`
-                : `Tu solicitud quedó registrada. Si no llega la constancia a ${success.email}, consultá en la municipalidad con el número de solicitud.`}
-            </p>
-            <p className="text-xs leading-relaxed text-slate-500">
-              Esta preinscripción no implica la adjudicación del espacio. La organización evaluará cada
-              solicitud según disponibilidad y requisitos.
-            </p>
-          </div>
-        </div>
-      </div>
-    )
   }
 
   return (
