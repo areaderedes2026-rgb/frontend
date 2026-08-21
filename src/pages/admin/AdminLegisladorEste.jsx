@@ -12,7 +12,6 @@ import {
   updateLegisladorEsteContent,
 } from '../../services/legisladorEsteService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
-import { ROUTES } from '../../utils/constants.js'
 
 function cloneContent(c) {
   return JSON.parse(JSON.stringify(c))
@@ -167,8 +166,7 @@ export function AdminLegisladorEste() {
       {conflictDialog}
       {toast ? <Toast variant={toast.variant} message={toast.message} onDismiss={dismissToast} /> : null}
       <AdminPageShell
-        backTo={ROUTES.adminSettings}
-        backLabel="Volver a configuración"
+        showBackLink={false}
         eyebrow="Gobierno"
         title="Legislador por el Este"
         subtitle="Ficha del legislador, proyectos por año, comisiones y leyes."

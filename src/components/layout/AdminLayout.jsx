@@ -113,21 +113,22 @@ export function AdminLayout() {
   const [nuestraCiudadOpen, setNuestraCiudadOpen] = useState(false)
 
   const intendenciaActive =
-    pathname === ROUTES.adminSettingsIntendencia ||
-    pathname.startsWith(`${ROUTES.adminSettingsIntendencia}/`)
+    pathname === ROUTES.adminIntendencia ||
+    pathname.startsWith(`${ROUTES.adminIntendencia}/`)
   const concejoActive =
-    pathname === ROUTES.adminSettingsConcejoDeliberante ||
-    pathname.startsWith(`${ROUTES.adminSettingsConcejoDeliberante}/`)
+    pathname === ROUTES.adminConcejoDeliberante ||
+    pathname.startsWith(`${ROUTES.adminConcejoDeliberante}/`)
   const legisladorActive =
-    pathname === ROUTES.adminSettingsLegisladorEste ||
-    pathname.startsWith(`${ROUTES.adminSettingsLegisladorEste}/`)
+    pathname === ROUTES.adminLegisladorEste ||
+    pathname.startsWith(`${ROUTES.adminLegisladorEste}/`)
   const gobiernoActive = intendenciaActive || concejoActive || legisladorActive
 
   const settingsActive =
-    (pathname === ROUTES.adminSettings || pathname.startsWith(`${ROUTES.adminSettings}/`)) &&
-    !intendenciaActive &&
-    !concejoActive &&
-    !legisladorActive
+    pathname === ROUTES.adminSettings ||
+    (pathname.startsWith(`${ROUTES.adminSettings}/`) &&
+      !pathname.startsWith('/admin/settings/intendencia') &&
+      !pathname.startsWith('/admin/settings/legislador-este') &&
+      !pathname.startsWith('/admin/settings/concejo-deliberante'))
   const newsActive =
     pathname === ROUTES.adminNews || pathname.startsWith(`${ROUTES.adminNews}/`)
   const areasActive =
@@ -272,7 +273,7 @@ export function AdminLayout() {
           {gobiernoOpen ? (
             <div className="ml-2 space-y-0.5 border-l border-slate-200 pl-2">
               <NavLink
-                to={ROUTES.adminSettingsIntendencia}
+                to={ROUTES.adminIntendencia}
                 onMouseEnter={() => preloadAdminRoute('settingsIntendencia')}
                 onFocus={() => preloadAdminRoute('settingsIntendencia')}
                 onClick={closeMobile}
@@ -283,7 +284,7 @@ export function AdminLayout() {
                 Intendencia
               </NavLink>
               <NavLink
-                to={ROUTES.adminSettingsConcejoDeliberante}
+                to={ROUTES.adminConcejoDeliberante}
                 onMouseEnter={() => preloadAdminRoute('settingsConcejoDeliberante')}
                 onFocus={() => preloadAdminRoute('settingsConcejoDeliberante')}
                 onClick={closeMobile}
@@ -294,7 +295,7 @@ export function AdminLayout() {
                 Concejo deliberante
               </NavLink>
               <NavLink
-                to={ROUTES.adminSettingsLegisladorEste}
+                to={ROUTES.adminLegisladorEste}
                 onMouseEnter={() => preloadAdminRoute('settingsLegisladorEste')}
                 onFocus={() => preloadAdminRoute('settingsLegisladorEste')}
                 onClick={closeMobile}

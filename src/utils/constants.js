@@ -49,9 +49,15 @@ export const ROUTES = {
   adminSettingsHomeBanners: '/admin/settings/home-banners',
   adminSettingsHomeMap: '/admin/settings/home-map',
   adminSettingsHomeEmergency: '/admin/settings/home-emergency',
-  adminSettingsIntendencia: '/admin/settings/intendencia',
-  adminSettingsLegisladorEste: '/admin/settings/legislador-este',
-  adminSettingsConcejoDeliberante: '/admin/settings/concejo-deliberante',
+  adminIntendencia: '/admin/intendencia',
+  adminLegisladorEste: '/admin/legislador-este',
+  adminConcejoDeliberante: '/admin/concejo-deliberante',
+  /** @deprecated Usar adminIntendencia — se mantiene por compatibilidad. */
+  adminSettingsIntendencia: '/admin/intendencia',
+  /** @deprecated Usar adminLegisladorEste */
+  adminSettingsLegisladorEste: '/admin/legislador-este',
+  /** @deprecated Usar adminConcejoDeliberante */
+  adminSettingsConcejoDeliberante: '/admin/concejo-deliberante',
   adminMyAreaServices: '/admin/my-area-services',
   adminAreaServiceEditor: (areaSlug, serviceId) =>
     `/admin/area-services/${areaSlug}/${serviceId}`,

@@ -212,6 +212,30 @@ export function AppRouter() {
             }
           />
           <Route
+            path="intendencia"
+            element={
+              <Suspense fallback={<AdminRouteFallback />}>
+                <AdminIntendencia />
+              </Suspense>
+            }
+          />
+          <Route
+            path="legislador-este"
+            element={
+              <Suspense fallback={<AdminRouteFallback />}>
+                <AdminLegisladorEste />
+              </Suspense>
+            }
+          />
+          <Route
+            path="concejo-deliberante"
+            element={
+              <Suspense fallback={<AdminRouteFallback />}>
+                <AdminConcejoDeliberante />
+              </Suspense>
+            }
+          />
+          <Route
             path="fdc-solicitudes"
             element={
               <Suspense fallback={<AdminRouteFallback />}>
@@ -283,29 +307,14 @@ export function AppRouter() {
                 </Suspense>
               }
             />
-            <Route
-              path="intendencia"
-              element={
-                <Suspense fallback={<AdminRouteFallback />}>
-                  <AdminIntendencia />
-                </Suspense>
-              }
-            />
+            <Route path="intendencia" element={<Navigate to="/admin/intendencia" replace />} />
             <Route
               path="legislador-este"
-              element={
-                <Suspense fallback={<AdminRouteFallback />}>
-                  <AdminLegisladorEste />
-                </Suspense>
-              }
+              element={<Navigate to="/admin/legislador-este" replace />}
             />
             <Route
               path="concejo-deliberante"
-              element={
-                <Suspense fallback={<AdminRouteFallback />}>
-                  <AdminConcejoDeliberante />
-                </Suspense>
-              }
+              element={<Navigate to="/admin/concejo-deliberante" replace />}
             />
             <Route
               path="oferta-academica"
