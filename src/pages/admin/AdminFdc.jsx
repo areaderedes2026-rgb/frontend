@@ -4,6 +4,7 @@ import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
 import { PageCoverModal } from '../../components/admin/PageCoverModal.jsx'
 import { SingleImageUploadField } from '../../components/admin/SingleImageUploadField.jsx'
 import { FdcFestivalHero } from '../../components/fdc/FdcFestivalHero.jsx'
+import { Modal } from '../../components/ui/Modal.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
 import { inputClass, labelClass, textareaClass } from '../../components/ui/formStyles.js'
 import {
@@ -19,6 +20,7 @@ import { useContentEditorConcurrencyConflict } from '../../hooks/useContentEdito
 import { fetchFdcContentAdmin, updateFdcContent } from '../../services/fdcService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
 import { ROUTES } from '../../utils/constants.js'
+import { resolveMediaUrl } from '../../utils/imageUrl.js'
 
 function cloneContent(c) {
   return JSON.parse(JSON.stringify(c))
@@ -99,11 +101,42 @@ const NAV_ICON_OPTIONS = [
   { value: 'link', label: 'Enlace' },
 ]
 
-function SectionTitle({ title, description }) {
+const TABS = [
+  { id: 'portada', label: 'Portada' },
+  { id: 'navegacion', label: 'Navegación' },
+  { id: 'cartelera', label: 'Cartelera' },
+  { id: 'cronograma', label: 'Cronograma' },
+  { id: 'entradas', label: 'Entradas' },
+  { id: 'noticias', label: 'Noticias' },
+  { id: 'galeria', label: 'Galería' },
+  { id: 'auspiciantes', label: 'Auspiciantes' },
+  { id: 'preinscripcion', label: 'Preinscripción' },
+]
+
+function ModalFooter({ onCancel, onApply, applyLabel = 'Aplicar', applyDisabled = false, saving = false }) {
   return (
-    <div>
-      <h2 className="text-lg font-bold text-slate-900">{title}</h2>
-      {description ? <p className="mt-1 text-sm text-slate-600">{description}</p> : null}
+    <div className="flex justify-end gap-2">
+      <button type="button" className={ACTION_NEUTRAL} onClick={onCancel} disabled={saving}>
+        Cancelar
+      </button>
+      <button type="button" className={ACTION_PRIMARY} onClick={onApply} disabled={applyDisabled || saving}>
+        {applyLabel}
+      </button>
+    </div>
+  )
+}
+
+function ThumbCell({ src, alt, className = 'h-12 w-12' }) {
+  const resolved = src ? resolveMediaUrl(src) || src : ''
+  return (
+    <div
+      className={`${className} shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-100`}
+    >
+      {resolved ? (
+        <img src={resolved} alt={alt || ''} className="h-full w-full object-cover" />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center text-[10px] text-slate-400">Sin foto</div>
+      )}
     </div>
   )
 }
@@ -114,11 +147,19 @@ export function AdminFdc() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [activeTab, setActiveTab] = useState('portada')
   const [heroCoverOpen, setHeroCoverOpen] = useState(false)
   const [heroCoverDraft, setHeroCoverDraft] = useState(() =>
     fdcContentToHeroCover(DEFAULT_FDC_CONTENT),
   )
   const [toast, setToast] = useState(null)
+  const [artistModal, setArtistModal] = useState({ open: false, index: null, draft: null })
+  const [dayModal, setDayModal] = useState({ open: false, index: null, draft: null })
+  const [scheduleImageModal, setScheduleImageModal] = useState({ open: false, index: null, draft: null })
+  const [newsModal, setNewsModal] = useState({ open: false, index: null, draft: null })
+  const [galleryModal, setGalleryModal] = useState({ open: false, index: null, draft: null })
+  const [sponsorModal, setSponsorModal] = useState({ open: false, index: null, draft: null })
+
   const dismissToast = useCallback(() => setToast(null), [])
   const apiAvailable = isApiConfigured()
 
@@ -380,6 +421,142 @@ export function AdminFdc() {
     }))
   }
 
+  function openArtistModal(index = null) {
+    const draft =
+      index != null
+        ? { ...(form.artists?.items || [])[index] }
+        : { id: makeFdcItemId('art'), name: '', dateTag: '', photoUrl: '', sortOrder: (form.artists?.items || []).length }
+    setArtistModal({ open: true, index, draft })
+  }
+
+  function applyArtistModal() {
+    const name = String(artistModal.draft?.name || '').trim()
+    if (!name) return
+    updateArtists((a) => {
+      const items = [...(a.items || [])]
+      const entry = { ...artistModal.draft, name }
+      if (artistModal.index == null) items.push(entry)
+      else items[artistModal.index] = entry
+      return { ...a, items }
+    })
+    setArtistModal({ open: false, index: null, draft: null })
+  }
+
+  function openDayModal(index = null) {
+    const draft =
+      index != null
+        ? cloneContent((form.schedule?.days || [])[index])
+        : { id: makeFdcItemId('day'), label: '', items: [] }
+    setDayModal({ open: true, index, draft })
+  }
+
+  function applyDayModal() {
+    updateSchedule((s) => {
+      const days = [...(s.days || [])]
+      const entry = {
+        ...dayModal.draft,
+        label: String(dayModal.draft?.label || '').trim(),
+        items: (dayModal.draft?.items || []).map((it) => ({ ...it })),
+      }
+      if (dayModal.index == null) days.push(entry)
+      else days[dayModal.index] = entry
+      return { ...s, days }
+    })
+    setDayModal({ open: false, index: null, draft: null })
+  }
+
+  function openScheduleImageModal(index = null) {
+    const draft =
+      index != null
+        ? { ...(form.schedule?.images || [])[index] }
+        : { id: makeFdcItemId('schimg'), imageUrl: '', caption: '' }
+    setScheduleImageModal({ open: true, index, draft })
+  }
+
+  function applyScheduleImageModal() {
+    const imageUrl = String(scheduleImageModal.draft?.imageUrl || '').trim()
+    if (!imageUrl) return
+    updateSchedule((s) => {
+      const images = [...(s.images || [])]
+      const entry = { ...scheduleImageModal.draft, imageUrl }
+      if (scheduleImageModal.index == null) images.push(entry)
+      else images[scheduleImageModal.index] = entry
+      return { ...s, images: images.slice(0, FDC_SCHEDULE_MAX_IMAGES) }
+    })
+    setScheduleImageModal({ open: false, index: null, draft: null })
+  }
+
+  function openNewsModal(index = null) {
+    const draft =
+      index != null
+        ? { ...(form.news?.items || [])[index] }
+        : { id: makeFdcItemId('news'), title: '', date: '', excerpt: '', link: '', imageUrl: '' }
+    setNewsModal({ open: true, index, draft })
+  }
+
+  function applyNewsModal() {
+    const title = String(newsModal.draft?.title || '').trim()
+    if (!title) return
+    updateNews((n) => {
+      const items = [...(n.items || [])]
+      const entry = { ...newsModal.draft, title }
+      if (newsModal.index == null) items.push(entry)
+      else items[newsModal.index] = entry
+      return { ...n, items }
+    })
+    setNewsModal({ open: false, index: null, draft: null })
+  }
+
+  function openGalleryModal(index = null) {
+    const draft =
+      index != null
+        ? { ...(form.gallery?.items || [])[index] }
+        : { id: makeFdcItemId('gal'), imageUrl: '', caption: '' }
+    setGalleryModal({ open: true, index, draft })
+  }
+
+  function applyGalleryModal() {
+    const imageUrl = String(galleryModal.draft?.imageUrl || '').trim()
+    if (!imageUrl) return
+    updateGallery((g) => {
+      const items = [...(g.items || [])]
+      const entry = { ...galleryModal.draft, imageUrl }
+      if (galleryModal.index == null) items.push(entry)
+      else items[galleryModal.index] = entry
+      return { ...g, items }
+    })
+    setGalleryModal({ open: false, index: null, draft: null })
+  }
+
+  function openSponsorModal(index = null) {
+    const draft =
+      index != null
+        ? { ...(form.sponsors?.items || [])[index] }
+        : { id: makeFdcItemId('spo'), name: '', logoUrl: '', url: '' }
+    setSponsorModal({ open: true, index, draft })
+  }
+
+  function applySponsorModal() {
+    const name = String(sponsorModal.draft?.name || '').trim()
+    const logoUrl = String(sponsorModal.draft?.logoUrl || '').trim()
+    if (!name && !logoUrl) return
+    updateSponsors((s) => {
+      const items = [...(s.items || [])]
+      const entry = { ...sponsorModal.draft }
+      if (sponsorModal.index == null) items.push(entry)
+      else items[sponsorModal.index] = entry
+      return { ...s, items }
+    })
+    setSponsorModal({ open: false, index: null, draft: null })
+  }
+
+  const scheduleImages = form.schedule?.images || []
+  const scheduleDays = form.schedule?.days || []
+  const artistItems = form.artists?.items || []
+  const newsItems = form.news?.items || []
+  const galleryItems = form.gallery?.items || []
+  const sponsorItems = form.sponsors?.items || []
+
   return (
     <>
       {conflictDialog}
@@ -405,12 +582,401 @@ export function AdminFdc() {
         saveLabel="Aplicar al borrador"
       />
 
+      {/* Artist modal */}
+      <Modal
+        open={artistModal.open}
+        onClose={() => setArtistModal({ open: false, index: null, draft: null })}
+        title={artistModal.index == null ? 'Agregar artista' : 'Editar artista'}
+        size="default"
+        footer={
+          <ModalFooter
+            saving={saving}
+            applyDisabled={!String(artistModal.draft?.name || '').trim()}
+            onCancel={() => setArtistModal({ open: false, index: null, draft: null })}
+            onApply={applyArtistModal}
+          />
+        }
+      >
+        {artistModal.draft ? (
+          <div className="grid gap-4">
+            <label className={labelClass}>
+              Nombre
+              <input
+                className={inputClass}
+                value={artistModal.draft.name || ''}
+                disabled={saving}
+                onChange={(e) =>
+                  setArtistModal((m) => ({ ...m, draft: { ...m.draft, name: e.target.value } }))
+                }
+              />
+            </label>
+            <label className={labelClass}>
+              Badge de fecha
+              <input
+                className={inputClass}
+                value={artistModal.draft.dateTag || ''}
+                disabled={saving}
+                placeholder="JUE 9"
+                onChange={(e) =>
+                  setArtistModal((m) => ({ ...m, draft: { ...m.draft, dateTag: e.target.value } }))
+                }
+              />
+              <span className="mt-1 text-xs font-normal text-slate-500">
+                Formato sugerido: día + número (ej. JUE 9, VIE 10).
+              </span>
+            </label>
+            <SingleImageUploadField
+              label="Foto del artista"
+              value={artistModal.draft.photoUrl || ''}
+              disabled={saving}
+              kind="cover"
+              onChange={(url) =>
+                setArtistModal((m) => ({ ...m, draft: { ...m.draft, photoUrl: url } }))
+              }
+              onNotify={setToast}
+            />
+          </div>
+        ) : null}
+      </Modal>
+
+      {/* Day modal */}
+      <Modal
+        open={dayModal.open}
+        onClose={() => setDayModal({ open: false, index: null, draft: null })}
+        title={dayModal.index == null ? 'Agregar día' : 'Editar día'}
+        size="wide"
+        footer={
+          <ModalFooter
+            saving={saving}
+            onCancel={() => setDayModal({ open: false, index: null, draft: null })}
+            onApply={applyDayModal}
+          />
+        }
+      >
+        {dayModal.draft ? (
+          <div className="grid gap-4">
+            <label className={labelClass}>
+              Etiqueta del día
+              <input
+                className={inputClass}
+                value={dayModal.draft.label || ''}
+                disabled={saving}
+                placeholder="Jueves 9 Jul"
+                onChange={(e) =>
+                  setDayModal((m) => ({ ...m, draft: { ...m.draft, label: e.target.value } }))
+                }
+              />
+            </label>
+            <div>
+              <p className="mb-2 text-sm font-medium text-slate-700">Actividades</p>
+              <div className="space-y-2">
+                {(dayModal.draft.items || []).map((it, itemIdx) => (
+                  <div
+                    key={it.id || itemIdx}
+                    className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50/70 p-3 sm:grid-cols-[6rem_1fr_auto]"
+                  >
+                    <label className={labelClass}>
+                      Hora
+                      <input
+                        className={inputClass}
+                        value={it.time || ''}
+                        disabled={saving}
+                        placeholder="18:00"
+                        onChange={(e) =>
+                          setDayModal((m) => {
+                            const items = [...(m.draft.items || [])]
+                            items[itemIdx] = { ...items[itemIdx], time: e.target.value }
+                            return { ...m, draft: { ...m.draft, items } }
+                          })
+                        }
+                      />
+                    </label>
+                    <label className={labelClass}>
+                      Actividad
+                      <input
+                        className={inputClass}
+                        value={it.text || ''}
+                        disabled={saving}
+                        onChange={(e) =>
+                          setDayModal((m) => {
+                            const items = [...(m.draft.items || [])]
+                            items[itemIdx] = { ...items[itemIdx], text: e.target.value }
+                            return { ...m, draft: { ...m.draft, items } }
+                          })
+                        }
+                      />
+                    </label>
+                    <div className="flex items-end">
+                      <button
+                        type="button"
+                        className={ACTION_DANGER}
+                        disabled={saving}
+                        onClick={() =>
+                          setDayModal((m) => ({
+                            ...m,
+                            draft: {
+                              ...m.draft,
+                              items: (m.draft.items || []).filter((_, i) => i !== itemIdx),
+                            },
+                          }))
+                        }
+                      >
+                        Quitar
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  className={ACTION_ADD}
+                  disabled={saving}
+                  onClick={() =>
+                    setDayModal((m) => ({
+                      ...m,
+                      draft: {
+                        ...m.draft,
+                        items: [
+                          ...(m.draft.items || []),
+                          { id: makeFdcItemId('sch'), time: '', text: '' },
+                        ],
+                      },
+                    }))
+                  }
+                >
+                  + Agregar actividad
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </Modal>
+
+      {/* Schedule image modal */}
+      <Modal
+        open={scheduleImageModal.open}
+        onClose={() => setScheduleImageModal({ open: false, index: null, draft: null })}
+        title={scheduleImageModal.index == null ? 'Agregar foto al carrusel' : 'Editar foto del carrusel'}
+        size="default"
+        footer={
+          <ModalFooter
+            saving={saving}
+            applyDisabled={!String(scheduleImageModal.draft?.imageUrl || '').trim()}
+            onCancel={() => setScheduleImageModal({ open: false, index: null, draft: null })}
+            onApply={applyScheduleImageModal}
+          />
+        }
+      >
+        {scheduleImageModal.draft ? (
+          <div className="grid gap-4">
+            <SingleImageUploadField
+              label="Imagen"
+              value={scheduleImageModal.draft.imageUrl || ''}
+              disabled={saving}
+              kind="cover"
+              onChange={(url) =>
+                setScheduleImageModal((m) => ({ ...m, draft: { ...m.draft, imageUrl: url } }))
+              }
+              onNotify={setToast}
+            />
+            <label className={labelClass}>
+              Epígrafe (opcional)
+              <input
+                className={inputClass}
+                value={scheduleImageModal.draft.caption || ''}
+                disabled={saving}
+                onChange={(e) =>
+                  setScheduleImageModal((m) => ({
+                    ...m,
+                    draft: { ...m.draft, caption: e.target.value },
+                  }))
+                }
+              />
+            </label>
+          </div>
+        ) : null}
+      </Modal>
+
+      {/* News modal */}
+      <Modal
+        open={newsModal.open}
+        onClose={() => setNewsModal({ open: false, index: null, draft: null })}
+        title={newsModal.index == null ? 'Agregar noticia' : 'Editar noticia'}
+        size="wide"
+        footer={
+          <ModalFooter
+            saving={saving}
+            applyDisabled={!String(newsModal.draft?.title || '').trim()}
+            onCancel={() => setNewsModal({ open: false, index: null, draft: null })}
+            onApply={applyNewsModal}
+          />
+        }
+      >
+        {newsModal.draft ? (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className={labelClass}>
+              Título
+              <input
+                className={inputClass}
+                value={newsModal.draft.title || ''}
+                disabled={saving}
+                onChange={(e) =>
+                  setNewsModal((m) => ({ ...m, draft: { ...m.draft, title: e.target.value } }))
+                }
+              />
+            </label>
+            <label className={labelClass}>
+              Fecha (badge)
+              <input
+                className={inputClass}
+                value={newsModal.draft.date || ''}
+                disabled={saving}
+                placeholder="15 MAY"
+                onChange={(e) =>
+                  setNewsModal((m) => ({ ...m, draft: { ...m.draft, date: e.target.value } }))
+                }
+              />
+            </label>
+            <label className={`${labelClass} sm:col-span-2`}>
+              Enlace «Leer más»
+              <input
+                className={inputClass}
+                value={newsModal.draft.link || ''}
+                disabled={saving}
+                placeholder="/noticias/... o URL"
+                onChange={(e) =>
+                  setNewsModal((m) => ({ ...m, draft: { ...m.draft, link: e.target.value } }))
+                }
+              />
+            </label>
+            <label className={`${labelClass} sm:col-span-2`}>
+              Extracto (opcional)
+              <textarea
+                className={textareaClass}
+                value={newsModal.draft.excerpt || ''}
+                disabled={saving}
+                onChange={(e) =>
+                  setNewsModal((m) => ({ ...m, draft: { ...m.draft, excerpt: e.target.value } }))
+                }
+              />
+            </label>
+            <div className="sm:col-span-2">
+              <SingleImageUploadField
+                label="Imagen"
+                value={newsModal.draft.imageUrl || ''}
+                disabled={saving}
+                kind="cover"
+                onChange={(url) =>
+                  setNewsModal((m) => ({ ...m, draft: { ...m.draft, imageUrl: url } }))
+                }
+                onNotify={setToast}
+              />
+            </div>
+          </div>
+        ) : null}
+      </Modal>
+
+      {/* Gallery modal */}
+      <Modal
+        open={galleryModal.open}
+        onClose={() => setGalleryModal({ open: false, index: null, draft: null })}
+        title={galleryModal.index == null ? 'Agregar foto' : 'Editar foto'}
+        size="default"
+        footer={
+          <ModalFooter
+            saving={saving}
+            applyDisabled={!String(galleryModal.draft?.imageUrl || '').trim()}
+            onCancel={() => setGalleryModal({ open: false, index: null, draft: null })}
+            onApply={applyGalleryModal}
+          />
+        }
+      >
+        {galleryModal.draft ? (
+          <div className="grid gap-4">
+            <SingleImageUploadField
+              label="Imagen"
+              value={galleryModal.draft.imageUrl || ''}
+              disabled={saving}
+              kind="gallery"
+              onChange={(url) =>
+                setGalleryModal((m) => ({ ...m, draft: { ...m.draft, imageUrl: url } }))
+              }
+              onNotify={setToast}
+            />
+            <label className={labelClass}>
+              Leyenda
+              <input
+                className={inputClass}
+                value={galleryModal.draft.caption || ''}
+                disabled={saving}
+                onChange={(e) =>
+                  setGalleryModal((m) => ({ ...m, draft: { ...m.draft, caption: e.target.value } }))
+                }
+              />
+            </label>
+          </div>
+        ) : null}
+      </Modal>
+
+      {/* Sponsor modal */}
+      <Modal
+        open={sponsorModal.open}
+        onClose={() => setSponsorModal({ open: false, index: null, draft: null })}
+        title={sponsorModal.index == null ? 'Agregar auspiciante' : 'Editar auspiciante'}
+        size="default"
+        footer={
+          <ModalFooter
+            saving={saving}
+            applyDisabled={
+              !String(sponsorModal.draft?.name || '').trim() &&
+              !String(sponsorModal.draft?.logoUrl || '').trim()
+            }
+            onCancel={() => setSponsorModal({ open: false, index: null, draft: null })}
+            onApply={applySponsorModal}
+          />
+        }
+      >
+        {sponsorModal.draft ? (
+          <div className="grid gap-4">
+            <label className={labelClass}>
+              Nombre
+              <input
+                className={inputClass}
+                value={sponsorModal.draft.name || ''}
+                disabled={saving}
+                onChange={(e) =>
+                  setSponsorModal((m) => ({ ...m, draft: { ...m.draft, name: e.target.value } }))
+                }
+              />
+            </label>
+            <label className={labelClass}>
+              Sitio web
+              <input
+                className={inputClass}
+                value={sponsorModal.draft.url || ''}
+                disabled={saving}
+                placeholder="https://…"
+                onChange={(e) =>
+                  setSponsorModal((m) => ({ ...m, draft: { ...m.draft, url: e.target.value } }))
+                }
+              />
+            </label>
+            <SingleImageUploadField
+              label="Logo"
+              value={sponsorModal.draft.logoUrl || ''}
+              disabled={saving}
+              kind="cover"
+              onChange={(url) =>
+                setSponsorModal((m) => ({ ...m, draft: { ...m.draft, logoUrl: url } }))
+              }
+              onNotify={setToast}
+            />
+          </div>
+        ) : null}
+      </Modal>
+
       <AdminPageShell
         showBackLink={false}
-        eyebrow="Nuestra ciudad"
-        title="Fiesta del Caballo"
-        subtitle="Portada, secciones del festival (cronograma, cartelera, entradas, noticias, galería, auspiciantes, info útil) y preinscripción de puestos."
-        maxWidthClass="max-w-5xl"
+        maxWidthClass="max-w-7xl"
         variant="plain"
         actions={
           <Link to={ROUTES.adminFdcSolicitudes} className={ACTION_NEUTRAL}>
@@ -432,115 +998,145 @@ export function AdminFdc() {
         {loading ? (
           <div className="h-64 animate-pulse rounded-3xl bg-slate-100" />
         ) : (
-          <div className="space-y-6">
-            <div className="overflow-hidden rounded-3xl border border-[#ddd7ca] bg-[#0c1017]">
-              <div className="flex items-center justify-between gap-3 px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-100">
-                  Portada pública
-                </p>
-                <button
-                  type="button"
-                  className={ACTION_NEUTRAL}
-                  onClick={() => {
-                    setHeroCoverDraft(fdcContentToHeroCover(form))
-                    setHeroCoverOpen(true)
-                  }}
-                  disabled={saving}
-                >
-                  Cambiar portada
-                </button>
-              </div>
-              <div className="flex h-[min(70vh,36rem)] flex-col">
-                <FdcFestivalHero
-                  previewMode
-                  contentReady
-                  imageUrl={form.heroImageUrl || ''}
-                  overlayOpacity={form.overlayOpacity}
-                  eyebrow={form.showHeroBadge !== false ? form.heroEyebrow : ''}
-                  title={form.showHeroTitle !== false ? form.heroTitle : ''}
-                  subtitle={form.showHeroSubtitle !== false ? form.heroSubtitle : ''}
-                  primaryCta={heroPrimaryCta}
-                  secondaryCta={heroSecondaryCta}
-                />
+          <div className="space-y-4">
+            {/* Horizontal tabs */}
+            <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm">
+              <div className="flex min-w-max gap-1">
+                {TABS.map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    className={`rounded-xl px-3.5 py-2 text-sm font-semibold transition ${
+                      activeTab === tab.id
+                        ? 'bg-sky-700 text-white shadow-sm'
+                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    }`}
+                    onClick={() => setActiveTab(tab.id)}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
               </div>
             </div>
 
-            <section className={SECTION_CARD}>
-              <SectionTitle title="Navegación por secciones" description="Enlaces rápidos bajo la portada." />
-              <div className="mt-4 space-y-3">
-                {(form.sectionNav || []).map((item, idx) => (
-                  <div key={item.id || idx} className={`${ITEM_CARD} grid gap-3 sm:grid-cols-[1fr_1fr_auto_auto]`}>
-                    <label className={labelClass}>
-                      Etiqueta
-                      <input
-                        className={inputClass}
-                        value={item.label || ''}
-                        disabled={saving}
-                        onChange={(e) =>
-                          setForm((p) => {
-                            const next = [...(p.sectionNav || [])]
-                            next[idx] = { ...next[idx], label: e.target.value }
-                            return { ...p, sectionNav: next }
-                          })
-                        }
-                      />
-                    </label>
-                    <label className={labelClass}>
-                      Enlace (#ancla o URL)
-                      <input
-                        className={inputClass}
-                        value={item.href || ''}
-                        disabled={saving}
-                        onChange={(e) =>
-                          setForm((p) => {
-                            const next = [...(p.sectionNav || [])]
-                            next[idx] = { ...next[idx], href: e.target.value }
-                            return { ...p, sectionNav: next }
-                          })
-                        }
-                      />
-                    </label>
-                    <label className={labelClass}>
-                      Ícono
-                      <select
-                        className={inputClass}
-                        value={item.icon || 'link'}
-                        disabled={saving}
-                        onChange={(e) =>
-                          setForm((p) => {
-                            const next = [...(p.sectionNav || [])]
-                            next[idx] = { ...next[idx], icon: e.target.value }
-                            return { ...p, sectionNav: next }
-                          })
-                        }
-                      >
-                        {NAV_ICON_OPTIONS.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <div className="flex items-end">
-                      <button
-                        type="button"
-                        className={ACTION_DANGER}
-                        disabled={saving}
-                        onClick={() =>
-                          setForm((p) => ({
-                            ...p,
-                            sectionNav: (p.sectionNav || []).filter((_, i) => i !== idx),
-                          }))
-                        }
-                      >
-                        Quitar
-                      </button>
+            {/* Portada */}
+            {activeTab === 'portada' ? (
+              <div className="overflow-hidden rounded-3xl border border-[#ddd7ca] bg-[#0c1017]">
+                <div className="flex items-center justify-between gap-3 px-4 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-100">
+                    Portada pública
+                  </p>
+                  <button
+                    type="button"
+                    className={ACTION_NEUTRAL}
+                    onClick={() => {
+                      setHeroCoverDraft(fdcContentToHeroCover(form))
+                      setHeroCoverOpen(true)
+                    }}
+                    disabled={saving}
+                  >
+                    Cambiar portada
+                  </button>
+                </div>
+                <div className="flex h-[min(70vh,36rem)] flex-col">
+                  <FdcFestivalHero
+                    previewMode
+                    contentReady
+                    imageUrl={form.heroImageUrl || ''}
+                    overlayOpacity={form.overlayOpacity}
+                    eyebrow={form.showHeroBadge !== false ? form.heroEyebrow : ''}
+                    title={form.showHeroTitle !== false ? form.heroTitle : ''}
+                    subtitle={form.showHeroSubtitle !== false ? form.heroSubtitle : ''}
+                    primaryCta={heroPrimaryCta}
+                    secondaryCta={heroSecondaryCta}
+                  />
+                </div>
+              </div>
+            ) : null}
+
+            {/* Navegación */}
+            {activeTab === 'navegacion' ? (
+              <section className={SECTION_CARD}>
+                <h2 className="text-lg font-bold text-slate-900">Navegación por secciones</h2>
+                <p className="mt-1 text-sm text-slate-600">Enlaces rápidos bajo la portada.</p>
+                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                  {(form.sectionNav || []).map((item, idx) => (
+                    <div
+                      key={item.id || idx}
+                      className={`${ITEM_CARD} grid gap-2 p-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end`}
+                    >
+                      <label className={labelClass}>
+                        Etiqueta
+                        <input
+                          className={inputClass}
+                          value={item.label || ''}
+                          disabled={saving}
+                          onChange={(e) =>
+                            setForm((p) => {
+                              const next = [...(p.sectionNav || [])]
+                              next[idx] = { ...next[idx], label: e.target.value }
+                              return { ...p, sectionNav: next }
+                            })
+                          }
+                        />
+                      </label>
+                      <label className={labelClass}>
+                        Enlace
+                        <input
+                          className={inputClass}
+                          value={item.href || ''}
+                          disabled={saving}
+                          onChange={(e) =>
+                            setForm((p) => {
+                              const next = [...(p.sectionNav || [])]
+                              next[idx] = { ...next[idx], href: e.target.value }
+                              return { ...p, sectionNav: next }
+                            })
+                          }
+                        />
+                      </label>
+                      <div className="flex items-end gap-2">
+                        <label className={`${labelClass} min-w-[5.5rem] flex-1`}>
+                          Ícono
+                          <select
+                            className={inputClass}
+                            value={item.icon || 'link'}
+                            disabled={saving}
+                            onChange={(e) =>
+                              setForm((p) => {
+                                const next = [...(p.sectionNav || [])]
+                                next[idx] = { ...next[idx], icon: e.target.value }
+                                return { ...p, sectionNav: next }
+                              })
+                            }
+                          >
+                            {NAV_ICON_OPTIONS.map((opt) => (
+                              <option key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <button
+                          type="button"
+                          className={ACTION_DANGER}
+                          disabled={saving}
+                          onClick={() =>
+                            setForm((p) => ({
+                              ...p,
+                              sectionNav: (p.sectionNav || []).filter((_, i) => i !== idx),
+                            }))
+                          }
+                        >
+                          Quitar
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
                 <button
                   type="button"
-                  className={ACTION_ADD}
+                  className={`${ACTION_ADD} mt-3`}
                   disabled={saving}
                   onClick={() =>
                     setForm((p) => ({
@@ -552,28 +1148,26 @@ export function AdminFdc() {
                     }))
                   }
                 >
-                  + Agregar enlace
+                  + Agregar
                 </button>
-              </div>
-            </section>
+              </section>
+            ) : null}
 
-            <section className={SECTION_CARD}>
-              <SectionTitle
-                title="Cartelera artística"
-                description="Carrusel de artistas con foto, nombre y fecha. Se muestra justo debajo del hero."
-              />
-              <div className="mt-4 grid gap-4">
-                <label className={labelClass}>
-                  Título de sección
-                  <input
-                    className={inputClass}
-                    value={form.artists?.title || ''}
-                    disabled={saving}
-                    onChange={(e) => updateArtists((a) => ({ ...a, title: e.target.value }))}
-                    placeholder="Cartelera artística"
-                  />
-                </label>
-                <div className="grid gap-3 sm:grid-cols-2">
+            {/* Cartelera */}
+            {activeTab === 'cartelera' ? (
+              <section className={SECTION_CARD}>
+                <h2 className="text-lg font-bold text-slate-900">Cartelera artística</h2>
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  <label className={labelClass}>
+                    Título de sección
+                    <input
+                      className={inputClass}
+                      value={form.artists?.title || ''}
+                      disabled={saving}
+                      onChange={(e) => updateArtists((a) => ({ ...a, title: e.target.value }))}
+                      placeholder="Cartelera artística"
+                    />
+                  </label>
                   <label className={labelClass}>
                     Texto del botón
                     <input
@@ -585,134 +1179,101 @@ export function AdminFdc() {
                     />
                   </label>
                   <label className={labelClass}>
-                    Enlace del botón (opcional)
+                    Enlace del botón
                     <input
                       className={inputClass}
                       value={form.artists?.ctaHref || ''}
                       disabled={saving}
                       onChange={(e) => updateArtists((a) => ({ ...a, ctaHref: e.target.value }))}
-                      placeholder="#cronograma o URL externa"
+                      placeholder="#cronograma o URL"
                     />
                   </label>
                 </div>
-                <div className="space-y-3">
-                  {(form.artists?.items || []).map((artist, idx) => (
-                    <div key={artist.id || idx} className={ITEM_CARD}>
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                          Artista {idx + 1}
-                        </p>
-                        <button
-                          type="button"
-                          className={ACTION_DANGER}
-                          disabled={saving}
-                          onClick={() =>
-                            updateArtists((a) => ({
-                              ...a,
-                              items: (a.items || []).filter((_, i) => i !== idx),
-                            }))
-                          }
-                        >
-                          Quitar
-                        </button>
-                      </div>
-                      <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                        <label className={labelClass}>
-                          Nombre
-                          <input
-                            className={inputClass}
-                            value={artist.name || ''}
-                            disabled={saving}
-                            onChange={(e) =>
-                              updateArtists((a) => {
-                                const items = [...(a.items || [])]
-                                items[idx] = { ...items[idx], name: e.target.value }
-                                return { ...a, items }
-                              })
-                            }
-                          />
-                        </label>
-                        <label className={labelClass}>
-                          Badge de fecha
-                          <input
-                            className={inputClass}
-                            value={artist.dateTag || ''}
-                            disabled={saving}
-                            placeholder="JUE 9"
-                            onChange={(e) =>
-                              updateArtists((a) => {
-                                const items = [...(a.items || [])]
-                                items[idx] = { ...items[idx], dateTag: e.target.value }
-                                return { ...a, items }
-                              })
-                            }
-                          />
-                          <span className="mt-1 text-xs font-normal text-slate-500">
-                            Formato sugerido: día + número (ej. JUE 9, VIE 10).
-                          </span>
-                        </label>
-                      </div>
-                      <div className="mt-3">
-                        <SingleImageUploadField
-                          label="Foto del artista"
-                          value={artist.photoUrl || ''}
-                          disabled={saving}
-                          kind="cover"
-                          onChange={(url) =>
-                            updateArtists((a) => {
-                              const items = [...(a.items || [])]
-                              items[idx] = { ...items[idx], photoUrl: url }
-                              return { ...a, items }
-                            })
-                          }
-                          onNotify={setToast}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    className={ACTION_ADD}
-                    disabled={saving}
-                    onClick={() =>
-                      updateArtists((a) => ({
-                        ...a,
-                        items: [
-                          ...(a.items || []),
-                          {
-                            id: makeFdcItemId('art'),
-                            name: '',
-                            dateTag: '',
-                            photoUrl: '',
-                            sortOrder: (a.items || []).length,
-                          },
-                        ],
-                      }))
-                    }
-                  >
-                    + Agregar artista
-                  </button>
-                </div>
-              </div>
-            </section>
 
-            <section className={SECTION_CARD}>
-              <SectionTitle
-                title="Cronograma"
-                description="Programación por días y carrusel de hasta 10 fotos."
-              />
-              <div className="mt-4 grid gap-4">
-                <label className={labelClass}>
-                  Título de sección
-                  <input
-                    className={inputClass}
-                    value={form.schedule?.title || ''}
-                    disabled={saving}
-                    onChange={(e) => updateSchedule((s) => ({ ...s, title: e.target.value }))}
-                    placeholder="Cronograma de actividades"
-                  />
-                </label>
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200">
+                  <table className="w-full text-left text-sm">
+                    <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      <tr>
+                        <th className="px-4 py-3">Foto</th>
+                        <th className="px-4 py-3">Nombre</th>
+                        <th className="px-4 py-3">Fecha</th>
+                        <th className="px-4 py-3 text-right">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {artistItems.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="px-4 py-6 text-center text-slate-500">
+                            Todavía no hay artistas.
+                          </td>
+                        </tr>
+                      ) : (
+                        artistItems.map((artist, idx) => (
+                          <tr key={artist.id || idx} className="hover:bg-slate-50/80">
+                            <td className="px-4 py-3">
+                              <ThumbCell src={artist.photoUrl} alt={artist.name} />
+                            </td>
+                            <td className="px-4 py-3 font-medium text-slate-900">
+                              {artist.name || '—'}
+                            </td>
+                            <td className="px-4 py-3 text-slate-600">{artist.dateTag || '—'}</td>
+                            <td className="px-4 py-3">
+                              <div className="flex justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className={ACTION_NEUTRAL}
+                                  disabled={saving}
+                                  onClick={() => openArtistModal(idx)}
+                                >
+                                  Editar
+                                </button>
+                                <button
+                                  type="button"
+                                  className={ACTION_DANGER}
+                                  disabled={saving}
+                                  onClick={() =>
+                                    updateArtists((a) => ({
+                                      ...a,
+                                      items: (a.items || []).filter((_, i) => i !== idx),
+                                    }))
+                                  }
+                                >
+                                  Eliminar
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                <button
+                  type="button"
+                  className={`${ACTION_ADD} mt-3`}
+                  disabled={saving}
+                  onClick={() => openArtistModal(null)}
+                >
+                  + Agregar artista
+                </button>
+              </section>
+            ) : null}
+
+            {/* Cronograma */}
+            {activeTab === 'cronograma' ? (
+              <section className={SECTION_CARD}>
+                <h2 className="text-lg font-bold text-slate-900">Cronograma</h2>
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  <label className={labelClass}>
+                    Título de sección
+                    <input
+                      className={inputClass}
+                      value={form.schedule?.title || ''}
+                      disabled={saving}
+                      onChange={(e) => updateSchedule((s) => ({ ...s, title: e.target.value }))}
+                      placeholder="Cronograma de actividades"
+                    />
+                  </label>
                   <label className={labelClass}>
                     Texto del botón
                     <input
@@ -724,58 +1285,59 @@ export function AdminFdc() {
                     />
                   </label>
                   <label className={labelClass}>
-                    Enlace del botón (opcional)
+                    Enlace del botón
                     <input
                       className={inputClass}
                       value={form.schedule?.ctaHref || ''}
                       disabled={saving}
                       onChange={(e) => updateSchedule((s) => ({ ...s, ctaHref: e.target.value }))}
-                      placeholder="Vacío = expandir todos los días en la página"
+                      placeholder="Vacío = expandir días"
                     />
                   </label>
                 </div>
 
-                <div>
+                <div className="mt-5">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="text-sm font-medium text-slate-700">
-                      Fotos del carrusel{' '}
+                      Carrusel de fotos{' '}
                       <span className="font-normal text-slate-500">
-                        ({(form.schedule?.images || []).length}/{FDC_SCHEDULE_MAX_IMAGES})
+                        ({scheduleImages.length}/{FDC_SCHEDULE_MAX_IMAGES})
                       </span>
                     </p>
                     <button
                       type="button"
                       className={ACTION_ADD}
-                      disabled={saving || (form.schedule?.images || []).length >= FDC_SCHEDULE_MAX_IMAGES}
-                      onClick={() =>
-                        updateSchedule((s) => ({
-                          ...s,
-                          images: [
-                            ...(s.images || []),
-                            { id: makeFdcItemId('schimg'), imageUrl: '', caption: '' },
-                          ].slice(0, FDC_SCHEDULE_MAX_IMAGES),
-                        }))
-                      }
+                      disabled={saving || scheduleImages.length >= FDC_SCHEDULE_MAX_IMAGES}
+                      onClick={() => openScheduleImageModal(null)}
                     >
-                      + Agregar foto
+                      Agregar foto
                     </button>
                   </div>
-                  <div className="mt-3 space-y-3">
-                    {(form.schedule?.images || []).length === 0 ? (
-                      <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
-                        Todavía no hay fotos. Agregá hasta {FDC_SCHEDULE_MAX_IMAGES} para el carrusel.
-                      </p>
-                    ) : null}
-                    {(form.schedule?.images || []).map((img, imgIdx) => (
-                      <div key={img.id || imgIdx} className={ITEM_CARD}>
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                            Foto {imgIdx + 1}
-                          </p>
+                  {scheduleImages.length === 0 ? (
+                    <p className="mt-3 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+                      Todavía no hay fotos. Agregá hasta {FDC_SCHEDULE_MAX_IMAGES} para el carrusel.
+                    </p>
+                  ) : (
+                    <div className="mt-3 flex gap-2 overflow-x-auto pb-2">
+                      {scheduleImages.map((img, imgIdx) => (
+                        <div key={img.id || imgIdx} className="group relative shrink-0">
                           <button
                             type="button"
-                            className={ACTION_DANGER}
+                            className="block overflow-hidden rounded-xl border border-slate-200 transition hover:border-sky-400 hover:ring-2 hover:ring-sky-200"
                             disabled={saving}
+                            onClick={() => openScheduleImageModal(imgIdx)}
+                          >
+                            <ThumbCell
+                              src={img.imageUrl}
+                              alt={img.caption || `Foto ${imgIdx + 1}`}
+                              className="h-20 w-28"
+                            />
+                          </button>
+                          <button
+                            type="button"
+                            className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-rose-600 text-[10px] font-bold text-white opacity-0 transition group-hover:opacity-100"
+                            disabled={saving}
+                            aria-label="Quitar foto"
                             onClick={() =>
                               updateSchedule((s) => ({
                                 ...s,
@@ -783,223 +1345,126 @@ export function AdminFdc() {
                               }))
                             }
                           >
-                            Quitar
+                            ×
                           </button>
                         </div>
-                        <div className="mt-3">
-                          <SingleImageUploadField
-                            label="Imagen"
-                            value={img.imageUrl || ''}
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-6">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-medium text-slate-700">Días del cronograma</p>
+                    <button
+                      type="button"
+                      className={ACTION_ADD}
+                      disabled={saving}
+                      onClick={() => openDayModal(null)}
+                    >
+                      Agregar día
+                    </button>
+                  </div>
+                  <div className="mt-3 space-y-2">
+                    {scheduleDays.length === 0 ? (
+                      <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+                        Todavía no hay días configurados.
+                      </p>
+                    ) : (
+                      scheduleDays.map((day, dayIdx) => (
+                        <div
+                          key={day.id || dayIdx}
+                          className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3"
+                        >
+                          <button
+                            type="button"
+                            className="min-w-0 flex-1 text-left"
                             disabled={saving}
-                            kind="cover"
-                            onChange={(url) =>
-                              updateSchedule((s) => {
-                                const images = [...(s.images || [])]
-                                images[imgIdx] = { ...images[imgIdx], imageUrl: url }
-                                return { ...s, images }
-                              })
-                            }
-                            onNotify={setToast}
-                          />
+                            onClick={() => openDayModal(dayIdx)}
+                          >
+                            <p className="font-medium text-slate-900">
+                              {day.label || `Día ${dayIdx + 1}`}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              {(day.items || []).length}{' '}
+                              {(day.items || []).length === 1 ? 'actividad' : 'actividades'}
+                            </p>
+                          </button>
+                          <div className="flex shrink-0 gap-2">
+                            <button
+                              type="button"
+                              className={ACTION_NEUTRAL}
+                              disabled={saving}
+                              onClick={() => openDayModal(dayIdx)}
+                            >
+                              Editar
+                            </button>
+                            <button
+                              type="button"
+                              className={ACTION_DANGER}
+                              disabled={saving}
+                              onClick={() =>
+                                updateSchedule((s) => ({
+                                  ...s,
+                                  days: (s.days || []).filter((_, i) => i !== dayIdx),
+                                }))
+                              }
+                            >
+                              Quitar
+                            </button>
+                          </div>
                         </div>
-                        <label className={`${labelClass} mt-3`}>
-                          Epígrafe (opcional)
-                          <input
-                            className={inputClass}
-                            value={img.caption || ''}
-                            disabled={saving}
-                            onChange={(e) =>
-                              updateSchedule((s) => {
-                                const images = [...(s.images || [])]
-                                images[imgIdx] = { ...images[imgIdx], caption: e.target.value }
-                                return { ...s, images }
-                              })
-                            }
-                          />
-                        </label>
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </div>
                 </div>
+              </section>
+            ) : null}
 
-                <div className="space-y-4">
-                  {(form.schedule?.days || []).map((day, dayIdx) => (
-                    <div key={day.id || dayIdx} className={ITEM_CARD}>
-                      <div className="flex flex-wrap items-end justify-between gap-3">
-                        <label className={`${labelClass} flex-1 min-w-[12rem]`}>
-                          Día
-                          <input
-                            className={inputClass}
-                            value={day.label || ''}
-                            disabled={saving}
-                            placeholder="Jueves 9 Jul"
-                            onChange={(e) =>
-                              updateSchedule((s) => {
-                                const days = [...(s.days || [])]
-                                days[dayIdx] = { ...days[dayIdx], label: e.target.value }
-                                return { ...s, days }
-                              })
-                            }
-                          />
-                        </label>
-                        <button
-                          type="button"
-                          className={ACTION_DANGER}
-                          disabled={saving}
-                          onClick={() =>
-                            updateSchedule((s) => ({
-                              ...s,
-                              days: (s.days || []).filter((_, i) => i !== dayIdx),
-                            }))
-                          }
-                        >
-                          Quitar día
-                        </button>
-                      </div>
-                      <div className="mt-3 space-y-2">
-                        {(day.items || []).map((it, itemIdx) => (
-                          <div key={it.id || itemIdx} className="grid gap-2 rounded-xl border border-slate-200 bg-white p-3 sm:grid-cols-[6rem_1fr_auto]">
-                            <label className={labelClass}>
-                              Hora
-                              <input
-                                className={inputClass}
-                                value={it.time || ''}
-                                disabled={saving}
-                                placeholder="18:00"
-                                onChange={(e) =>
-                                  updateSchedule((s) => {
-                                    const days = [...(s.days || [])]
-                                    const items = [...(days[dayIdx].items || [])]
-                                    items[itemIdx] = { ...items[itemIdx], time: e.target.value }
-                                    days[dayIdx] = { ...days[dayIdx], items }
-                                    return { ...s, days }
-                                  })
-                                }
-                              />
-                            </label>
-                            <label className={labelClass}>
-                              Actividad
-                              <input
-                                className={inputClass}
-                                value={it.text || ''}
-                                disabled={saving}
-                                onChange={(e) =>
-                                  updateSchedule((s) => {
-                                    const days = [...(s.days || [])]
-                                    const items = [...(days[dayIdx].items || [])]
-                                    items[itemIdx] = { ...items[itemIdx], text: e.target.value }
-                                    days[dayIdx] = { ...days[dayIdx], items }
-                                    return { ...s, days }
-                                  })
-                                }
-                              />
-                            </label>
-                            <div className="flex items-end">
-                              <button
-                                type="button"
-                                className={ACTION_DANGER}
-                                disabled={saving}
-                                onClick={() =>
-                                  updateSchedule((s) => {
-                                    const days = [...(s.days || [])]
-                                    days[dayIdx] = {
-                                      ...days[dayIdx],
-                                      items: (days[dayIdx].items || []).filter((_, i) => i !== itemIdx),
-                                    }
-                                    return { ...s, days }
-                                  })
-                                }
-                              >
-                                Quitar
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                        <button
-                          type="button"
-                          className={ACTION_ADD}
-                          disabled={saving}
-                          onClick={() =>
-                            updateSchedule((s) => {
-                              const days = [...(s.days || [])]
-                              days[dayIdx] = {
-                                ...days[dayIdx],
-                                items: [
-                                  ...(days[dayIdx].items || []),
-                                  { id: makeFdcItemId('sch'), time: '', text: '' },
-                                ],
-                              }
-                              return { ...s, days }
-                            })
-                          }
-                        >
-                          + Agregar actividad
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    className={ACTION_ADD}
-                    disabled={saving}
-                    onClick={() =>
-                      updateSchedule((s) => ({
-                        ...s,
-                        days: [
-                          ...(s.days || []),
-                          { id: makeFdcItemId('day'), label: '', items: [] },
-                        ],
-                      }))
-                    }
-                  >
-                    + Agregar día
-                  </button>
-                </div>
-              </div>
-            </section>
-
-            <section className={SECTION_CARD}>
-              <SectionTitle
-                title="Entradas"
-                description="Sección centrada con imagen de fondo, overlay y CTA."
-              />
-              <div className="mt-4 grid gap-4">
-                <label className={labelClass}>
-                  Título
-                  <input
-                    className={inputClass}
-                    value={form.tickets?.title || ''}
-                    disabled={saving}
-                    onChange={(e) => updateTickets((t) => ({ ...t, title: e.target.value }))}
-                  />
-                </label>
-                <label className={labelClass}>
-                  Texto
-                  <textarea
-                    className={textareaClass}
-                    value={form.tickets?.body || ''}
-                    disabled={saving}
-                    onChange={(e) => updateTickets((t) => ({ ...t, body: e.target.value }))}
-                  />
-                </label>
-                <label className={labelClass}>
-                  Beneficios (uno por línea)
-                  <textarea
-                    className={textareaClass}
-                    value={(form.tickets?.bullets || []).join('\n')}
-                    disabled={saving}
-                    onChange={(e) =>
-                      updateTickets((t) => ({
-                        ...t,
-                        bullets: e.target.value
-                          .split('\n')
-                          .map((x) => x.trim())
-                          .filter(Boolean),
-                      }))
-                    }
-                  />
-                </label>
-                <div className="grid gap-4 sm:grid-cols-2">
+            {/* Entradas */}
+            {activeTab === 'entradas' ? (
+              <section className={SECTION_CARD}>
+                <h2 className="text-lg font-bold text-slate-900">Entradas</h2>
+                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                  <label className={labelClass}>
+                    Título
+                    <input
+                      className={inputClass}
+                      value={form.tickets?.title || ''}
+                      disabled={saving}
+                      onChange={(e) => updateTickets((t) => ({ ...t, title: e.target.value }))}
+                    />
+                  </label>
+                  <div className="sm:col-span-2">
+                    <label className={labelClass}>
+                      Texto
+                      <textarea
+                        className={textareaClass}
+                        value={form.tickets?.body || ''}
+                        disabled={saving}
+                        onChange={(e) => updateTickets((t) => ({ ...t, body: e.target.value }))}
+                      />
+                    </label>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className={labelClass}>
+                      Beneficios (uno por línea)
+                      <textarea
+                        className={textareaClass}
+                        value={(form.tickets?.bullets || []).join('\n')}
+                        disabled={saving}
+                        onChange={(e) =>
+                          updateTickets((t) => ({
+                            ...t,
+                            bullets: e.target.value
+                              .split('\n')
+                              .map((x) => x.trim())
+                              .filter(Boolean),
+                          }))
+                        }
+                      />
+                    </label>
+                  </div>
                   <label className={labelClass}>
                     Texto del botón
                     <input
@@ -1019,46 +1484,48 @@ export function AdminFdc() {
                       onChange={(e) => updateTickets((t) => ({ ...t, ctaUrl: e.target.value }))}
                     />
                   </label>
+                  <div className="sm:col-span-2">
+                    <SingleImageUploadField
+                      label="Imagen de fondo"
+                      value={form.tickets?.imageUrl || ''}
+                      disabled={saving}
+                      kind="cover"
+                      onChange={(url) => updateTickets((t) => ({ ...t, imageUrl: url }))}
+                      onNotify={setToast}
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className={labelClass}>
+                      Opacidad del overlay: {normalizeOverlay(form.tickets?.overlayOpacity, 55)}%
+                      <input
+                        type="range"
+                        min={0}
+                        max={90}
+                        step={1}
+                        className="mt-2 w-full accent-sky-700"
+                        value={normalizeOverlay(form.tickets?.overlayOpacity, 55)}
+                        disabled={saving || !String(form.tickets?.imageUrl || '').trim()}
+                        onChange={(e) =>
+                          updateTickets((t) => ({
+                            ...t,
+                            overlayOpacity: normalizeOverlay(e.target.value, 55),
+                          }))
+                        }
+                      />
+                      <span className="mt-1 block text-xs font-normal text-slate-500">
+                        Más alto = fondo más oscuro y texto más legible.
+                      </span>
+                    </label>
+                  </div>
                 </div>
-                <SingleImageUploadField
-                  label="Imagen de fondo"
-                  value={form.tickets?.imageUrl || ''}
-                  disabled={saving}
-                  kind="cover"
-                  onChange={(url) => updateTickets((t) => ({ ...t, imageUrl: url }))}
-                  onNotify={setToast}
-                />
-                <label className={labelClass}>
-                  Opacidad del overlay: {normalizeOverlay(form.tickets?.overlayOpacity, 55)}%
-                  <input
-                    type="range"
-                    min={0}
-                    max={90}
-                    step={1}
-                    className="mt-2 w-full accent-sky-700"
-                    value={normalizeOverlay(form.tickets?.overlayOpacity, 55)}
-                    disabled={saving || !String(form.tickets?.imageUrl || '').trim()}
-                    onChange={(e) =>
-                      updateTickets((t) => ({
-                        ...t,
-                        overlayOpacity: normalizeOverlay(e.target.value, 55),
-                      }))
-                    }
-                  />
-                  <span className="mt-1 block text-xs font-normal text-slate-500">
-                    Más alto = fondo más oscuro y texto más legible.
-                  </span>
-                </label>
-              </div>
-            </section>
+              </section>
+            ) : null}
 
-            <section className={SECTION_CARD}>
-              <SectionTitle
-                title="Noticias del festival"
-                description="Tarjetas con imagen, fecha (ej. 15 MAY) y enlace. En desktop se muestran hasta 4 por fila."
-              />
-              <div className="mt-4 grid gap-4">
-                <div className="grid gap-4 sm:grid-cols-3">
+            {/* Noticias */}
+            {activeTab === 'noticias' ? (
+              <section className={SECTION_CARD}>
+                <h2 className="text-lg font-bold text-slate-900">Noticias del festival</h2>
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
                   <label className={labelClass}>
                     Título sección
                     <input
@@ -1090,140 +1557,81 @@ export function AdminFdc() {
                     />
                   </label>
                 </div>
-                <div className="space-y-3">
-                  {(form.news?.items || []).map((item, idx) => (
-                    <div key={item.id || idx} className={ITEM_CARD}>
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                          Noticia {idx + 1}
-                        </p>
-                        <button
-                          type="button"
-                          className={ACTION_DANGER}
-                          disabled={saving}
-                          onClick={() =>
-                            updateNews((n) => ({
-                              ...n,
-                              items: (n.items || []).filter((_, i) => i !== idx),
-                            }))
-                          }
-                        >
-                          Quitar
-                        </button>
-                      </div>
-                      <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                        <label className={labelClass}>
-                          Título
-                          <input
-                            className={inputClass}
-                            value={item.title || ''}
-                            disabled={saving}
-                            onChange={(e) =>
-                              updateNews((n) => {
-                                const items = [...(n.items || [])]
-                                items[idx] = { ...items[idx], title: e.target.value }
-                                return { ...n, items }
-                              })
-                            }
-                          />
-                        </label>
-                        <label className={labelClass}>
-                          Fecha (badge)
-                          <input
-                            className={inputClass}
-                            value={item.date || ''}
-                            disabled={saving}
-                            placeholder="15 MAY  ·  o  2026-05-15"
-                            onChange={(e) =>
-                              updateNews((n) => {
-                                const items = [...(n.items || [])]
-                                items[idx] = { ...items[idx], date: e.target.value }
-                                return { ...n, items }
-                              })
-                            }
-                          />
-                        </label>
-                        <label className={`${labelClass} sm:col-span-2`}>
-                          Enlace «Leer más»
-                          <input
-                            className={inputClass}
-                            value={item.link || ''}
-                            disabled={saving}
-                            placeholder="/noticias/... o URL"
-                            onChange={(e) =>
-                              updateNews((n) => {
-                                const items = [...(n.items || [])]
-                                items[idx] = { ...items[idx], link: e.target.value }
-                                return { ...n, items }
-                              })
-                            }
-                          />
-                        </label>
-                        <label className={`${labelClass} sm:col-span-2`}>
-                          Extracto (opcional, no se muestra en la tarjeta nueva)
-                          <textarea
-                            className={textareaClass}
-                            value={item.excerpt || ''}
-                            disabled={saving}
-                            onChange={(e) =>
-                              updateNews((n) => {
-                                const items = [...(n.items || [])]
-                                items[idx] = { ...items[idx], excerpt: e.target.value }
-                                return { ...n, items }
-                              })
-                            }
-                          />
-                        </label>
-                      </div>
-                      <div className="mt-3">
-                        <SingleImageUploadField
-                          label="Imagen"
-                          value={item.imageUrl || ''}
-                          disabled={saving}
-                          kind="cover"
-                          onChange={(url) =>
-                            updateNews((n) => {
-                              const items = [...(n.items || [])]
-                              items[idx] = { ...items[idx], imageUrl: url }
-                              return { ...n, items }
-                            })
-                          }
-                          onNotify={setToast}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    className={ACTION_ADD}
-                    disabled={saving}
-                    onClick={() =>
-                      updateNews((n) => ({
-                        ...n,
-                        items: [
-                          ...(n.items || []),
-                          {
-                            id: makeFdcItemId('news'),
-                            title: '',
-                            date: '',
-                            excerpt: '',
-                            link: '',
-                            imageUrl: '',
-                          },
-                        ],
-                      }))
-                    }
-                  >
-                    + Agregar noticia
-                  </button>
-                </div>
-              </div>
-            </section>
 
-            <section className={SECTION_CARD}>
-              <SectionTitle title="Galería" description="Fotos en fila horizontal." />
-              <div className="mt-4 grid gap-4">
-                <label className={labelClass}>
+                <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200">
+                  <table className="w-full text-left text-sm">
+                    <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      <tr>
+                        <th className="px-4 py-3">Imagen</th>
+                        <th className="px-4 py-3">Título</th>
+                        <th className="px-4 py-3">Fecha</th>
+                        <th className="px-4 py-3 text-right">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {newsItems.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="px-4 py-6 text-center text-slate-500">
+                            Todavía no hay noticias.
+                          </td>
+                        </tr>
+                      ) : (
+                        newsItems.map((item, idx) => (
+                          <tr key={item.id || idx} className="hover:bg-slate-50/80">
+                            <td className="px-4 py-3">
+                              <ThumbCell src={item.imageUrl} alt={item.title} />
+                            </td>
+                            <td className="px-4 py-3 font-medium text-slate-900">
+                              {item.title || '—'}
+                            </td>
+                            <td className="px-4 py-3 text-slate-600">{item.date || '—'}</td>
+                            <td className="px-4 py-3">
+                              <div className="flex justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className={ACTION_NEUTRAL}
+                                  disabled={saving}
+                                  onClick={() => openNewsModal(idx)}
+                                >
+                                  Editar
+                                </button>
+                                <button
+                                  type="button"
+                                  className={ACTION_DANGER}
+                                  disabled={saving}
+                                  onClick={() =>
+                                    updateNews((n) => ({
+                                      ...n,
+                                      items: (n.items || []).filter((_, i) => i !== idx),
+                                    }))
+                                  }
+                                >
+                                  Eliminar
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                <button
+                  type="button"
+                  className={`${ACTION_ADD} mt-3`}
+                  disabled={saving}
+                  onClick={() => openNewsModal(null)}
+                >
+                  + Agregar noticia
+                </button>
+              </section>
+            ) : null}
+
+            {/* Galería */}
+            {activeTab === 'galeria' ? (
+              <section className={SECTION_CARD}>
+                <h2 className="text-lg font-bold text-slate-900">Galería</h2>
+                <label className={`${labelClass} mt-4 block max-w-md`}>
                   Título
                   <input
                     className={inputClass}
@@ -1232,44 +1640,37 @@ export function AdminFdc() {
                     onChange={(e) => updateGallery((g) => ({ ...g, title: e.target.value }))}
                   />
                 </label>
-                <div className="space-y-3">
-                  {(form.gallery?.items || []).map((item, idx) => (
-                    <div key={item.id || idx} className={ITEM_CARD}>
-                      <SingleImageUploadField
-                        label="Imagen"
-                        value={item.imageUrl || ''}
-                        disabled={saving}
-                        kind="gallery"
-                        compact
-                        onChange={(url) =>
-                          updateGallery((g) => {
-                            const items = [...(g.items || [])]
-                            items[idx] = { ...items[idx], imageUrl: url }
-                            return { ...g, items }
-                          })
-                        }
-                        onNotify={setToast}
-                      />
-                      <label className={`${labelClass} mt-3`}>
-                        Leyenda
-                        <input
-                          className={inputClass}
-                          value={item.caption || ''}
-                          disabled={saving}
-                          onChange={(e) =>
-                            updateGallery((g) => {
-                              const items = [...(g.items || [])]
-                              items[idx] = { ...items[idx], caption: e.target.value }
-                              return { ...g, items }
-                            })
-                          }
-                        />
-                      </label>
-                      <div className="mt-3 flex justify-end">
+
+                {galleryItems.length === 0 ? (
+                  <p className="mt-4 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
+                    Todavía no hay fotos en la galería.
+                  </p>
+                ) : (
+                  <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                    {galleryItems.map((item, idx) => (
+                      <div key={item.id || idx} className="group relative">
                         <button
                           type="button"
-                          className={ACTION_DANGER}
+                          className="block w-full overflow-hidden rounded-xl border border-slate-200 transition hover:border-sky-400 hover:ring-2 hover:ring-sky-200"
                           disabled={saving}
+                          onClick={() => openGalleryModal(idx)}
+                        >
+                          <ThumbCell
+                            src={item.imageUrl}
+                            alt={item.caption || `Foto ${idx + 1}`}
+                            className="aspect-square h-auto w-full"
+                          />
+                          {item.caption ? (
+                            <p className="truncate px-2 py-1.5 text-xs text-slate-600">
+                              {item.caption}
+                            </p>
+                          ) : null}
+                        </button>
+                        <button
+                          type="button"
+                          className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-rose-600 text-[10px] font-bold text-white opacity-0 transition group-hover:opacity-100"
+                          disabled={saving}
+                          aria-label="Quitar foto"
                           onClick={() =>
                             updateGallery((g) => ({
                               ...g,
@@ -1277,35 +1678,28 @@ export function AdminFdc() {
                             }))
                           }
                         >
-                          Quitar foto
+                          ×
                         </button>
                       </div>
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    className={ACTION_ADD}
-                    disabled={saving}
-                    onClick={() =>
-                      updateGallery((g) => ({
-                        ...g,
-                        items: [
-                          ...(g.items || []),
-                          { id: makeFdcItemId('gal'), imageUrl: '', caption: '' },
-                        ],
-                      }))
-                    }
-                  >
-                    + Agregar foto
-                  </button>
-                </div>
-              </div>
-            </section>
+                    ))}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  className={`${ACTION_ADD} mt-4`}
+                  disabled={saving}
+                  onClick={() => openGalleryModal(null)}
+                >
+                  + Agregar foto
+                </button>
+              </section>
+            ) : null}
 
-            <section className={SECTION_CARD}>
-              <SectionTitle title="Auspiciantes" />
-              <div className="mt-4 grid gap-4">
-                <label className={labelClass}>
+            {/* Auspiciantes */}
+            {activeTab === 'auspiciantes' ? (
+              <section className={SECTION_CARD}>
+                <h2 className="text-lg font-bold text-slate-900">Auspiciantes</h2>
+                <label className={`${labelClass} mt-4 block max-w-md`}>
                   Título
                   <input
                     className={inputClass}
@@ -1314,148 +1708,133 @@ export function AdminFdc() {
                     onChange={(e) => updateSponsors((s) => ({ ...s, title: e.target.value }))}
                   />
                 </label>
-                <div className="space-y-3">
-                  {(form.sponsors?.items || []).map((item, idx) => (
-                    <div key={item.id || idx} className={ITEM_CARD}>
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <label className={labelClass}>
-                          Nombre
-                          <input
-                            className={inputClass}
-                            value={item.name || ''}
-                            disabled={saving}
-                            onChange={(e) =>
-                              updateSponsors((s) => {
-                                const items = [...(s.items || [])]
-                                items[idx] = { ...items[idx], name: e.target.value }
-                                return { ...s, items }
-                              })
-                            }
-                          />
-                        </label>
-                        <label className={labelClass}>
-                          Sitio web
-                          <input
-                            className={inputClass}
-                            value={item.url || ''}
-                            disabled={saving}
-                            placeholder="https://…"
-                            onChange={(e) =>
-                              updateSponsors((s) => {
-                                const items = [...(s.items || [])]
-                                items[idx] = { ...items[idx], url: e.target.value }
-                                return { ...s, items }
-                              })
-                            }
-                          />
-                        </label>
-                      </div>
-                      <div className="mt-3">
-                        <SingleImageUploadField
-                          label="Logo"
-                          value={item.logoUrl || ''}
-                          disabled={saving}
-                          kind="cover"
-                          compact
-                          onChange={(url) =>
-                            updateSponsors((s) => {
-                              const items = [...(s.items || [])]
-                              items[idx] = { ...items[idx], logoUrl: url }
-                              return { ...s, items }
-                            })
-                          }
-                          onNotify={setToast}
-                        />
-                      </div>
-                      <div className="mt-3 flex justify-end">
-                        <button
-                          type="button"
-                          className={ACTION_DANGER}
-                          disabled={saving}
-                          onClick={() =>
-                            updateSponsors((s) => ({
-                              ...s,
-                              items: (s.items || []).filter((_, i) => i !== idx),
-                            }))
-                          }
-                        >
-                          Quitar auspiciante
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    className={ACTION_ADD}
-                    disabled={saving}
-                    onClick={() =>
-                      updateSponsors((s) => ({
-                        ...s,
-                        items: [
-                          ...(s.items || []),
-                          { id: makeFdcItemId('spo'), name: '', logoUrl: '', url: '' },
-                        ],
-                      }))
-                    }
-                  >
-                    + Agregar auspiciante
-                  </button>
-                </div>
-              </div>
-            </section>
 
-            <section className={SECTION_CARD}>
-              <SectionTitle title="Preinscripción de puestos" />
-              <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                <label className={labelClass}>
-                  Abre el
-                  <input
-                    type="date"
-                    className={inputClass}
-                    value={form.formOpenFrom || ''}
-                    onChange={(e) => setForm((p) => ({ ...p, formOpenFrom: e.target.value }))}
-                    disabled={saving}
-                  />
-                </label>
-                <label className={labelClass}>
-                  Cierra el
-                  <input
-                    type="date"
-                    className={inputClass}
-                    value={form.formOpenUntil || ''}
-                    onChange={(e) => setForm((p) => ({ ...p, formOpenUntil: e.target.value }))}
-                    disabled={saving}
-                  />
-                </label>
-                <label className={`${labelClass} sm:col-span-2`}>
-                  Aviso del formulario
-                  <textarea
-                    className={textareaClass}
-                    value={form.formNotice || ''}
-                    onChange={(e) => setForm((p) => ({ ...p, formNotice: e.target.value }))}
-                    disabled={saving}
-                  />
-                </label>
-                <label className={labelClass}>
-                  Título del bloque
-                  <input
-                    className={inputClass}
-                    value={form.ctaTitle || ''}
-                    onChange={(e) => setForm((p) => ({ ...p, ctaTitle: e.target.value }))}
-                    disabled={saving}
-                  />
-                </label>
-                <label className={labelClass}>
-                  Texto del bloque
-                  <textarea
-                    className={textareaClass}
-                    value={form.ctaBody || ''}
-                    onChange={(e) => setForm((p) => ({ ...p, ctaBody: e.target.value }))}
-                    disabled={saving}
-                  />
-                </label>
-              </div>
-            </section>
+                <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200">
+                  <table className="w-full text-left text-sm">
+                    <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      <tr>
+                        <th className="px-4 py-3">Logo</th>
+                        <th className="px-4 py-3">Nombre</th>
+                        <th className="px-4 py-3">Sitio web</th>
+                        <th className="px-4 py-3 text-right">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {sponsorItems.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="px-4 py-6 text-center text-slate-500">
+                            Todavía no hay auspiciantes.
+                          </td>
+                        </tr>
+                      ) : (
+                        sponsorItems.map((item, idx) => (
+                          <tr key={item.id || idx} className="hover:bg-slate-50/80">
+                            <td className="px-4 py-3">
+                              <ThumbCell src={item.logoUrl} alt={item.name} />
+                            </td>
+                            <td className="px-4 py-3 font-medium text-slate-900">
+                              {item.name || '—'}
+                            </td>
+                            <td className="max-w-[12rem] truncate px-4 py-3 text-slate-600">
+                              {item.url || '—'}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex justify-end gap-2">
+                                <button
+                                  type="button"
+                                  className={ACTION_NEUTRAL}
+                                  disabled={saving}
+                                  onClick={() => openSponsorModal(idx)}
+                                >
+                                  Editar
+                                </button>
+                                <button
+                                  type="button"
+                                  className={ACTION_DANGER}
+                                  disabled={saving}
+                                  onClick={() =>
+                                    updateSponsors((s) => ({
+                                      ...s,
+                                      items: (s.items || []).filter((_, i) => i !== idx),
+                                    }))
+                                  }
+                                >
+                                  Eliminar
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                <button
+                  type="button"
+                  className={`${ACTION_ADD} mt-3`}
+                  disabled={saving}
+                  onClick={() => openSponsorModal(null)}
+                >
+                  + Agregar auspiciante
+                </button>
+              </section>
+            ) : null}
+
+            {/* Preinscripción */}
+            {activeTab === 'preinscripcion' ? (
+              <section className={SECTION_CARD}>
+                <h2 className="text-lg font-bold text-slate-900">Preinscripción de puestos</h2>
+                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                  <label className={labelClass}>
+                    Abre el
+                    <input
+                      type="date"
+                      className={inputClass}
+                      value={form.formOpenFrom || ''}
+                      onChange={(e) => setForm((p) => ({ ...p, formOpenFrom: e.target.value }))}
+                      disabled={saving}
+                    />
+                  </label>
+                  <label className={labelClass}>
+                    Cierra el
+                    <input
+                      type="date"
+                      className={inputClass}
+                      value={form.formOpenUntil || ''}
+                      onChange={(e) => setForm((p) => ({ ...p, formOpenUntil: e.target.value }))}
+                      disabled={saving}
+                    />
+                  </label>
+                  <label className={`${labelClass} sm:col-span-2`}>
+                    Aviso del formulario
+                    <textarea
+                      className={textareaClass}
+                      value={form.formNotice || ''}
+                      onChange={(e) => setForm((p) => ({ ...p, formNotice: e.target.value }))}
+                      disabled={saving}
+                    />
+                  </label>
+                  <label className={labelClass}>
+                    Título del bloque
+                    <input
+                      className={inputClass}
+                      value={form.ctaTitle || ''}
+                      onChange={(e) => setForm((p) => ({ ...p, ctaTitle: e.target.value }))}
+                      disabled={saving}
+                    />
+                  </label>
+                  <label className={labelClass}>
+                    Texto del bloque
+                    <textarea
+                      className={textareaClass}
+                      value={form.ctaBody || ''}
+                      onChange={(e) => setForm((p) => ({ ...p, ctaBody: e.target.value }))}
+                      disabled={saving}
+                    />
+                  </label>
+                </div>
+              </section>
+            ) : null}
 
             <div className="sticky bottom-3 z-20 flex justify-end rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur">
               <button

@@ -341,7 +341,7 @@ export function FdcStallApplicationForm({
               </div>
             ) : null}
 
-            <div className="flex w-full justify-stretch border-t border-[#ebe7df] pt-5 sm:justify-end">
+            <div className="flex w-full justify-center border-t border-[#ebe7df] pt-5">
               <button
                 type="submit"
                 disabled={disabled}
