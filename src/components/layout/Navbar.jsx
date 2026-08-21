@@ -8,6 +8,13 @@ import { SearchOpenButton, SiteSearchPanel } from './SiteSearchPanel.jsx'
 
 const startLinks = [
   { to: '/', label: 'Inicio', end: true },
+  {
+    to: '/fiesta-del-caballo',
+    label: 'FDC',
+    ariaLabel: 'Fiesta del Caballo',
+    preload: 'fdc',
+    end: true,
+  },
 ]
 
 const newsLink = { to: '/news', label: 'Noticias' }
@@ -17,7 +24,6 @@ const areasLink = { to: '/areas', label: 'Áreas', preload: 'areasIndex', end: t
 const servicesLink = { to: '/services', label: 'Servicios' }
 
 const ourCityLinks = [
-  { to: '/fiesta-del-caballo', label: 'Fiesta del Caballo', preload: 'fdc', end: true },
   { to: '/eventos', label: 'Eventos', preload: 'events' },
   {
     to: '/gobierno/oferta-academica',
@@ -363,6 +369,9 @@ export function Navbar() {
                 to={link.to}
                 className={mobileLinkClass}
                 end={link.end}
+                aria-label={link.ariaLabel}
+                onMouseEnter={() => preloadPublicRoute(link.preload)}
+                onFocus={() => preloadPublicRoute(link.preload)}
                 onClick={() => setOpen(false)}
               >
                 {link.label}
@@ -632,7 +641,10 @@ export function Navbar() {
                   key={link.to}
                   to={link.to}
                   label={link.label}
+                  ariaLabel={link.ariaLabel}
                   end={link.end}
+                  onMouseEnter={() => preloadPublicRoute(link.preload)}
+                  onFocus={() => preloadPublicRoute(link.preload)}
                   compact={scrolled}
                 />
               ))}
