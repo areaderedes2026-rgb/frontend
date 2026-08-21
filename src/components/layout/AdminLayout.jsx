@@ -110,6 +110,7 @@ export function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(readSidebarOpen)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [gobiernoOpen, setGobiernoOpen] = useState(false)
+  const [nuestraCiudadOpen, setNuestraCiudadOpen] = useState(false)
 
   const intendenciaActive =
     pathname === ROUTES.adminSettingsIntendencia ||
@@ -135,6 +136,9 @@ export function AdminLayout() {
     pathname === ROUTES.adminEvents || pathname.startsWith(`${ROUTES.adminEvents}/`)
   const historyActive =
     pathname === ROUTES.adminHistory || pathname.startsWith(`${ROUTES.adminHistory}/`)
+  const tourismActive =
+    pathname === ROUTES.adminTourismPlaces ||
+    pathname.startsWith(`${ROUTES.adminTourismPlaces}/`)
   const citizenAttentionActive =
     pathname === ROUTES.adminCitizenAttention ||
     pathname.startsWith(`${ROUTES.adminCitizenAttention}/`)
@@ -154,6 +158,12 @@ export function AdminLayout() {
     pathname.startsWith(`${ROUTES.adminFdc}/`) ||
     pathname === ROUTES.adminFdcSolicitudes ||
     pathname.startsWith(`${ROUTES.adminFdcSolicitudes}/`)
+  const nuestraCiudadActive =
+    eventsActive ||
+    ofertaAcademicaActive ||
+    gastronomicCatalogActive ||
+    tourismActive ||
+    historyActive
 
   const persistSidebarOpen = useCallback((next) => {
     setSidebarOpen(next)
@@ -168,6 +178,10 @@ export function AdminLayout() {
   useEffect(() => {
     if (gobiernoActive) setGobiernoOpen(true)
   }, [gobiernoActive])
+
+  useEffect(() => {
+    if (nuestraCiudadActive) setNuestraCiudadOpen(true)
+  }, [nuestraCiudadActive])
 
   useEffect(() => {
     const run = () => {
@@ -295,15 +309,6 @@ export function AdminLayout() {
         </div>
 
         <NavLink
-          to={ROUTES.adminEvents}
-          onMouseEnter={() => preloadAdminRoute('events')}
-          onFocus={() => preloadAdminRoute('events')}
-          onClick={closeMobile}
-          className={({ isActive }) => navClass({ isActive: isActive || eventsActive })}
-        >
-          Eventos
-        </NavLink>
-        <NavLink
           to={ROUTES.adminAreas}
           onMouseEnter={() => preloadAdminRoute('areas')}
           onFocus={() => preloadAdminRoute('areas')}
@@ -313,36 +318,90 @@ export function AdminLayout() {
           Áreas
         </NavLink>
         <NavLink
-          to={ROUTES.adminHistory}
-          onMouseEnter={() => preloadAdminRoute('history')}
-          onFocus={() => preloadAdminRoute('history')}
+          to={ROUTES.adminServices}
+          onMouseEnter={() => preloadAdminRoute('services')}
+          onFocus={() => preloadAdminRoute('services')}
           onClick={closeMobile}
-          className={({ isActive }) => navClass({ isActive: isActive || historyActive })}
+          className={({ isActive }) => navClass({ isActive: isActive || servicesActive })}
         >
-          Historia
+          Servicios
         </NavLink>
-        <NavLink
-          to={ROUTES.adminOfertaAcademica}
-          onMouseEnter={() => preloadAdminRoute('ofertaAcademica')}
-          onFocus={() => preloadAdminRoute('ofertaAcademica')}
-          onClick={closeMobile}
-          className={({ isActive }) =>
-            navClass({ isActive: isActive || ofertaAcademicaActive })
-          }
-        >
-          Oferta académica
-        </NavLink>
-        <NavLink
-          to={ROUTES.adminCatalogoGastronomico}
-          onMouseEnter={() => preloadAdminRoute('gastronomicCatalog')}
-          onFocus={() => preloadAdminRoute('gastronomicCatalog')}
-          onClick={closeMobile}
-          className={({ isActive }) =>
-            navClass({ isActive: isActive || gastronomicCatalogActive })
-          }
-        >
-          Gastronomía
-        </NavLink>
+
+        <div className="space-y-1">
+          <button
+            type="button"
+            className={`flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition-all duration-200 ${
+              nuestraCiudadActive
+                ? 'bg-sky-50 text-sky-800 ring-1 ring-sky-200/80'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+            }`}
+            aria-expanded={nuestraCiudadOpen}
+            onClick={() => setNuestraCiudadOpen((v) => !v)}
+          >
+            <span>Nuestra ciudad</span>
+            <ChevronDownIcon open={nuestraCiudadOpen} />
+          </button>
+          {nuestraCiudadOpen ? (
+            <div className="ml-2 space-y-0.5 border-l border-slate-200 pl-2">
+              <NavLink
+                to={ROUTES.adminEvents}
+                onMouseEnter={() => preloadAdminRoute('events')}
+                onFocus={() => preloadAdminRoute('events')}
+                onClick={closeMobile}
+                className={({ isActive }) =>
+                  subNavClass({ isActive: isActive || eventsActive })
+                }
+              >
+                Eventos
+              </NavLink>
+              <NavLink
+                to={ROUTES.adminOfertaAcademica}
+                onMouseEnter={() => preloadAdminRoute('ofertaAcademica')}
+                onFocus={() => preloadAdminRoute('ofertaAcademica')}
+                onClick={closeMobile}
+                className={({ isActive }) =>
+                  subNavClass({ isActive: isActive || ofertaAcademicaActive })
+                }
+              >
+                Oferta académica
+              </NavLink>
+              <NavLink
+                to={ROUTES.adminCatalogoGastronomico}
+                onMouseEnter={() => preloadAdminRoute('gastronomicCatalog')}
+                onFocus={() => preloadAdminRoute('gastronomicCatalog')}
+                onClick={closeMobile}
+                className={({ isActive }) =>
+                  subNavClass({ isActive: isActive || gastronomicCatalogActive })
+                }
+              >
+                Catálogo gastronómico
+              </NavLink>
+              <NavLink
+                to={ROUTES.adminTourismPlaces}
+                onMouseEnter={() => preloadAdminRoute('tourismPlaces')}
+                onFocus={() => preloadAdminRoute('tourismPlaces')}
+                onClick={closeMobile}
+                className={({ isActive }) =>
+                  subNavClass({ isActive: isActive || tourismActive })
+                }
+              >
+                Turismo
+              </NavLink>
+              <NavLink
+                to={ROUTES.adminHistory}
+                onMouseEnter={() => preloadAdminRoute('history')}
+                onFocus={() => preloadAdminRoute('history')}
+                onClick={closeMobile}
+                className={({ isActive }) =>
+                  subNavClass({ isActive: isActive || historyActive })
+                }
+              >
+                Historia
+              </NavLink>
+            </div>
+          ) : null}
+        </div>
+
         <NavLink
           to={ROUTES.adminFdc}
           onMouseEnter={() => preloadAdminRoute('fdc')}
@@ -351,15 +410,6 @@ export function AdminLayout() {
           className={({ isActive }) => navClass({ isActive: isActive || fdcActive })}
         >
           Fiesta Caballo
-        </NavLink>
-        <NavLink
-          to={ROUTES.adminServices}
-          onMouseEnter={() => preloadAdminRoute('services')}
-          onFocus={() => preloadAdminRoute('services')}
-          onClick={closeMobile}
-          className={({ isActive }) => navClass({ isActive: isActive || servicesActive })}
-        >
-          Servicios
         </NavLink>
         <NavLink
           to={ROUTES.adminCitizenAttention}
