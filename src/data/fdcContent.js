@@ -22,6 +22,23 @@ export function isFdcOtherRubro(label) {
   return String(label || '').trim().toLowerCase() === 'otro'
 }
 
+/** Normaliza lista de rubros y garantiza «Otro» al final (no se puede quitar). */
+export function ensureFdcFormRubros(list, fallback = FDC_RUBROS) {
+  const source = Array.isArray(list) && list.length ? list : fallback
+  const seen = new Set()
+  const out = []
+  for (const raw of source) {
+    const label = String(raw || '').trim()
+    if (!label || isFdcOtherRubro(label)) continue
+    const key = label.toLowerCase()
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push(label)
+  }
+  out.push('Otro')
+  return out
+}
+
 export const FDC_DEFAULT_HERO_IMAGE =
   'https://images.unsplash.com/photo-1553284965-83fd3e82fa5a?auto=format&fit=crop&w=1800&q=80'
 
@@ -343,24 +360,25 @@ export function mergeFdcContent(base, remote) {
     sponsors: mergeNamedSection(defaults.sponsors, remote.sponsors, ['title', 'items']),
     usefulInfo: { title: '', items: [] },
     formNotice: String(remote.formNotice ?? defaults.formNotice ?? ''),
-    formRubros: (() => {
-      const source = Array.isArray(remote.formRubros)
+    formRubros: ensureFdcFormRubros(
+      Array.isArray(remote.formRubros)
         ? remote.formRubros
-        : defaults.formRubros || FDC_RUBROS
-      const seen = new Set()
-      const out = []
-      for (const raw of source) {
-        const label = String(raw || '').trim()
-        if (!label) continue
-        const key = label.toLowerCase()
-        if (seen.has(key)) continue
-        seen.add(key)
-        out.push(label)
-      }
-      return out.length > 0 ? out : [...(defaults.formRubros || FDC_RUBROS)]
-    })(),
-    formEyebrow: String(remote.formEyebrow ?? defaults.formEyebrow ?? 'Preinscripción 2026'),
-    formHeading: String(remote.formHeading ?? defaults.formHeading ?? 'Completá tus datos'),
+        : Array.isArray(remote.usefulInfo?.formRubros)
+          ? remote.usefulInfo.formRubros
+          : defaults.formRubros || FDC_RUBROS,
+    ),
+    formEyebrow: String(
+      remote.formEyebrow ||
+        remote.usefulInfo?.formEyebrow ||
+        defaults.formEyebrow ||
+        'Preinscripción 2026',
+    ),
+    formHeading: String(
+      remote.formHeading ||
+        remote.usefulInfo?.formHeading ||
+        defaults.formHeading ||
+        'Completá tus datos',
+    ),
     formOpenFrom: remote.formOpenFrom
       ? String(remote.formOpenFrom).slice(0, 10)
       : defaults.formOpenFrom,

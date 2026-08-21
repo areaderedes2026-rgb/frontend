@@ -11,7 +11,9 @@ import {
   DEFAULT_FDC_CONTENT,
   FDC_SCHEDULE_MAX_IMAGES,
   applyHeroCoverToFdcContent,
+  ensureFdcFormRubros,
   fdcContentToHeroCover,
+  isFdcOtherRubro,
   makeFdcItemId,
   mergeFdcContent,
 } from '../../data/fdcContent.js'
@@ -77,7 +79,7 @@ function mapContentToForm(content) {
     showSearch: normalizeHeroToggle(merged.showSearch, false),
     showPrimaryButton: normalizeHeroToggle(merged.showPrimaryButton, true),
     showSecondaryButton: normalizeHeroToggle(merged.showSecondaryButton, true),
-    formRubros: [...(merged.formRubros || [])],
+    formRubros: ensureFdcFormRubros(merged.formRubros),
   }
 }
 
@@ -318,9 +320,7 @@ export function AdminFdc() {
       },
       usefulInfo: { title: '', items: [] },
       formNotice: String(form.formNotice || ''),
-      formRubros: (form.formRubros || [])
-        .map((r) => String(r || '').trim())
-        .filter(Boolean),
+      formRubros: ensureFdcFormRubros(form.formRubros),
       formEyebrow: String(form.formEyebrow || '').trim(),
       formHeading: String(form.formHeading || '').trim(),
       formOpenFrom: form.formOpenFrom || null,
@@ -1868,8 +1868,8 @@ export function AdminFdc() {
                     <div>
                       <h3 className="text-base font-bold text-slate-900">Opciones de rubro</h3>
                       <p className="mt-1 text-sm text-slate-600">
-                        Aparecen en el select del formulario público. Si incluís una opción llamada
-                        «Otro», se pedirá un texto libre.
+                        Aparecen en el select del formulario público. La opción «Otro» es fija: permite
+                        ingresar un rubro libre y no se puede quitar.
                       </p>
                     </div>
                     <button
@@ -1877,92 +1877,107 @@ export function AdminFdc() {
                       className={ACTION_ADD}
                       disabled={saving}
                       onClick={() =>
-                        setForm((p) => ({
-                          ...p,
-                          formRubros: [...(p.formRubros || []), ''],
-                        }))
+                        setForm((p) => {
+                          const current = ensureFdcFormRubros(p.formRubros)
+                          const withoutOtro = current.filter((r) => !isFdcOtherRubro(r))
+                          return {
+                            ...p,
+                            formRubros: ensureFdcFormRubros([...withoutOtro, 'Nuevo rubro']),
+                          }
+                        })
                       }
                     >
                       + Agregar rubro
                     </button>
                   </div>
                   <ul className="mt-4 space-y-2">
-                    {(form.formRubros || []).map((rubro, idx) => (
-                      <li
-                        key={`rubro-${idx}`}
-                        className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/70 p-2.5 sm:flex-nowrap"
-                      >
-                        <span className="w-7 shrink-0 text-center text-xs font-semibold text-slate-400">
-                          {idx + 1}
-                        </span>
-                        <input
-                          className={`${inputClass} min-w-0 flex-1`}
-                          value={rubro}
-                          disabled={saving}
-                          placeholder="Nombre del rubro"
-                          onChange={(e) =>
-                            setForm((p) => {
-                              const next = [...(p.formRubros || [])]
-                              next[idx] = e.target.value
-                              return { ...p, formRubros: next }
-                            })
-                          }
-                        />
-                        <div className="flex shrink-0 gap-1.5">
-                          <button
-                            type="button"
-                            className={ACTION_NEUTRAL}
-                            disabled={saving || idx === 0}
-                            aria-label="Subir"
-                            onClick={() =>
+                    {(form.formRubros || []).map((rubro, idx) => {
+                      const isOtro = isFdcOtherRubro(rubro)
+                      return (
+                        <li
+                          key={`rubro-${idx}`}
+                          className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/70 p-2.5 sm:flex-nowrap"
+                        >
+                          <span className="w-7 shrink-0 text-center text-xs font-semibold text-slate-400">
+                            {idx + 1}
+                          </span>
+                          <input
+                            className={`${inputClass} min-w-0 flex-1`}
+                            value={rubro}
+                            disabled={saving || isOtro}
+                            readOnly={isOtro}
+                            placeholder="Nombre del rubro"
+                            onChange={(e) =>
                               setForm((p) => {
                                 const next = [...(p.formRubros || [])]
-                                if (idx <= 0) return p
-                                ;[next[idx - 1], next[idx]] = [next[idx], next[idx - 1]]
-                                return { ...p, formRubros: next }
+                                next[idx] = e.target.value
+                                return { ...p, formRubros: ensureFdcFormRubros(next) }
                               })
                             }
-                          >
-                            ↑
-                          </button>
-                          <button
-                            type="button"
-                            className={ACTION_NEUTRAL}
-                            disabled={saving || idx >= (form.formRubros || []).length - 1}
-                            aria-label="Bajar"
-                            onClick={() =>
-                              setForm((p) => {
-                                const next = [...(p.formRubros || [])]
-                                if (idx >= next.length - 1) return p
-                                ;[next[idx], next[idx + 1]] = [next[idx + 1], next[idx]]
-                                return { ...p, formRubros: next }
-                              })
-                            }
-                          >
-                            ↓
-                          </button>
-                          <button
-                            type="button"
-                            className={ACTION_DANGER}
-                            disabled={saving || (form.formRubros || []).length <= 1}
-                            onClick={() =>
-                              setForm((p) => ({
-                                ...p,
-                                formRubros: (p.formRubros || []).filter((_, i) => i !== idx),
-                              }))
-                            }
-                          >
-                            Quitar
-                          </button>
-                        </div>
-                      </li>
-                    ))}
+                          />
+                          {isOtro ? (
+                            <span className="shrink-0 rounded-lg bg-amber-50 px-2.5 py-1.5 text-[11px] font-semibold text-amber-900">
+                              Fijo
+                            </span>
+                          ) : (
+                            <div className="flex shrink-0 gap-1.5">
+                              <button
+                                type="button"
+                                className={ACTION_NEUTRAL}
+                                disabled={saving || idx === 0}
+                                aria-label="Subir"
+                                onClick={() =>
+                                  setForm((p) => {
+                                    const next = [...(p.formRubros || [])]
+                                    if (idx <= 0 || isFdcOtherRubro(next[idx])) return p
+                                    ;[next[idx - 1], next[idx]] = [next[idx], next[idx - 1]]
+                                    return { ...p, formRubros: ensureFdcFormRubros(next) }
+                                  })
+                                }
+                              >
+                                ↑
+                              </button>
+                              <button
+                                type="button"
+                                className={ACTION_NEUTRAL}
+                                disabled={
+                                  saving ||
+                                  idx >= (form.formRubros || []).length - 2
+                                }
+                                aria-label="Bajar"
+                                onClick={() =>
+                                  setForm((p) => {
+                                    const next = [...(p.formRubros || [])]
+                                    if (idx >= next.length - 1 || isFdcOtherRubro(next[idx])) return p
+                                    if (isFdcOtherRubro(next[idx + 1])) return p
+                                    ;[next[idx], next[idx + 1]] = [next[idx + 1], next[idx]]
+                                    return { ...p, formRubros: ensureFdcFormRubros(next) }
+                                  })
+                                }
+                              >
+                                ↓
+                              </button>
+                              <button
+                                type="button"
+                                className={ACTION_DANGER}
+                                disabled={saving}
+                                onClick={() =>
+                                  setForm((p) => ({
+                                    ...p,
+                                    formRubros: ensureFdcFormRubros(
+                                      (p.formRubros || []).filter((_, i) => i !== idx),
+                                    ),
+                                  }))
+                                }
+                              >
+                                Quitar
+                              </button>
+                            </div>
+                          )}
+                        </li>
+                      )
+                    })}
                   </ul>
-                  {(form.formRubros || []).length === 0 ? (
-                    <p className="mt-3 text-sm text-amber-800">
-                      Agregá al menos un rubro antes de guardar.
-                    </p>
-                  ) : null}
                 </div>
               </section>
             ) : null}
