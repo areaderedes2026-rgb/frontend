@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   FdcArtistsSection,
   FdcGallerySection,
@@ -25,27 +25,11 @@ import {
 import { fetchFdcContent } from '../../services/fdcService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
 import { ROUTES } from '../../utils/constants.js'
-
-/** Anclas que deben llevar a la sección del formulario de puestos. */
-const FDC_FORM_SECTION_ID = 'solicitud-puestos'
-const FDC_FORM_HASH_ALIASES = new Set([
-  'solicitud-puestos',
-  'preinscripcion',
-  'preinscripción',
-  'formulario',
-  'puestos',
-  'postularme',
-])
-
-function resolveFdcHashTargetId(hash) {
-  const raw = String(hash || '')
-    .replace(/^#/, '')
-    .trim()
-    .toLowerCase()
-  if (!raw) return null
-  if (FDC_FORM_HASH_ALIASES.has(raw)) return FDC_FORM_SECTION_ID
-  return raw
-}
+import {
+  FDC_FORM_SECTION_ID,
+  resolveFdcHashTargetId,
+  scrollToFdcElementSettled,
+} from '../../utils/fdcScroll.js'
 
 function FdcSubmitSuccess({ result }) {
   const id = result?.id
@@ -120,6 +104,7 @@ function FdcSubmitSuccess({ result }) {
 
 export function FiestaDelCaballo() {
   const location = useLocation()
+  const navigate = useNavigate()
   const apiEnabled = isApiConfigured()
   const [page, setPage] = useState(() =>
     apiEnabled ? { ...DEFAULT_FDC_CONTENT, heroImageUrl: '' } : { ...DEFAULT_FDC_CONTENT },
@@ -128,6 +113,21 @@ export function FiestaDelCaballo() {
   const [toast, setToast] = useState(null)
   const [submitSuccess, setSubmitSuccess] = useState(null)
   const dismissToast = useCallback(() => setToast(null), [])
+
+  const handleHashNavigate = useCallback(
+    (hashOrHref) => {
+      const targetId = resolveFdcHashTargetId(hashOrHref)
+      if (!targetId) return
+      const nextHash = `#${targetId}`
+      const current = String(location.hash || '').toLowerCase()
+      if (current === nextHash.toLowerCase() || resolveFdcHashTargetId(location.hash) === targetId) {
+        scrollToFdcElementSettled(targetId)
+        return
+      }
+      navigate({ pathname: location.pathname, hash: targetId }, { replace: false })
+    },
+    [location.hash, location.pathname, navigate],
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -148,36 +148,43 @@ export function FiestaDelCaballo() {
     }
   }, [apiEnabled])
 
-  // Deep-link: /fiesta-del-caballo#solicitud-puestos (y alias) → scroll al formulario
+  // Deep-link / anclas internas → scroll con offset de navbar + barra sticky
   useEffect(() => {
     if (!hydrated || submitSuccess) return
     const targetId = resolveFdcHashTargetId(location.hash)
     if (!targetId) return
 
-    const preferReduced =
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches
-
     let attempts = 0
-    let timer = 0
+    let retryTimer = 0
+    let cancelSettled = () => {}
 
-    function scrollToTarget() {
+    function tryScroll() {
       const el = document.getElementById(targetId)
       if (!el) {
         attempts += 1
-        if (attempts < 12) {
-          timer = window.setTimeout(scrollToTarget, 80)
+        if (attempts < 20) {
+          retryTimer = window.setTimeout(tryScroll, 60)
         }
         return
       }
-      el.scrollIntoView({
-        behavior: preferReduced ? 'auto' : 'smooth',
-        block: 'start',
-      })
+      cancelSettled = scrollToFdcElementSettled(targetId)
+      try {
+        el.focus?.({ preventScroll: true })
+      } catch {
+        /* ignore */
+      }
     }
 
-    timer = window.setTimeout(scrollToTarget, 60)
-    return () => window.clearTimeout(timer)
+    // Evitar el salto nativo del navegador (deja el scroll a mitad).
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual'
+    }
+
+    retryTimer = window.setTimeout(tryScroll, 40)
+    return () => {
+      window.clearTimeout(retryTimer)
+      cancelSettled()
+    }
   }, [hydrated, location.hash, submitSuccess])
 
   useEffect(() => {
@@ -242,8 +249,9 @@ export function FiestaDelCaballo() {
           subtitle={page.showHeroSubtitle !== false ? page.heroSubtitle : ''}
           primaryCta={hydrated ? primaryCta : null}
           secondaryCta={hydrated ? secondaryCta : null}
+          onHashNavigate={handleHashNavigate}
         />
-        <FdcSectionNav items={page.sectionNav} />
+        <FdcSectionNav items={page.sectionNav} onHashNavigate={handleHashNavigate} />
       </div>
 
       {(page.artists?.items || []).some((a) => a?.name) ? (
@@ -314,25 +322,25 @@ export function FiestaDelCaballo() {
         </section>
       ) : null}
 
-      <section
-        id={FDC_FORM_SECTION_ID}
-        tabIndex={-1}
-        className="relative isolate scroll-mt-[calc(var(--navbar-h,5rem)+4rem)] border-y border-white/10 bg-[#171b22] py-14 text-white outline-none sm:py-16 lg:py-20"
-      >
+      <section className="relative isolate border-y border-white/10 bg-[#171b22] py-10 text-white outline-none sm:py-12 lg:py-14">
         <Container className="relative z-10 max-w-[min(100%,96rem)]!">
-          <RevealOnScroll variant="slow">
-            <FdcSectionTitle
-              title={page.ctaTitle || 'Solicitud de puestos comerciales'}
-              tone="dark"
-            />
-            {fromLabel && untilLabel ? (
-              <p className="mb-5 text-center text-xs font-medium text-slate-300 sm:mb-6 sm:text-sm">
-                Periodo de preinscripción:{' '}
-                <span className="font-semibold text-white">
-                  {fromLabel} al {untilLabel}
-                </span>
-              </p>
-            ) : null}
+          <FdcSectionTitle
+            title={page.ctaTitle || 'Solicitud de puestos comerciales'}
+            tone="dark"
+          />
+          {fromLabel && untilLabel ? (
+            <p className="mb-5 text-center text-xs font-medium text-slate-300 sm:mb-6 sm:text-sm">
+              Periodo de preinscripción:{' '}
+              <span className="font-semibold text-white">
+                {fromLabel} al {untilLabel}
+              </span>
+            </p>
+          ) : null}
+          <div
+            id={FDC_FORM_SECTION_ID}
+            tabIndex={-1}
+            className="scroll-mt-[calc(var(--navbar-h,5rem)+5.5rem)] outline-none"
+          >
             <FdcStallApplicationForm
               formNotice={page.formNotice}
               formOpen={formOpen}
@@ -356,7 +364,7 @@ export function FiestaDelCaballo() {
                 })
               }}
             />
-          </RevealOnScroll>
+          </div>
         </Container>
       </section>
     </>

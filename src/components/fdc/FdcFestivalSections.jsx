@@ -138,12 +138,20 @@ function SmartLink({ href, className, children, ...rest }) {
   )
 }
 
-export function FdcSectionNav({ items = [], className = '' }) {
+export function FdcSectionNav({ items = [], className = '', onHashNavigate }) {
   const navItems = (items || []).filter((n) => n?.label && n?.href)
   if (navItems.length === 0) return null
 
+  function handleClick(e, href) {
+    const target = String(href || '').trim()
+    if (!target.startsWith('#') || !onHashNavigate) return
+    e.preventDefault()
+    onHashNavigate(target)
+  }
+
   return (
     <nav
+      id="fdc-section-nav"
       aria-label="Secciones del festival"
       className={`sticky top-[calc(var(--navbar-h,5rem))] z-30 shrink-0 border-b border-white/10 bg-[#0c1017] ${className}`.trim()}
     >
@@ -154,6 +162,7 @@ export function FdcSectionNav({ items = [], className = '' }) {
               <a
                 key={item.id || item.href}
                 href={item.href}
+                onClick={(e) => handleClick(e, item.href)}
                 className="group flex min-w-[4.75rem] flex-col items-center justify-center gap-1 rounded-lg px-2 py-2 text-center transition hover:bg-white/8 sm:min-w-0 sm:flex-1 sm:gap-1.5 sm:px-3 lg:px-4"
               >
                 <span className="text-[#d4b483] transition group-hover:text-amber-200">

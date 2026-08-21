@@ -13,7 +13,7 @@ function splitFestivalTitle(title) {
   return { lead: raw, emphasis: '' }
 }
 
-function HeroLink({ href, className, children, previewMode = false }) {
+function HeroLink({ href, className, children, previewMode = false, onHashNavigate }) {
   const target = String(href || '').trim() || '#'
   if (previewMode) {
     return <span className={className}>{children}</span>
@@ -25,6 +25,14 @@ function HeroLink({ href, className, children, previewMode = false }) {
         className={className}
         target={target.startsWith('http') ? '_blank' : undefined}
         rel={target.startsWith('http') ? 'noopener noreferrer' : undefined}
+        onClick={
+          target.startsWith('#') && onHashNavigate
+            ? (e) => {
+                e.preventDefault()
+                onHashNavigate(target)
+              }
+            : undefined
+        }
       >
         {children}
       </a>
@@ -51,6 +59,7 @@ export function FdcFestivalHero({
   subtitle = '',
   primaryCta,
   secondaryCta,
+  onHashNavigate,
   className = '',
 }) {
   const ready = previewMode || contentReady
@@ -148,6 +157,7 @@ export function FdcFestivalHero({
                   <HeroLink
                     href={primaryCta.href}
                     previewMode={previewMode}
+                    onHashNavigate={onHashNavigate}
                     className="inline-flex min-h-11 items-center justify-center rounded-md bg-[#d4b483] px-6 text-xs font-bold uppercase tracking-[0.16em] text-[#171b22] shadow-[0_12px_32px_-12px_rgba(0,0,0,0.55)] transition hover:bg-[#e0c49a] sm:min-h-12 sm:px-7 sm:text-sm"
                   >
                     {primaryCta.label}
@@ -161,6 +171,7 @@ export function FdcFestivalHero({
                 <HeroLink
                   href={secondaryCta.href}
                   previewMode={previewMode}
+                  onHashNavigate={onHashNavigate}
                   className="inline-flex items-center gap-2.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white/90 transition hover:text-amber-200 sm:text-xs"
                 >
                   <span
