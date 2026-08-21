@@ -77,6 +77,7 @@ function mapContentToForm(content) {
     showSearch: normalizeHeroToggle(merged.showSearch, false),
     showPrimaryButton: normalizeHeroToggle(merged.showPrimaryButton, true),
     showSecondaryButton: normalizeHeroToggle(merged.showSecondaryButton, true),
+    formRubros: [...(merged.formRubros || [])],
   }
 }
 
@@ -317,6 +318,11 @@ export function AdminFdc() {
       },
       usefulInfo: { title: '', items: [] },
       formNotice: String(form.formNotice || ''),
+      formRubros: (form.formRubros || [])
+        .map((r) => String(r || '').trim())
+        .filter(Boolean),
+      formEyebrow: String(form.formEyebrow || '').trim(),
+      formHeading: String(form.formHeading || '').trim(),
       formOpenFrom: form.formOpenFrom || null,
       formOpenUntil: form.formOpenUntil || null,
       ctaTitle: String(form.ctaTitle || '').trim(),
@@ -1784,6 +1790,9 @@ export function AdminFdc() {
             {activeTab === 'preinscripcion' ? (
               <section className={SECTION_CARD}>
                 <h2 className="text-lg font-bold text-slate-900">Preinscripción de puestos</h2>
+                <p className="mt-1 text-sm text-slate-600">
+                  Ventana, textos del formulario y opciones del select de rubro.
+                </p>
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   <label className={labelClass}>
                     Abre el
@@ -1805,6 +1814,26 @@ export function AdminFdc() {
                       disabled={saving}
                     />
                   </label>
+                  <label className={labelClass}>
+                    Etiqueta superior del formulario
+                    <input
+                      className={inputClass}
+                      value={form.formEyebrow || ''}
+                      onChange={(e) => setForm((p) => ({ ...p, formEyebrow: e.target.value }))}
+                      disabled={saving}
+                      placeholder="Preinscripción 2026"
+                    />
+                  </label>
+                  <label className={labelClass}>
+                    Título del formulario
+                    <input
+                      className={inputClass}
+                      value={form.formHeading || ''}
+                      onChange={(e) => setForm((p) => ({ ...p, formHeading: e.target.value }))}
+                      disabled={saving}
+                      placeholder="Completá tus datos"
+                    />
+                  </label>
                   <label className={`${labelClass} sm:col-span-2`}>
                     Aviso del formulario
                     <textarea
@@ -1815,7 +1844,7 @@ export function AdminFdc() {
                     />
                   </label>
                   <label className={labelClass}>
-                    Título del bloque
+                    Título del bloque (CTA)
                     <input
                       className={inputClass}
                       value={form.ctaTitle || ''}
@@ -1824,7 +1853,7 @@ export function AdminFdc() {
                     />
                   </label>
                   <label className={labelClass}>
-                    Texto del bloque
+                    Texto del bloque (CTA)
                     <textarea
                       className={textareaClass}
                       value={form.ctaBody || ''}
@@ -1832,6 +1861,108 @@ export function AdminFdc() {
                       disabled={saving}
                     />
                   </label>
+                </div>
+
+                <div className="mt-8 border-t border-slate-200 pt-6">
+                  <div className="flex flex-wrap items-end justify-between gap-3">
+                    <div>
+                      <h3 className="text-base font-bold text-slate-900">Opciones de rubro</h3>
+                      <p className="mt-1 text-sm text-slate-600">
+                        Aparecen en el select del formulario público. Si incluís una opción llamada
+                        «Otro», se pedirá un texto libre.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className={ACTION_ADD}
+                      disabled={saving}
+                      onClick={() =>
+                        setForm((p) => ({
+                          ...p,
+                          formRubros: [...(p.formRubros || []), ''],
+                        }))
+                      }
+                    >
+                      + Agregar rubro
+                    </button>
+                  </div>
+                  <ul className="mt-4 space-y-2">
+                    {(form.formRubros || []).map((rubro, idx) => (
+                      <li
+                        key={`rubro-${idx}`}
+                        className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/70 p-2.5 sm:flex-nowrap"
+                      >
+                        <span className="w-7 shrink-0 text-center text-xs font-semibold text-slate-400">
+                          {idx + 1}
+                        </span>
+                        <input
+                          className={`${inputClass} min-w-0 flex-1`}
+                          value={rubro}
+                          disabled={saving}
+                          placeholder="Nombre del rubro"
+                          onChange={(e) =>
+                            setForm((p) => {
+                              const next = [...(p.formRubros || [])]
+                              next[idx] = e.target.value
+                              return { ...p, formRubros: next }
+                            })
+                          }
+                        />
+                        <div className="flex shrink-0 gap-1.5">
+                          <button
+                            type="button"
+                            className={ACTION_NEUTRAL}
+                            disabled={saving || idx === 0}
+                            aria-label="Subir"
+                            onClick={() =>
+                              setForm((p) => {
+                                const next = [...(p.formRubros || [])]
+                                if (idx <= 0) return p
+                                ;[next[idx - 1], next[idx]] = [next[idx], next[idx - 1]]
+                                return { ...p, formRubros: next }
+                              })
+                            }
+                          >
+                            ↑
+                          </button>
+                          <button
+                            type="button"
+                            className={ACTION_NEUTRAL}
+                            disabled={saving || idx >= (form.formRubros || []).length - 1}
+                            aria-label="Bajar"
+                            onClick={() =>
+                              setForm((p) => {
+                                const next = [...(p.formRubros || [])]
+                                if (idx >= next.length - 1) return p
+                                ;[next[idx], next[idx + 1]] = [next[idx + 1], next[idx]]
+                                return { ...p, formRubros: next }
+                              })
+                            }
+                          >
+                            ↓
+                          </button>
+                          <button
+                            type="button"
+                            className={ACTION_DANGER}
+                            disabled={saving || (form.formRubros || []).length <= 1}
+                            onClick={() =>
+                              setForm((p) => ({
+                                ...p,
+                                formRubros: (p.formRubros || []).filter((_, i) => i !== idx),
+                              }))
+                            }
+                          >
+                            Quitar
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                  {(form.formRubros || []).length === 0 ? (
+                    <p className="mt-3 text-sm text-amber-800">
+                      Agregá al menos un rubro antes de guardar.
+                    </p>
+                  ) : null}
                 </div>
               </section>
             ) : null}

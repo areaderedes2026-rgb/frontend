@@ -62,7 +62,8 @@ function StatusPill({ status }) {
 
 function rubroLabel(app) {
   if (!app) return '—'
-  if (app.rubro === 'Otro' && app.rubroOther) return `Otro: ${app.rubroOther}`
+  const isOther = String(app.rubro || '').trim().toLowerCase() === 'otro'
+  if (isOther && app.rubroOther) return `Otro: ${app.rubroOther}`
   return app.rubro || '—'
 }
 

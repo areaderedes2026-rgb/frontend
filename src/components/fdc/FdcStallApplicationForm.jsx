@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { FDC_RUBROS } from '../../data/fdcContent.js'
+import { isFdcOtherRubro } from '../../data/fdcContent.js'
 import { createFdcStallApplication } from '../../services/fdcService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
 import { formErrorClass, inputClass, labelClass } from '../ui/formStyles.js'
@@ -47,11 +47,21 @@ export function FdcStallApplicationForm({
   formNotice = '',
   formOpen = true,
   windowMessage = '',
+  rubros = [],
+  formEyebrow = 'Preinscripción 2026',
+  formHeading = 'Completá tus datos',
   onSuccess,
 }) {
   const [form, setForm] = useState(EMPTY_FORM)
   const [sending, setSending] = useState(false)
   const [formError, setFormError] = useState('')
+
+  const rubroOptions = useMemo(() => {
+    const list = Array.isArray(rubros)
+      ? rubros.map((r) => String(r || '').trim()).filter(Boolean)
+      : []
+    return list
+  }, [rubros])
 
   const disabled = !formOpen || sending
 
@@ -104,7 +114,11 @@ export function FdcStallApplicationForm({
       setFormError('Seleccioná un rubro.')
       return
     }
-    if (form.rubro === 'Otro' && !form.rubroOther.trim()) {
+    if (rubroOptions.length && !rubroOptions.includes(form.rubro)) {
+      setFormError('Seleccioná un rubro válido.')
+      return
+    }
+    if (isFdcOtherRubro(form.rubro) && !form.rubroOther.trim()) {
       setFormError('Indicá el rubro en «Otro».')
       return
     }
@@ -132,7 +146,7 @@ export function FdcStallApplicationForm({
         phone,
         email,
         rubro: form.rubro,
-        rubroOther: form.rubro === 'Otro' ? form.rubroOther.trim() : '',
+        rubroOther: isFdcOtherRubro(form.rubro) ? form.rubroOther.trim() : '',
         participatedBefore: Boolean(form.participatedBefore),
         participationYears: form.participatedBefore ? form.participationYears.trim() : '',
       })
@@ -156,10 +170,10 @@ export function FdcStallApplicationForm({
       <div className="w-full overflow-hidden rounded-2xl border border-[#ddd7ca] bg-white shadow-[0_20px_50px_-28px_rgba(23,27,34,0.4)] sm:rounded-3xl">
         <div className="border-b border-[#e8e5dd] bg-linear-to-br from-[#f8f4ec] via-white to-[#f3f7fb] px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-7 xl:px-10">
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-amber-800 sm:text-xs">
-            Preinscripción 2026
+            {formEyebrow || 'Preinscripción 2026'}
           </p>
           <h2 className="mt-1.5 font-serif text-xl font-bold tracking-tight text-[#171b22] sm:text-2xl lg:text-3xl">
-            Completá tus datos
+            {formHeading || 'Completá tus datos'}
           </h2>
         </div>
 
@@ -264,14 +278,14 @@ export function FdcStallApplicationForm({
                       required
                     >
                       <option value="">Elegí una opción…</option>
-                      {FDC_RUBROS.map((rubro) => (
+                      {rubroOptions.map((rubro) => (
                         <option key={rubro} value={rubro}>
                           {rubro}
                         </option>
                       ))}
                     </select>
                   </label>
-                  {form.rubro === 'Otro' ? (
+                  {isFdcOtherRubro(form.rubro) ? (
                     <label className={labelClass}>
                       <FieldLabel required>Especificá el rubro</FieldLabel>
                       <input

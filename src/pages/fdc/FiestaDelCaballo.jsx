@@ -337,6 +337,9 @@ export function FiestaDelCaballo() {
               formNotice={page.formNotice}
               formOpen={formOpen}
               windowMessage={windowMessage}
+              rubros={page.formRubros}
+              formEyebrow={page.formEyebrow}
+              formHeading={page.formHeading}
               onSuccess={(result) => {
                 const id = result?.application?.id
                 const email = String(result?.application?.email || '').trim()

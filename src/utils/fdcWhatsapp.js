@@ -19,7 +19,7 @@ export function applyFdcWhatsappPlaceholders(template, application) {
   const raw = t || DEFAULT_FDC_WHATSAPP_TEMPLATE
   const name = String(application?.fullName ?? '').trim() || '—'
   const rubro =
-    application?.rubro === 'Otro' && application?.rubroOther
+    String(application?.rubro || '').trim().toLowerCase() === 'otro' && application?.rubroOther
       ? `Otro: ${application.rubroOther}`
       : String(application?.rubro || '—')
   return raw

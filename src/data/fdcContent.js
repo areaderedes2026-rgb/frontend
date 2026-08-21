@@ -17,6 +17,11 @@ export const FDC_RUBROS = [
   'Otro',
 ]
 
+/** La opción «Otro» abre el campo libre de especificación. */
+export function isFdcOtherRubro(label) {
+  return String(label || '').trim().toLowerCase() === 'otro'
+}
+
 export const FDC_DEFAULT_HERO_IMAGE =
   'https://images.unsplash.com/photo-1553284965-83fd3e82fa5a?auto=format&fit=crop&w=1800&q=80'
 
@@ -198,6 +203,9 @@ export const DEFAULT_FDC_CONTENT = {
   usefulInfo: DEFAULT_FDC_USEFUL_INFO,
   formNotice:
     'IMPORTANTE: La presente preinscripción no implica la adjudicación del espacio. La organización evaluará cada solicitud de acuerdo con la disponibilidad de lugares y el cumplimiento de los requisitos establecidos.',
+  formRubros: [...FDC_RUBROS],
+  formEyebrow: 'Preinscripción 2026',
+  formHeading: 'Completá tus datos',
   formOpenFrom: '2026-08-20',
   formOpenUntil: '2026-09-10',
   ctaTitle: '¿Querés sumar tu puesto?',
@@ -335,6 +343,24 @@ export function mergeFdcContent(base, remote) {
     sponsors: mergeNamedSection(defaults.sponsors, remote.sponsors, ['title', 'items']),
     usefulInfo: { title: '', items: [] },
     formNotice: String(remote.formNotice ?? defaults.formNotice ?? ''),
+    formRubros: (() => {
+      const source = Array.isArray(remote.formRubros)
+        ? remote.formRubros
+        : defaults.formRubros || FDC_RUBROS
+      const seen = new Set()
+      const out = []
+      for (const raw of source) {
+        const label = String(raw || '').trim()
+        if (!label) continue
+        const key = label.toLowerCase()
+        if (seen.has(key)) continue
+        seen.add(key)
+        out.push(label)
+      }
+      return out.length > 0 ? out : [...(defaults.formRubros || FDC_RUBROS)]
+    })(),
+    formEyebrow: String(remote.formEyebrow ?? defaults.formEyebrow ?? 'Preinscripción 2026'),
+    formHeading: String(remote.formHeading ?? defaults.formHeading ?? 'Completá tus datos'),
     formOpenFrom: remote.formOpenFrom
       ? String(remote.formOpenFrom).slice(0, 10)
       : defaults.formOpenFrom,
