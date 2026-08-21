@@ -31,6 +31,14 @@ function navClass({ isActive }) {
   }`
 }
 
+function subNavClass({ isActive }) {
+  return `flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ${
+    isActive
+      ? 'bg-sky-50 text-sky-800 ring-1 ring-sky-200/80'
+      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+  }`
+}
+
 function MenuIcon({ open }) {
   return (
     <svg
@@ -75,6 +83,23 @@ function ChevronIcon({ collapsed }) {
   )
 }
 
+function ChevronDownIcon({ open }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={`h-4 w-4 shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  )
+}
+
 export function AdminLayout() {
   const { pathname } = useLocation()
   const { user, logout } = useAuth()
@@ -84,11 +109,24 @@ export function AdminLayout() {
   const mobileNavId = `${navId}-mobile`
   const [sidebarOpen, setSidebarOpen] = useState(readSidebarOpen)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [gobiernoOpen, setGobiernoOpen] = useState(false)
+
+  const intendenciaActive =
+    pathname === ROUTES.adminSettingsIntendencia ||
+    pathname.startsWith(`${ROUTES.adminSettingsIntendencia}/`)
+  const concejoActive =
+    pathname === ROUTES.adminSettingsConcejoDeliberante ||
+    pathname.startsWith(`${ROUTES.adminSettingsConcejoDeliberante}/`)
+  const legisladorActive =
+    pathname === ROUTES.adminSettingsLegisladorEste ||
+    pathname.startsWith(`${ROUTES.adminSettingsLegisladorEste}/`)
+  const gobiernoActive = intendenciaActive || concejoActive || legisladorActive
 
   const settingsActive =
     (pathname === ROUTES.adminSettings || pathname.startsWith(`${ROUTES.adminSettings}/`)) &&
-    pathname !== ROUTES.adminSettingsLegisladorEste &&
-    pathname !== ROUTES.adminSettingsConcejoDeliberante
+    !intendenciaActive &&
+    !concejoActive &&
+    !legisladorActive
   const newsActive =
     pathname === ROUTES.adminNews || pathname.startsWith(`${ROUTES.adminNews}/`)
   const areasActive =
@@ -125,6 +163,11 @@ export function AdminLayout() {
       /* ignore */
     }
   }, [])
+
+  // Abrir submenú Gobierno al estar en una de sus secciones
+  useEffect(() => {
+    if (gobiernoActive) setGobiernoOpen(true)
+  }, [gobiernoActive])
 
   useEffect(() => {
     const run = () => {
@@ -197,6 +240,60 @@ export function AdminLayout() {
         >
           Noticias
         </NavLink>
+
+        <div className="space-y-1">
+          <button
+            type="button"
+            className={`flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition-all duration-200 ${
+              gobiernoActive
+                ? 'bg-sky-50 text-sky-800 ring-1 ring-sky-200/80'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+            }`}
+            aria-expanded={gobiernoOpen}
+            onClick={() => setGobiernoOpen((v) => !v)}
+          >
+            <span>Gobierno</span>
+            <ChevronDownIcon open={gobiernoOpen} />
+          </button>
+          {gobiernoOpen ? (
+            <div className="ml-2 space-y-0.5 border-l border-slate-200 pl-2">
+              <NavLink
+                to={ROUTES.adminSettingsIntendencia}
+                onMouseEnter={() => preloadAdminRoute('settingsIntendencia')}
+                onFocus={() => preloadAdminRoute('settingsIntendencia')}
+                onClick={closeMobile}
+                className={({ isActive }) =>
+                  subNavClass({ isActive: isActive || intendenciaActive })
+                }
+              >
+                Intendencia
+              </NavLink>
+              <NavLink
+                to={ROUTES.adminSettingsConcejoDeliberante}
+                onMouseEnter={() => preloadAdminRoute('settingsConcejoDeliberante')}
+                onFocus={() => preloadAdminRoute('settingsConcejoDeliberante')}
+                onClick={closeMobile}
+                className={({ isActive }) =>
+                  subNavClass({ isActive: isActive || concejoActive })
+                }
+              >
+                Concejo deliberante
+              </NavLink>
+              <NavLink
+                to={ROUTES.adminSettingsLegisladorEste}
+                onMouseEnter={() => preloadAdminRoute('settingsLegisladorEste')}
+                onFocus={() => preloadAdminRoute('settingsLegisladorEste')}
+                onClick={closeMobile}
+                className={({ isActive }) =>
+                  subNavClass({ isActive: isActive || legisladorActive })
+                }
+              >
+                Legislador por el Este
+              </NavLink>
+            </div>
+          ) : null}
+        </div>
+
         <NavLink
           to={ROUTES.adminEvents}
           onMouseEnter={() => preloadAdminRoute('events')}
