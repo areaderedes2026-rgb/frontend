@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import {
   FdcArtistsSection,
   FdcGallerySection,
@@ -25,6 +25,27 @@ import {
 import { fetchFdcContent } from '../../services/fdcService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
 import { ROUTES } from '../../utils/constants.js'
+
+/** Anclas que deben llevar a la sección del formulario de puestos. */
+const FDC_FORM_SECTION_ID = 'solicitud-puestos'
+const FDC_FORM_HASH_ALIASES = new Set([
+  'solicitud-puestos',
+  'preinscripcion',
+  'preinscripción',
+  'formulario',
+  'puestos',
+  'postularme',
+])
+
+function resolveFdcHashTargetId(hash) {
+  const raw = String(hash || '')
+    .replace(/^#/, '')
+    .trim()
+    .toLowerCase()
+  if (!raw) return null
+  if (FDC_FORM_HASH_ALIASES.has(raw)) return FDC_FORM_SECTION_ID
+  return raw
+}
 
 function FdcSubmitSuccess({ result }) {
   const id = result?.id
@@ -98,6 +119,7 @@ function FdcSubmitSuccess({ result }) {
 }
 
 export function FiestaDelCaballo() {
+  const location = useLocation()
   const apiEnabled = isApiConfigured()
   const [page, setPage] = useState(() =>
     apiEnabled ? { ...DEFAULT_FDC_CONTENT, heroImageUrl: '' } : { ...DEFAULT_FDC_CONTENT },
@@ -125,6 +147,38 @@ export function FiestaDelCaballo() {
       cancelled = true
     }
   }, [apiEnabled])
+
+  // Deep-link: /fiesta-del-caballo#solicitud-puestos (y alias) → scroll al formulario
+  useEffect(() => {
+    if (!hydrated || submitSuccess) return
+    const targetId = resolveFdcHashTargetId(location.hash)
+    if (!targetId) return
+
+    const preferReduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    let attempts = 0
+    let timer = 0
+
+    function scrollToTarget() {
+      const el = document.getElementById(targetId)
+      if (!el) {
+        attempts += 1
+        if (attempts < 12) {
+          timer = window.setTimeout(scrollToTarget, 80)
+        }
+        return
+      }
+      el.scrollIntoView({
+        behavior: preferReduced ? 'auto' : 'smooth',
+        block: 'start',
+      })
+    }
+
+    timer = window.setTimeout(scrollToTarget, 60)
+    return () => window.clearTimeout(timer)
+  }, [hydrated, location.hash, submitSuccess])
 
   useEffect(() => {
     if (!submitSuccess) return
@@ -261,8 +315,9 @@ export function FiestaDelCaballo() {
       ) : null}
 
       <section
-        id="solicitud-puestos"
-        className="relative isolate border-y border-white/10 bg-[#171b22] py-14 text-white sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
+        id={FDC_FORM_SECTION_ID}
+        tabIndex={-1}
+        className="relative isolate scroll-mt-[calc(var(--navbar-h,5rem)+4rem)] border-y border-white/10 bg-[#171b22] py-14 text-white outline-none sm:py-16 lg:py-20"
       >
         <Container className="relative z-10 max-w-[min(100%,96rem)]!">
           <RevealOnScroll variant="slow">

@@ -16,6 +16,8 @@ export const ROUTES = {
   ofertaAcademica: '/gobierno/oferta-academica',
   catalogoGastronomico: '/catalogo-gastronomico',
   fiestaDelCaballo: '/fiesta-del-caballo',
+  /** Link directo a la preinscripción de puestos (ancla en la página del festival). */
+  fiestaDelCaballoPreinscripcion: '/fiesta-del-caballo#solicitud-puestos',
   areas: '/areas',
   area: (slug) => `/areas/${slug}`,
   areaServiceDetail: (areaSlug, serviceId) =>
