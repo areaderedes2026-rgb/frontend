@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Modal } from '../ui/Modal.jsx'
 import { ConfirmDialog } from '../ui/ConfirmDialog.jsx'
 import { SingleImageUploadField } from './SingleImageUploadField.jsx'
@@ -10,9 +11,19 @@ import { inputClass, labelClass, textareaClass } from '../ui/formStyles.js'
 import { sortLegislatorCommissions } from '../../data/legisladorCommissionsContent.js'
 import { sortLegislatorLaws } from '../../data/legisladorLawsContent.js'
 import { sortProjectStats } from '../../data/legisladorProjectsContent.js'
+import { ROUTES } from '../../utils/constants.js'
+
+const TABS = [
+  { id: 'ficha', label: 'Ficha' },
+  { id: 'proyectos', label: 'Proyectos' },
+  { id: 'comisiones', label: 'Comisiones' },
+  { id: 'leyes', label: 'Leyes' },
+  { id: 'visibilidad', label: 'Visibilidad' },
+]
 
 const ACTION_BTN_PRIMARY =
   'inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-sky-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-800 disabled:cursor-not-allowed disabled:opacity-60'
+const SECTION_CARD = 'rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6'
 
 function EditChip({ label = 'Editar', onClick, disabled }) {
   return (
@@ -93,6 +104,7 @@ export function AdminLegisladorEsteEditorPreview({
 }) {
   const [editor, setEditor] = useState(null)
   const [confirmRemove, setConfirmRemove] = useState(null)
+  const [activeTab, setActiveTab] = useState('ficha')
 
   function openEditor(kind, index = null, draft = null) {
     setEditor({ kind, index, draft })
@@ -535,13 +547,29 @@ export function AdminLegisladorEsteEditorPreview({
         </p>
       ) : null}
 
-      <div className="rounded-2xl border border-amber-200/80 bg-amber-50/80 px-4 py-3 text-sm text-amber-950">
-        Los cambios quedan en borrador hasta que toques «Guardar cambios» al final de la página.
-      </div>
+      <div className="space-y-4">
+        <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm">
+          <div className="flex min-w-max gap-1">
+            {TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                className={`rounded-xl px-3.5 py-2 text-sm font-semibold transition ${
+                  activeTab === tab.id
+                    ? 'bg-sky-700 text-white shadow-sm'
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                }`}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
-      <form className="mt-6 space-y-8" onSubmit={onSubmit}>
-        <section className="overflow-hidden rounded-3xl border border-[#ddd7ca] bg-[#f7f7f5]">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#ddd7ca] bg-white px-5 py-4">
+        {activeTab === 'ficha' ? (
+        <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-slate-50 px-5 py-4">
             <div>
               <h2 className="text-lg font-bold text-slate-900">Vista previa pública</h2>
               <p className="text-sm text-slate-600">Así se verá la página del legislador.</p>
@@ -563,14 +591,14 @@ export function AdminLegisladorEsteEditorPreview({
             />
           </div>
           <div className="pointer-events-none p-4 sm:p-6">
-            <div className="rounded-[1.75rem] border border-[#ddd7ca] bg-white p-4 opacity-95">
+            <div className="rounded-[1.75rem] border border-slate-200 bg-white p-4 opacity-95 shadow-sm">
               <p className="text-xs font-bold uppercase tracking-wider text-sky-800">Legislador</p>
-              <p className="mt-2 font-serif text-xl font-bold text-[#171b22]">
+              <p className="mt-2 font-serif text-xl font-bold text-slate-900">
                 {form.legislatorName || '—'}
               </p>
               <p className="text-sm text-slate-600">{form.legislatorRole}</p>
               {showProjectsPdfPreview ? (
-                <p className="mt-3 inline-flex rounded-xl border border-[#2a313b] bg-[#171b22] px-4 py-2 text-sm font-semibold text-white">
+                <p className="mt-3 inline-flex rounded-xl border border-slate-800 bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
                   Ver todos los proyectos
                 </p>
               ) : null}
@@ -588,8 +616,11 @@ export function AdminLegisladorEsteEditorPreview({
             ) : null}
           </div>
         </section>
+        ) : null}
 
-        <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+        {activeTab === 'proyectos' ? (
+        <div className="space-y-4">
+        <section className={SECTION_CARD}>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h2 className="text-base font-semibold text-slate-900">Proyectos por año</h2>
@@ -642,7 +673,7 @@ export function AdminLegisladorEsteEditorPreview({
           </ul>
         </section>
 
-        <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+        <section className={SECTION_CARD}>
           <div>
             <h2 className="text-base font-semibold text-slate-900">PDF de todos los proyectos</h2>
             <p className="mt-1 text-sm text-slate-500">
@@ -665,8 +696,11 @@ export function AdminLegisladorEsteEditorPreview({
             />
           </div>
         </section>
+        </div>
+        ) : null}
 
-        <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+        {activeTab === 'comisiones' ? (
+        <section className={SECTION_CARD}>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h2 className="text-base font-semibold text-slate-900">Comisiones</h2>
@@ -720,8 +754,10 @@ export function AdminLegisladorEsteEditorPreview({
             ))}
           </ul>
         </section>
+        ) : null}
 
-        <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+        {activeTab === 'leyes' ? (
+        <section className={SECTION_CARD}>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h2 className="text-base font-semibold text-slate-900">Leyes</h2>
@@ -768,10 +804,15 @@ export function AdminLegisladorEsteEditorPreview({
             ))}
           </ul>
         </section>
+        ) : null}
 
-        <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+        {activeTab === 'visibilidad' ? (
+        <section className={SECTION_CARD}>
           <h2 className="text-base font-semibold text-slate-900">Visibilidad pública</h2>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <p className="mt-1 text-sm text-slate-500">
+            Controlá qué bloques se muestran en el portal. Los datos no se borran.
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             <VisibilityToggle
               label="Ficha del legislador (foto y datos)"
               checked={form.showLegislatorPhoto}
@@ -788,7 +829,7 @@ export function AdminLegisladorEsteEditorPreview({
               label="Botón «Ver todos los proyectos» (PDF)"
               hint={
                 projectsPdfUrl
-                  ? 'Requiere PDF cargado en la sección anterior.'
+                  ? 'Requiere PDF cargado en la pestaña Proyectos.'
                   : 'Sin PDF cargado, el botón no se muestra aunque esté activado.'
               }
               checked={form.showProjectsPdfButton}
@@ -821,13 +862,27 @@ export function AdminLegisladorEsteEditorPreview({
             />
           </div>
         </section>
+        ) : null}
 
-        <div className="flex justify-end border-t border-slate-200/80 pt-4">
-          <button type="submit" disabled={loading || saving || !apiAvailable} className={ACTION_BTN_PRIMARY}>
+        <div className="sticky bottom-3 z-20 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur">
+          <Link
+            to={ROUTES.legisladorEste}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm font-semibold text-sky-700 hover:text-sky-900"
+          >
+            Ver página pública ↗
+          </Link>
+          <button
+            type="button"
+            disabled={loading || saving || !apiAvailable}
+            className={ACTION_BTN_PRIMARY}
+            onClick={() => void onSubmit()}
+          >
             {saving ? 'Guardando…' : 'Guardar cambios'}
           </button>
         </div>
-      </form>
+      </div>
     </>
   )
 }

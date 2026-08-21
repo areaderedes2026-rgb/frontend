@@ -137,7 +137,7 @@ export function AdminLegisladorEste() {
   })
 
   async function handleSubmit(event) {
-    event.preventDefault()
+    event?.preventDefault?.()
     setError('')
     if (!apiAvailable) {
       setToast({
@@ -165,29 +165,27 @@ export function AdminLegisladorEste() {
     <>
       {conflictDialog}
       {toast ? <Toast variant={toast.variant} message={toast.message} onDismiss={dismissToast} /> : null}
-      <AdminPageShell
-        showBackLink={false}
-        eyebrow="Gobierno"
-        title="Legislador por el Este"
-        subtitle="Ficha del legislador, proyectos por año, comisiones y leyes."
-        maxWidthClass="max-w-6xl"
-        variant="plain"
-      >
+      <AdminPageShell showBackLink={false} maxWidthClass="max-w-7xl" variant="plain">
+        <h1 className="sr-only">Administrar Legislador por el Este</h1>
         {!apiAvailable ? (
           <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
             Esta sección requiere conexión activa con el backend para guardar cambios.
           </div>
         ) : null}
 
-        <AdminLegisladorEsteEditorPreview
-          form={form}
-          setForm={setForm}
-          loading={loading}
-          saving={saving}
-          error={error}
-          onSubmit={handleSubmit}
-          apiAvailable={apiAvailable}
-        />
+        {loading ? (
+          <div className="h-64 animate-pulse rounded-3xl bg-slate-100" />
+        ) : (
+          <AdminLegisladorEsteEditorPreview
+            form={form}
+            setForm={setForm}
+            loading={loading}
+            saving={saving}
+            error={error}
+            onSubmit={handleSubmit}
+            apiAvailable={apiAvailable}
+          />
+        )}
       </AdminPageShell>
     </>
   )

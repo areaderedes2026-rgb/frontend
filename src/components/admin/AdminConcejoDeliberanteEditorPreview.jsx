@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Modal } from '../ui/Modal.jsx'
 import { ConfirmDialog } from '../ui/ConfirmDialog.jsx'
 import { Button } from '../ui/Button.jsx'
@@ -21,6 +22,17 @@ import { ConcejoContactInfoSection } from '../concejo/ConcejoContactInfoSection.
 import { ConcejoIntroSection } from '../concejo/ConcejoIntroSection.jsx'
 import { ConcejoPageNav } from '../concejo/ConcejoPageNav.jsx'
 import { buildConcejoNavSections } from '../concejo/concejoPageSections.js'
+import { ROUTES } from '../../utils/constants.js'
+
+const TABS = [
+  { id: 'identidad', label: 'Identidad' },
+  { id: 'introduccion', label: 'Introducción' },
+  { id: 'funciones', label: 'Funciones' },
+  { id: 'presidencia', label: 'Presidencia' },
+  { id: 'concejales', label: 'Concejales' },
+  { id: 'comisiones', label: 'Comisiones' },
+  { id: 'contacto', label: 'Contacto' },
+]
 
 const ACTION_BTN_BASE =
   'inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto'
@@ -250,6 +262,7 @@ export function AdminConcejoDeliberanteEditorPreview({
   const [memberFormError, setMemberFormError] = useState('')
   const [removeMemberId, setRemoveMemberId] = useState(null)
   const [removeParagraphIndex, setRemoveParagraphIndex] = useState(null)
+  const [activeTab, setActiveTab] = useState('identidad')
 
   const pageTitle = (form.heroTitle || '').trim() || 'Concejo Deliberante'
   const hasPresidencia = Boolean(
@@ -670,30 +683,23 @@ export function AdminConcejoDeliberanteEditorPreview({
         </div>
       </Modal>
 
-      <div className="admin-fade-up space-y-5">
-        <div className="flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-slate-600">
-            Tocá el lápiz de cada sección para editarla.{' '}
-            <span className="hidden sm:inline">
-              Los cambios quedan en borrador hasta «Guardar cambios».
-            </span>
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => void onSubmit()}
-              disabled={saving || loading || !apiAvailable}
-              className={ACTION_BTN_PRIMARY}
-            >
-              {saving ? (
-                <>
-                  <Spinner tone="white" size="sm" />
-                  Guardando…
-                </>
-              ) : (
-                'Guardar cambios'
-              )}
-            </button>
+      <div className="admin-fade-up space-y-4">
+        <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm">
+          <div className="flex min-w-max gap-1">
+            {TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                className={`rounded-xl px-3.5 py-2 text-sm font-semibold transition ${
+                  activeTab === tab.id
+                    ? 'bg-sky-700 text-white shadow-sm'
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                }`}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -706,8 +712,9 @@ export function AdminConcejoDeliberanteEditorPreview({
           </p>
         ) : null}
 
-        <article className="overflow-hidden rounded-3xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm">
-          <div className="relative border-b border-[#e8e4dc] bg-[#f7f7f5] px-5 py-4 sm:px-7 sm:py-5">
+        <article className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          {activeTab === 'identidad' ? (
+          <div className="relative border-b border-slate-100 bg-slate-50 px-5 py-4 sm:px-7 sm:py-5">
             <div className="absolute right-4 top-4 z-10 sm:right-6 sm:top-5">
               <EditChip
                 label="Editar título"
@@ -719,14 +726,22 @@ export function AdminConcejoDeliberanteEditorPreview({
                 disabled={saving}
               />
             </div>
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+              Vista previa de la navegación pública
+            </p>
             <ConcejoPageNav title={pageTitle} sections={navSections} />
+            <p className="mt-4 max-w-2xl text-sm text-slate-600">
+              Acá se define el título que aparece junto a los anclajes de la página pública del Concejo.
+            </p>
           </div>
+          ) : null}
 
-          <div className="space-y-10 p-5 sm:p-7 lg:p-10">
+          <div className="space-y-8 p-5 sm:p-7 lg:p-8">
+            {activeTab === 'introduccion' ? (
             <SectionCard
               id="intro-concejo"
               title="Órgano Legislativo y de Control Municipal"
-              description="Primera sección de contenido, debajo de la navegación minimalista."
+              description="Primera sección de contenido del portal."
               variant="plain"
               rightSlot={
                 <div className="flex flex-wrap gap-2">
@@ -750,7 +765,7 @@ export function AdminConcejoDeliberanteEditorPreview({
             >
               <div
                 id="intro-concejo"
-                className="rounded-3xl border border-[#ddd7ca] bg-[#f8f7f3] p-6 sm:p-8"
+                className="rounded-3xl border border-slate-200 bg-slate-50 p-6 sm:p-8"
               >
                 <ConcejoIntroSection
                   introTitle={form.introTitle}
@@ -758,7 +773,7 @@ export function AdminConcejoDeliberanteEditorPreview({
                   introParagraphs={form.introParagraphs}
                 />
                 {(form.introParagraphs || []).length === 0 ? (
-                  <div className="mt-4 border-t border-[#e8e4dc] pt-4">
+                  <div className="mt-4 border-t border-slate-200 pt-4">
                     <EmptyHint
                       onAdd={() => openEditor('paragraph', null, { text: '' })}
                       addLabel="Agregar párrafo"
@@ -767,11 +782,11 @@ export function AdminConcejoDeliberanteEditorPreview({
                     </EmptyHint>
                   </div>
                 ) : (
-                  <ul className="mt-6 space-y-3 border-t border-[#e8e4dc] pt-6">
+                  <ul className="mt-6 space-y-3 border-t border-slate-200 pt-6">
                     {(form.introParagraphs || []).map((p, idx) => (
                       <li
                         key={`p-${idx}`}
-                        className="group relative rounded-2xl border border-transparent bg-white/70 p-3 text-sm leading-relaxed text-[#4b505a] sm:text-base"
+                        className="group relative rounded-2xl border border-transparent bg-white p-3 text-sm leading-relaxed text-slate-700 sm:text-base"
                       >
                         <div className="absolute right-2 top-2 flex gap-1.5">
                           <EditChip
@@ -792,16 +807,20 @@ export function AdminConcejoDeliberanteEditorPreview({
                 )}
               </div>
             </SectionCard>
+            ) : null}
 
+            {activeTab === 'funciones' ? (
             <SectionCard
               id="funciones-principales-admin"
               title="Funciones principales del HCD"
-              description="Segunda sección del portal: funciones legislativa, de contralor y representativa."
+              description="Funciones legislativa, de contralor y representativa."
               variant="plain"
             >
               <AdminConcejoMainFunctionsPanel form={form} setForm={setForm} saving={saving} />
             </SectionCard>
+            ) : null}
 
+            {activeTab === 'presidencia' ? (
             <SectionCard
               id="presidencia-admin"
               title="Presidencia del Concejo"
@@ -865,7 +884,9 @@ export function AdminConcejoDeliberanteEditorPreview({
                 </EmptyHint>
               )}
             </SectionCard>
+            ) : null}
 
+            {activeTab === 'concejales' ? (
             <SectionCard
               id="concejales-admin"
               title="Cuerpo de Concejales"
@@ -932,7 +953,9 @@ export function AdminConcejoDeliberanteEditorPreview({
                 {totalMembers} {totalMembers === 1 ? 'concejal' : 'concejales'}
               </p>
             </SectionCard>
+            ) : null}
 
+            {activeTab === 'comisiones' ? (
             <SectionCard
               id="comisiones-admin"
               title="Comisiones de Trabajo"
@@ -941,7 +964,9 @@ export function AdminConcejoDeliberanteEditorPreview({
             >
               <AdminConcejoCommissionsPanel form={form} setForm={setForm} saving={saving} />
             </SectionCard>
+            ) : null}
 
+            {activeTab === 'contacto' ? (
             <SectionCard
               id="contacto-concejo-admin"
               title="Contacto e información del Concejo"
@@ -970,13 +995,19 @@ export function AdminConcejoDeliberanteEditorPreview({
             >
               <ConcejoContactInfoSection content={form} />
             </SectionCard>
+            ) : null}
           </div>
         </article>
 
-        <div className="sticky bottom-3 z-30 flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white/95 p-4 shadow-lg backdrop-blur sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-slate-600">
-            Los cambios no son visibles en el portal hasta que toques «Guardar cambios».
-          </p>
+        <div className="sticky bottom-3 z-30 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur">
+          <Link
+            to={ROUTES.concejoDeliberante}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm font-semibold text-sky-700 hover:text-sky-900"
+          >
+            Ver página pública ↗
+          </Link>
           <button
             type="button"
             onClick={() => void onSubmit()}
@@ -989,7 +1020,7 @@ export function AdminConcejoDeliberanteEditorPreview({
                 Guardando…
               </>
             ) : (
-              'Guardar cambios del Concejo Deliberante'
+              'Guardar cambios'
             )}
           </button>
         </div>

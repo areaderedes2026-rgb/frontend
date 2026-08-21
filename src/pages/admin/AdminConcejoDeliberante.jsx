@@ -163,8 +163,7 @@ export function AdminConcejoDeliberante() {
 
       <AdminPageShell
         showBackLink={false}
-        eyebrow=""
-        maxWidthClass="max-w-none"
+        maxWidthClass="max-w-7xl"
         variant="plain"
       >
         <h1 className="sr-only">Administrar Concejo Deliberante</h1>
