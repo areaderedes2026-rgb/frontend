@@ -28,6 +28,12 @@ function cloneContent(c) {
   return JSON.parse(JSON.stringify(c))
 }
 
+/** Mantiene «Otro» al final sin trim (para editar con espacios). */
+function pinFdcOtroRubro(list) {
+  const without = (Array.isArray(list) ? list : []).filter((r) => !isFdcOtherRubro(r))
+  return [...without, 'Otro']
+}
+
 function normalizeOverlay(value, fallback = 65) {
   const n = Number(value)
   return Number.isFinite(n) ? Math.min(90, Math.max(0, Math.round(n))) : fallback
@@ -1878,11 +1884,10 @@ export function AdminFdc() {
                       disabled={saving}
                       onClick={() =>
                         setForm((p) => {
-                          const current = ensureFdcFormRubros(p.formRubros)
-                          const withoutOtro = current.filter((r) => !isFdcOtherRubro(r))
+                          const withoutOtro = (p.formRubros || []).filter((r) => !isFdcOtherRubro(r))
                           return {
                             ...p,
-                            formRubros: ensureFdcFormRubros([...withoutOtro, 'Nuevo rubro']),
+                            formRubros: pinFdcOtroRubro([...withoutOtro, '']),
                           }
                         })
                       }
@@ -1906,13 +1911,21 @@ export function AdminFdc() {
                             value={rubro}
                             disabled={saving || isOtro}
                             readOnly={isOtro}
-                            placeholder="Nombre del rubro"
-                            onChange={(e) =>
+                            placeholder="Ej. Stand Comercial"
+                            onChange={(e) => {
+                              const value = e.target.value
                               setForm((p) => {
                                 const next = [...(p.formRubros || [])]
-                                next[idx] = e.target.value
-                                return { ...p, formRubros: ensureFdcFormRubros(next) }
+                                if (isFdcOtherRubro(next[idx])) return p
+                                next[idx] = value
+                                return { ...p, formRubros: pinFdcOtroRubro(next) }
                               })
+                            }}
+                            onBlur={() =>
+                              setForm((p) => ({
+                                ...p,
+                                formRubros: ensureFdcFormRubros(p.formRubros),
+                              }))
                             }
                           />
                           {isOtro ? (
@@ -1931,7 +1944,7 @@ export function AdminFdc() {
                                     const next = [...(p.formRubros || [])]
                                     if (idx <= 0 || isFdcOtherRubro(next[idx])) return p
                                     ;[next[idx - 1], next[idx]] = [next[idx], next[idx - 1]]
-                                    return { ...p, formRubros: ensureFdcFormRubros(next) }
+                                    return { ...p, formRubros: pinFdcOtroRubro(next) }
                                   })
                                 }
                               >
@@ -1951,7 +1964,7 @@ export function AdminFdc() {
                                     if (idx >= next.length - 1 || isFdcOtherRubro(next[idx])) return p
                                     if (isFdcOtherRubro(next[idx + 1])) return p
                                     ;[next[idx], next[idx + 1]] = [next[idx + 1], next[idx]]
-                                    return { ...p, formRubros: ensureFdcFormRubros(next) }
+                                    return { ...p, formRubros: pinFdcOtroRubro(next) }
                                   })
                                 }
                               >

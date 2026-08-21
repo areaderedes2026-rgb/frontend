@@ -3,30 +3,7 @@ import { Link } from 'react-router-dom'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
 import { Container } from '../ui/Container.jsx'
 
-function FdcTitleOrnament({ className = '' }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 180 20"
-      fill="none"
-      aria-hidden
-      preserveAspectRatio="xMidYMid meet"
-    >
-      <path d="M6 10H58" stroke="currentColor" strokeWidth="1.15" strokeLinecap="round" />
-      <path
-        d="M66 10c3.5-5.5 7-5.5 10.5 0 3.5 5.5 7 5.5 10.5 0 3.5-5.5 7-5.5 10.5 0"
-        stroke="currentColor"
-        strokeWidth="1.15"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <circle cx="90" cy="10" r="2.15" fill="currentColor" />
-      <path d="M122 10H174" stroke="currentColor" strokeWidth="1.15" strokeLinecap="round" />
-    </svg>
-  )
-}
-
-/** Título centrado del módulo FDC: serif mayúsculas + ornamento dorado. */
+/** Título centrado del módulo FDC. */
 export function FdcSectionTitle({
   title,
   subtitle,
@@ -46,7 +23,6 @@ export function FdcSectionTitle({
       >
         {text}
       </h2>
-      <FdcTitleOrnament className="mx-auto mt-3 h-4 w-40 text-[#d4b483] sm:mt-4 sm:h-[1.125rem] sm:w-44" />
       {subtitle ? (
         <p
           className={`mx-auto mt-4 max-w-2xl text-sm leading-relaxed sm:text-base ${
@@ -575,8 +551,8 @@ export function FdcTicketsSection({ tickets, hideHeading = false }) {
   return (
     <section
       id={hideHeading ? undefined : 'entradas'}
-      className={`relative isolate overflow-hidden border-y py-14 sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)] ${
-        hasBg ? 'border-white/10 text-white' : 'border-[#e8e5dd] bg-[#f7f7f5]'
+      className={`relative isolate overflow-hidden py-14 sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)] ${
+        hasBg ? 'text-white' : 'bg-[#f7f7f5]'
       }`}
     >
       {hasBg ? (
