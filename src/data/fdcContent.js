@@ -274,7 +274,9 @@ export function mergeFdcContent(base, remote) {
       return href !== '#info-util'
     }),
     schedule: (() => {
-      const merged = mergeNamedSection(defaults.schedule, remote.schedule, [
+      const remoteSch =
+        remote.schedule && typeof remote.schedule === 'object' ? remote.schedule : null
+      const merged = mergeNamedSection(defaults.schedule, remoteSch, [
         'title',
         'featuredImageUrl',
         'ctaLabel',
@@ -282,7 +284,17 @@ export function mergeFdcContent(base, remote) {
         'days',
         'images',
       ])
-      const images = normalizeFdcScheduleImages(merged)
+      // Si hay schedule remoto, no mezclar fotos demo del default: usar `images` del
+      // servidor o migrar desde `featuredImageUrl` legacy.
+      const images = normalizeFdcScheduleImages(
+        remoteSch
+          ? {
+              images: Array.isArray(remoteSch.images) ? remoteSch.images : [],
+              featuredImageUrl:
+                remoteSch.featuredImageUrl || merged.featuredImageUrl || '',
+            }
+          : merged,
+      )
       return {
         ...merged,
         images,
