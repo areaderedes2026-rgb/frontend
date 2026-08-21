@@ -152,8 +152,8 @@ export function FdcStallApplicationForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="w-full" noValidate>
-      <div className="overflow-hidden rounded-2xl border border-[#ddd7ca] bg-white shadow-[0_20px_50px_-28px_rgba(23,27,34,0.4)] sm:rounded-3xl">
+    <form onSubmit={handleSubmit} className="block w-full" noValidate>
+      <div className="w-full overflow-hidden rounded-2xl border border-[#ddd7ca] bg-white shadow-[0_20px_50px_-28px_rgba(23,27,34,0.4)] sm:rounded-3xl">
         <div className="border-b border-[#e8e5dd] bg-linear-to-br from-[#f8f4ec] via-white to-[#f3f7fb] px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-7 xl:px-10">
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-amber-800 sm:text-xs">
             Preinscripción 2026
@@ -163,23 +163,23 @@ export function FdcStallApplicationForm({
           </h2>
         </div>
 
-        <div className="px-4 py-5 sm:px-6 sm:py-7 lg:px-8 lg:py-8 xl:px-10 xl:py-9">
-          <div className="space-y-7 lg:space-y-8">
+        {/* Campos del formulario — ancho completo, sin columna lateral */}
+        <div className="w-full px-4 py-5 sm:px-6 sm:py-7 lg:px-8 lg:py-8 xl:px-10 xl:py-9">
+          <div className="flex w-full flex-col gap-7 lg:gap-8">
             {!formOpen ? (
               <div
-                className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3.5 text-sm leading-relaxed text-amber-950 sm:px-5"
+                className="w-full rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3.5 text-sm leading-relaxed text-amber-950 sm:px-5"
                 role="status"
               >
                 {windowMessage || 'La preinscripción no está abierta en este momento.'}
               </div>
             ) : null}
 
-            <section className="space-y-4">
+            <section className="w-full space-y-4">
               <SectionTitle>Datos personales</SectionTitle>
-
               <fieldset
                 disabled={disabled}
-                className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6 xl:grid-cols-12"
+                className="grid w-full gap-4 sm:grid-cols-2 lg:grid-cols-6 xl:grid-cols-12"
               >
                 <label className={`${labelClass} sm:col-span-2 lg:col-span-4 xl:col-span-8`}>
                   <FieldLabel required>Apellido y nombre</FieldLabel>
@@ -192,7 +192,6 @@ export function FdcStallApplicationForm({
                     placeholder="Ej. Pérez, María"
                   />
                 </label>
-
                 <label className={`${labelClass} lg:col-span-2 xl:col-span-4`}>
                   <FieldLabel required>DNI</FieldLabel>
                   <input
@@ -204,7 +203,6 @@ export function FdcStallApplicationForm({
                     placeholder="Solo números"
                   />
                 </label>
-
                 <label className={`${labelClass} sm:col-span-2 lg:col-span-4 xl:col-span-8`}>
                   <FieldLabel required>Domicilio</FieldLabel>
                   <input
@@ -216,7 +214,6 @@ export function FdcStallApplicationForm({
                     placeholder="Calle y número"
                   />
                 </label>
-
                 <label className={`${labelClass} lg:col-span-2 xl:col-span-4`}>
                   <FieldLabel required>Localidad</FieldLabel>
                   <input
@@ -227,7 +224,6 @@ export function FdcStallApplicationForm({
                     placeholder="Ej. Trancas"
                   />
                 </label>
-
                 <label className={`${labelClass} sm:col-span-1 lg:col-span-3 xl:col-span-6`}>
                   <FieldLabel required>Teléfono</FieldLabel>
                   <input
@@ -239,7 +235,6 @@ export function FdcStallApplicationForm({
                     placeholder="Con código de área"
                   />
                 </label>
-
                 <label className={`${labelClass} sm:col-span-1 lg:col-span-3 xl:col-span-6`}>
                   <FieldLabel required>Correo electrónico</FieldLabel>
                   <input
@@ -255,10 +250,9 @@ export function FdcStallApplicationForm({
               </fieldset>
             </section>
 
-            <div className="grid gap-7 sm:gap-8 md:grid-cols-2 md:gap-6 xl:gap-8">
-              <section className="space-y-4">
+            <div className="grid w-full gap-7 sm:gap-8 md:grid-cols-2 md:gap-6 xl:gap-8">
+              <section className="w-full space-y-4">
                 <SectionTitle>Rubro</SectionTitle>
-
                 <fieldset disabled={disabled} className="space-y-4">
                   <label className={labelClass}>
                     <FieldLabel required>Seleccioná el rubro de tu puesto</FieldLabel>
@@ -277,7 +271,6 @@ export function FdcStallApplicationForm({
                       ))}
                     </select>
                   </label>
-
                   {form.rubro === 'Otro' ? (
                     <label className={labelClass}>
                       <FieldLabel required>Especificá el rubro</FieldLabel>
@@ -292,9 +285,8 @@ export function FdcStallApplicationForm({
                 </fieldset>
               </section>
 
-              <section className="space-y-4">
+              <section className="w-full space-y-4">
                 <SectionTitle>Experiencia</SectionTitle>
-
                 <fieldset disabled={disabled} className="space-y-4">
                   <div>
                     <p className="text-sm font-medium text-slate-700">
@@ -328,7 +320,6 @@ export function FdcStallApplicationForm({
                       })}
                     </div>
                   </div>
-
                   {form.participatedBefore ? (
                     <label className={labelClass}>
                       <FieldLabel required>Indicá el/los año/s</FieldLabel>
@@ -345,12 +336,12 @@ export function FdcStallApplicationForm({
             </div>
 
             {formError ? (
-              <div className={formErrorClass} role="alert">
+              <div className={`w-full ${formErrorClass}`} role="alert">
                 {formError}
               </div>
             ) : null}
 
-            <div className="flex justify-stretch border-t border-[#ebe7df] pt-5 sm:justify-end">
+            <div className="flex w-full justify-stretch border-t border-[#ebe7df] pt-5 sm:justify-end">
               <button
                 type="submit"
                 disabled={disabled}
@@ -359,32 +350,34 @@ export function FdcStallApplicationForm({
                 {sending ? 'Enviando…' : 'Enviar preinscripción'}
               </button>
             </div>
+          </div>
+        </div>
 
-            <div className="grid gap-4 border-t border-[#ebe7df] pt-6 sm:gap-5 md:grid-cols-2">
-              <div className="rounded-2xl border border-amber-200/90 bg-amber-50/95 px-4 py-4 text-sm leading-relaxed text-amber-950 sm:px-5 sm:py-5">
-                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-amber-900">
-                  Aviso importante
-                </p>
-                <p className="mt-2">{notice}</p>
-              </div>
-
-              <div className="rounded-2xl border border-[#ddd7ca] bg-[#f8f7f3] px-4 py-4 sm:px-5 sm:py-5">
-                <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-sky-800">
-                  Documentación a presentar
-                </h3>
-                <ul className="mt-3 space-y-2 text-sm text-[#171b22]">
-                  <li className="flex gap-2.5">
-                    <span
-                      className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-700"
-                      aria-hidden
-                    />
-                    <span>
-                      <strong className="font-semibold">Fotocopia de DNI</strong> — se solicitará en
-                      el proceso de evaluación / adjudicación.
-                    </span>
-                  </li>
-                </ul>
-              </div>
+        {/* Avisos debajo del formulario, mismo ancho completo — nunca al costado */}
+        <div className="w-full border-t border-[#ebe7df] bg-[#fcfcfa] px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-7 xl:px-10">
+          <div className="flex w-full flex-col gap-4 sm:gap-5 lg:flex-row lg:items-stretch">
+            <div className="min-w-0 flex-1 rounded-2xl border border-amber-200/90 bg-amber-50/95 px-4 py-4 text-sm leading-relaxed text-amber-950 sm:px-5 sm:py-5">
+              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-amber-900">
+                Aviso importante
+              </p>
+              <p className="mt-2">{notice}</p>
+            </div>
+            <div className="min-w-0 flex-1 rounded-2xl border border-[#ddd7ca] bg-white px-4 py-4 sm:px-5 sm:py-5">
+              <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-sky-800">
+                Documentación a presentar
+              </h3>
+              <ul className="mt-3 space-y-2 text-sm text-[#171b22]">
+                <li className="flex gap-2.5">
+                  <span
+                    className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-700"
+                    aria-hidden
+                  />
+                  <span>
+                    <strong className="font-semibold">Fotocopia de DNI</strong> — se solicitará en el
+                    proceso de evaluación / adjudicación.
+                  </span>
+                </li>
+              </ul>
             </div>
           </div>
         </div>
