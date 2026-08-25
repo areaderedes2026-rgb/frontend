@@ -45,15 +45,14 @@ function HeroLink({ href, className, children, previewMode = false, onHashNaviga
 }
 
 /**
- * Hero FDC orientado a afiche:
- * - Móvil: la imagen define la altura (sin recorte).
- * - Desktop: cover a viewport, foco al centro.
- * - Sin degradés oscuros.
+ * Hero FDC a viewport completo.
+ * Soporta art direction: imagen móvil + escritorio (sin degradés oscuros).
  */
 export function FdcFestivalHero({
   contentReady = true,
   previewMode = false,
   imageUrl = '',
+  imageUrlMobile = '',
   overlayOpacity: _overlayOpacity = 0,
   eyebrow = '',
   title = '',
@@ -64,46 +63,46 @@ export function FdcFestivalHero({
   className = '',
 }) {
   const ready = previewMode || contentReady
-  const heroImage = imageUrl ? resolveMediaUrl(imageUrl) || imageUrl : ''
+  const desktopSrc = imageUrl ? resolveMediaUrl(imageUrl) || imageUrl : ''
+  const mobileRaw = String(imageUrlMobile || '').trim()
+  const mobileSrc = mobileRaw
+    ? resolveMediaUrl(mobileRaw) || mobileRaw
+    : desktopSrc
   const { lead, emphasis } = splitFestivalTitle(title)
   const hasCopy = Boolean(eyebrow || title || subtitle || primaryCta?.label || secondaryCta?.label)
 
   return (
     <header
-      className={`relative bg-[#f3f1ec] md:min-h-0 md:flex-1 md:overflow-hidden ${className}`.trim()}
+      className={`relative min-h-0 flex-1 overflow-hidden bg-[#f3f1ec] ${className}`.trim()}
       aria-busy={!ready}
     >
       {!ready ? (
-        <div
-          className="min-h-[14rem] animate-pulse bg-[#e8e4dc] md:absolute md:inset-0 md:min-h-0"
-          aria-hidden
-        />
-      ) : heroImage ? (
-        <img
-          src={heroImage}
-          alt=""
-          width={1920}
-          height={1080}
-          fetchPriority={previewMode ? undefined : 'high'}
-          className="relative z-0 block h-auto w-full object-contain object-center md:absolute md:inset-0 md:h-full md:object-cover"
-          loading={previewMode ? 'lazy' : 'eager'}
-          decoding="async"
-        />
+        <div className="absolute inset-0 animate-pulse bg-[#e8e4dc]" aria-hidden />
+      ) : desktopSrc ? (
+        <picture className="absolute inset-0 block h-full w-full">
+          {mobileSrc && mobileSrc !== desktopSrc ? (
+            <source media="(max-width: 767px)" srcSet={mobileSrc} />
+          ) : null}
+          <img
+            src={desktopSrc}
+            alt=""
+            width={1920}
+            height={1080}
+            fetchPriority={previewMode ? undefined : 'high'}
+            className="h-full w-full object-cover object-center"
+            loading={previewMode ? 'lazy' : 'eager'}
+            decoding="async"
+          />
+        </picture>
       ) : (
         <div
-          className="min-h-[16rem] bg-linear-to-br from-[#ebe7df] via-[#f3f1ec] to-[#ddd7ca] md:absolute md:inset-0 md:min-h-0"
+          className="absolute inset-0 bg-linear-to-br from-[#ebe7df] via-[#f3f1ec] to-[#ddd7ca]"
           aria-hidden
         />
       )}
 
       {hasCopy ? (
-        <Container
-          className={`z-10 flex flex-col px-4 sm:px-6 lg:px-8 xl:px-10 ${
-            heroImage
-              ? 'relative mt-[-4.5rem] justify-end pb-4 md:absolute md:inset-0 md:mt-0 md:pb-7 md:pt-[calc(var(--navbar-h,5rem)+1rem)]'
-              : 'relative justify-end pb-6 pt-[calc(var(--navbar-h,5rem)+1.25rem)] md:absolute md:inset-0 md:pb-8 md:pt-[calc(var(--navbar-h,5rem)+1.75rem)]'
-          }`}
-        >
+        <Container className="relative z-10 flex h-full flex-col justify-end px-4 pb-6 pt-[calc(var(--navbar-h,5rem)+1.25rem)] sm:px-6 sm:pb-8 sm:pt-[calc(var(--navbar-h,5rem)+1.75rem)] lg:px-8 lg:pb-10 xl:px-10">
           {!ready ? (
             <div className="max-w-xl space-y-3" aria-hidden>
               <div className="h-3 w-24 rounded bg-slate-300/50" />
@@ -113,8 +112,8 @@ export function FdcFestivalHero({
             <div className="flex w-full flex-col gap-5 lg:flex-row lg:items-end lg:justify-between lg:gap-10">
               <div
                 className={`max-w-3xl text-left ${
-                  heroImage
-                    ? 'rounded-2xl bg-[#f3f1ec]/92 px-4 py-3 shadow-[0_8px_30px_-18px_rgba(23,27,34,0.35)] backdrop-blur-[2px] sm:px-5 sm:py-4'
+                  desktopSrc
+                    ? 'rounded-2xl bg-[#f3f1ec]/90 px-4 py-3 shadow-[0_8px_30px_-18px_rgba(23,27,34,0.35)] backdrop-blur-[2px] sm:px-5 sm:py-4'
                     : ''
                 }`}
               >

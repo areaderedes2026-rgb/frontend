@@ -212,6 +212,7 @@ export function AdminFdc() {
       heroSlogan: '',
       heroDateBadge: '',
       heroImageUrl: String(form.heroImageUrl || '').trim(),
+      heroImageUrlMobile: String(form.heroImageUrlMobile || '').trim(),
       overlayOpacity: normalizeOverlay(form.overlayOpacity, 65),
       heroSearchPlaceholder: String(form.heroSearchPlaceholder || ''),
       showHeroBadge: normalizeHeroToggle(form.showHeroBadge, true),
@@ -1033,36 +1034,58 @@ export function AdminFdc() {
 
             {/* Portada */}
             {activeTab === 'portada' ? (
-              <div className="overflow-hidden rounded-3xl border border-[#ddd7ca] bg-[#0c1017]">
-                <div className="flex items-center justify-between gap-3 px-4 py-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-100">
-                    Portada pública
+              <div className="space-y-4">
+                <div className="overflow-hidden rounded-3xl border border-[#ddd7ca] bg-[#0c1017]">
+                  <div className="flex items-center justify-between gap-3 px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-100">
+                      Portada pública
+                    </p>
+                    <button
+                      type="button"
+                      className={ACTION_NEUTRAL}
+                      onClick={() => {
+                        setHeroCoverDraft(fdcContentToHeroCover(form))
+                        setHeroCoverOpen(true)
+                      }}
+                      disabled={saving}
+                    >
+                      Cambiar portada (escritorio)
+                    </button>
+                  </div>
+                  <div className="flex h-[min(70vh,36rem)] flex-col">
+                    <FdcFestivalHero
+                      previewMode
+                      contentReady
+                      imageUrl={form.heroImageUrl || ''}
+                      imageUrlMobile={form.heroImageUrlMobile || ''}
+                      overlayOpacity={0}
+                      eyebrow={form.showHeroBadge !== false ? form.heroEyebrow : ''}
+                      title={form.showHeroTitle !== false ? form.heroTitle : ''}
+                      subtitle={form.showHeroSubtitle !== false ? form.heroSubtitle : ''}
+                      primaryCta={heroPrimaryCta}
+                      secondaryCta={heroSecondaryCta}
+                    />
+                  </div>
+                </div>
+
+                <section className={SECTION_CARD}>
+                  <h2 className="text-base font-bold text-slate-900">Imagen para celular</h2>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Subí un recorte vertical u optimizado para pantallas chicas. Si lo dejás vacío, se
+                    usa la portada de escritorio.
                   </p>
-                  <button
-                    type="button"
-                    className={ACTION_NEUTRAL}
-                    onClick={() => {
-                      setHeroCoverDraft(fdcContentToHeroCover(form))
-                      setHeroCoverOpen(true)
-                    }}
-                    disabled={saving}
-                  >
-                    Cambiar portada
-                  </button>
-                </div>
-                <div className="flex h-[min(70vh,36rem)] flex-col">
-                  <FdcFestivalHero
-                    previewMode
-                    contentReady
-                    imageUrl={form.heroImageUrl || ''}
-                    overlayOpacity={0}
-                    eyebrow={form.showHeroBadge !== false ? form.heroEyebrow : ''}
-                    title={form.showHeroTitle !== false ? form.heroTitle : ''}
-                    subtitle={form.showHeroSubtitle !== false ? form.heroSubtitle : ''}
-                    primaryCta={heroPrimaryCta}
-                    secondaryCta={heroSecondaryCta}
-                  />
-                </div>
+                  <div className="mt-4 max-w-xl">
+                    <SingleImageUploadField
+                      label="Afiche móvil"
+                      value={form.heroImageUrlMobile || ''}
+                      onChange={(value) =>
+                        setForm((p) => ({ ...p, heroImageUrlMobile: value }))
+                      }
+                      disabled={saving}
+                      helpText="Recomendado: proporción más alta (portrait) con logo y texto centrados."
+                    />
+                  </div>
+                </section>
               </div>
             ) : null}
 

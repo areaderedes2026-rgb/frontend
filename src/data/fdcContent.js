@@ -195,6 +195,8 @@ export const DEFAULT_FDC_CONTENT = {
   heroSlogan: '',
   heroDateBadge: '',
   heroImageUrl: FDC_DEFAULT_HERO_IMAGE,
+  /** Afiche vertical/optimizado para móvil; si está vacío se usa heroImageUrl. */
+  heroImageUrlMobile: '',
   overlayOpacity: 58,
   heroSearchPlaceholder: '',
   showHeroBadge: true,
@@ -254,6 +256,12 @@ export function mergeFdcContent(base, remote) {
     heroSlogan: String(remote.heroSlogan ?? defaults.heroSlogan ?? ''),
     heroDateBadge: String(remote.heroDateBadge ?? defaults.heroDateBadge ?? ''),
     heroImageUrl: String(remote.heroImageUrl ?? defaults.heroImageUrl ?? ''),
+    heroImageUrlMobile: String(
+      remote.heroImageUrlMobile ??
+        remote.usefulInfo?.heroImageUrlMobile ??
+        defaults.heroImageUrlMobile ??
+        '',
+    ),
     overlayOpacity: Number.isFinite(Number(remote.overlayOpacity))
       ? Math.min(90, Math.max(0, Math.round(Number(remote.overlayOpacity))))
       : defaults.overlayOpacity ?? 65,
