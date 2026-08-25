@@ -1055,7 +1055,7 @@ export function AdminFdc() {
                     previewMode
                     contentReady
                     imageUrl={form.heroImageUrl || ''}
-                    overlayOpacity={form.overlayOpacity}
+                    overlayOpacity={0}
                     eyebrow={form.showHeroBadge !== false ? form.heroEyebrow : ''}
                     title={form.showHeroTitle !== false ? form.heroTitle : ''}
                     subtitle={form.showHeroSubtitle !== false ? form.heroSubtitle : ''}

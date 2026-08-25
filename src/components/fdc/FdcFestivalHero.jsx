@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
-import { heroOverlayGradientStyle, normalizeHeroOverlayOpacity } from '../../utils/heroOverlay.js'
 import { Container } from '../ui/Container.jsx'
 
 function splitFestivalTitle(title) {
@@ -46,14 +45,16 @@ function HeroLink({ href, className, children, previewMode = false, onHashNaviga
 }
 
 /**
- * Hero a viewport completo para Fiesta del Caballo (imagen + contenido tipográfico).
- * Pensado para vivir en un contenedor flex con la barra de secciones debajo.
+ * Hero FDC orientado a afiche:
+ * - Móvil: la imagen define la altura (sin recorte).
+ * - Desktop: cover a viewport, foco al centro.
+ * - Sin degradés oscuros.
  */
 export function FdcFestivalHero({
   contentReady = true,
   previewMode = false,
   imageUrl = '',
-  overlayOpacity = 58,
+  overlayOpacity: _overlayOpacity = 0,
   eyebrow = '',
   title = '',
   subtitle = '',
@@ -64,16 +65,19 @@ export function FdcFestivalHero({
 }) {
   const ready = previewMode || contentReady
   const heroImage = imageUrl ? resolveMediaUrl(imageUrl) || imageUrl : ''
-  const overlay = normalizeHeroOverlayOpacity(overlayOpacity, 58)
   const { lead, emphasis } = splitFestivalTitle(title)
+  const hasCopy = Boolean(eyebrow || title || subtitle || primaryCta?.label || secondaryCta?.label)
 
   return (
     <header
-      className={`relative min-h-0 flex-1 overflow-x-hidden overflow-y-auto bg-[#0c1017] ${className}`.trim()}
+      className={`relative bg-[#f3f1ec] md:min-h-0 md:flex-1 md:overflow-hidden ${className}`.trim()}
       aria-busy={!ready}
     >
       {!ready ? (
-        <div className="absolute inset-0 animate-pulse bg-[#171b22]" aria-hidden />
+        <div
+          className="min-h-[14rem] animate-pulse bg-[#e8e4dc] md:absolute md:inset-0 md:min-h-0"
+          aria-hidden
+        />
       ) : heroImage ? (
         <img
           src={heroImage}
@@ -81,114 +85,110 @@ export function FdcFestivalHero({
           width={1920}
           height={1080}
           fetchPriority={previewMode ? undefined : 'high'}
-          className="absolute inset-0 h-full w-full object-cover object-[68%_center] sm:object-[72%_center] lg:object-[75%_center]"
+          className="relative z-0 block h-auto w-full object-contain object-center md:absolute md:inset-0 md:h-full md:object-cover"
           loading={previewMode ? 'lazy' : 'eager'}
           decoding="async"
         />
       ) : (
         <div
-          className="absolute inset-0 bg-linear-to-br from-slate-800 via-slate-900 to-[#0c1017]"
+          className="min-h-[16rem] bg-linear-to-br from-[#ebe7df] via-[#f3f1ec] to-[#ddd7ca] md:absolute md:inset-0 md:min-h-0"
           aria-hidden
         />
       )}
 
-      {ready ? (
-        <>
-          <div
-            className="absolute inset-0"
-            style={heroOverlayGradientStyle(overlay)}
-            aria-hidden
-          />
-          <div
-            className="absolute inset-0 bg-linear-to-r from-black/75 via-black/45 to-black/15 sm:from-black/70 sm:via-black/35 sm:to-transparent"
-            aria-hidden
-          />
-          <div
-            className="absolute inset-x-0 bottom-0 h-28 bg-linear-to-t from-[#0c1017]/90 to-transparent sm:h-36"
-            aria-hidden
-          />
-        </>
-      ) : null}
+      {hasCopy ? (
+        <Container
+          className={`z-10 flex flex-col px-4 sm:px-6 lg:px-8 xl:px-10 ${
+            heroImage
+              ? 'relative mt-[-4.5rem] justify-end pb-4 md:absolute md:inset-0 md:mt-0 md:pb-7 md:pt-[calc(var(--navbar-h,5rem)+1rem)]'
+              : 'relative justify-end pb-6 pt-[calc(var(--navbar-h,5rem)+1.25rem)] md:absolute md:inset-0 md:pb-8 md:pt-[calc(var(--navbar-h,5rem)+1.75rem)]'
+          }`}
+        >
+          {!ready ? (
+            <div className="max-w-xl space-y-3" aria-hidden>
+              <div className="h-3 w-24 rounded bg-slate-300/50" />
+              <div className="h-10 w-full max-w-md rounded bg-slate-300/40" />
+            </div>
+          ) : (
+            <div className="flex w-full flex-col gap-5 lg:flex-row lg:items-end lg:justify-between lg:gap-10">
+              <div
+                className={`max-w-3xl text-left ${
+                  heroImage
+                    ? 'rounded-2xl bg-[#f3f1ec]/92 px-4 py-3 shadow-[0_8px_30px_-18px_rgba(23,27,34,0.35)] backdrop-blur-[2px] sm:px-5 sm:py-4'
+                    : ''
+                }`}
+              >
+                {eyebrow ? (
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-800 sm:text-xs">
+                    {eyebrow}
+                  </p>
+                ) : null}
 
-      <Container className="relative z-10 flex h-full flex-col justify-end px-4 pb-6 pt-[calc(var(--navbar-h,5rem)+1.25rem)] sm:px-6 sm:pb-8 sm:pt-[calc(var(--navbar-h,5rem)+1.75rem)] lg:px-8 lg:pb-10 xl:px-10">
-        {!ready ? (
-          <div className="max-w-xl space-y-3" aria-hidden>
-            <div className="h-3 w-24 rounded bg-white/15" />
-            <div className="h-10 w-full max-w-md rounded bg-white/20" />
-            <div className="h-16 w-48 rounded bg-white/25" />
-            <div className="h-4 w-64 rounded bg-white/10" />
-          </div>
-        ) : (
-          <div className="flex w-full flex-col gap-6 lg:flex-row lg:items-end lg:justify-between lg:gap-10">
-            <div className="max-w-3xl text-left">
-              {eyebrow ? (
-                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-200/95 sm:text-xs">
-                  {eyebrow}
-                </p>
-              ) : null}
-
-              {title ? (
-                <h1 className="mt-3 font-serif font-bold tracking-tight text-white drop-shadow-[0_2px_24px_rgba(0,0,0,0.45)]">
-                  {emphasis ? (
-                    <>
-                      <span className="block text-balance text-2xl leading-snug sm:text-3xl md:text-4xl lg:text-[2.65rem] lg:leading-[1.15]">
+                {title ? (
+                  <h1 className="mt-2 font-serif font-bold tracking-tight text-[#171b22]">
+                    {emphasis ? (
+                      <>
+                        <span className="block text-balance text-2xl leading-snug sm:text-3xl md:text-4xl lg:text-[2.65rem] lg:leading-[1.15]">
+                          {lead}
+                        </span>
+                        <span className="mt-1 block text-[clamp(2.4rem,7.5vw,5.2rem)] uppercase leading-[0.95] tracking-tight">
+                          {emphasis}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="block text-balance text-3xl leading-tight sm:text-4xl md:text-5xl lg:text-[3.25rem] lg:leading-[1.1]">
                         {lead}
                       </span>
-                      <span className="mt-1 block text-[clamp(2.6rem,8vw,5.5rem)] uppercase leading-[0.95] tracking-tight">
-                        {emphasis}
-                      </span>
-                    </>
-                  ) : (
-                    <span className="block text-balance text-3xl leading-tight sm:text-4xl md:text-5xl lg:text-[3.25rem] lg:leading-[1.1]">
-                      {lead}
-                    </span>
-                  )}
-                </h1>
-              ) : null}
+                    )}
+                  </h1>
+                ) : null}
 
-              {subtitle ? (
-                <p className="mt-4 max-w-xl text-sm leading-relaxed text-slate-100/95 sm:text-base">
-                  {subtitle}
-                </p>
-              ) : null}
+                {subtitle ? (
+                  <p className="mt-3 max-w-xl text-sm leading-relaxed text-[#3e434d] sm:text-base">
+                    {subtitle}
+                  </p>
+                ) : null}
 
-              {primaryCta?.label ? (
-                <div className="mt-6 flex flex-wrap items-center gap-3">
+                {primaryCta?.label ? (
+                  <div className="mt-5 flex flex-wrap items-center gap-3">
+                    <HeroLink
+                      href={primaryCta.href}
+                      previewMode={previewMode}
+                      onHashNavigate={onHashNavigate}
+                      className="inline-flex min-h-11 items-center justify-center rounded-md bg-[#d4b483] px-6 text-xs font-bold uppercase tracking-[0.16em] text-[#171b22] shadow-[0_12px_32px_-12px_rgba(0,0,0,0.35)] transition hover:bg-[#e0c49a] sm:min-h-12 sm:px-7 sm:text-sm"
+                    >
+                      {primaryCta.label}
+                    </HeroLink>
+                  </div>
+                ) : null}
+              </div>
+
+              {secondaryCta?.label ? (
+                <div className="lg:pb-1 lg:text-right">
                   <HeroLink
-                    href={primaryCta.href}
+                    href={secondaryCta.href}
                     previewMode={previewMode}
                     onHashNavigate={onHashNavigate}
-                    className="inline-flex min-h-11 items-center justify-center rounded-md bg-[#d4b483] px-6 text-xs font-bold uppercase tracking-[0.16em] text-[#171b22] shadow-[0_12px_32px_-12px_rgba(0,0,0,0.55)] transition hover:bg-[#e0c49a] sm:min-h-12 sm:px-7 sm:text-sm"
+                    className="inline-flex items-center gap-2.5 text-[11px] font-bold uppercase tracking-[0.18em] text-[#171b22]/90 transition hover:text-amber-800 sm:text-xs"
                   >
-                    {primaryCta.label}
+                    <span
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#171b22]/35 text-[#171b22]"
+                      aria-hidden
+                    >
+                      <svg className="h-4 w-4 translate-x-px" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8.25 5.25v13.5l11.25-6.75L8.25 5.25Z" />
+                      </svg>
+                    </span>
+                    <span>{secondaryCta.label}</span>
                   </HeroLink>
                 </div>
               ) : null}
             </div>
-
-            {secondaryCta?.label ? (
-              <div className="lg:pb-1 lg:text-right">
-                <HeroLink
-                  href={secondaryCta.href}
-                  previewMode={previewMode}
-                  onHashNavigate={onHashNavigate}
-                  className="inline-flex items-center gap-2.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white/90 transition hover:text-amber-200 sm:text-xs"
-                >
-                  <span
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/55 text-white"
-                    aria-hidden
-                  >
-                    <svg className="h-4 w-4 translate-x-px" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M8.25 5.25v13.5l11.25-6.75L8.25 5.25Z" />
-                    </svg>
-                  </span>
-                  <span>{secondaryCta.label}</span>
-                </HeroLink>
-              </div>
-            ) : null}
-          </div>
-        )}
-      </Container>
+          )}
+        </Container>
+      ) : (
+        <span className="sr-only">Fiesta del Caballo</span>
+      )}
     </header>
   )
 }
