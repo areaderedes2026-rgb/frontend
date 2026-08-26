@@ -14,6 +14,7 @@ import {
   updateFdcStallApplicationStatus,
   updateFdcWhatsappTemplate,
 } from '../../services/fdcService.js'
+import { isFdcOtherRubro } from '../../data/fdcContent.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
 import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
 import { ROUTES } from '../../utils/constants.js'
@@ -84,21 +85,28 @@ function StatusPill({ status }) {
   )
 }
 
+/** Texto visible en tabla/detalle (incluye especificación de «Otro»). */
 function rubroLabel(app) {
   if (!app) return '—'
-  const isOther = String(app.rubro || '').trim().toLowerCase() === 'otro'
-  if (isOther && app.rubroOther) return `Otro: ${app.rubroOther}`
+  if (isFdcOtherRubro(app.rubro) && app.rubroOther) return `Otro: ${app.rubroOther}`
+  if (isFdcOtherRubro(app.rubro)) return 'Otro'
   return app.rubro || '—'
 }
 
-function rubroKey(app) {
+/**
+ * Clave de filtro: todos los «Otro» (con cualquier especificación) agrupan en uno solo.
+ * Así el select no lista «Otro: panadería», «Otro: kiosco», etc. por separado.
+ */
+function rubroFilterKey(app) {
   const base = String(app?.rubro || '').trim()
   if (!base) return ''
-  if (base.toLowerCase() === 'otro') {
-    const other = String(app?.rubroOther || '').trim()
-    return other ? `otro:${other.toLowerCase()}` : 'otro'
-  }
+  if (isFdcOtherRubro(base)) return 'otro'
   return base.toLowerCase()
+}
+
+function rubroFilterLabel(key, sampleApp) {
+  if (key === 'otro') return 'Otro'
+  return rubroLabel(sampleApp) || key
 }
 
 export function AdminFdcStallApplications() {
@@ -163,14 +171,18 @@ export function AdminFdcStallApplications() {
   const rubroOptions = useMemo(() => {
     const map = new Map()
     for (const app of items) {
-      const key = rubroKey(app)
+      const key = rubroFilterKey(app)
       if (!key) continue
-      const label = rubroLabel(app)
-      if (!map.has(key)) map.set(key, label)
+      if (!map.has(key)) map.set(key, rubroFilterLabel(key, app))
     }
     return [...map.entries()]
       .map(([value, label]) => ({ value, label }))
-      .sort((a, b) => a.label.localeCompare(b.label, 'es'))
+      .sort((a, b) => {
+        // «Otro» siempre al final del listado de rubros.
+        if (a.value === 'otro') return 1
+        if (b.value === 'otro') return -1
+        return a.label.localeCompare(b.label, 'es')
+      })
   }, [items])
 
   const localityOptions = useMemo(() => {
@@ -185,7 +197,7 @@ export function AdminFdcStallApplications() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     return items.filter((app) => {
-      if (rubroFilter !== 'all' && rubroKey(app) !== rubroFilter) return false
+      if (rubroFilter !== 'all' && rubroFilterKey(app) !== rubroFilter) return false
       if (localityFilter !== 'all') {
         if (String(app.locality || '').trim() !== localityFilter) return false
       }
