@@ -79,7 +79,7 @@ export function FdcFestivalHero({
       {!ready ? (
         <div className="absolute inset-0 animate-pulse bg-[#e8e4dc]" aria-hidden />
       ) : desktopSrc ? (
-        <picture className="absolute inset-0 block h-full w-full">
+        <picture className="pointer-events-none absolute inset-0 block h-full w-full overflow-hidden">
           {mobileSrc && mobileSrc !== desktopSrc ? (
             <source media="(max-width: 767px)" srcSet={mobileSrc} />
           ) : null}
@@ -89,7 +89,7 @@ export function FdcFestivalHero({
             width={1920}
             height={1080}
             fetchPriority={previewMode ? undefined : 'high'}
-            className="h-full w-full object-cover object-center"
+            className="absolute inset-0 h-full w-full max-w-none object-cover object-center"
             loading={previewMode ? 'lazy' : 'eager'}
             decoding="async"
           />

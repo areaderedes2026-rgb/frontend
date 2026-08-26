@@ -268,7 +268,7 @@ export function SiteSearchPanel({ variant, query, setQuery, items, loading, onSe
               aria-autocomplete="list"
               aria-controls={listboxId}
               aria-expanded={trimmed.length >= 2}
-              className="site-search-input min-w-0 flex-1 border-0 bg-transparent py-1.5 text-[0.9375rem] font-medium text-white outline-none placeholder:text-white/35 sm:text-base"
+              className="site-search-input min-w-0 flex-1 border-0 bg-transparent py-1.5 text-base font-medium text-white outline-none placeholder:text-white/35"
             />
             <ClearQueryButton visible={query.length > 0} compact={compact} onClear={clearQuery} />
             {loading ? <Spinner /> : null}
@@ -327,7 +327,7 @@ export function SiteSearchPanel({ variant, query, setQuery, items, loading, onSe
           aria-autocomplete="list"
           aria-controls={listboxId}
           aria-expanded={trimmed.length >= 2}
-          className="site-search-input min-w-0 flex-1 border-0 bg-transparent py-1 text-[0.9rem] font-medium tracking-wide text-white/95 outline-none placeholder:text-white/35 sm:text-[0.9375rem]"
+          className="site-search-input min-w-0 flex-1 border-0 bg-transparent py-1 text-base font-medium tracking-wide text-white/95 outline-none placeholder:text-white/35 sm:text-[0.9375rem]"
         />
         <ClearQueryButton visible={query.length > 0} compact={compact} onClear={clearQuery} />
         {loading ? <Spinner /> : null}

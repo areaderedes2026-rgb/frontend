@@ -27,7 +27,7 @@ export function MainLayout() {
   }, [])
 
   return (
-    <div className="flex min-h-dvh flex-col bg-slate-50">
+    <div className="flex min-h-dvh w-full max-w-full flex-col overflow-x-clip bg-slate-50">
       <ScrollToTop />
       <SeoManager />
       <Navbar />

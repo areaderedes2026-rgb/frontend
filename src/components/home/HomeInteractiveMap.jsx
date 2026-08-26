@@ -245,7 +245,7 @@ export function HomeInteractiveMap({ content }) {
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar ubicación..."
             autoComplete="off"
-            className="w-full rounded-full border border-[#d6d0c3] bg-white/95 py-2.5 pr-10 pl-10 text-sm text-[#171b22] shadow-sm transition placeholder:text-slate-400 focus:border-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-200/80"
+            className="w-full rounded-full border border-[#d6d0c3] bg-white/95 py-2.5 pr-10 pl-10 text-base text-[#171b22] shadow-sm transition placeholder:text-slate-400 focus:border-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-200/80 sm:text-sm"
           />
           {searchQuery ? (
             <button

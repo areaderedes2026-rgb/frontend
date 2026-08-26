@@ -3,7 +3,7 @@ export const labelClass =
   'flex min-w-0 flex-col gap-1.5 text-sm font-medium text-slate-700'
 
 export const inputClass =
-  'min-w-0 max-w-full w-full rounded-xl border border-slate-200/90 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition duration-200 placeholder:text-slate-400 focus:border-sky-500 focus:outline-none focus:ring-4 focus:ring-sky-500/15 disabled:cursor-not-allowed disabled:opacity-60'
+  'min-w-0 max-w-full w-full rounded-xl border border-slate-200/90 bg-white px-3.5 py-2.5 text-base text-slate-900 shadow-sm transition duration-200 placeholder:text-slate-400 focus:border-sky-500 focus:outline-none focus:ring-4 focus:ring-sky-500/15 disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm'
 
 export const textareaClass = `${inputClass} min-h-[7rem] resize-y overflow-x-hidden break-words leading-normal py-3`
 

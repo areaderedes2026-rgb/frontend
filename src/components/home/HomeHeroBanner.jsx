@@ -169,14 +169,14 @@ export function HomeHeroBanner({ content = DEFAULT_HOME_HERO_CONTENT, preview = 
     >
       <div className="absolute inset-0">
         {primaryImageUrl ? (
-          <picture key={current.id} className="block h-full w-full">
+          <picture key={current.id} className="absolute inset-0 block h-full w-full overflow-hidden">
             {mobileImageUrl ? <source media="(max-width: 767px)" srcSet={mobileImageUrl} /> : null}
             <img
               src={primaryImageUrl}
               alt=""
               fetchPriority={preview ? undefined : 'high'}
               decoding="async"
-              className="h-full w-full object-cover object-center motion-safe:animate-[hero-fade_780ms_ease-out_both]"
+              className="absolute inset-0 h-full w-full max-w-none object-cover object-center motion-safe:animate-[hero-fade_780ms_ease-out_both]"
             />
           </picture>
         ) : (
