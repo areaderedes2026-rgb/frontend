@@ -529,11 +529,21 @@ export function AdminLayout() {
     <div className="flex min-h-dvh bg-slate-50">
       <ScrollToTop />
 
-      {/* Sidebar desktop: self-start evita que el flex la estire a toda la altura del contenido
-          (sin eso, sticky no retiene el menú y al scrollear solo queda el pie de sesión). */}
+      {/*
+        Sidebar desktop fija (no sticky): overflow-x:clip en html/body rompe position:sticky.
+        Un spacer mantiene el ancho del flujo; el aside real va fixed a la ventana.
+      */}
+      <div
+        className={`hidden shrink-0 transition-[width] duration-300 ease-out lg:block ${
+          sidebarOpen ? 'w-[17.5rem]' : 'w-0'
+        }`}
+        aria-hidden
+      />
       <aside
-        className={`sticky top-0 z-30 hidden h-dvh max-h-dvh shrink-0 flex-col self-start overflow-hidden border-slate-200/90 bg-white shadow-sm transition-[width] duration-300 ease-out lg:flex ${
-          sidebarOpen ? 'w-[17.5rem] border-r' : 'w-0 border-0'
+        className={`fixed inset-y-0 left-0 z-30 hidden h-dvh max-h-dvh flex-col overflow-hidden border-slate-200/90 bg-white shadow-sm transition-[width,transform] duration-300 ease-out lg:flex ${
+          sidebarOpen
+            ? 'w-[17.5rem] translate-x-0 border-r'
+            : 'w-[17.5rem] -translate-x-full border-0 pointer-events-none'
         }`}
         aria-hidden={!sidebarOpen}
       >
@@ -557,7 +567,7 @@ export function AdminLayout() {
           onClick={closeMobile}
         />
         <aside
-          className={`absolute inset-y-0 left-0 flex w-[min(100%,17.5rem)] flex-col border-r border-slate-200/90 bg-white shadow-xl transition-transform duration-300 ease-out ${
+          className={`absolute inset-y-0 left-0 flex h-dvh w-[min(100%,17.5rem)] flex-col border-r border-slate-200/90 bg-white shadow-xl transition-transform duration-300 ease-out ${
             mobileOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
         >
