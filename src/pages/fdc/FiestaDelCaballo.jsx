@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
-  FdcArtistsSection,
   FdcGallerySection,
   FdcNewsSection,
   FdcScheduleSection,
@@ -10,6 +9,7 @@ import {
   FdcSponsorsSection,
   FdcTicketsSection,
 } from '../../components/fdc/FdcFestivalSections.jsx'
+import { FdcArtistsSection } from '../../components/fdc/FdcArtistsSection.jsx'
 import { FdcFestivalHero } from '../../components/fdc/FdcFestivalHero.jsx'
 import { FdcStallApplicationForm } from '../../components/fdc/FdcStallApplicationForm.jsx'
 import { RevealOnScroll } from '../../components/home/RevealOnScroll.jsx'
@@ -255,7 +255,8 @@ export function FiestaDelCaballo() {
         <FdcSectionNav items={page.sectionNav} onHashNavigate={handleHashNavigate} />
       </div>
 
-      {(page.artists?.items || []).some((a) => a?.name) ? (
+      {(page.artists?.items || []).some((a) => a?.name) ||
+      (page.artists?.dayPosters || []).some((p) => p?.imageUrl) ? (
         <section
           id="cartelera"
           className="relative isolate border-y border-[#e8e5dd] bg-[#f7f7f5] py-14 sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"

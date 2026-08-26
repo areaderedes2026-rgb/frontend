@@ -9,6 +9,7 @@ import { Toast } from '../../components/ui/Toast.jsx'
 import { inputClass, labelClass, textareaClass } from '../../components/ui/formStyles.js'
 import {
   DEFAULT_FDC_CONTENT,
+  FDC_ARTISTS_MAX_DAY_POSTERS,
   FDC_SCHEDULE_MAX_IMAGES,
   applyHeroCoverToFdcContent,
   ensureFdcFormRubros,
@@ -59,6 +60,7 @@ function mapContentToForm(content) {
     artists: {
       ...merged.artists,
       items: (merged.artists?.items || []).map((it) => ({ ...it })),
+      dayPosters: (merged.artists?.dayPosters || []).map((it) => ({ ...it })),
     },
     tickets: {
       ...merged.tickets,
@@ -163,6 +165,7 @@ export function AdminFdc() {
   )
   const [toast, setToast] = useState(null)
   const [artistModal, setArtistModal] = useState({ open: false, index: null, draft: null })
+  const [dayPosterModal, setDayPosterModal] = useState({ open: false, index: null, draft: null })
   const [dayModal, setDayModal] = useState({ open: false, index: null, draft: null })
   const [scheduleImageModal, setScheduleImageModal] = useState({ open: false, index: null, draft: null })
   const [newsModal, setNewsModal] = useState({ open: false, index: null, draft: null })
@@ -271,6 +274,15 @@ export function AdminFdc() {
         title: String(form.artists?.title || '').trim(),
         ctaLabel: String(form.artists?.ctaLabel || '').trim(),
         ctaHref: String(form.artists?.ctaHref || '').trim(),
+        dayPosters: (form.artists?.dayPosters || [])
+          .map((it, idx) => ({
+            id: String(it?.id || '').trim() || makeFdcItemId('dp'),
+            label: String(it?.label || '').trim(),
+            imageUrl: String(it?.imageUrl || '').trim(),
+            sortOrder: Number.isFinite(Number(it?.sortOrder)) ? Number(it.sortOrder) : idx,
+          }))
+          .filter((it) => it.imageUrl)
+          .slice(0, FDC_ARTISTS_MAX_DAY_POSTERS),
         items: (form.artists?.items || [])
           .map((it) => ({
             id: String(it?.id || '').trim() || makeFdcItemId('art'),
@@ -455,6 +467,41 @@ export function AdminFdc() {
     setArtistModal({ open: false, index: null, draft: null })
   }
 
+  function openDayPosterModal(index = null) {
+    const list = form.artists?.dayPosters || []
+    const draft =
+      index != null
+        ? { ...list[index] }
+        : {
+            id: makeFdcItemId('dp'),
+            label: '',
+            imageUrl: '',
+            sortOrder: list.length,
+          }
+    setDayPosterModal({ open: true, index, draft })
+  }
+
+  function applyDayPosterModal() {
+    const imageUrl = String(dayPosterModal.draft?.imageUrl || '').trim()
+    if (!imageUrl) return
+    updateArtists((a) => {
+      const dayPosters = [...(a.dayPosters || [])]
+      const entry = {
+        ...dayPosterModal.draft,
+        imageUrl,
+        label: String(dayPosterModal.draft?.label || '').trim(),
+      }
+      if (dayPosterModal.index == null) {
+        if (dayPosters.length >= FDC_ARTISTS_MAX_DAY_POSTERS) return a
+        dayPosters.push(entry)
+      } else {
+        dayPosters[dayPosterModal.index] = entry
+      }
+      return { ...a, dayPosters }
+    })
+    setDayPosterModal({ open: false, index: null, draft: null })
+  }
+
   function openDayModal(index = null) {
     const draft =
       index != null
@@ -566,6 +613,7 @@ export function AdminFdc() {
   const scheduleImages = form.schedule?.images || []
   const scheduleDays = form.schedule?.days || []
   const artistItems = form.artists?.items || []
+  const dayPosterItems = form.artists?.dayPosters || []
   const newsItems = form.news?.items || []
   const galleryItems = form.gallery?.items || []
   const sponsorItems = form.sponsors?.items || []
@@ -645,6 +693,51 @@ export function AdminFdc() {
               kind="cover"
               onChange={(url) =>
                 setArtistModal((m) => ({ ...m, draft: { ...m.draft, photoUrl: url } }))
+              }
+              onNotify={setToast}
+            />
+          </div>
+        ) : null}
+      </Modal>
+
+      {/* Day poster modal */}
+      <Modal
+        open={dayPosterModal.open}
+        onClose={() => setDayPosterModal({ open: false, index: null, draft: null })}
+        title={dayPosterModal.index == null ? 'Agregar afiche del día' : 'Editar afiche del día'}
+        footer={
+          <ModalFooter
+            saving={saving}
+            applyDisabled={!String(dayPosterModal.draft?.imageUrl || '').trim()}
+            onCancel={() => setDayPosterModal({ open: false, index: null, draft: null })}
+            onApply={applyDayPosterModal}
+          />
+        }
+      >
+        {dayPosterModal.draft ? (
+          <div className="grid gap-4">
+            <label className={labelClass}>
+              Etiqueta del día
+              <input
+                className={inputClass}
+                value={dayPosterModal.draft.label || ''}
+                disabled={saving}
+                placeholder="Jueves 9"
+                onChange={(e) =>
+                  setDayPosterModal((m) => ({ ...m, draft: { ...m.draft, label: e.target.value } }))
+                }
+              />
+              <span className="mt-1 text-xs font-normal text-slate-500">
+                Se muestra en la tarjeta y al ampliar el afiche.
+              </span>
+            </label>
+            <SingleImageUploadField
+              label="Imagen de la cartelera del día"
+              value={dayPosterModal.draft.imageUrl || ''}
+              disabled={saving}
+              kind="cover"
+              onChange={(url) =>
+                setDayPosterModal((m) => ({ ...m, draft: { ...m.draft, imageUrl: url } }))
               }
               onNotify={setToast}
             />
@@ -1222,6 +1315,10 @@ export function AdminFdc() {
                       onChange={(e) => updateArtists((a) => ({ ...a, ctaHref: e.target.value }))}
                       placeholder="#cronograma o URL"
                     />
+                    <span className="mt-1 text-xs font-normal text-slate-500">
+                      Si cargás afiches por día abajo, el botón alterna la vista (carrusel ↔ cartelera)
+                      y este enlace no se usa.
+                    </span>
                   </label>
                 </div>
 
@@ -1291,6 +1388,82 @@ export function AdminFdc() {
                 >
                   + Agregar artista
                 </button>
+
+                <div className="mt-8 border-t border-slate-200 pt-6">
+                  <h3 className="text-base font-bold text-slate-900">Cartelera completa por día</h3>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Hasta {FDC_ARTISTS_MAX_DAY_POSTERS} afiches (uno por día). En el sitio público, el
+                    botón «{form.artists?.ctaLabel || 'Ver cartelera completa'}» oculta el carrusel y
+                    muestra estas tarjetas grandes.
+                  </p>
+                  <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200">
+                    <table className="w-full text-left text-sm">
+                      <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        <tr>
+                          <th className="px-4 py-3">Afiche</th>
+                          <th className="px-4 py-3">Día / etiqueta</th>
+                          <th className="px-4 py-3 text-right">Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {dayPosterItems.length === 0 ? (
+                          <tr>
+                            <td colSpan={3} className="px-4 py-6 text-center text-slate-500">
+                              Todavía no hay afiches por día.
+                            </td>
+                          </tr>
+                        ) : (
+                          dayPosterItems.map((poster, idx) => (
+                            <tr key={poster.id || idx} className="hover:bg-slate-50/80">
+                              <td className="px-4 py-3">
+                                <ThumbCell src={poster.imageUrl} alt={poster.label || 'Afiche'} />
+                              </td>
+                              <td className="px-4 py-3 font-medium text-slate-900">
+                                {poster.label || `Día ${idx + 1}`}
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex justify-end gap-2">
+                                  <button
+                                    type="button"
+                                    className={ACTION_NEUTRAL}
+                                    disabled={saving}
+                                    onClick={() => openDayPosterModal(idx)}
+                                  >
+                                    Editar
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className={ACTION_DANGER}
+                                    disabled={saving}
+                                    onClick={() =>
+                                      updateArtists((a) => ({
+                                        ...a,
+                                        dayPosters: (a.dayPosters || []).filter((_, i) => i !== idx),
+                                      }))
+                                    }
+                                  >
+                                    Eliminar
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                  <button
+                    type="button"
+                    className={`${ACTION_ADD} mt-3`}
+                    disabled={saving || dayPosterItems.length >= FDC_ARTISTS_MAX_DAY_POSTERS}
+                    onClick={() => openDayPosterModal(null)}
+                  >
+                    + Agregar afiche del día
+                    {dayPosterItems.length >= FDC_ARTISTS_MAX_DAY_POSTERS
+                      ? ` (máx. ${FDC_ARTISTS_MAX_DAY_POSTERS})`
+                      : ''}
+                  </button>
+                </div>
               </section>
             ) : null}
 

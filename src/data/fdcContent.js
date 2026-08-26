@@ -114,10 +114,34 @@ export function normalizeFdcScheduleImages(schedule) {
   return images
 }
 
+export const FDC_ARTISTS_MAX_DAY_POSTERS = 4
+
+export function normalizeFdcArtistDayPosters(artists) {
+  const src = artists && typeof artists === 'object' ? artists : {}
+  const list = Array.isArray(src.dayPosters) ? src.dayPosters : []
+  const out = []
+  for (const item of list.slice(0, FDC_ARTISTS_MAX_DAY_POSTERS)) {
+    const imageUrl = String(item?.imageUrl || '').trim()
+    if (!imageUrl) continue
+    out.push({
+      id: String(item?.id || '').trim() || `dp-${out.length + 1}`,
+      label: String(item?.label || '').trim(),
+      imageUrl,
+      sortOrder: Number.isFinite(Number(item?.sortOrder))
+        ? Number(item.sortOrder)
+        : out.length,
+    })
+  }
+  out.sort((a, b) => a.sortOrder - b.sortOrder)
+  return out
+}
+
 export const DEFAULT_FDC_ARTISTS = {
   title: 'Cartelera artística',
   ctaLabel: 'Ver cartelera completa',
   ctaHref: '',
+  /** Afiches generales por día (hasta 4). Si hay al menos uno, el CTA alterna la vista. */
+  dayPosters: [],
   items: [
     {
       id: 'art-1',
@@ -334,12 +358,27 @@ export function mergeFdcContent(base, remote) {
         featuredImageUrl: images[0]?.imageUrl || String(merged.featuredImageUrl || '').trim(),
       }
     })(),
-    artists: mergeNamedSection(defaults.artists, remote.artists, [
-      'title',
-      'ctaLabel',
-      'ctaHref',
-      'items',
-    ]),
+    artists: (() => {
+      const merged = mergeNamedSection(defaults.artists, remote.artists, [
+        'title',
+        'ctaLabel',
+        'ctaHref',
+        'items',
+        'dayPosters',
+      ])
+      return {
+        ...merged,
+        dayPosters: normalizeFdcArtistDayPosters(
+          remote.artists && typeof remote.artists === 'object'
+            ? {
+                dayPosters: Array.isArray(remote.artists.dayPosters)
+                  ? remote.artists.dayPosters
+                  : [],
+              }
+            : merged,
+        ),
+      }
+    })(),
     tickets: (() => {
       const merged = mergeNamedSection(defaults.tickets, remote.tickets, [
         'title',
