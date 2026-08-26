@@ -529,9 +529,10 @@ export function AdminLayout() {
     <div className="flex min-h-dvh bg-slate-50">
       <ScrollToTop />
 
-      {/* Sidebar desktop */}
+      {/* Sidebar desktop: self-start evita que el flex la estire a toda la altura del contenido
+          (sin eso, sticky no retiene el menú y al scrollear solo queda el pie de sesión). */}
       <aside
-        className={`sticky top-0 z-30 hidden h-dvh shrink-0 flex-col overflow-hidden border-slate-200/90 bg-white shadow-sm transition-[width] duration-300 ease-out lg:flex ${
+        className={`sticky top-0 z-30 hidden h-dvh max-h-dvh shrink-0 flex-col self-start overflow-hidden border-slate-200/90 bg-white shadow-sm transition-[width] duration-300 ease-out lg:flex ${
           sidebarOpen ? 'w-[17.5rem] border-r' : 'w-0 border-0'
         }`}
         aria-hidden={!sidebarOpen}
