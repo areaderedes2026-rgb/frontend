@@ -16,6 +16,7 @@ import {
   FDC_ARTISTS_MAX_DAY_POSTERS,
   FDC_SCHEDULE_MAX_IMAGES,
   FDC_STAT_ICON_OPTIONS,
+  FDC_HERO_COUNTDOWN_LABEL_COLORS,
   applyHeroCoverToFdcContent,
   ensureFdcFormRubros,
   fdcContentToHeroCover,
@@ -1404,6 +1405,68 @@ export function AdminFdc() {
                           }))
                         }}
                       />
+                    </label>
+                    <label className={labelClass}>
+                      Color de «Faltan»
+                      <div className="mt-2 flex flex-wrap items-center gap-3">
+                        <input
+                          type="color"
+                          className="h-11 w-14 cursor-pointer rounded-lg border border-slate-200 bg-white p-1"
+                          value={normalizeFdcHeroCountdown(form.heroCountdown).labelColor}
+                          disabled={saving || form.heroCountdown?.enabled !== true}
+                          onChange={(e) =>
+                            setForm((p) => ({
+                              ...p,
+                              heroCountdown: {
+                                ...normalizeFdcHeroCountdown(p.heroCountdown),
+                                labelColor: e.target.value,
+                              },
+                            }))
+                          }
+                        />
+                        <input
+                          type="text"
+                          className={`${inputClass} max-w-[8.5rem] font-mono text-sm`}
+                          value={normalizeFdcHeroCountdown(form.heroCountdown).labelColor}
+                          disabled={saving || form.heroCountdown?.enabled !== true}
+                          onChange={(e) =>
+                            setForm((p) => ({
+                              ...p,
+                              heroCountdown: {
+                                ...normalizeFdcHeroCountdown(p.heroCountdown),
+                                labelColor: e.target.value,
+                              },
+                            }))
+                          }
+                          placeholder="#ffffff"
+                        />
+                        <div className="flex flex-wrap gap-1.5">
+                          {FDC_HERO_COUNTDOWN_LABEL_COLORS.map((preset) => (
+                            <button
+                              key={preset.value}
+                              type="button"
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 transition hover:border-sky-300 hover:bg-sky-50 disabled:opacity-50"
+                              disabled={saving || form.heroCountdown?.enabled !== true}
+                              onClick={() =>
+                                setForm((p) => ({
+                                  ...p,
+                                  heroCountdown: {
+                                    ...normalizeFdcHeroCountdown(p.heroCountdown),
+                                    labelColor: preset.value,
+                                  },
+                                }))
+                              }
+                            >
+                              <span
+                                className="h-3.5 w-3.5 rounded-full border border-slate-200"
+                                style={{ backgroundColor: preset.value }}
+                                aria-hidden
+                              />
+                              {preset.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     </label>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <label className={labelClass}>

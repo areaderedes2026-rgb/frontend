@@ -344,6 +344,28 @@ export const DEFAULT_FDC_HERO_COUNTDOWN = {
   offsetYMobile: 0,
   /** Ajuste vertical en px (negativo = más arriba). Escritorio. */
   offsetYDesktop: 0,
+  /** Color del texto «Faltan» (hex). */
+  labelColor: '#ffffff',
+}
+
+export const FDC_HERO_COUNTDOWN_LABEL_COLORS = [
+  { value: '#ffffff', label: 'Blanco' },
+  { value: '#171b22', label: 'Azul oscuro' },
+  { value: '#d4b483', label: 'Dorado' },
+  { value: '#0369a1', label: 'Azul institucional' },
+]
+
+function normalizeCountdownLabelColor(value, fallback = '#ffffff') {
+  const expand = (hex) => {
+    const raw = String(hex || '').trim()
+    if (/^#[0-9a-fA-F]{6}$/.test(raw)) return raw.toLowerCase()
+    if (/^#[0-9a-fA-F]{3}$/.test(raw)) {
+      const c = raw.slice(1)
+      return `#${c[0]}${c[0]}${c[1]}${c[1]}${c[2]}${c[2]}`.toLowerCase()
+    }
+    return null
+  }
+  return expand(value) || expand(fallback) || '#ffffff'
 }
 
 function clampCountdownOffset(value, fallback = 0) {
@@ -365,6 +387,7 @@ export function normalizeFdcHeroCountdown(input, defaults = DEFAULT_FDC_HERO_COU
     targetAt,
     offsetYMobile: clampCountdownOffset(src.offsetYMobile, base.offsetYMobile),
     offsetYDesktop: clampCountdownOffset(src.offsetYDesktop, base.offsetYDesktop),
+    labelColor: normalizeCountdownLabelColor(src.labelColor, base.labelColor),
   }
 }
 
