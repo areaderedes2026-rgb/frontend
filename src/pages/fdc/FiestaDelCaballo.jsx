@@ -11,6 +11,7 @@ import {
 } from '../../components/fdc/FdcFestivalSections.jsx'
 import { FdcArtistsSection } from '../../components/fdc/FdcArtistsSection.jsx'
 import { FdcFestivalHero } from '../../components/fdc/FdcFestivalHero.jsx'
+import { FdcHeroCountdown } from '../../components/fdc/FdcHeroCountdown.jsx'
 import { FdcStallApplicationForm } from '../../components/fdc/FdcStallApplicationForm.jsx'
 import { RevealOnScroll } from '../../components/home/RevealOnScroll.jsx'
 import { Container } from '../../components/ui/Container.jsx'
@@ -252,6 +253,7 @@ export function FiestaDelCaballo() {
           secondaryCta={hydrated ? secondaryCta : null}
           onHashNavigate={handleHashNavigate}
         />
+        {hydrated ? <FdcHeroCountdown config={page.heroCountdown} /> : null}
         <FdcSectionNav items={page.sectionNav} onHashNavigate={handleHashNavigate} />
       </div>
 

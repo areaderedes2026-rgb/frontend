@@ -4,19 +4,24 @@ import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
 import { PageCoverModal } from '../../components/admin/PageCoverModal.jsx'
 import { SingleImageUploadField } from '../../components/admin/SingleImageUploadField.jsx'
 import { FdcFestivalHero } from '../../components/fdc/FdcFestivalHero.jsx'
+import { FdcHeroCountdown } from '../../components/fdc/FdcHeroCountdown.jsx'
+import { FdcSectionNav } from '../../components/fdc/FdcFestivalSections.jsx'
 import { Modal } from '../../components/ui/Modal.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
 import { inputClass, labelClass, textareaClass } from '../../components/ui/formStyles.js'
 import {
   DEFAULT_FDC_CONTENT,
+  DEFAULT_FDC_HERO_COUNTDOWN,
   FDC_ARTISTS_MAX_DAY_POSTERS,
   FDC_SCHEDULE_MAX_IMAGES,
   applyHeroCoverToFdcContent,
   ensureFdcFormRubros,
   fdcContentToHeroCover,
+  fdcCountdownToDatetimeLocal,
   isFdcOtherRubro,
   makeFdcItemId,
   mergeFdcContent,
+  normalizeFdcHeroCountdown,
 } from '../../data/fdcContent.js'
 import { normalizeHeroToggle } from '../../data/servicesPageContent.js'
 import { useContentEditorConcurrencyConflict } from '../../hooks/useContentEditorConcurrencyConflict.jsx'
@@ -88,6 +93,7 @@ function mapContentToForm(content) {
     showPrimaryButton: normalizeHeroToggle(merged.showPrimaryButton, true),
     showSecondaryButton: normalizeHeroToggle(merged.showSecondaryButton, true),
     formRubros: ensureFdcFormRubros(merged.formRubros),
+    heroCountdown: normalizeFdcHeroCountdown(merged.heroCountdown),
   }
 }
 
@@ -216,6 +222,10 @@ export function AdminFdc() {
       heroDateBadge: '',
       heroImageUrl: String(form.heroImageUrl || '').trim(),
       heroImageUrlMobile: String(form.heroImageUrlMobile || '').trim(),
+      heroCountdown: normalizeFdcHeroCountdown(
+        form.heroCountdown,
+        DEFAULT_FDC_HERO_COUNTDOWN,
+      ),
       overlayOpacity: normalizeOverlay(form.overlayOpacity, 65),
       heroSearchPlaceholder: String(form.heroSearchPlaceholder || ''),
       showHeroBadge: normalizeHeroToggle(form.showHeroBadge, true),
@@ -1158,8 +1168,114 @@ export function AdminFdc() {
                       primaryCta={heroPrimaryCta}
                       secondaryCta={heroSecondaryCta}
                     />
+                    <FdcHeroCountdown config={form.heroCountdown} previewMode />
+                    <FdcSectionNav
+                      items={(form.sectionNav || []).slice(0, 5)}
+                      onHashNavigate={() => {}}
+                    />
                   </div>
                 </div>
+
+                <section className={SECTION_CARD}>
+                  <h2 className="text-base font-bold text-slate-900">Contador regresivo</h2>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Solo números (días, horas, minutos y segundos), centrado entre la portada y la
+                    barra de navegación. Ajustá la posición vertical por separado en móvil y
+                    escritorio.
+                  </p>
+                  <div className="mt-4 space-y-4">
+                    <label className="flex cursor-pointer items-center gap-3">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-slate-300 text-sky-700 focus:ring-sky-600"
+                        checked={form.heroCountdown?.enabled === true}
+                        disabled={saving}
+                        onChange={(e) =>
+                          setForm((p) => ({
+                            ...p,
+                            heroCountdown: {
+                              ...normalizeFdcHeroCountdown(p.heroCountdown),
+                              enabled: e.target.checked,
+                            },
+                          }))
+                        }
+                      />
+                      <span className="text-sm font-medium text-slate-800">Activar contador</span>
+                    </label>
+                    <label className={labelClass}>
+                      Fecha y hora objetivo
+                      <input
+                        type="datetime-local"
+                        className={inputClass}
+                        value={fdcCountdownToDatetimeLocal(form.heroCountdown?.targetAt)}
+                        disabled={saving || form.heroCountdown?.enabled !== true}
+                        onChange={(e) => {
+                          const raw = String(e.target.value || '').trim()
+                          const targetAt = raw ? (raw.length === 16 ? `${raw}:00` : raw.slice(0, 19)) : ''
+                          setForm((p) => ({
+                            ...p,
+                            heroCountdown: {
+                              ...normalizeFdcHeroCountdown(p.heroCountdown),
+                              targetAt,
+                            },
+                          }))
+                        }}
+                      />
+                    </label>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <label className={labelClass}>
+                        Posición vertical (móvil):{' '}
+                        {normalizeFdcHeroCountdown(form.heroCountdown).offsetYMobile}px
+                        <input
+                          type="range"
+                          min={-160}
+                          max={160}
+                          step={1}
+                          className="mt-2 w-full accent-sky-700"
+                          value={normalizeFdcHeroCountdown(form.heroCountdown).offsetYMobile}
+                          disabled={saving || form.heroCountdown?.enabled !== true}
+                          onChange={(e) =>
+                            setForm((p) => ({
+                              ...p,
+                              heroCountdown: {
+                                ...normalizeFdcHeroCountdown(p.heroCountdown),
+                                offsetYMobile: Number(e.target.value),
+                              },
+                            }))
+                          }
+                        />
+                        <span className="mt-1 block text-xs font-normal text-slate-500">
+                          Valores negativos suben el contador; positivos lo bajan.
+                        </span>
+                      </label>
+                      <label className={labelClass}>
+                        Posición vertical (escritorio):{' '}
+                        {normalizeFdcHeroCountdown(form.heroCountdown).offsetYDesktop}px
+                        <input
+                          type="range"
+                          min={-160}
+                          max={160}
+                          step={1}
+                          className="mt-2 w-full accent-sky-700"
+                          value={normalizeFdcHeroCountdown(form.heroCountdown).offsetYDesktop}
+                          disabled={saving || form.heroCountdown?.enabled !== true}
+                          onChange={(e) =>
+                            setForm((p) => ({
+                              ...p,
+                              heroCountdown: {
+                                ...normalizeFdcHeroCountdown(p.heroCountdown),
+                                offsetYDesktop: Number(e.target.value),
+                              },
+                            }))
+                          }
+                        />
+                        <span className="mt-1 block text-xs font-normal text-slate-500">
+                          Independiente del ajuste en celular; se aplica desde 1024px de ancho.
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                </section>
 
                 <section className={SECTION_CARD}>
                   <h2 className="text-base font-bold text-slate-900">Imagen para celular</h2>

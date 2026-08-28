@@ -715,3 +715,14 @@
   border: none;
 }
 
+/* FDC: ajuste vertical del contador (móvil / escritorio) */
+.fdc-hero-countdown-offset {
+  transform: translateY(var(--fdc-countdown-y-mobile, 0px));
+}
+
+@media (min-width: 1024px) {
+  .fdc-hero-countdown-offset {
+    transform: translateY(var(--fdc-countdown-y-desktop, var(--fdc-countdown-y-mobile, 0px)));
+  }
+}
+

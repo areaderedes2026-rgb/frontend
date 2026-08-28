@@ -211,6 +211,71 @@ export const DEFAULT_FDC_SECTION_NAV = [
   { id: 'nav-puestos', label: 'Puestos', href: '#solicitud-puestos', icon: 'store' },
 ]
 
+/** Contador regresivo sobre la portada (encima de la barra de navegación). */
+export const DEFAULT_FDC_HERO_COUNTDOWN = {
+  enabled: false,
+  /** Fecha/hora local ISO parcial: 2026-07-09T18:00:00 */
+  targetAt: '2026-07-09T00:00:00',
+  /** Ajuste vertical en px (negativo = más arriba). Móvil. */
+  offsetYMobile: 0,
+  /** Ajuste vertical en px (negativo = más arriba). Escritorio. */
+  offsetYDesktop: 0,
+}
+
+function clampCountdownOffset(value, fallback = 0) {
+  const n = Number(value)
+  const fb = Number(fallback)
+  const base = Number.isFinite(n) ? n : Number.isFinite(fb) ? fb : 0
+  return Math.min(160, Math.max(-160, Math.round(base)))
+}
+
+export function normalizeFdcHeroCountdown(input, defaults = DEFAULT_FDC_HERO_COUNTDOWN) {
+  const src = input && typeof input === 'object' ? input : {}
+  const base = defaults && typeof defaults === 'object' ? defaults : DEFAULT_FDC_HERO_COUNTDOWN
+  const enabled = src.enabled === true || src.enabled === 1
+  const targetRaw = String(src.targetAt ?? base.targetAt ?? '').trim()
+  const targetAt =
+    targetRaw && /^\d{4}-\d{2}-\d{2}/.test(targetRaw) ? targetRaw.slice(0, 19) : String(base.targetAt || '')
+  return {
+    enabled,
+    targetAt,
+    offsetYMobile: clampCountdownOffset(src.offsetYMobile, base.offsetYMobile),
+    offsetYDesktop: clampCountdownOffset(src.offsetYDesktop, base.offsetYDesktop),
+  }
+}
+
+/** Convierte targetAt a valor para input datetime-local. */
+export function fdcCountdownToDatetimeLocal(targetAt) {
+  const raw = String(targetAt || '').trim()
+  if (!raw) return ''
+  const normalized = raw.length === 10 ? `${raw}T00:00:00` : raw
+  const d = new Date(normalized)
+  if (Number.isNaN(d.getTime())) return ''
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  const h = String(d.getHours()).padStart(2, '0')
+  const min = String(d.getMinutes()).padStart(2, '0')
+  return `${y}-${m}-${day}T${h}:${min}`
+}
+
+/** Partes del contador (días, horas, minutos, segundos). */
+export function computeFdcCountdownRemaining(targetAt, now = Date.now()) {
+  const raw = String(targetAt || '').trim()
+  if (!raw) return null
+  const target = new Date(raw.length === 10 ? `${raw}T00:00:00` : raw)
+  if (Number.isNaN(target.getTime())) return null
+  const diff = Math.max(0, target.getTime() - now)
+  const totalSec = Math.floor(diff / 1000)
+  return {
+    days: Math.floor(totalSec / 86400),
+    hours: Math.floor((totalSec % 86400) / 3600),
+    minutes: Math.floor((totalSec % 3600) / 60),
+    seconds: totalSec % 60,
+    expired: diff === 0,
+  }
+}
+
 export const DEFAULT_FDC_CONTENT = {
   heroEyebrow: 'Trancas · Tucumán · Argentina',
   heroTitle: 'Fiesta Nacional e Internacional del Caballo 2026',
@@ -233,6 +298,7 @@ export const DEFAULT_FDC_CONTENT = {
   showSecondaryButton: true,
   heroSecondaryLabel: 'Ver cronograma',
   heroSecondaryHref: '#cronograma',
+  heroCountdown: { ...DEFAULT_FDC_HERO_COUNTDOWN },
   introTitle: '',
   introParagraphs: [],
   highlights: [],
@@ -311,6 +377,12 @@ export function mergeFdcContent(base, remote) {
     ),
     heroSecondaryLabel: String(remote.heroSecondaryLabel ?? defaults.heroSecondaryLabel ?? ''),
     heroSecondaryHref: String(remote.heroSecondaryHref ?? defaults.heroSecondaryHref ?? ''),
+    heroCountdown: normalizeFdcHeroCountdown(
+      remote.heroCountdown ??
+        remote.usefulInfo?.heroCountdown ??
+        defaults.heroCountdown,
+      defaults.heroCountdown,
+    ),
     introTitle: String(remote.introTitle ?? defaults.introTitle ?? ''),
     introParagraphs: Array.isArray(remote.introParagraphs)
       ? remote.introParagraphs.map((p) => String(p || '').trim()).filter(Boolean)
