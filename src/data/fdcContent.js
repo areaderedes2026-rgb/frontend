@@ -201,9 +201,9 @@ export const DEFAULT_FDC_SPONSORS = {
 export const FDC_STAT_ICON_OPTIONS = [
   { value: 'horse', label: 'Caballo' },
   { value: 'people', label: 'Personas / visitantes' },
-  { value: 'music', label: 'Música / artistas' },
-  { value: 'jineteada', label: 'Jineteada' },
-  { value: 'peruvianHorse', label: 'Caballos peruanos' },
+  { value: 'music', label: 'Micrófono / artistas' },
+  { value: 'jineteada', label: 'Gaucho / jineteada' },
+  { value: 'peruvianHorse', label: 'Caballo (perfil)' },
   { value: 'food', label: 'Gastronomía' },
   { value: 'market', label: 'Feria / puestos' },
   { value: 'calendar', label: 'Calendario / días' },
