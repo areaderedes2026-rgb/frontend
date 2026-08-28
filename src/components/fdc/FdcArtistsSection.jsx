@@ -9,7 +9,6 @@ const VIEW_CAROUSEL = 'carousel'
 const VIEW_DAYS = 'days'
 
 const softEase = [0.22, 1, 0.36, 1]
-const slowEase = [0.16, 1, 0.3, 1]
 
 function usePrefersReducedMotion() {
   const [reduce, setReduce] = useState(
@@ -69,8 +68,11 @@ function parseDateBadge(tag) {
   return { day: raw.toUpperCase(), num: '' }
 }
 
-const ctaButtonClass =
+const ctaButtonClassLight =
   'inline-flex min-h-11 items-center justify-center rounded-md border border-[#171b22]/80 px-5 text-[11px] font-bold uppercase tracking-[0.14em] text-[#171b22] transition hover:bg-[#171b22] hover:text-white sm:text-xs'
+
+const ctaButtonClassDark =
+  'inline-flex min-h-11 items-center justify-center rounded-md border border-white/75 px-5 text-[11px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-white hover:text-[#171b22] sm:text-xs'
 
 function DayPosterLightbox({ poster, onClose, reduceMotion }) {
   const titleId = useId()
@@ -83,26 +85,29 @@ function DayPosterLightbox({ poster, onClose, reduceMotion }) {
       if (e.key === 'Escape') onClose()
     }
     document.addEventListener('keydown', onKey)
-    const prev = document.body.style.overflow
+    const prevBody = document.body.style.overflow
+    const prevHtml = document.documentElement.style.overflow
     document.body.style.overflow = 'hidden'
+    document.documentElement.style.overflow = 'hidden'
     const id = requestAnimationFrame(() => closeRef.current?.focus())
     return () => {
       document.removeEventListener('keydown', onKey)
-      document.body.style.overflow = prev
+      document.body.style.overflow = prevBody
+      document.documentElement.style.overflow = prevHtml
       cancelAnimationFrame(id)
     }
   }, [onClose])
 
   return (
     <Motion.div
-      className="fixed inset-0 z-[160] flex items-center justify-center p-3 sm:p-6"
+      className="fixed inset-0 z-[160] flex items-center justify-center overflow-hidden p-3 sm:p-6"
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: reduceMotion ? 0.15 : 0.55, ease: softEase }}
+      transition={{ duration: reduceMotion ? 0.12 : 0.28, ease: softEase }}
     >
       <button
         type="button"
@@ -113,10 +118,10 @@ function DayPosterLightbox({ poster, onClose, reduceMotion }) {
       <Motion.div
         layoutId={reduceMotion ? undefined : `fdc-day-poster-${poster.id}`}
         className="relative z-10 flex max-h-[min(94dvh,56rem)] w-full max-w-[min(96vw,28rem)] flex-col overflow-hidden rounded-2xl bg-[#171b22] shadow-[0_40px_100px_-40px_rgba(0,0,0,0.75)] ring-1 ring-white/10 sm:max-w-[min(92vw,34rem)]"
-        initial={reduceMotion ? false : { scale: 0.92, y: 28, filter: 'blur(8px)' }}
+        initial={reduceMotion ? false : { scale: 0.94, y: 16, filter: 'blur(4px)' }}
         animate={{ scale: 1, y: 0, filter: 'blur(0px)' }}
-        exit={reduceMotion ? undefined : { scale: 0.94, y: 16, opacity: 0.6, filter: 'blur(4px)' }}
-        transition={{ duration: reduceMotion ? 0.15 : 0.85, ease: slowEase }}
+        exit={reduceMotion ? undefined : { scale: 0.96, y: 10, opacity: 0.7, filter: 'blur(2px)' }}
+        transition={{ duration: reduceMotion ? 0.12 : 0.36, ease: softEase }}
       >
         <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3 sm:px-5">
           <p
@@ -135,11 +140,11 @@ function DayPosterLightbox({ poster, onClose, reduceMotion }) {
             ✕
           </button>
         </div>
-        <div className="min-h-0 flex-1 overflow-auto overscroll-contain bg-[#0c1017] p-2 sm:p-3">
+        <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-[#0c1017] p-2 sm:p-3">
           <img
             src={src}
             alt={label}
-            className="mx-auto h-auto w-full max-w-full object-contain"
+            className="max-h-[min(calc(94dvh-7.5rem),50rem)] w-auto max-w-full object-contain"
             decoding="async"
           />
         </div>
@@ -166,6 +171,11 @@ export function FdcArtistsSection({ artists }) {
   const title = String(artists?.title || 'Cartelera artística').trim()
   const ctaLabel = String(artists?.ctaLabel || '').trim() || 'Ver cartelera completa'
   const ctaHref = String(artists?.ctaHref || '').trim()
+  const bgSrc =
+    resolveMediaUrl(artists?.backgroundImageUrl) || String(artists?.backgroundImageUrl || '').trim()
+  const hasBg = Boolean(bgSrc)
+  const titleTone = hasBg ? 'dark' : 'light'
+  const ctaButtonClass = hasBg ? ctaButtonClassDark : ctaButtonClassLight
   const hasDayPosters = dayPosters.length > 0
   const showingDays = hasDayPosters && (view === VIEW_DAYS || items.length === 0)
 
@@ -205,13 +215,13 @@ export function FdcArtistsSection({ artists }) {
     )
   ) : null
 
-  const stageDuration = reduceMotion ? 0.2 : 1.05
+  const stageDuration = reduceMotion ? 0.15 : 0.4
 
   return (
     <div>
       <FdcSectionTitle
         title={title}
-        tone="light"
+        tone={titleTone}
         subtitle={
           showingDays
             ? 'Cartelera general por día. Tocá un afiche para verlo en grande.'
@@ -232,10 +242,10 @@ export function FdcArtistsSection({ artists }) {
                     ? { opacity: 0 }
                     : {
                         opacity: 0,
-                        rotateX: 18,
-                        y: 48,
-                        filter: 'blur(12px)',
-                        clipPath: 'inset(12% 18% 12% 18% round 1.25rem)',
+                        rotateX: 10,
+                        y: 24,
+                        filter: 'blur(6px)',
+                        clipPath: 'inset(8% 12% 8% 12% round 1rem)',
                       }
                 }
                 animate={{
@@ -250,13 +260,13 @@ export function FdcArtistsSection({ artists }) {
                     ? { opacity: 0 }
                     : {
                         opacity: 0,
-                        rotateX: -10,
-                        y: -24,
-                        filter: 'blur(8px)',
-                        clipPath: 'inset(8% 10% 8% 10% round 1rem)',
+                        rotateX: -6,
+                        y: -14,
+                        filter: 'blur(4px)',
+                        clipPath: 'inset(6% 8% 6% 8% round 0.75rem)',
                       }
                 }
-                transition={{ duration: stageDuration, ease: slowEase }}
+                transition={{ duration: stageDuration, ease: softEase }}
                 style={{ transformStyle: 'preserve-3d' }}
               >
                 <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4 lg:gap-6">
@@ -266,11 +276,11 @@ export function FdcArtistsSection({ artists }) {
                     return (
                       <Motion.li
                         key={poster.id || idx}
-                        initial={reduceMotion ? false : { opacity: 0, y: 36, scale: 0.92 }}
+                        initial={reduceMotion ? false : { opacity: 0, y: 20, scale: 0.96 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         transition={{
-                          duration: reduceMotion ? 0.2 : 0.85,
-                          delay: reduceMotion ? 0 : 0.18 + idx * 0.12,
+                          duration: reduceMotion ? 0.15 : 0.38,
+                          delay: reduceMotion ? 0 : 0.05 + idx * 0.04,
                           ease: softEase,
                         }}
                       >
@@ -315,7 +325,7 @@ export function FdcArtistsSection({ artists }) {
                 initial={
                   reduceMotion
                     ? { opacity: 0 }
-                    : { opacity: 0, y: -20, filter: 'blur(6px)', scale: 0.98 }
+                    : { opacity: 0, y: -12, filter: 'blur(4px)', scale: 0.98 }
                 }
                 animate={{ opacity: 1, y: 0, filter: 'blur(0px)', scale: 1 }}
                 exit={
@@ -323,13 +333,13 @@ export function FdcArtistsSection({ artists }) {
                     ? { opacity: 0 }
                     : {
                         opacity: 0,
-                        y: 32,
-                        scale: 0.94,
-                        filter: 'blur(10px)',
-                        rotateX: 12,
+                        y: 16,
+                        scale: 0.96,
+                        filter: 'blur(5px)',
+                        rotateX: 6,
                       }
                 }
-                transition={{ duration: stageDuration, ease: slowEase }}
+                transition={{ duration: stageDuration, ease: softEase }}
                 className="relative"
                 style={{ transformStyle: 'preserve-3d' }}
               >
@@ -367,8 +377,8 @@ export function FdcArtistsSection({ artists }) {
                         initial={reduceMotion ? false : { opacity: 0, x: 28 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{
-                          duration: reduceMotion ? 0.15 : 0.7,
-                          delay: reduceMotion ? 0 : Math.min(idx, 6) * 0.06,
+                          duration: reduceMotion ? 0.12 : 0.35,
+                          delay: reduceMotion ? 0 : Math.min(idx, 6) * 0.03,
                           ease: softEase,
                         }}
                         className="group relative w-[min(72vw,14.5rem)] shrink-0 snap-start overflow-hidden rounded-xl shadow-[0_12px_36px_-24px_rgba(23,27,34,0.4)] ring-1 ring-[#e8e4dc] sm:w-[min(42vw,15.5rem)] lg:w-[13.75rem]"

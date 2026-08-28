@@ -13,6 +13,7 @@ import { FdcArtistsSection } from '../../components/fdc/FdcArtistsSection.jsx'
 import { FdcFestivalHero } from '../../components/fdc/FdcFestivalHero.jsx'
 import { FdcFestivalStatsSection } from '../../components/fdc/FdcFestivalStatsSection.jsx'
 import { FdcHeroCountdown } from '../../components/fdc/FdcHeroCountdown.jsx'
+import { resolveMediaUrl } from '../../utils/imageUrl.js'
 import { FdcStallApplicationForm } from '../../components/fdc/FdcStallApplicationForm.jsx'
 import { RevealOnScroll } from '../../components/home/RevealOnScroll.jsx'
 import { Container } from '../../components/ui/Container.jsx'
@@ -224,6 +225,15 @@ export function FiestaDelCaballo() {
       ? { label: page.heroSecondaryLabel, href: page.heroSecondaryHref || '#cronograma' }
       : null
 
+  const artistsBgSrc =
+    resolveMediaUrl(page.artists?.backgroundImageUrl) ||
+    String(page.artists?.backgroundImageUrl || '').trim()
+  const artistsHasBg = Boolean(artistsBgSrc)
+  const artistsOverlayRaw = Number(page.artists?.overlayOpacity)
+  const artistsOverlay = Number.isFinite(artistsOverlayRaw)
+    ? Math.min(90, Math.max(0, Math.round(artistsOverlayRaw)))
+    : 55
+
   if (submitSuccess) {
     return (
       <>
@@ -275,8 +285,26 @@ export function FiestaDelCaballo() {
       (page.artists?.dayPosters || []).some((p) => p?.imageUrl) ? (
         <section
           id="cartelera"
-          className="relative isolate border-y border-[#e8e5dd] bg-[#f7f7f5] py-14 sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
+          className={`relative isolate overflow-hidden border-y py-14 sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)] ${
+            artistsHasBg ? 'border-white/10 text-white' : 'border-[#e8e5dd] bg-[#f7f7f5]'
+          }`}
         >
+          {artistsHasBg ? (
+            <>
+              <img
+                src={artistsBgSrc}
+                alt=""
+                className="absolute inset-0 h-full w-full object-cover"
+                loading="lazy"
+                decoding="async"
+              />
+              <div
+                className="absolute inset-0 bg-[#171b22]"
+                style={{ opacity: artistsOverlay / 100 }}
+                aria-hidden
+              />
+            </>
+          ) : null}
           <Container className="relative z-10">
             <RevealOnScroll variant="slow">
               <FdcArtistsSection artists={page.artists} />

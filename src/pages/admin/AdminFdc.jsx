@@ -70,6 +70,7 @@ function mapContentToForm(content) {
       ...merged.artists,
       items: (merged.artists?.items || []).map((it) => ({ ...it })),
       dayPosters: (merged.artists?.dayPosters || []).map((it) => ({ ...it })),
+      overlayOpacity: normalizeOverlay(merged.artists?.overlayOpacity, 55),
     },
     tickets: {
       ...merged.tickets,
@@ -294,6 +295,8 @@ export function AdminFdc() {
         title: String(form.artists?.title || '').trim(),
         ctaLabel: String(form.artists?.ctaLabel || '').trim(),
         ctaHref: String(form.artists?.ctaHref || '').trim(),
+        backgroundImageUrl: String(form.artists?.backgroundImageUrl || '').trim(),
+        overlayOpacity: normalizeOverlay(form.artists?.overlayOpacity, 55),
         dayPosters: (form.artists?.dayPosters || [])
           .map((it, idx) => ({
             id: String(it?.id || '').trim() || makeFdcItemId('dp'),
@@ -1656,6 +1659,51 @@ export function AdminFdc() {
                       y este enlace no se usa.
                     </span>
                   </label>
+                </div>
+
+                <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50/60 p-4 sm:p-5">
+                  <h3 className="text-base font-bold text-slate-900">Fondo de la sección</h3>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Sin imagen se usa el fondo claro actual. Si subís una imagen, podés oscurecerla con
+                    el overlay para que el título y las tarjetas sigan legibles.
+                  </p>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <div className="sm:col-span-2">
+                      <SingleImageUploadField
+                        label="Imagen de fondo (opcional)"
+                        value={form.artists?.backgroundImageUrl || ''}
+                        disabled={saving}
+                        kind="cover"
+                        onChange={(url) =>
+                          updateArtists((a) => ({ ...a, backgroundImageUrl: url }))
+                        }
+                        onNotify={setToast}
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className={labelClass}>
+                        Opacidad del overlay: {normalizeOverlay(form.artists?.overlayOpacity, 55)}%
+                        <input
+                          type="range"
+                          min={0}
+                          max={90}
+                          step={1}
+                          className="mt-2 w-full accent-sky-700"
+                          value={normalizeOverlay(form.artists?.overlayOpacity, 55)}
+                          disabled={saving || !String(form.artists?.backgroundImageUrl || '').trim()}
+                          onChange={(e) =>
+                            updateArtists((a) => ({
+                              ...a,
+                              overlayOpacity: normalizeOverlay(e.target.value, 55),
+                            }))
+                          }
+                        />
+                        <span className="mt-1 block text-xs font-normal text-slate-500">
+                          Más alto = fondo más oscuro y texto más legible.
+                        </span>
+                      </label>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200">

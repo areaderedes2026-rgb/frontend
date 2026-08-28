@@ -140,6 +140,9 @@ export const DEFAULT_FDC_ARTISTS = {
   title: 'Cartelera artística',
   ctaLabel: 'Ver cartelera completa',
   ctaHref: '',
+  /** Vacío = fondo claro. Con URL se muestra imagen + overlay configurable. */
+  backgroundImageUrl: '',
+  overlayOpacity: 55,
   /** Afiches generales por día (hasta 4). Si hay al menos uno, el CTA alterna la vista. */
   dayPosters: [],
   items: [
@@ -586,7 +589,10 @@ export function mergeFdcContent(base, remote) {
         'ctaHref',
         'items',
         'dayPosters',
+        'backgroundImageUrl',
+        'overlayOpacity',
       ])
+      const overlayRaw = Number(merged.overlayOpacity)
       return {
         ...merged,
         dayPosters: normalizeFdcArtistDayPosters(
@@ -598,6 +604,9 @@ export function mergeFdcContent(base, remote) {
               }
             : merged,
         ),
+        overlayOpacity: Number.isFinite(overlayRaw)
+          ? Math.min(90, Math.max(0, Math.round(overlayRaw)))
+          : defaults.artists?.overlayOpacity ?? 55,
       }
     })(),
     tickets: (() => {
