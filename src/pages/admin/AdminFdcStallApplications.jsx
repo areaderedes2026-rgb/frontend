@@ -24,6 +24,11 @@ import {
   openFdcStallWhatsApp,
 } from '../../utils/fdcWhatsapp.js'
 import { downloadFdcStallApplicationsPdf } from '../../utils/fdcStallApplicationsPdf.js'
+import {
+  buildLocalityFilterOptions,
+  localityFilterKey,
+  localityFilterLabel,
+} from '../../utils/fdcStallApplicationFilters.js'
 
 const PAGE_SIZE_OPTIONS = [20, 50, 100, 200]
 
@@ -185,21 +190,14 @@ export function AdminFdcStallApplications() {
       })
   }, [items])
 
-  const localityOptions = useMemo(() => {
-    const set = new Set()
-    for (const app of items) {
-      const loc = String(app.locality || '').trim()
-      if (loc) set.add(loc)
-    }
-    return [...set].sort((a, b) => a.localeCompare(b, 'es'))
-  }, [items])
+  const localityOptions = useMemo(() => buildLocalityFilterOptions(items), [items])
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     return items.filter((app) => {
       if (rubroFilter !== 'all' && rubroFilterKey(app) !== rubroFilter) return false
-      if (localityFilter !== 'all') {
-        if (String(app.locality || '').trim() !== localityFilter) return false
+      if (localityFilter !== 'all' && localityFilterKey(app.locality) !== localityFilter) {
+        return false
       }
       if (participatedFilter === 'yes' && !app.participatedBefore) return false
       if (participatedFilter === 'no' && app.participatedBefore) return false
@@ -258,7 +256,10 @@ export function AdminFdcStallApplications() {
       const rubro = rubroOptions.find((r) => r.value === rubroFilter)?.label || rubroFilter
       parts.push(`Rubro: ${rubro}`)
     }
-    if (localityFilter !== 'all') parts.push(`Localidad: ${localityFilter}`)
+    if (localityFilter !== 'all') {
+      const loc = localityFilterLabel(localityFilter, localityOptions) || localityFilter
+      parts.push(`Localidad: ${loc}`)
+    }
     if (participatedFilter === 'yes') parts.push('Participó antes: Sí')
     if (participatedFilter === 'no') parts.push('Participó antes: No')
     if (dateFrom) parts.push(`Desde: ${dateFrom}`)
@@ -688,9 +689,9 @@ export function AdminFdcStallApplications() {
                     onChange={(e) => setLocalityFilter(e.target.value)}
                   >
                     <option value="all">Todas</option>
-                    {localityOptions.map((loc) => (
-                      <option key={loc} value={loc}>
-                        {loc}
+                    {localityOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
                       </option>
                     ))}
                   </select>
