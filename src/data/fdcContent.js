@@ -436,6 +436,7 @@ export function mergeFdcContent(base, remote) {
     ctaBody: String(remote.ctaBody ?? defaults.ctaBody ?? ''),
     whatsappMessage:
       remote.whatsappMessage != null ? String(remote.whatsappMessage) : defaults.whatsappMessage || '',
+    localityFilterGroups: [],
     updatedAt: remote.updatedAt ?? null,
   }
 }
