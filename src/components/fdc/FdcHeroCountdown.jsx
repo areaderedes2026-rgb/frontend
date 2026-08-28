@@ -40,7 +40,7 @@ function pad2(n) {
   return String(Math.max(0, Number(n) || 0)).padStart(2, '0')
 }
 
-function CountdownUnit({ value, label, reduceMotion, index }) {
+function CountdownUnit({ value, label, labelColor, reduceMotion, index }) {
   const display = pad2(value)
   return (
     <Motion.div
@@ -71,7 +71,10 @@ function CountdownUnit({ value, label, reduceMotion, index }) {
           </Motion.span>
         </AnimatePresence>
       </div>
-      <span className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#171b22]/75 sm:text-[10px] sm:tracking-[0.22em]">
+      <span
+        className="text-[9px] font-semibold uppercase tracking-[0.2em] sm:text-[10px] sm:tracking-[0.22em]"
+        style={{ color: labelColor }}
+      >
         {label}
       </span>
     </Motion.div>
@@ -176,6 +179,7 @@ export function FdcHeroCountdown({ config, className = '', previewMode = false }
               <CountdownUnit
                 value={unit.value}
                 label={unit.label}
+                labelColor={normalized.labelColor}
                 reduceMotion={reduceMotion}
                 index={idx}
               />

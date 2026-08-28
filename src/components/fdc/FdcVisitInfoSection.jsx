@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { resolveMediaUrl } from '../../utils/imageUrl.js'
-import { useFdcSectionTone } from './FdcSectionToneContext.jsx'
 import { fdcVisitInfoHasContent } from '../../data/fdcContent.js'
+import { resolveFdcVisitMapCoords } from '../../utils/fdcVisitMap.js'
+import { FdcVisitMap } from './FdcVisitMap.jsx'
+import { useFdcSectionTone } from './FdcSectionToneContext.jsx'
 
 function SmartLink({ href, className, children, ...rest }) {
   const target = String(href || '').trim() || '#'
@@ -27,14 +28,14 @@ function SmartLink({ href, className, children, ...rest }) {
   )
 }
 
-function BlockTitle({ title, showTitle, dark }) {
+function BlockTitle({ title, showTitle, dark, className = '' }) {
   const text = String(title || '').trim()
   if (!showTitle || !text) return null
   return (
     <h2
-      className={`font-serif text-xl font-bold uppercase tracking-[0.06em] sm:text-2xl ${
+      className={`font-serif text-lg font-bold uppercase tracking-[0.06em] sm:text-xl lg:text-2xl ${
         dark ? 'text-white' : 'text-[#171b22]'
-      }`}
+      } ${className}`.trim()}
     >
       {text}
     </h2>
@@ -120,95 +121,95 @@ export function FdcVisitInfoSection({ visitInfo }) {
   const address = String(directions.address || '').trim()
   const mapUrl = String(directions.mapUrl || '').trim()
   const mapButtonLabel = String(directions.mapButtonLabel || '').trim() || 'Ver en mapa'
-  const mapImageSrc =
-    resolveMediaUrl(directions.mapImageUrl) || String(directions.mapImageUrl || '').trim()
   const ctaLabel = String(faq.ctaLabel || '').trim()
   const ctaHref = String(faq.ctaHref || '').trim()
+  const mapCoords = resolveFdcVisitMapCoords(directions)
+  const venueLabel = address.split(',')[0]?.trim() || address
 
-  const hasDirections = Boolean(address || mapUrl || mapImageSrc)
+  const hasDirections = Boolean(address || mapUrl || mapCoords)
   const hasFaq = faqItems.length > 0
+  const showMap = Number.isFinite(mapCoords.lat) && Number.isFinite(mapCoords.lng)
 
   const textMuted = dark ? 'text-white/80' : 'text-[#4b505a]'
-  const mapBtnClass =
-    'inline-flex min-h-11 items-center justify-center rounded-sm bg-[#171b22] px-5 text-[11px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-black sm:text-xs'
+  const textBody = dark ? 'text-white/90' : 'text-[#171b22]'
+  const mapBtnClass = dark
+    ? 'inline-flex min-h-11 w-full items-center justify-center rounded-sm bg-white px-4 text-[11px] font-bold uppercase tracking-[0.14em] text-[#171b22] transition hover:bg-white/90 sm:text-xs'
+    : 'inline-flex min-h-11 w-full items-center justify-center rounded-sm bg-[#171b22] px-4 text-[11px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-black sm:text-xs'
   const faqCtaClass = dark
     ? 'inline-flex min-h-11 items-center justify-center rounded-sm border border-white/75 px-5 text-[11px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-white hover:text-[#171b22] sm:text-xs'
     : 'inline-flex min-h-11 items-center justify-center rounded-sm border border-[#d4b483] px-5 text-[11px] font-bold uppercase tracking-[0.14em] text-[#171b22] transition hover:bg-[#d4b483]/10 sm:text-xs'
 
+  const gridClass =
+    hasDirections && showMap && hasFaq
+      ? 'lg:grid-cols-[minmax(10.5rem,0.68fr)_minmax(0,1.42fr)_minmax(0,1.15fr)]'
+      : hasDirections && showMap
+        ? 'lg:grid-cols-[minmax(10.5rem,0.72fr)_minmax(0,1fr)]'
+        : hasDirections && hasFaq
+          ? 'lg:grid-cols-[minmax(10.5rem,0.72fr)_minmax(0,1fr)]'
+          : 'mx-auto max-w-3xl'
+
   return (
-    <div
-      className={`grid gap-10 lg:grid-cols-2 lg:gap-14 xl:gap-16 ${
-        hasDirections && hasFaq ? '' : 'mx-auto max-w-3xl'
-      }`}
-    >
+    <div className={`grid gap-8 xl:gap-10 ${gridClass}`}>
       {hasDirections ? (
-        <div>
+        <aside className="flex min-w-0 flex-col lg:max-w-[15rem] lg:justify-self-start">
           <BlockTitle
             title={directions.title}
             showTitle={directions.showTitle !== false}
             dark={dark}
           />
           <div
-            className={`${directions.showTitle !== false && String(directions.title || '').trim() ? 'mt-5' : ''} flex flex-col gap-6 md:flex-row md:items-start md:gap-5 lg:gap-6`}
+            className={`${
+              directions.showTitle !== false && String(directions.title || '').trim()
+                ? 'mt-4 sm:mt-5'
+                : ''
+            } flex flex-1 flex-col`}
           >
-            <div className="min-w-0 flex-1">
-              {address ? (
-                <p className={`flex items-start gap-2.5 text-sm leading-relaxed sm:text-[15px] ${textMuted}`}>
-                  <PinIcon className={`mt-0.5 shrink-0 ${dark ? 'text-[#d4b483]' : 'text-[#171b22]'}`} />
+            {address ? (
+              <div className="min-w-0">
+                {venueLabel ? (
+                  <p className={`font-serif text-base font-bold leading-snug sm:text-lg ${textBody}`}>
+                    {venueLabel}
+                  </p>
+                ) : null}
+                <p
+                  className={`${venueLabel ? 'mt-2.5' : ''} flex items-start gap-2 text-sm leading-relaxed sm:text-[15px] ${textMuted}`}
+                >
+                  <PinIcon
+                    className={`mt-0.5 h-4 w-4 shrink-0 ${dark ? 'text-[#d4b483]' : 'text-[#171b22]'}`}
+                  />
                   <span>{address}</span>
                 </p>
-              ) : null}
-              {mapUrl ? (
-                <SmartLink href={mapUrl} className={`${address ? 'mt-5' : ''} ${mapBtnClass}`}>
-                  {mapButtonLabel}
-                </SmartLink>
-              ) : null}
-            </div>
-            {mapImageSrc ? (
-              <div className="mx-auto w-full max-w-[15.5rem] shrink-0 overflow-hidden rounded-xl shadow-[0_16px_40px_-24px_rgba(23,27,34,0.45)] ring-1 ring-[#e8e4dc]/80 md:mx-0">
-                {mapUrl ? (
-                  <a href={mapUrl} target="_blank" rel="noopener noreferrer" className="block">
-                    <img
-                      src={mapImageSrc}
-                      alt="Ubicación en mapa"
-                      className="aspect-[4/3] h-full w-full object-cover transition hover:scale-[1.02]"
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  </a>
-                ) : (
-                  <img
-                    src={mapImageSrc}
-                    alt="Ubicación en mapa"
-                    className="aspect-[4/3] h-full w-full object-cover"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                )}
               </div>
-            ) : mapUrl ? (
-              <a
+            ) : null}
+
+            {mapUrl ? (
+              <SmartLink
                 href={mapUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`mx-auto flex aspect-[4/3] w-full max-w-[15.5rem] shrink-0 flex-col items-center justify-center rounded-xl border border-dashed px-4 text-center ${
-                  dark
-                    ? 'border-white/25 bg-white/5 text-white/70 hover:bg-white/10'
-                    : 'border-[#ddd7ca] bg-[#efe8dc]/50 text-[#4b505a] hover:bg-[#efe8dc]'
-                } md:mx-0`}
+                className={`${address ? 'mt-6' : 'mt-0'} ${mapBtnClass} lg:mt-auto lg:pt-6`}
               >
-                <PinIcon className={`mb-2 h-8 w-8 ${dark ? 'text-[#d4b483]' : 'text-[#171b22]/70'}`} />
-                <span className="text-xs font-semibold uppercase tracking-wide">Abrir mapa</span>
-              </a>
+                {mapButtonLabel}
+              </SmartLink>
             ) : null}
           </div>
+        </aside>
+      ) : null}
+
+      {showMap ? (
+        <div className="min-w-0 lg:min-h-[17.5rem]">
+          <FdcVisitMap
+            center={mapCoords}
+            zoom={mapCoords.zoom}
+            label={venueLabel}
+            address={address}
+            dark={dark}
+          />
         </div>
       ) : null}
 
       {hasFaq ? (
-        <div>
+        <div className="min-w-0">
           <BlockTitle title={faq.title} showTitle={faq.showTitle !== false} dark={dark} />
-          <div className={faq.showTitle !== false && String(faq.title || '').trim() ? 'mt-5' : ''}>
+          <div className={faq.showTitle !== false && String(faq.title || '').trim() ? 'mt-4 sm:mt-5' : ''}>
             <FaqAccordion items={faqItems} dark={dark} />
             {ctaLabel && ctaHref ? (
               <div className="mt-6 flex justify-center lg:justify-start">

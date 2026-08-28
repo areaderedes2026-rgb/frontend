@@ -2517,7 +2517,7 @@ export function AdminFdc() {
                         />
                       </label>
                       <label className={labelClass}>
-                        URL del mapa
+                        URL del mapa (Google Maps)
                         <input
                           className={inputClass}
                           value={form.visitInfo?.directions?.mapUrl || ''}
@@ -2530,20 +2530,73 @@ export function AdminFdc() {
                             }))
                           }
                         />
+                        <span className="mt-1 text-xs font-normal text-slate-500">
+                          Se usa para el botón «Ver en mapa». Si no cargás coordenadas, también puede
+                          inferir la ubicación desde esta URL.
+                        </span>
                       </label>
-                      <SingleImageUploadField
-                        label="Imagen preview del mapa (opcional)"
-                        value={form.visitInfo?.directions?.mapImageUrl || ''}
-                        disabled={saving}
-                        kind="cover"
-                        onChange={(url) =>
-                          updateVisitInfo((v) => ({
-                            ...v,
-                            directions: { ...(v.directions || {}), mapImageUrl: url },
-                          }))
-                        }
-                        onNotify={setToast}
-                      />
+                      <div className="grid gap-3 sm:grid-cols-3">
+                        <label className={labelClass}>
+                          Latitud
+                          <input
+                            className={inputClass}
+                            type="number"
+                            step="any"
+                            value={form.visitInfo?.directions?.mapLat ?? ''}
+                            disabled={saving}
+                            placeholder="-26.2312"
+                            onChange={(e) =>
+                              updateVisitInfo((v) => ({
+                                ...v,
+                                directions: {
+                                  ...(v.directions || {}),
+                                  mapLat: e.target.value === '' ? null : Number(e.target.value),
+                                },
+                              }))
+                            }
+                          />
+                        </label>
+                        <label className={labelClass}>
+                          Longitud
+                          <input
+                            className={inputClass}
+                            type="number"
+                            step="any"
+                            value={form.visitInfo?.directions?.mapLng ?? ''}
+                            disabled={saving}
+                            placeholder="-65.2818"
+                            onChange={(e) =>
+                              updateVisitInfo((v) => ({
+                                ...v,
+                                directions: {
+                                  ...(v.directions || {}),
+                                  mapLng: e.target.value === '' ? null : Number(e.target.value),
+                                },
+                              }))
+                            }
+                          />
+                        </label>
+                        <label className={labelClass}>
+                          Zoom del mapa
+                          <input
+                            className={inputClass}
+                            type="number"
+                            min={10}
+                            max={18}
+                            value={form.visitInfo?.directions?.mapZoom ?? 14}
+                            disabled={saving}
+                            onChange={(e) =>
+                              updateVisitInfo((v) => ({
+                                ...v,
+                                directions: {
+                                  ...(v.directions || {}),
+                                  mapZoom: Number(e.target.value) || 14,
+                                },
+                              }))
+                            }
+                          />
+                        </label>
+                      </div>
                     </div>
                   </div>
 

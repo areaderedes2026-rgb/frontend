@@ -382,6 +382,9 @@ export const DEFAULT_FDC_VISIT_INFO = {
     mapUrl:
       'https://www.google.com/maps/search/?api=1&query=Hip%C3%B3dromo+Municipal+de+Trancas+Trancas+Tucum%C3%A1n',
     mapImageUrl: '',
+    mapLat: -26.2312,
+    mapLng: -65.2818,
+    mapZoom: 14,
   },
   faq: {
     showTitle: true,
@@ -476,6 +479,18 @@ export function normalizeFdcVisitInfo(input, defaults = DEFAULT_FDC_VISIT_INFO) 
       ).trim(),
       mapUrl: String(directionsSrc.mapUrl ?? base.directions?.mapUrl ?? '').trim(),
       mapImageUrl: String(directionsSrc.mapImageUrl ?? base.directions?.mapImageUrl ?? '').trim(),
+      mapLat: (() => {
+        const n = Number(directionsSrc.mapLat ?? base.directions?.mapLat)
+        return Number.isFinite(n) ? Math.min(90, Math.max(-90, n)) : null
+      })(),
+      mapLng: (() => {
+        const n = Number(directionsSrc.mapLng ?? base.directions?.mapLng)
+        return Number.isFinite(n) ? Math.min(180, Math.max(-180, n)) : null
+      })(),
+      mapZoom: (() => {
+        const n = Number(directionsSrc.mapZoom ?? base.directions?.mapZoom)
+        return Number.isFinite(n) ? Math.min(18, Math.max(10, Math.round(n))) : 14
+      })(),
     },
     faq: {
       showTitle: normalizeFdcVisitShowTitle(faqSrc.showTitle, base.faq?.showTitle !== false),
@@ -493,7 +508,8 @@ export function fdcVisitInfoHasContent(visitInfo) {
   const hasDirections = Boolean(
     String(d.address || '').trim() ||
       String(d.mapUrl || '').trim() ||
-      String(d.mapImageUrl || '').trim(),
+      String(d.mapImageUrl || '').trim() ||
+      (Number.isFinite(Number(d.mapLat)) && Number.isFinite(Number(d.mapLng))),
   )
   return hasDirections || (normalized.faq?.items || []).length > 0
 }
