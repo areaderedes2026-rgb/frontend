@@ -335,6 +335,134 @@ export const DEFAULT_FDC_USEFUL_INFO = {
   items: [],
 }
 
+export const DEFAULT_FDC_VISIT_INFO = {
+  backgroundStyle: 'light',
+  backgroundImageUrl: '',
+  overlayOpacity: 55,
+  directions: {
+    showTitle: true,
+    title: '¿Cómo llegar?',
+    address: 'Hipódromo Municipal de Trancas, Ruta 9 Km 1308, Trancas, Tucumán',
+    mapButtonLabel: 'Ver en mapa',
+    mapUrl:
+      'https://www.google.com/maps/search/?api=1&query=Hip%C3%B3dromo+Municipal+de+Trancas+Trancas+Tucum%C3%A1n',
+    mapImageUrl: '',
+  },
+  faq: {
+    showTitle: true,
+    title: 'Preguntas frecuentes',
+    ctaLabel: 'Ver todas las preguntas',
+    ctaHref: '',
+    items: [
+      {
+        id: 'faq-1',
+        question: '¿Los menores pagan entrada?',
+        answer: 'Consultá la boletería oficial para conocer edades, costos y promociones vigentes.',
+        sortOrder: 0,
+      },
+      {
+        id: 'faq-2',
+        question: '¿Se puede ingresar con conservadora?',
+        answer: 'Sí, podés ingresar con conservadora según las normas de seguridad del predio.',
+        sortOrder: 1,
+      },
+      {
+        id: 'faq-3',
+        question: '¿Qué pasa si llueve?',
+        answer:
+          'La mayoría de las actividades se realiza bajo techo o con infraestructura preparada. Ante cambios, se informará por redes oficiales.',
+        sortOrder: 2,
+      },
+      {
+        id: 'faq-4',
+        question: '¿Hay estacionamiento?',
+        answer: 'Sí, hay sectores de estacionamiento señalizados cerca del predio.',
+        sortOrder: 3,
+      },
+    ],
+  },
+}
+
+function normalizeFdcVisitShowTitle(value, fallback = true) {
+  if (value === true || value === 1 || value === '1' || value === 'true') return true
+  if (value === false || value === 0 || value === '0' || value === 'false') return false
+  return fallback === true
+}
+
+export function normalizeFdcVisitFaqItem(item, index = 0) {
+  const src = item && typeof item === 'object' ? item : {}
+  const question = String(src.question ?? '').trim()
+  if (!question) return null
+  return {
+    id: String(src.id || '').trim() || makeFdcItemId('faq'),
+    question,
+    answer: String(src.answer ?? '').trim(),
+    sortOrder: Number.isFinite(Number(src.sortOrder)) ? Number(src.sortOrder) : index,
+  }
+}
+
+export function normalizeFdcVisitInfo(input, defaults = DEFAULT_FDC_VISIT_INFO) {
+  const hasInput = input && typeof input === 'object'
+  const src = hasInput ? input : {}
+  const base = defaults && typeof defaults === 'object' ? defaults : DEFAULT_FDC_VISIT_INFO
+  const directionsSrc =
+    src.directions && typeof src.directions === 'object' ? src.directions : base.directions || {}
+  const faqSrc = src.faq && typeof src.faq === 'object' ? src.faq : base.faq || {}
+  const bgImage = String(
+    hasInput && src.backgroundImageUrl != null
+      ? src.backgroundImageUrl
+      : base.backgroundImageUrl || '',
+  ).trim()
+  const rawItems = hasInput && Array.isArray(faqSrc.items) ? faqSrc.items : base.faq?.items || []
+  const items = rawItems
+    .map((it, idx) => normalizeFdcVisitFaqItem(it, idx))
+    .filter(Boolean)
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+
+  return {
+    backgroundStyle: normalizeFdcSectionBackgroundStyle(
+      hasInput ? src.backgroundStyle : base.backgroundStyle,
+      bgImage,
+    ),
+    backgroundImageUrl: bgImage,
+    overlayOpacity: normalizeFdcSectionOverlay(
+      hasInput ? src.overlayOpacity : base.overlayOpacity,
+      base.overlayOpacity ?? 55,
+    ),
+    directions: {
+      showTitle: normalizeFdcVisitShowTitle(
+        directionsSrc.showTitle,
+        base.directions?.showTitle !== false,
+      ),
+      title: String(directionsSrc.title ?? base.directions?.title ?? '¿Cómo llegar?').trim(),
+      address: String(directionsSrc.address ?? base.directions?.address ?? '').trim(),
+      mapButtonLabel: String(
+        directionsSrc.mapButtonLabel ?? base.directions?.mapButtonLabel ?? 'Ver en mapa',
+      ).trim(),
+      mapUrl: String(directionsSrc.mapUrl ?? base.directions?.mapUrl ?? '').trim(),
+      mapImageUrl: String(directionsSrc.mapImageUrl ?? base.directions?.mapImageUrl ?? '').trim(),
+    },
+    faq: {
+      showTitle: normalizeFdcVisitShowTitle(faqSrc.showTitle, base.faq?.showTitle !== false),
+      title: String(faqSrc.title ?? base.faq?.title ?? 'Preguntas frecuentes').trim(),
+      ctaLabel: String(faqSrc.ctaLabel ?? base.faq?.ctaLabel ?? '').trim(),
+      ctaHref: String(faqSrc.ctaHref ?? base.faq?.ctaHref ?? '').trim(),
+      items,
+    },
+  }
+}
+
+export function fdcVisitInfoHasContent(visitInfo) {
+  const normalized = normalizeFdcVisitInfo(visitInfo)
+  const d = normalized.directions || {}
+  const hasDirections = Boolean(
+    String(d.address || '').trim() ||
+      String(d.mapUrl || '').trim() ||
+      String(d.mapImageUrl || '').trim(),
+  )
+  return hasDirections || (normalized.faq?.items || []).length > 0
+}
+
 export const DEFAULT_FDC_SECTION_NAV = [
   { id: 'nav-cronograma', label: 'Cronograma', href: '#cronograma', icon: 'calendar' },
   { id: 'nav-cartelera', label: 'Cartelera', href: '#cartelera', icon: 'music' },
@@ -467,6 +595,7 @@ export const DEFAULT_FDC_CONTENT = {
   gallery: DEFAULT_FDC_GALLERY,
   sponsors: DEFAULT_FDC_SPONSORS,
   festivalStats: DEFAULT_FDC_FESTIVAL_STATS,
+  visitInfo: DEFAULT_FDC_VISIT_INFO,
   usefulInfo: DEFAULT_FDC_USEFUL_INFO,
   formNotice:
     'IMPORTANTE: La presente preinscripción no implica la adjudicación del espacio. La organización evaluará cada solicitud de acuerdo con la disponibilidad de lugares y el cumplimiento de los requisitos establecidos.',
@@ -651,6 +780,7 @@ export function mergeFdcContent(base, remote) {
       remote.festivalStats ?? defaults.festivalStats,
       defaults.festivalStats,
     ),
+    visitInfo: normalizeFdcVisitInfo(remote.visitInfo ?? defaults.visitInfo, defaults.visitInfo),
     usefulInfo: { title: '', items: [] },
     formNotice: String(remote.formNotice ?? defaults.formNotice ?? ''),
     formRubros: ensureFdcFormRubros(

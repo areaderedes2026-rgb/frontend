@@ -6,6 +6,7 @@ import { SingleImageUploadField } from '../../components/admin/SingleImageUpload
 import { FdcSectionBackgroundFields } from '../../components/admin/FdcSectionBackgroundFields.jsx'
 import { FdcFestivalHero } from '../../components/fdc/FdcFestivalHero.jsx'
 import { FdcStatIcon, FdcFestivalStatsSection } from '../../components/fdc/FdcFestivalStatsSection.jsx'
+import { FdcVisitInfoSection } from '../../components/fdc/FdcVisitInfoSection.jsx'
 import { FdcHeroCountdown } from '../../components/fdc/FdcHeroCountdown.jsx'
 import { FdcSectionNav } from '../../components/fdc/FdcFestivalSections.jsx'
 import { Modal } from '../../components/ui/Modal.jsx'
@@ -27,6 +28,7 @@ import {
   mergeFdcContent,
   normalizeFdcFestivalStats,
   normalizeFdcHeroCountdown,
+  normalizeFdcVisitInfo,
 } from '../../data/fdcContent.js'
 import { normalizeHeroToggle } from '../../data/servicesPageContent.js'
 import { useContentEditorConcurrencyConflict } from '../../hooks/useContentEditorConcurrencyConflict.jsx'
@@ -103,6 +105,13 @@ function mapContentToForm(content) {
       ...normalizeFdcFestivalStats(merged.festivalStats),
       items: (normalizeFdcFestivalStats(merged.festivalStats).items || []).map((it) => ({ ...it })),
     },
+    visitInfo: {
+      ...normalizeFdcVisitInfo(merged.visitInfo),
+      faq: {
+        ...normalizeFdcVisitInfo(merged.visitInfo).faq,
+        items: (normalizeFdcVisitInfo(merged.visitInfo).faq?.items || []).map((it) => ({ ...it })),
+      },
+    },
     usefulInfo: { title: '', items: [] },
     overlayOpacity: normalizeOverlay(merged.overlayOpacity, 65),
     showHeroBadge: normalizeHeroToggle(merged.showHeroBadge, true),
@@ -144,6 +153,7 @@ const TABS = [
   { id: 'estadisticas', label: 'Estadísticas' },
   { id: 'cronograma', label: 'Cronograma' },
   { id: 'entradas', label: 'Entradas' },
+  { id: 'info-visita', label: 'Llegada y FAQ' },
   { id: 'noticias', label: 'Noticias' },
   { id: 'galeria', label: 'Galería' },
   { id: 'auspiciantes', label: 'Auspiciantes' },
@@ -198,6 +208,7 @@ export function AdminFdc() {
   const [galleryModal, setGalleryModal] = useState({ open: false, index: null, draft: null })
   const [sponsorModal, setSponsorModal] = useState({ open: false, index: null, draft: null })
   const [statModal, setStatModal] = useState({ open: false, index: null, draft: null })
+  const [visitFaqModal, setVisitFaqModal] = useState({ open: false, index: null, draft: null })
 
   const dismissToast = useCallback(() => setToast(null), [])
   const apiAvailable = isApiConfigured()
@@ -379,6 +390,7 @@ export function AdminFdc() {
           .filter((it) => it.name || it.logoUrl),
       },
       festivalStats: normalizeFdcFestivalStats(form.festivalStats),
+      visitInfo: normalizeFdcVisitInfo(form.visitInfo),
       usefulInfo: { title: '', items: [] },
       formNotice: String(form.formNotice || ''),
       formRubros: ensureFdcFormRubros(form.formRubros),
@@ -492,6 +504,13 @@ export function AdminFdc() {
     setForm((p) => ({
       ...p,
       festivalStats: typeof updater === 'function' ? updater(p.festivalStats) : updater,
+    }))
+  }
+
+  function updateVisitInfo(updater) {
+    setForm((p) => ({
+      ...p,
+      visitInfo: typeof updater === 'function' ? updater(p.visitInfo) : updater,
     }))
   }
 
@@ -695,6 +714,36 @@ export function AdminFdc() {
     setStatModal({ open: false, index: null, draft: null })
   }
 
+  function openVisitFaqModal(index = null) {
+    const draft =
+      index != null
+        ? { ...(form.visitInfo?.faq?.items || [])[index] }
+        : {
+            id: makeFdcItemId('faq'),
+            question: '',
+            answer: '',
+            sortOrder: (form.visitInfo?.faq?.items || []).length,
+          }
+    setVisitFaqModal({ open: true, index, draft })
+  }
+
+  function applyVisitFaqModal() {
+    const question = String(visitFaqModal.draft?.question || '').trim()
+    if (!question) return
+    updateVisitInfo((v) => {
+      const items = [...(v.faq?.items || [])]
+      const entry = {
+        ...visitFaqModal.draft,
+        question,
+        answer: String(visitFaqModal.draft?.answer || '').trim(),
+      }
+      if (visitFaqModal.index == null) items.push(entry)
+      else items[visitFaqModal.index] = entry
+      return { ...v, faq: { ...(v.faq || {}), items } }
+    })
+    setVisitFaqModal({ open: false, index: null, draft: null })
+  }
+
   const scheduleImages = form.schedule?.images || []
   const scheduleDays = form.schedule?.days || []
   const artistItems = form.artists?.items || []
@@ -703,6 +752,7 @@ export function AdminFdc() {
   const galleryItems = form.gallery?.items || []
   const sponsorItems = form.sponsors?.items || []
   const statItems = form.festivalStats?.items || []
+  const visitFaqItems = form.visitInfo?.faq?.items || []
 
   return (
     <>
@@ -1262,6 +1312,56 @@ export function AdminFdc() {
                 </p>
               </div>
             </div>
+          </div>
+        ) : null}
+      </Modal>
+
+      {/* FAQ visita modal */}
+      <Modal
+        open={visitFaqModal.open}
+        onClose={() => setVisitFaqModal({ open: false, index: null, draft: null })}
+        title={visitFaqModal.index == null ? 'Agregar pregunta' : 'Editar pregunta'}
+        size="wide"
+        footer={
+          <ModalFooter
+            saving={saving}
+            applyDisabled={!String(visitFaqModal.draft?.question || '').trim()}
+            onCancel={() => setVisitFaqModal({ open: false, index: null, draft: null })}
+            onApply={applyVisitFaqModal}
+          />
+        }
+      >
+        {visitFaqModal.draft ? (
+          <div className="grid gap-4">
+            <label className={labelClass}>
+              Pregunta
+              <input
+                className={inputClass}
+                value={visitFaqModal.draft.question || ''}
+                disabled={saving}
+                onChange={(e) =>
+                  setVisitFaqModal((m) => ({
+                    ...m,
+                    draft: { ...m.draft, question: e.target.value },
+                  }))
+                }
+              />
+            </label>
+            <label className={labelClass}>
+              Respuesta
+              <textarea
+                className={textareaClass}
+                value={visitFaqModal.draft.answer || ''}
+                disabled={saving}
+                rows={5}
+                onChange={(e) =>
+                  setVisitFaqModal((m) => ({
+                    ...m,
+                    draft: { ...m.draft, answer: e.target.value },
+                  }))
+                }
+              />
+            </label>
           </div>
         ) : null}
       </Modal>
@@ -2214,6 +2314,266 @@ export function AdminFdc() {
                       }
                     />
                   </div>
+                </div>
+              </section>
+            ) : null}
+
+            {/* Llegada y FAQ */}
+            {activeTab === 'info-visita' ? (
+              <section className={SECTION_CARD}>
+                <h2 className="text-lg font-bold text-slate-900">Cómo llegar y preguntas frecuentes</h2>
+                <p className="mt-1 text-sm text-slate-600">
+                  Sección debajo de Entradas. Podés ocultar cada título por separado y elegir el fondo
+                  de la sección.
+                </p>
+
+                <div className="mt-5">
+                  <FdcSectionBackgroundFields
+                    backgroundStyle={form.visitInfo?.backgroundStyle || 'light'}
+                    backgroundImageUrl={form.visitInfo?.backgroundImageUrl || ''}
+                    overlayOpacity={normalizeOverlay(form.visitInfo?.overlayOpacity, 55)}
+                    disabled={saving}
+                    labelClass={labelClass}
+                    onNotify={setToast}
+                    onStyleChange={(style) =>
+                      updateVisitInfo((v) => ({ ...v, backgroundStyle: style }))
+                    }
+                    onImageChange={(url) =>
+                      updateVisitInfo((v) => ({ ...v, backgroundImageUrl: url }))
+                    }
+                    onOverlayChange={(value) =>
+                      updateVisitInfo((v) => ({ ...v, overlayOpacity: value }))
+                    }
+                  />
+                </div>
+
+                <div className="mt-8 grid gap-8 lg:grid-cols-2">
+                  <div className="rounded-2xl border border-slate-200 p-4 sm:p-5">
+                    <h3 className="text-base font-bold text-slate-900">¿Cómo llegar?</h3>
+                    <label className="mt-4 flex cursor-pointer items-center gap-3">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-slate-300 text-sky-700 focus:ring-sky-600"
+                        checked={form.visitInfo?.directions?.showTitle !== false}
+                        disabled={saving}
+                        onChange={(e) =>
+                          updateVisitInfo((v) => ({
+                            ...v,
+                            directions: { ...(v.directions || {}), showTitle: e.target.checked },
+                          }))
+                        }
+                      />
+                      <span className="text-sm font-medium text-slate-800">Mostrar título</span>
+                    </label>
+                    <div className="mt-4 grid gap-3">
+                      <label className={labelClass}>
+                        Título
+                        <input
+                          className={inputClass}
+                          value={form.visitInfo?.directions?.title || ''}
+                          disabled={saving || form.visitInfo?.directions?.showTitle === false}
+                          onChange={(e) =>
+                            updateVisitInfo((v) => ({
+                              ...v,
+                              directions: { ...(v.directions || {}), title: e.target.value },
+                            }))
+                          }
+                        />
+                      </label>
+                      <label className={labelClass}>
+                        Dirección
+                        <textarea
+                          className={textareaClass}
+                          value={form.visitInfo?.directions?.address || ''}
+                          disabled={saving}
+                          rows={2}
+                          onChange={(e) =>
+                            updateVisitInfo((v) => ({
+                              ...v,
+                              directions: { ...(v.directions || {}), address: e.target.value },
+                            }))
+                          }
+                        />
+                      </label>
+                      <label className={labelClass}>
+                        Texto del botón mapa
+                        <input
+                          className={inputClass}
+                          value={form.visitInfo?.directions?.mapButtonLabel || ''}
+                          disabled={saving}
+                          onChange={(e) =>
+                            updateVisitInfo((v) => ({
+                              ...v,
+                              directions: { ...(v.directions || {}), mapButtonLabel: e.target.value },
+                            }))
+                          }
+                        />
+                      </label>
+                      <label className={labelClass}>
+                        URL del mapa
+                        <input
+                          className={inputClass}
+                          value={form.visitInfo?.directions?.mapUrl || ''}
+                          disabled={saving}
+                          placeholder="https://maps.google.com/…"
+                          onChange={(e) =>
+                            updateVisitInfo((v) => ({
+                              ...v,
+                              directions: { ...(v.directions || {}), mapUrl: e.target.value },
+                            }))
+                          }
+                        />
+                      </label>
+                      <SingleImageUploadField
+                        label="Imagen preview del mapa (opcional)"
+                        value={form.visitInfo?.directions?.mapImageUrl || ''}
+                        disabled={saving}
+                        kind="cover"
+                        onChange={(url) =>
+                          updateVisitInfo((v) => ({
+                            ...v,
+                            directions: { ...(v.directions || {}), mapImageUrl: url },
+                          }))
+                        }
+                        onNotify={setToast}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 p-4 sm:p-5">
+                    <h3 className="text-base font-bold text-slate-900">Preguntas frecuentes</h3>
+                    <label className="mt-4 flex cursor-pointer items-center gap-3">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-slate-300 text-sky-700 focus:ring-sky-600"
+                        checked={form.visitInfo?.faq?.showTitle !== false}
+                        disabled={saving}
+                        onChange={(e) =>
+                          updateVisitInfo((v) => ({
+                            ...v,
+                            faq: { ...(v.faq || {}), showTitle: e.target.checked },
+                          }))
+                        }
+                      />
+                      <span className="text-sm font-medium text-slate-800">Mostrar título</span>
+                    </label>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <label className={labelClass}>
+                        Título
+                        <input
+                          className={inputClass}
+                          value={form.visitInfo?.faq?.title || ''}
+                          disabled={saving || form.visitInfo?.faq?.showTitle === false}
+                          onChange={(e) =>
+                            updateVisitInfo((v) => ({
+                              ...v,
+                              faq: { ...(v.faq || {}), title: e.target.value },
+                            }))
+                          }
+                        />
+                      </label>
+                      <label className={labelClass}>
+                        Texto botón «ver todas»
+                        <input
+                          className={inputClass}
+                          value={form.visitInfo?.faq?.ctaLabel || ''}
+                          disabled={saving}
+                          onChange={(e) =>
+                            updateVisitInfo((v) => ({
+                              ...v,
+                              faq: { ...(v.faq || {}), ctaLabel: e.target.value },
+                            }))
+                          }
+                        />
+                      </label>
+                      <label className={`${labelClass} sm:col-span-2`}>
+                        Enlace del botón (opcional)
+                        <input
+                          className={inputClass}
+                          value={form.visitInfo?.faq?.ctaHref || ''}
+                          disabled={saving}
+                          placeholder="# o URL"
+                          onChange={(e) =>
+                            updateVisitInfo((v) => ({
+                              ...v,
+                              faq: { ...(v.faq || {}), ctaHref: e.target.value },
+                            }))
+                          }
+                        />
+                      </label>
+                    </div>
+
+                    <div className="mt-5 overflow-hidden rounded-xl border border-slate-200">
+                      <table className="w-full text-left text-sm">
+                        <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          <tr>
+                            <th className="px-4 py-3">Pregunta</th>
+                            <th className="px-4 py-3 text-right">Acciones</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {visitFaqItems.length === 0 ? (
+                            <tr>
+                              <td colSpan={2} className="px-4 py-6 text-center text-slate-500">
+                                Todavía no hay preguntas.
+                              </td>
+                            </tr>
+                          ) : (
+                            visitFaqItems.map((item, idx) => (
+                              <tr key={item.id || idx} className="hover:bg-slate-50/80">
+                                <td className="px-4 py-3 font-medium text-slate-900">
+                                  {item.question || '—'}
+                                </td>
+                                <td className="px-4 py-3">
+                                  <div className="flex justify-end gap-2">
+                                    <button
+                                      type="button"
+                                      className={ACTION_NEUTRAL}
+                                      disabled={saving}
+                                      onClick={() => openVisitFaqModal(idx)}
+                                    >
+                                      Editar
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className={ACTION_DANGER}
+                                      disabled={saving}
+                                      onClick={() =>
+                                        updateVisitInfo((v) => ({
+                                          ...v,
+                                          faq: {
+                                            ...(v.faq || {}),
+                                            items: (v.faq?.items || []).filter((_, i) => i !== idx),
+                                          },
+                                        }))
+                                      }
+                                    >
+                                      Eliminar
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                    <button
+                      type="button"
+                      className={`${ACTION_ADD} mt-3`}
+                      disabled={saving}
+                      onClick={() => openVisitFaqModal(null)}
+                    >
+                      + Agregar pregunta
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-8 overflow-hidden rounded-3xl border border-[#ddd7ca] bg-[#f7f7f5] p-4 sm:p-6">
+                  <p className="mb-4 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Vista previa
+                  </p>
+                  <FdcVisitInfoSection visitInfo={form.visitInfo} />
                 </div>
               </section>
             ) : null}

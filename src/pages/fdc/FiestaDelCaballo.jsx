@@ -13,8 +13,10 @@ import { FdcArtistsSection } from '../../components/fdc/FdcArtistsSection.jsx'
 import { FdcFestivalHero } from '../../components/fdc/FdcFestivalHero.jsx'
 import { FdcFestivalStatsSection } from '../../components/fdc/FdcFestivalStatsSection.jsx'
 import { FdcHeroCountdown } from '../../components/fdc/FdcHeroCountdown.jsx'
+import { FdcVisitInfoSection } from '../../components/fdc/FdcVisitInfoSection.jsx'
 import { FdcSectionBackgroundLayers } from '../../components/fdc/FdcSectionBackgroundLayers.jsx'
 import { resolveFdcSectionBackground } from '../../utils/fdcSectionBackground.js'
+import { fdcVisitInfoHasContent } from '../../data/fdcContent.js'
 import { FdcStallApplicationForm } from '../../components/fdc/FdcStallApplicationForm.jsx'
 import { RevealOnScroll } from '../../components/home/RevealOnScroll.jsx'
 import { Container } from '../../components/ui/Container.jsx'
@@ -231,6 +233,13 @@ export function FiestaDelCaballo() {
     [page.artists],
   )
 
+  const visitSectionBg = useMemo(
+    () => resolveFdcSectionBackground(page.visitInfo),
+    [page.visitInfo],
+  )
+
+  const showVisitSection = fdcVisitInfoHasContent(page.visitInfo)
+
   if (submitSuccess) {
     return (
       <>
@@ -314,6 +323,24 @@ export function FiestaDelCaballo() {
         <RevealOnScroll variant="slow">
           <FdcTicketsSection tickets={page.tickets} />
         </RevealOnScroll>
+      ) : null}
+
+      {showVisitSection ? (
+        <section
+          id="info-visita"
+          className={`relative isolate overflow-hidden border-y py-14 sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)] ${visitSectionBg.sectionClassName}`}
+        >
+          <FdcSectionBackgroundLayers
+            style={visitSectionBg.style}
+            imageUrl={visitSectionBg.imageUrl}
+            overlayOpacity={visitSectionBg.overlayOpacity}
+          />
+          <Container className="relative z-10">
+            <RevealOnScroll variant="slow">
+              <FdcVisitInfoSection visitInfo={page.visitInfo} />
+            </RevealOnScroll>
+          </Container>
+        </section>
       ) : null}
 
       {(page.news?.items || []).some((n) => n?.title) ? (
