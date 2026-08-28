@@ -22,6 +22,20 @@ function usePrefersReducedMotion() {
   return reduce
 }
 
+function useResponsiveCountdownOffset(offsetYMobile, offsetYDesktop) {
+  const [offsetY, setOffsetY] = useState(offsetYMobile)
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)')
+    const update = () => setOffsetY(mq.matches ? offsetYDesktop : offsetYMobile)
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [offsetYMobile, offsetYDesktop])
+
+  return offsetY
+}
+
 function pad2(n) {
   return String(Math.max(0, Number(n) || 0)).padStart(2, '0')
 }
@@ -39,7 +53,7 @@ function CountdownUnit({ value, reduceMotion, index }) {
         ease: softEase,
       }}
     >
-      <div className="relative w-full overflow-hidden rounded-xl border border-[#d4b483]/35 bg-[#0c1017]/72 px-1.5 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_12px_32px_-18px_rgba(0,0,0,0.65)] backdrop-blur-md sm:rounded-2xl sm:px-2 sm:py-2.5 lg:px-2.5 lg:py-3">
+      <div className="relative w-full overflow-hidden rounded-xl border border-[#d4b483]/40 bg-[#171b22] px-1.5 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_12px_32px_-18px_rgba(0,0,0,0.7)] sm:rounded-2xl sm:px-2 sm:py-2.5 lg:px-2.5 lg:py-3">
         <div
           className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-[#d4b483]/55 to-transparent"
           aria-hidden
@@ -81,10 +95,14 @@ function Separator({ reduceMotion, index }) {
 }
 
 /**
- * Contador regresivo FDC (solo números). Flota sobre la portada, justo encima de la navegación.
+ * Contador regresivo FDC. Flota sobre la portada, justo encima de la navegación.
  */
 export function FdcHeroCountdown({ config, className = '', previewMode = false }) {
   const normalized = useMemo(() => normalizeFdcHeroCountdown(config), [config])
+  const offsetY = useResponsiveCountdownOffset(
+    normalized.offsetYMobile,
+    normalized.offsetYDesktop,
+  )
   const reduceMotion = usePrefersReducedMotion()
   const [now, setNow] = useState(() => Date.now())
 
@@ -111,45 +129,40 @@ export function FdcHeroCountdown({ config, className = '', previewMode = false }
   return (
     <div
       className={`pointer-events-none absolute inset-x-0 bottom-0 z-20 flex justify-center px-3 sm:px-4 lg:px-6 ${className}`.trim()}
-      style={{
-        '--fdc-countdown-y-mobile': `${normalized.offsetYMobile}px`,
-        '--fdc-countdown-y-desktop': `${normalized.offsetYDesktop}px`,
-      }}
-      aria-hidden={previewMode ? undefined : false}
+      style={{ transform: `translateY(${offsetY}px)` }}
     >
       <Motion.div
-        className="fdc-hero-countdown-offset pointer-events-auto mx-auto flex max-w-full justify-center"
-        initial={reduceMotion ? false : { opacity: 0, y: 24, scale: 0.96 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
+        className="pointer-events-auto mx-auto flex max-w-full flex-col items-center"
+        initial={reduceMotion ? false : { opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: reduceMotion ? 0.15 : 1.05, ease: softEase }}
       >
+        <Motion.p
+          className="mb-2.5 text-center font-serif text-xs font-semibold uppercase tracking-[0.42em] text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.65)] sm:mb-3 sm:text-sm sm:tracking-[0.5em]"
+          initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: reduceMotion ? 0.12 : 0.65, ease: softEase }}
+        >
+          Faltan
+        </Motion.p>
+
         <div
-          className="relative flex items-end justify-center rounded-[1.35rem] border border-white/10 bg-[#171b22]/28 px-2 py-2 shadow-[0_20px_50px_-28px_rgba(0,0,0,0.75)] backdrop-blur-sm sm:rounded-[1.5rem] sm:px-3 sm:py-2.5 lg:px-4 lg:py-3"
+          className="flex items-end justify-center"
           role="timer"
           aria-label={
             previewMode
               ? 'Vista previa del contador'
-              : `Cuenta regresiva: ${remaining.days} días, ${remaining.hours} horas, ${remaining.minutes} minutos y ${remaining.seconds} segundos`
+              : `Faltan ${remaining.days} días, ${remaining.hours} horas, ${remaining.minutes} minutos y ${remaining.seconds} segundos`
           }
         >
-          <div
-            className="pointer-events-none absolute -inset-px rounded-[inherit] bg-linear-to-b from-[#d4b483]/12 via-transparent to-transparent"
-            aria-hidden
-          />
-          <div className="relative flex items-end">
-            {units.map((unit, idx) => (
-              <span key={unit.key} className="flex items-end">
-                <CountdownUnit
-                  value={unit.value}
-                  reduceMotion={reduceMotion}
-                  index={idx}
-                />
-                {idx < units.length - 1 ? (
-                  <Separator reduceMotion={reduceMotion} index={idx} />
-                ) : null}
-              </span>
-            ))}
-          </div>
+          {units.map((unit, idx) => (
+            <span key={unit.key} className="flex items-end">
+              <CountdownUnit value={unit.value} reduceMotion={reduceMotion} index={idx} />
+              {idx < units.length - 1 ? (
+                <Separator reduceMotion={reduceMotion} index={idx} />
+              ) : null}
+            </span>
+          ))}
         </div>
       </Motion.div>
     </div>
