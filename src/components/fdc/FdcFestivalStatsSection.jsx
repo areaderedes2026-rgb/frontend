@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import { motion as Motion } from 'motion/react'
 import { formatFdcStatNumber, normalizeFdcFestivalStats } from '../../data/fdcContent.js'
 import { useCountUp } from '../../hooks/useCountUp.js'
@@ -40,22 +41,20 @@ function FdcStatIcon({ name, className = 'h-9 w-9 sm:h-10 sm:w-10' }) {
       return (
         <svg {...svgProps}>
           <path d="M4 20h16" />
-          <path d="M7 17h10" />
-          <path d="M9 14l2-4 3 2-1.5 2" />
-          <circle cx="10.5" cy="7.5" r="1.75" />
-          <path d="M12 7.5c1-1.5 2.5-2.25 4.25-2 1.25.17 2.25 1.17 2.5 2.42" />
-          <path d="M16.75 5.25c.5-1.1 1.55-1.85 2.75-1.85 1.65 0 3 1.35 3 3 0 .55-.15 1.05-.4 1.48" />
+          <path d="M7 17.5c1.2-.8 2.6-1.2 4-1.2h3.5" />
+          <path d="M9.5 14.5 11.5 10l2.5 1.5-1 2.5" />
+          <circle cx="10.5" cy="8" r="1.5" />
+          <path d="M14 8.5c.8-1.2 2-2 3.5-1.8 1.4.2 2.5 1.3 2.8 2.7" />
+          <path d="M18 6.5c.4-.9 1.3-1.5 2.3-1.5 1.5 0 2.7 1.2 2.7 2.7" />
         </svg>
       )
     case 'peruvianHorse':
       return (
         <svg {...svgProps}>
-          <path d="M5 19c1.2-2 3-3.25 5.25-3.65" />
-          <path d="M8.5 15.5c1-1.75 2.55-2.9 4.5-3.35" />
-          <path d="M11.5 12c.85-1.45 2.15-2.35 3.75-2.65" />
-          <path d="M13.5 8.75c.45-1 1.35-1.65 2.45-1.65 1.45 0 2.65 1.2 2.65 2.65" />
-          <path d="M16.25 5.75c.35-.85 1.12-1.42 2.05-1.42 1.28 0 2.32 1.04 2.32 2.32" />
-          <path d="M7.5 17.5c-.5-.85-.75-1.82-.75-2.82 0-2.75 2.25-5 5-5 .72 0 1.4.15 2 .42" />
+          <path d="M22 5h-2l-3 3h-4l-2-3h-2" />
+          <path d="M4 20h2l1-3 4-1 3 1 1 3h3" />
+          <path d="M7 17l-2-5 2-2 3 1" />
+          <path d="M13 14l1.5-3" />
         </svg>
       )
     case 'food':
@@ -95,12 +94,9 @@ function FdcStatIcon({ name, className = 'h-9 w-9 sm:h-10 sm:w-10' }) {
     default:
       return (
         <svg {...svgProps}>
-          <path d="M5 19c1-1.85 2.65-3.05 4.75-3.55" />
-          <path d="M8.5 15.5c1.15-2.05 2.88-3.38 5.12-3.88" />
-          <path d="M11.5 11.8c.92-1.48 2.32-2.42 4.05-2.72" />
-          <path d="M13.5 8.4c.48-1.08 1.52-1.78 2.72-1.78 1.58 0 2.88 1.3 2.88 2.88" />
-          <path d="M16.5 5.2c.38-.92 1.22-1.55 2.22-1.55 1.38 0 2.5 1.12 2.5 2.5" />
-          <path d="M8.2 18.2c-.48-.82-.72-1.75-.72-2.72 0-2.98 2.42-5.4 5.4-5.4" />
+          <path d="M22 5h-2l-3 3h-4l-2-3h-2" />
+          <path d="M4 20h2l1-3 4-1 3 1 1 3h3" />
+          <path d="M7 17l-2-5 2-2 3 1" />
         </svg>
       )
   }
@@ -115,7 +111,7 @@ function FestivalStatBlock({ item, delayMs = 0 }) {
   return (
     <RevealOnScroll variant="newsCardSlow" delayMs={delayMs}>
       <Motion.div
-        className="mx-auto flex h-full max-w-[9.5rem] flex-col items-center px-2 py-1 text-center sm:max-w-none sm:px-3 sm:py-2"
+        className="flex w-[8.75rem] flex-col items-center px-2 py-1 text-center sm:w-[9.25rem] sm:px-3 sm:py-2 lg:w-[9.5rem]"
         initial={{ opacity: 0, y: 18 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.35 }}
@@ -148,22 +144,14 @@ function FestivalStatBlock({ item, delayMs = 0 }) {
   )
 }
 
-function statDividerClass(index) {
-  const mobileCol = index % 2
-  const smCol = index % 3
-  const lgCol = index % 6
-  const mobileRow = index >= 2
-  const smRow = index >= 3
-  return [
-    mobileCol === 1 ? 'border-l border-[#d4b483]/40' : '',
-    mobileRow ? 'border-t border-[#d4b483]/35 pt-8' : '',
-    smCol !== 0 ? 'sm:border-l sm:border-[#d4b483]/40' : 'sm:border-l-0',
-    smRow ? 'sm:border-t sm:border-[#d4b483]/35 sm:pt-8' : 'sm:border-t-0 sm:pt-0',
-    lgCol !== 0 ? 'lg:border-l lg:border-[#d4b483]/40' : 'lg:border-l-0',
-    'lg:border-t-0 lg:pt-0',
-  ]
-    .filter(Boolean)
-    .join(' ')
+function StatItemDivider({ show }) {
+  if (!show) return null
+  return (
+    <li
+      className="hidden w-px shrink-0 self-stretch bg-[#d4b483]/40 sm:block"
+      aria-hidden
+    />
+  )
 }
 
 export function FdcFestivalStatsSection({ stats, className = '' }) {
@@ -184,14 +172,14 @@ export function FdcFestivalStatsSection({ stats, className = '' }) {
         <FdcSectionTitle title={title} subtitle={subtitle || undefined} tone="light" />
       ) : null}
 
-      <ul className="grid list-none grid-cols-2 gap-y-8 p-0 sm:grid-cols-3 lg:grid-cols-6 lg:gap-y-0">
+      <ul className="mx-auto flex w-full max-w-5xl list-none flex-wrap items-start justify-center gap-x-6 gap-y-10 p-0 sm:gap-x-8 lg:gap-x-10">
         {items.map((item, index) => (
-          <li
-            key={item.id || index}
-            className={`relative flex min-w-0 items-stretch ${statDividerClass(index)}`}
-          >
-            <FestivalStatBlock item={item} delayMs={70 + index * 80} />
-          </li>
+          <Fragment key={item.id || index}>
+            <StatItemDivider show={index > 0} />
+            <li className="flex justify-center">
+              <FestivalStatBlock item={item} delayMs={70 + index * 80} />
+            </li>
+          </Fragment>
         ))}
       </ul>
     </section>
