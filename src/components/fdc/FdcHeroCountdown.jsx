@@ -40,11 +40,11 @@ function pad2(n) {
   return String(Math.max(0, Number(n) || 0)).padStart(2, '0')
 }
 
-function CountdownUnit({ value, reduceMotion, index }) {
+function CountdownUnit({ value, label, reduceMotion, index }) {
   const display = pad2(value)
   return (
     <Motion.div
-      className="relative flex min-w-[2.65rem] flex-col items-center sm:min-w-[3.1rem] lg:min-w-[3.45rem]"
+      className="flex min-w-[2.65rem] flex-col items-center gap-1 sm:min-w-[3.1rem] sm:gap-1.5 lg:min-w-[3.45rem]"
       initial={reduceMotion ? false : { opacity: 0, y: 16, scale: 0.92 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{
@@ -71,14 +71,21 @@ function CountdownUnit({ value, reduceMotion, index }) {
           </Motion.span>
         </AnimatePresence>
       </div>
+      <span className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#171b22]/75 sm:text-[10px] sm:tracking-[0.22em]">
+        {label}
+      </span>
     </Motion.div>
   )
 }
 
+/** Centrado vertical con la caja numérica (no con la etiqueta inferior). */
+const SEPARATOR_ALIGN =
+  'mt-[1.05rem] sm:mt-[1.3rem] lg:mt-[1.45rem]'
+
 function Separator({ reduceMotion, index }) {
   return (
     <Motion.span
-      className="flex shrink-0 items-center justify-center self-center px-1 sm:px-1.5"
+      className={`flex shrink-0 items-center justify-center self-start px-1 sm:px-1.5 ${SEPARATOR_ALIGN}`}
       aria-hidden
       initial={reduceMotion ? false : { opacity: 0, scale: 0.6 }}
       animate={{ opacity: 1, scale: 1 }}
@@ -122,10 +129,10 @@ export function FdcHeroCountdown({ config, className = '', previewMode = false }
   if (!remaining) return null
 
   const units = [
-    { key: 'days', value: remaining.days },
-    { key: 'hours', value: remaining.hours },
-    { key: 'minutes', value: remaining.minutes },
-    { key: 'seconds', value: remaining.seconds },
+    { key: 'days', value: remaining.days, label: 'Días' },
+    { key: 'hours', value: remaining.hours, label: 'Horas' },
+    { key: 'minutes', value: remaining.minutes, label: 'Min' },
+    { key: 'seconds', value: remaining.seconds, label: 'Seg' },
   ]
 
   return (
@@ -149,7 +156,7 @@ export function FdcHeroCountdown({ config, className = '', previewMode = false }
         </Motion.p>
 
         <div
-          className="flex items-center justify-center"
+          className="flex items-start justify-center"
           role="timer"
           aria-label={
             previewMode
@@ -158,8 +165,13 @@ export function FdcHeroCountdown({ config, className = '', previewMode = false }
           }
         >
           {units.map((unit, idx) => (
-            <span key={unit.key} className="flex items-center">
-              <CountdownUnit value={unit.value} reduceMotion={reduceMotion} index={idx} />
+            <span key={unit.key} className="flex items-start">
+              <CountdownUnit
+                value={unit.value}
+                label={unit.label}
+                reduceMotion={reduceMotion}
+                index={idx}
+              />
               {idx < units.length - 1 ? (
                 <Separator reduceMotion={reduceMotion} index={idx} />
               ) : null}
