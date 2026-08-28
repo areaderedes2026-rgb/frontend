@@ -198,6 +198,130 @@ export const DEFAULT_FDC_SPONSORS = {
   items: [],
 }
 
+export const FDC_STAT_ICON_OPTIONS = [
+  { value: 'horse', label: 'Caballo' },
+  { value: 'people', label: 'Personas / visitantes' },
+  { value: 'music', label: 'Música / artistas' },
+  { value: 'jineteada', label: 'Jineteada' },
+  { value: 'peruvianHorse', label: 'Caballos peruanos' },
+  { value: 'food', label: 'Gastronomía' },
+  { value: 'market', label: 'Feria / puestos' },
+  { value: 'calendar', label: 'Calendario / días' },
+  { value: 'ticket', label: 'Entradas' },
+]
+
+const FDC_STAT_ICONS = new Set(FDC_STAT_ICON_OPTIONS.map((o) => o.value))
+
+export const DEFAULT_FDC_FESTIVAL_STATS = {
+  title: 'La fiesta en números',
+  subtitle: '',
+  items: [
+    {
+      id: 'stat-ed',
+      icon: 'horse',
+      prefix: '',
+      value: 27,
+      valueText: '',
+      label: 'Ediciones',
+      sublabel: '',
+      sortOrder: 0,
+    },
+    {
+      id: 'stat-vis',
+      icon: 'people',
+      prefix: '+',
+      value: 40000,
+      valueText: '',
+      label: 'Visitantes',
+      sublabel: '',
+      sortOrder: 1,
+    },
+    {
+      id: 'stat-art',
+      icon: 'music',
+      prefix: '+',
+      value: 50,
+      valueText: '',
+      label: 'Artistas',
+      sublabel: '',
+      sortOrder: 2,
+    },
+    {
+      id: 'stat-jin',
+      icon: 'jineteada',
+      prefix: '',
+      value: 0,
+      valueText: 'Jineteadas',
+      label: '',
+      sublabel: 'Nacionales',
+      sortOrder: 3,
+    },
+    {
+      id: 'stat-cab',
+      icon: 'peruvianHorse',
+      prefix: '',
+      value: 0,
+      valueText: 'Caballos',
+      label: '',
+      sublabel: 'Peruanos',
+      sortOrder: 4,
+    },
+    {
+      id: 'stat-food',
+      icon: 'food',
+      prefix: '+',
+      value: 100,
+      valueText: '',
+      label: 'Puestos',
+      sublabel: 'Gastronómicos',
+      sortOrder: 5,
+    },
+  ],
+}
+
+export function normalizeFdcFestivalStatsItem(item, index = 0) {
+  const src = item && typeof item === 'object' ? item : {}
+  const valueText = String(src.valueText ?? '').trim()
+  const value = Math.max(0, Math.min(999999, Math.round(Number(src.value) || 0)))
+  const label = String(src.label ?? '').trim()
+  const sublabel = String(src.sublabel ?? '').trim()
+  if (!valueText && value <= 0 && !label && !sublabel) return null
+  return {
+    id: String(src.id || '').trim() || makeFdcItemId('stat'),
+    icon: FDC_STAT_ICONS.has(String(src.icon || '').trim())
+      ? String(src.icon).trim()
+      : 'horse',
+    prefix: String(src.prefix ?? '').trim().slice(0, 8),
+    value: valueText ? 0 : value,
+    valueText,
+    label,
+    sublabel,
+    sortOrder: Number.isFinite(Number(src.sortOrder)) ? Number(src.sortOrder) : index,
+  }
+}
+
+export function normalizeFdcFestivalStats(input, defaults = DEFAULT_FDC_FESTIVAL_STATS) {
+  const hasInput = input && typeof input === 'object'
+  const src = hasInput ? input : {}
+  const base = defaults && typeof defaults === 'object' ? defaults : DEFAULT_FDC_FESTIVAL_STATS
+  const rawItems = hasInput && Array.isArray(src.items) ? src.items : base.items || []
+  const items = rawItems
+    .map((it, idx) => normalizeFdcFestivalStatsItem(it, idx))
+    .filter(Boolean)
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .slice(0, 8)
+  return {
+    title: String(src.title ?? base.title ?? '').trim() || 'La fiesta en números',
+    subtitle: String(src.subtitle ?? base.subtitle ?? '').trim(),
+    items,
+  }
+}
+
+export function formatFdcStatNumber(value, prefix = '') {
+  const n = Math.max(0, Math.round(Number(value) || 0))
+  return `${prefix}${n.toLocaleString('es-AR')}`
+}
+
 export const DEFAULT_FDC_USEFUL_INFO = {
   title: '',
   items: [],
@@ -309,6 +433,7 @@ export const DEFAULT_FDC_CONTENT = {
   news: DEFAULT_FDC_NEWS,
   gallery: DEFAULT_FDC_GALLERY,
   sponsors: DEFAULT_FDC_SPONSORS,
+  festivalStats: DEFAULT_FDC_FESTIVAL_STATS,
   usefulInfo: DEFAULT_FDC_USEFUL_INFO,
   formNotice:
     'IMPORTANTE: La presente preinscripción no implica la adjudicación del espacio. La organización evaluará cada solicitud de acuerdo con la disponibilidad de lugares y el cumplimiento de los requisitos establecidos.',
@@ -477,6 +602,10 @@ export function mergeFdcContent(base, remote) {
     ]),
     gallery: mergeNamedSection(defaults.gallery, remote.gallery, ['title', 'items']),
     sponsors: mergeNamedSection(defaults.sponsors, remote.sponsors, ['title', 'items']),
+    festivalStats: normalizeFdcFestivalStats(
+      remote.festivalStats ?? defaults.festivalStats,
+      defaults.festivalStats,
+    ),
     usefulInfo: { title: '', items: [] },
     formNotice: String(remote.formNotice ?? defaults.formNotice ?? ''),
     formRubros: ensureFdcFormRubros(

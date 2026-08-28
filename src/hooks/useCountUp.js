@@ -16,7 +16,7 @@ export function useCountUp(target, { duration = 1600, rootMargin = '0px 0px -8% 
   const ref = useRef(null)
   const [value, setValue] = useState(0)
   const [started, setStarted] = useState(false)
-  const goal = Math.max(0, Math.min(99999, Math.round(Number(target) || 0)))
+  const goal = Math.max(0, Math.min(999999, Math.round(Number(target) || 0)))
 
   useEffect(() => {
     if (prefersReducedMotion()) {

@@ -11,6 +11,7 @@ import {
 } from '../../components/fdc/FdcFestivalSections.jsx'
 import { FdcArtistsSection } from '../../components/fdc/FdcArtistsSection.jsx'
 import { FdcFestivalHero } from '../../components/fdc/FdcFestivalHero.jsx'
+import { FdcFestivalStatsSection } from '../../components/fdc/FdcFestivalStatsSection.jsx'
 import { FdcHeroCountdown } from '../../components/fdc/FdcHeroCountdown.jsx'
 import { FdcStallApplicationForm } from '../../components/fdc/FdcStallApplicationForm.jsx'
 import { RevealOnScroll } from '../../components/home/RevealOnScroll.jsx'
@@ -258,6 +259,17 @@ export function FiestaDelCaballo() {
         </div>
         <FdcSectionNav items={page.sectionNav} onHashNavigate={handleHashNavigate} />
       </div>
+
+      {(page.festivalStats?.items || []).length > 0 ? (
+        <section
+          id="numeros"
+          className="relative isolate border-y border-[#e8e5dd] bg-[#f7f7f5] py-12 sm:py-14 lg:py-16 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
+        >
+          <Container className="relative z-10 max-w-[min(100%,96rem)]!">
+            <FdcFestivalStatsSection stats={page.festivalStats} />
+          </Container>
+        </section>
+      ) : null}
 
       {(page.artists?.items || []).some((a) => a?.name) ||
       (page.artists?.dayPosters || []).some((p) => p?.imageUrl) ? (

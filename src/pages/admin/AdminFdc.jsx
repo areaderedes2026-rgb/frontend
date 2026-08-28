@@ -4,6 +4,7 @@ import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
 import { PageCoverModal } from '../../components/admin/PageCoverModal.jsx'
 import { SingleImageUploadField } from '../../components/admin/SingleImageUploadField.jsx'
 import { FdcFestivalHero } from '../../components/fdc/FdcFestivalHero.jsx'
+import { FdcStatIcon, FdcFestivalStatsSection } from '../../components/fdc/FdcFestivalStatsSection.jsx'
 import { FdcHeroCountdown } from '../../components/fdc/FdcHeroCountdown.jsx'
 import { FdcSectionNav } from '../../components/fdc/FdcFestivalSections.jsx'
 import { Modal } from '../../components/ui/Modal.jsx'
@@ -14,6 +15,7 @@ import {
   DEFAULT_FDC_HERO_COUNTDOWN,
   FDC_ARTISTS_MAX_DAY_POSTERS,
   FDC_SCHEDULE_MAX_IMAGES,
+  FDC_STAT_ICON_OPTIONS,
   applyHeroCoverToFdcContent,
   ensureFdcFormRubros,
   fdcContentToHeroCover,
@@ -21,6 +23,7 @@ import {
   isFdcOtherRubro,
   makeFdcItemId,
   mergeFdcContent,
+  normalizeFdcFestivalStats,
   normalizeFdcHeroCountdown,
 } from '../../data/fdcContent.js'
 import { normalizeHeroToggle } from '../../data/servicesPageContent.js'
@@ -84,6 +87,10 @@ function mapContentToForm(content) {
       ...merged.sponsors,
       items: (merged.sponsors?.items || []).map((it) => ({ ...it })),
     },
+    festivalStats: {
+      ...normalizeFdcFestivalStats(merged.festivalStats),
+      items: (normalizeFdcFestivalStats(merged.festivalStats).items || []).map((it) => ({ ...it })),
+    },
     usefulInfo: { title: '', items: [] },
     overlayOpacity: normalizeOverlay(merged.overlayOpacity, 65),
     showHeroBadge: normalizeHeroToggle(merged.showHeroBadge, true),
@@ -122,6 +129,7 @@ const TABS = [
   { id: 'portada', label: 'Portada' },
   { id: 'navegacion', label: 'Navegación' },
   { id: 'cartelera', label: 'Cartelera' },
+  { id: 'estadisticas', label: 'Estadísticas' },
   { id: 'cronograma', label: 'Cronograma' },
   { id: 'entradas', label: 'Entradas' },
   { id: 'noticias', label: 'Noticias' },
@@ -177,6 +185,7 @@ export function AdminFdc() {
   const [newsModal, setNewsModal] = useState({ open: false, index: null, draft: null })
   const [galleryModal, setGalleryModal] = useState({ open: false, index: null, draft: null })
   const [sponsorModal, setSponsorModal] = useState({ open: false, index: null, draft: null })
+  const [statModal, setStatModal] = useState({ open: false, index: null, draft: null })
 
   const dismissToast = useCallback(() => setToast(null), [])
   const apiAvailable = isApiConfigured()
@@ -347,6 +356,7 @@ export function AdminFdc() {
           }))
           .filter((it) => it.name || it.logoUrl),
       },
+      festivalStats: normalizeFdcFestivalStats(form.festivalStats),
       usefulInfo: { title: '', items: [] },
       formNotice: String(form.formNotice || ''),
       formRubros: ensureFdcFormRubros(form.formRubros),
@@ -453,6 +463,13 @@ export function AdminFdc() {
     setForm((p) => ({
       ...p,
       sponsors: typeof updater === 'function' ? updater(p.sponsors) : updater,
+    }))
+  }
+
+  function updateFestivalStats(updater) {
+    setForm((p) => ({
+      ...p,
+      festivalStats: typeof updater === 'function' ? updater(p.festivalStats) : updater,
     }))
   }
 
@@ -620,6 +637,48 @@ export function AdminFdc() {
     setSponsorModal({ open: false, index: null, draft: null })
   }
 
+  function openStatModal(index = null) {
+    const draft =
+      index != null
+        ? { ...(form.festivalStats?.items || [])[index] }
+        : {
+            id: makeFdcItemId('stat'),
+            icon: 'horse',
+            prefix: '',
+            value: 0,
+            valueText: '',
+            label: '',
+            sublabel: '',
+            sortOrder: (form.festivalStats?.items || []).length,
+          }
+    setStatModal({ open: true, index, draft })
+  }
+
+  function applyStatModal() {
+    const draft = statModal.draft || {}
+    const valueText = String(draft.valueText || '').trim()
+    const value = Math.max(0, Math.round(Number(draft.value) || 0))
+    const label = String(draft.label || '').trim()
+    const sublabel = String(draft.sublabel || '').trim()
+    if (!valueText && value <= 0 && !label && !sublabel) return
+    updateFestivalStats((s) => {
+      const items = [...(s.items || [])]
+      const entry = {
+        ...draft,
+        valueText,
+        value: valueText ? 0 : value,
+        label,
+        sublabel,
+        prefix: String(draft.prefix || '').trim(),
+        icon: String(draft.icon || 'horse').trim(),
+      }
+      if (statModal.index == null) items.push(entry)
+      else items[statModal.index] = entry
+      return { ...s, items }
+    })
+    setStatModal({ open: false, index: null, draft: null })
+  }
+
   const scheduleImages = form.schedule?.images || []
   const scheduleDays = form.schedule?.days || []
   const artistItems = form.artists?.items || []
@@ -627,6 +686,7 @@ export function AdminFdc() {
   const newsItems = form.news?.items || []
   const galleryItems = form.gallery?.items || []
   const sponsorItems = form.sponsors?.items || []
+  const statItems = form.festivalStats?.items || []
 
   return (
     <>
@@ -1086,6 +1146,127 @@ export function AdminFdc() {
               }
               onNotify={setToast}
             />
+          </div>
+        ) : null}
+      </Modal>
+
+      {/* Estadística modal */}
+      <Modal
+        open={statModal.open}
+        onClose={() => setStatModal({ open: false, index: null, draft: null })}
+        title={statModal.index == null ? 'Agregar dato' : 'Editar dato'}
+        size="default"
+        footer={
+          <ModalFooter
+            saving={saving}
+            applyDisabled={
+              !String(statModal.draft?.valueText || '').trim() &&
+              !(Number(statModal.draft?.value) > 0) &&
+              !String(statModal.draft?.label || '').trim() &&
+              !String(statModal.draft?.sublabel || '').trim()
+            }
+            onCancel={() => setStatModal({ open: false, index: null, draft: null })}
+            onApply={applyStatModal}
+          />
+        }
+      >
+        {statModal.draft ? (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className={`${labelClass} sm:col-span-2`}>
+              Ícono
+              <select
+                className={inputClass}
+                value={statModal.draft.icon || 'horse'}
+                disabled={saving}
+                onChange={(e) =>
+                  setStatModal((m) => ({ ...m, draft: { ...m.draft, icon: e.target.value } }))
+                }
+              >
+                {FDC_STAT_ICON_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className={labelClass}>
+              Prefijo (opcional)
+              <input
+                className={inputClass}
+                value={statModal.draft.prefix || ''}
+                disabled={saving}
+                placeholder="+"
+                onChange={(e) =>
+                  setStatModal((m) => ({ ...m, draft: { ...m.draft, prefix: e.target.value } }))
+                }
+              />
+            </label>
+            <label className={labelClass}>
+              Número
+              <input
+                type="number"
+                min={0}
+                max={999999}
+                className={inputClass}
+                value={Number(statModal.draft.value) || 0}
+                disabled={saving || Boolean(String(statModal.draft.valueText || '').trim())}
+                onChange={(e) =>
+                  setStatModal((m) => ({
+                    ...m,
+                    draft: { ...m.draft, value: Number(e.target.value) || 0 },
+                  }))
+                }
+              />
+            </label>
+            <label className={`${labelClass} sm:col-span-2`}>
+              Texto principal (opcional)
+              <input
+                className={inputClass}
+                value={statModal.draft.valueText || ''}
+                disabled={saving}
+                placeholder="Ej.: Jineteadas, Caballos"
+                onChange={(e) =>
+                  setStatModal((m) => ({
+                    ...m,
+                    draft: { ...m.draft, valueText: e.target.value },
+                  }))
+                }
+              />
+              <span className="mt-1 block text-xs font-normal text-slate-500">
+                Si completás este campo, se muestra en lugar del número (ideal para Jineteadas, Caballos
+                peruanos, etc.).
+              </span>
+            </label>
+            <label className={labelClass}>
+              Etiqueta
+              <input
+                className={inputClass}
+                value={statModal.draft.label || ''}
+                disabled={saving}
+                placeholder="Ediciones, Visitantes…"
+                onChange={(e) =>
+                  setStatModal((m) => ({ ...m, draft: { ...m.draft, label: e.target.value } }))
+                }
+              />
+            </label>
+            <label className={labelClass}>
+              Subtítulo
+              <input
+                className={inputClass}
+                value={statModal.draft.sublabel || ''}
+                disabled={saving}
+                placeholder="Nacionales, Peruanos…"
+                onChange={(e) =>
+                  setStatModal((m) => ({ ...m, draft: { ...m.draft, sublabel: e.target.value } }))
+                }
+              />
+            </label>
+            <div className="sm:col-span-2 flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+              <FdcStatIcon name={statModal.draft.icon || 'horse'} className="h-8 w-8" />
+              <p className="text-xs text-slate-600">
+                Vista previa del ícono seleccionado en la sección pública.
+              </p>
+            </div>
           </div>
         ) : null}
       </Modal>
@@ -1582,6 +1763,125 @@ export function AdminFdc() {
                       ? ` (máx. ${FDC_ARTISTS_MAX_DAY_POSTERS})`
                       : ''}
                   </button>
+                </div>
+              </section>
+            ) : null}
+
+            {/* Estadísticas */}
+            {activeTab === 'estadisticas' ? (
+              <section className={SECTION_CARD}>
+                <h2 className="text-lg font-bold text-slate-900">La fiesta en números</h2>
+                <p className="mt-1 text-sm text-slate-600">
+                  Bloques con ícono, número animado o texto destacado. Se muestran entre la portada y la
+                  cartelera.
+                </p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <label className={labelClass}>
+                    Título de sección
+                    <input
+                      className={inputClass}
+                      value={form.festivalStats?.title || ''}
+                      disabled={saving}
+                      onChange={(e) =>
+                        updateFestivalStats((s) => ({ ...s, title: e.target.value }))
+                      }
+                      placeholder="La fiesta en números"
+                    />
+                  </label>
+                  <label className={labelClass}>
+                    Subtítulo (opcional)
+                    <input
+                      className={inputClass}
+                      value={form.festivalStats?.subtitle || ''}
+                      disabled={saving}
+                      onChange={(e) =>
+                        updateFestivalStats((s) => ({ ...s, subtitle: e.target.value }))
+                      }
+                    />
+                  </label>
+                </div>
+
+                <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200">
+                  <table className="w-full text-left text-sm">
+                    <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      <tr>
+                        <th className="px-4 py-3">Ícono</th>
+                        <th className="px-4 py-3">Valor</th>
+                        <th className="px-4 py-3">Etiquetas</th>
+                        <th className="px-4 py-3 text-right">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {statItems.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="px-4 py-6 text-center text-slate-500">
+                            Todavía no hay datos. Agregá al menos uno para mostrar la sección.
+                          </td>
+                        </tr>
+                      ) : (
+                        statItems.map((item, idx) => {
+                          const valueText = String(item.valueText || '').trim()
+                          const displayValue = valueText
+                            ? valueText
+                            : `${item.prefix || ''}${Number(item.value || 0).toLocaleString('es-AR')}`
+                          const labels = [item.label, item.sublabel]
+                            .map((l) => String(l || '').trim())
+                            .filter(Boolean)
+                            .join(' · ')
+                          return (
+                            <tr key={item.id || idx} className="hover:bg-slate-50/80">
+                              <td className="px-4 py-3">
+                                <FdcStatIcon name={item.icon || 'horse'} className="h-7 w-7" />
+                              </td>
+                              <td className="px-4 py-3 font-semibold text-slate-900">{displayValue}</td>
+                              <td className="px-4 py-3 text-slate-600">{labels || '—'}</td>
+                              <td className="px-4 py-3">
+                                <div className="flex justify-end gap-2">
+                                  <button
+                                    type="button"
+                                    className={ACTION_NEUTRAL}
+                                    disabled={saving}
+                                    onClick={() => openStatModal(idx)}
+                                  >
+                                    Editar
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className={ACTION_DANGER}
+                                    disabled={saving}
+                                    onClick={() =>
+                                      updateFestivalStats((s) => ({
+                                        ...s,
+                                        items: (s.items || []).filter((_, i) => i !== idx),
+                                      }))
+                                    }
+                                  >
+                                    Eliminar
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          )
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                <button
+                  type="button"
+                  className={`${ACTION_ADD} mt-3`}
+                  disabled={saving || statItems.length >= 8}
+                  onClick={() => openStatModal(null)}
+                >
+                  + Agregar dato
+                  {statItems.length >= 8 ? ' (máx. 8)' : ''}
+                </button>
+
+                <div className="mt-8 overflow-hidden rounded-3xl border border-[#ddd7ca] bg-[#f7f7f5] p-4 sm:p-6">
+                  <p className="mb-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Vista previa
+                  </p>
+                  <FdcFestivalStatsSection stats={form.festivalStats} />
                 </div>
               </section>
             ) : null}
