@@ -4,6 +4,10 @@
 
 import { mergePageHeroCover, pageHeroToHeaderProps } from './pageHeroCoverContent.js'
 import { normalizeHeroToggle } from './servicesPageContent.js'
+import {
+  normalizeFdcSectionBackgroundStyle,
+  normalizeFdcSectionOverlay,
+} from '../utils/fdcSectionBackground.js'
 
 export const FDC_RUBROS = [
   'Kiosco',
@@ -141,6 +145,7 @@ export const DEFAULT_FDC_ARTISTS = {
   ctaLabel: 'Ver cartelera completa',
   ctaHref: '',
   /** Vacío = fondo claro. Con URL se muestra imagen + overlay configurable. */
+  backgroundStyle: 'light',
   backgroundImageUrl: '',
   overlayOpacity: 55,
   /** Afiches generales por día (hasta 4). Si hay al menos uno, el CTA alterna la vista. */
@@ -179,6 +184,7 @@ export const DEFAULT_FDC_TICKETS = {
   bullets: ['Acceso al predio', 'Promociones y beneficios', 'Compra 100% online'],
   ctaLabel: 'Comprar entradas',
   ctaUrl: '',
+  backgroundStyle: 'image',
   imageUrl:
     'https://images.unsplash.com/photo-1556740738-b6a63e27c4df?auto=format&fit=crop&w=1600&q=80',
   overlayOpacity: 55,
@@ -589,10 +595,11 @@ export function mergeFdcContent(base, remote) {
         'ctaHref',
         'items',
         'dayPosters',
+        'backgroundStyle',
         'backgroundImageUrl',
         'overlayOpacity',
       ])
-      const overlayRaw = Number(merged.overlayOpacity)
+      const bgImage = String(merged.backgroundImageUrl || '').trim()
       return {
         ...merged,
         dayPosters: normalizeFdcArtistDayPosters(
@@ -604,9 +611,11 @@ export function mergeFdcContent(base, remote) {
               }
             : merged,
         ),
-        overlayOpacity: Number.isFinite(overlayRaw)
-          ? Math.min(90, Math.max(0, Math.round(overlayRaw)))
-          : defaults.artists?.overlayOpacity ?? 55,
+        backgroundStyle: normalizeFdcSectionBackgroundStyle(merged.backgroundStyle, bgImage),
+        overlayOpacity: normalizeFdcSectionOverlay(
+          merged.overlayOpacity,
+          defaults.artists?.overlayOpacity ?? 55,
+        ),
       }
     })(),
     tickets: (() => {
@@ -616,15 +625,18 @@ export function mergeFdcContent(base, remote) {
         'bullets',
         'ctaLabel',
         'ctaUrl',
+        'backgroundStyle',
         'imageUrl',
         'overlayOpacity',
       ])
-      const overlayRaw = Number(merged.overlayOpacity)
+      const ticketImage = String(merged.imageUrl || '').trim()
       return {
         ...merged,
-        overlayOpacity: Number.isFinite(overlayRaw)
-          ? Math.min(90, Math.max(0, Math.round(overlayRaw)))
-          : defaults.tickets?.overlayOpacity ?? 55,
+        backgroundStyle: normalizeFdcSectionBackgroundStyle(merged.backgroundStyle, ticketImage),
+        overlayOpacity: normalizeFdcSectionOverlay(
+          merged.overlayOpacity,
+          defaults.tickets?.overlayOpacity ?? 55,
+        ),
       }
     })(),
     news: mergeNamedSection(defaults.news, remote.news, [

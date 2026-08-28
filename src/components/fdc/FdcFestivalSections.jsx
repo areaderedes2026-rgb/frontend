@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
+import { resolveFdcSectionBackground } from '../../utils/fdcSectionBackground.js'
+import { FdcSectionBackgroundLayers } from './FdcSectionBackgroundLayers.jsx'
 import { Container } from '../ui/Container.jsx'
 
 /** Título centrado del módulo FDC. */
@@ -383,38 +385,21 @@ export function FdcTicketsSection({ tickets, hideHeading = false }) {
   if (!title) return null
 
   const bullets = (tickets?.bullets || []).filter(Boolean)
-  const imageSrc = resolveMediaUrl(tickets?.imageUrl) || String(tickets?.imageUrl || '').trim()
   const ctaUrl = String(tickets?.ctaUrl || '').trim()
-  const overlayRaw = Number(tickets?.overlayOpacity)
-  const overlayOpacity = Number.isFinite(overlayRaw)
-    ? Math.min(90, Math.max(0, Math.round(overlayRaw)))
-    : 55
-  const hasBg = Boolean(imageSrc)
-  const titleTone = hasBg ? 'dark' : 'light'
+  const sectionBg = resolveFdcSectionBackground(tickets)
+  const titleTone = sectionBg.titleTone
+  const usesDarkTone = sectionBg.usesDarkTone
 
   return (
     <section
       id={hideHeading ? undefined : 'entradas'}
-      className={`relative isolate overflow-hidden py-14 sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)] ${
-        hasBg ? 'text-white' : 'bg-[#f7f7f5]'
-      }`}
+      className={`relative isolate overflow-hidden py-14 sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)] ${sectionBg.sectionClassName}`}
     >
-      {hasBg ? (
-        <>
-          <img
-            src={imageSrc}
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover"
-            loading="lazy"
-            decoding="async"
-          />
-          <div
-            className="absolute inset-0 bg-[#171b22]"
-            style={{ opacity: overlayOpacity / 100 }}
-            aria-hidden
-          />
-        </>
-      ) : null}
+      <FdcSectionBackgroundLayers
+        style={sectionBg.style}
+        imageUrl={sectionBg.imageUrl}
+        overlayOpacity={sectionBg.overlayOpacity}
+      />
 
       <Container className="relative z-10">
         {!hideHeading ? <FdcSectionTitle title={title} tone={titleTone} /> : null}
@@ -423,7 +408,7 @@ export function FdcTicketsSection({ tickets, hideHeading = false }) {
           {tickets?.body ? (
             <p
               className={`text-sm leading-relaxed sm:text-base ${
-                hasBg ? 'text-white/85' : 'text-[#4b505a]'
+                usesDarkTone ? 'text-white/85' : 'text-[#4b505a]'
               }`}
             >
               {tickets.body}
@@ -438,7 +423,7 @@ export function FdcTicketsSection({ tickets, hideHeading = false }) {
                 <li
                   key={bullet}
                   className={`flex w-full items-start justify-center gap-2 text-sm sm:text-[15px] ${
-                    hasBg ? 'text-white/90' : 'text-[#3e434d]'
+                    usesDarkTone ? 'text-white/90' : 'text-[#3e434d]'
                   }`}
                 >
                   <span

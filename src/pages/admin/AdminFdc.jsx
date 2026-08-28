@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
 import { PageCoverModal } from '../../components/admin/PageCoverModal.jsx'
 import { SingleImageUploadField } from '../../components/admin/SingleImageUploadField.jsx'
+import { FdcSectionBackgroundFields } from '../../components/admin/FdcSectionBackgroundFields.jsx'
 import { FdcFestivalHero } from '../../components/fdc/FdcFestivalHero.jsx'
 import { FdcStatIcon, FdcFestivalStatsSection } from '../../components/fdc/FdcFestivalStatsSection.jsx'
 import { FdcHeroCountdown } from '../../components/fdc/FdcHeroCountdown.jsx'
@@ -33,6 +34,7 @@ import { fetchFdcContentAdmin, updateFdcContent } from '../../services/fdcServic
 import { isApiConfigured } from '../../utils/apiConfig.js'
 import { ROUTES } from '../../utils/constants.js'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
+import { normalizeFdcSectionBackgroundStyle } from '../../utils/fdcSectionBackground.js'
 
 function cloneContent(c) {
   return JSON.parse(JSON.stringify(c))
@@ -70,11 +72,19 @@ function mapContentToForm(content) {
       ...merged.artists,
       items: (merged.artists?.items || []).map((it) => ({ ...it })),
       dayPosters: (merged.artists?.dayPosters || []).map((it) => ({ ...it })),
+      backgroundStyle: normalizeFdcSectionBackgroundStyle(
+        merged.artists?.backgroundStyle,
+        merged.artists?.backgroundImageUrl,
+      ),
       overlayOpacity: normalizeOverlay(merged.artists?.overlayOpacity, 55),
     },
     tickets: {
       ...merged.tickets,
       bullets: [...(merged.tickets?.bullets || [])],
+      backgroundStyle: normalizeFdcSectionBackgroundStyle(
+        merged.tickets?.backgroundStyle,
+        merged.tickets?.imageUrl,
+      ),
       overlayOpacity: normalizeOverlay(merged.tickets?.overlayOpacity, 55),
     },
     news: {
@@ -295,6 +305,10 @@ export function AdminFdc() {
         title: String(form.artists?.title || '').trim(),
         ctaLabel: String(form.artists?.ctaLabel || '').trim(),
         ctaHref: String(form.artists?.ctaHref || '').trim(),
+        backgroundStyle: normalizeFdcSectionBackgroundStyle(
+          form.artists?.backgroundStyle,
+          form.artists?.backgroundImageUrl,
+        ),
         backgroundImageUrl: String(form.artists?.backgroundImageUrl || '').trim(),
         overlayOpacity: normalizeOverlay(form.artists?.overlayOpacity, 55),
         dayPosters: (form.artists?.dayPosters || [])
@@ -321,6 +335,10 @@ export function AdminFdc() {
         bullets: (form.tickets?.bullets || []).map((b) => String(b || '').trim()).filter(Boolean),
         ctaLabel: String(form.tickets?.ctaLabel || '').trim(),
         ctaUrl: String(form.tickets?.ctaUrl || '').trim(),
+        backgroundStyle: normalizeFdcSectionBackgroundStyle(
+          form.tickets?.backgroundStyle,
+          form.tickets?.imageUrl,
+        ),
         imageUrl: String(form.tickets?.imageUrl || '').trim(),
         overlayOpacity: normalizeOverlay(form.tickets?.overlayOpacity, 55),
       },
@@ -1661,49 +1679,24 @@ export function AdminFdc() {
                   </label>
                 </div>
 
-                <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50/60 p-4 sm:p-5">
-                  <h3 className="text-base font-bold text-slate-900">Fondo de la sección</h3>
-                  <p className="mt-1 text-sm text-slate-600">
-                    Sin imagen se usa el fondo claro actual. Si subís una imagen, podés oscurecerla con
-                    el overlay para que el título y las tarjetas sigan legibles.
-                  </p>
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                    <div className="sm:col-span-2">
-                      <SingleImageUploadField
-                        label="Imagen de fondo (opcional)"
-                        value={form.artists?.backgroundImageUrl || ''}
-                        disabled={saving}
-                        kind="cover"
-                        onChange={(url) =>
-                          updateArtists((a) => ({ ...a, backgroundImageUrl: url }))
-                        }
-                        onNotify={setToast}
-                      />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <label className={labelClass}>
-                        Opacidad del overlay: {normalizeOverlay(form.artists?.overlayOpacity, 55)}%
-                        <input
-                          type="range"
-                          min={0}
-                          max={90}
-                          step={1}
-                          className="mt-2 w-full accent-sky-700"
-                          value={normalizeOverlay(form.artists?.overlayOpacity, 55)}
-                          disabled={saving || !String(form.artists?.backgroundImageUrl || '').trim()}
-                          onChange={(e) =>
-                            updateArtists((a) => ({
-                              ...a,
-                              overlayOpacity: normalizeOverlay(e.target.value, 55),
-                            }))
-                          }
-                        />
-                        <span className="mt-1 block text-xs font-normal text-slate-500">
-                          Más alto = fondo más oscuro y texto más legible.
-                        </span>
-                      </label>
-                    </div>
-                  </div>
+                <div className="mt-5">
+                  <FdcSectionBackgroundFields
+                    backgroundStyle={form.artists?.backgroundStyle || 'light'}
+                    backgroundImageUrl={form.artists?.backgroundImageUrl || ''}
+                    overlayOpacity={normalizeOverlay(form.artists?.overlayOpacity, 55)}
+                    disabled={saving}
+                    labelClass={labelClass}
+                    onNotify={setToast}
+                    onStyleChange={(style) =>
+                      updateArtists((a) => ({ ...a, backgroundStyle: style }))
+                    }
+                    onImageChange={(url) =>
+                      updateArtists((a) => ({ ...a, backgroundImageUrl: url }))
+                    }
+                    onOverlayChange={(value) =>
+                      updateArtists((a) => ({ ...a, overlayOpacity: value }))
+                    }
+                  />
                 </div>
 
                 <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200">
@@ -2204,37 +2197,22 @@ export function AdminFdc() {
                     />
                   </label>
                   <div className="sm:col-span-2">
-                    <SingleImageUploadField
-                      label="Imagen de fondo"
-                      value={form.tickets?.imageUrl || ''}
+                    <FdcSectionBackgroundFields
+                      backgroundStyle={form.tickets?.backgroundStyle || 'light'}
+                      backgroundImageUrl={form.tickets?.imageUrl || ''}
+                      overlayOpacity={normalizeOverlay(form.tickets?.overlayOpacity, 55)}
                       disabled={saving}
-                      kind="cover"
-                      onChange={(url) => updateTickets((t) => ({ ...t, imageUrl: url }))}
+                      labelClass={labelClass}
+                      imageLabel="Imagen de fondo"
                       onNotify={setToast}
+                      onStyleChange={(style) =>
+                        updateTickets((t) => ({ ...t, backgroundStyle: style }))
+                      }
+                      onImageChange={(url) => updateTickets((t) => ({ ...t, imageUrl: url }))}
+                      onOverlayChange={(value) =>
+                        updateTickets((t) => ({ ...t, overlayOpacity: value }))
+                      }
                     />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className={labelClass}>
-                      Opacidad del overlay: {normalizeOverlay(form.tickets?.overlayOpacity, 55)}%
-                      <input
-                        type="range"
-                        min={0}
-                        max={90}
-                        step={1}
-                        className="mt-2 w-full accent-sky-700"
-                        value={normalizeOverlay(form.tickets?.overlayOpacity, 55)}
-                        disabled={saving || !String(form.tickets?.imageUrl || '').trim()}
-                        onChange={(e) =>
-                          updateTickets((t) => ({
-                            ...t,
-                            overlayOpacity: normalizeOverlay(e.target.value, 55),
-                          }))
-                        }
-                      />
-                      <span className="mt-1 block text-xs font-normal text-slate-500">
-                        Más alto = fondo más oscuro y texto más legible.
-                      </span>
-                    </label>
                   </div>
                 </div>
               </section>
