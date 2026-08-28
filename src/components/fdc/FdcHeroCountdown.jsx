@@ -78,7 +78,7 @@ function CountdownUnit({ value, reduceMotion, index }) {
 function Separator({ reduceMotion, index }) {
   return (
     <Motion.span
-      className="flex shrink-0 flex-col items-center justify-center gap-1 px-0.5 pb-1 sm:px-1"
+      className="flex shrink-0 items-center justify-center self-center px-1 sm:px-1.5"
       aria-hidden
       initial={reduceMotion ? false : { opacity: 0, scale: 0.6 }}
       animate={{ opacity: 1, scale: 1 }}
@@ -88,8 +88,10 @@ function Separator({ reduceMotion, index }) {
         ease: softEase,
       }}
     >
-      <span className="h-1 w-1 rounded-full bg-[#d4b483]/80 shadow-[0_0_8px_rgba(212,180,131,0.45)]" />
-      <span className="h-1 w-1 rounded-full bg-[#d4b483]/45" />
+      <span className="flex flex-col items-center justify-center gap-1.5">
+        <span className="h-1.5 w-1.5 rounded-full bg-[#171b22]" />
+        <span className="h-1.5 w-1.5 rounded-full bg-[#171b22]" />
+      </span>
     </Motion.span>
   )
 }
@@ -138,7 +140,7 @@ export function FdcHeroCountdown({ config, className = '', previewMode = false }
         transition={{ duration: reduceMotion ? 0.15 : 1.05, ease: softEase }}
       >
         <Motion.p
-          className="mb-2.5 text-center font-serif text-xs font-semibold uppercase tracking-[0.42em] text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.65)] sm:mb-3 sm:text-sm sm:tracking-[0.5em]"
+          className="mb-2.5 text-center font-serif text-xs font-semibold uppercase tracking-[0.42em] text-[#171b22] sm:mb-3 sm:text-sm sm:tracking-[0.5em]"
           initial={reduceMotion ? false : { opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: reduceMotion ? 0.12 : 0.65, ease: softEase }}
@@ -147,7 +149,7 @@ export function FdcHeroCountdown({ config, className = '', previewMode = false }
         </Motion.p>
 
         <div
-          className="flex items-end justify-center"
+          className="flex items-center justify-center"
           role="timer"
           aria-label={
             previewMode
@@ -156,7 +158,7 @@ export function FdcHeroCountdown({ config, className = '', previewMode = false }
           }
         >
           {units.map((unit, idx) => (
-            <span key={unit.key} className="flex items-end">
+            <span key={unit.key} className="flex items-center">
               <CountdownUnit value={unit.value} reduceMotion={reduceMotion} index={idx} />
               {idx < units.length - 1 ? (
                 <Separator reduceMotion={reduceMotion} index={idx} />
