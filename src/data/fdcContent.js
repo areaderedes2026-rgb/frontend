@@ -215,15 +215,14 @@ const FDC_STAT_ICONS = new Set(FDC_STAT_ICON_OPTIONS.map((o) => o.value))
 export const DEFAULT_FDC_FESTIVAL_STATS = {
   title: 'La fiesta en números',
   subtitle: '',
+  showTitle: false,
   items: [
     {
       id: 'stat-ed',
       icon: 'horse',
       prefix: '',
       value: 27,
-      valueText: '',
       label: 'Ediciones',
-      sublabel: '',
       sortOrder: 0,
     },
     {
@@ -231,9 +230,7 @@ export const DEFAULT_FDC_FESTIVAL_STATS = {
       icon: 'people',
       prefix: '+',
       value: 40000,
-      valueText: '',
       label: 'Visitantes',
-      sublabel: '',
       sortOrder: 1,
     },
     {
@@ -241,61 +238,59 @@ export const DEFAULT_FDC_FESTIVAL_STATS = {
       icon: 'music',
       prefix: '+',
       value: 50,
-      valueText: '',
       label: 'Artistas',
-      sublabel: '',
       sortOrder: 2,
     },
     {
       id: 'stat-jin',
       icon: 'jineteada',
-      prefix: '',
-      value: 0,
-      valueText: 'Jineteadas',
-      label: '',
-      sublabel: 'Nacionales',
+      prefix: '+',
+      value: 50,
+      label: 'Jinetes',
       sortOrder: 3,
     },
     {
       id: 'stat-cab',
       icon: 'peruvianHorse',
-      prefix: '',
-      value: 0,
-      valueText: 'Caballos',
-      label: '',
-      sublabel: 'Peruanos',
+      prefix: '+',
+      value: 100,
+      label: 'Caballos',
       sortOrder: 4,
     },
     {
-      id: 'stat-food',
-      icon: 'food',
+      id: 'stat-puestos',
+      icon: 'market',
       prefix: '+',
-      value: 100,
-      valueText: '',
+      value: 30,
       label: 'Puestos',
-      sublabel: 'Gastronómicos',
       sortOrder: 5,
     },
   ],
 }
 
+function normalizeFdcStatShowTitle(value, fallback = false) {
+  if (value === true || value === 1 || value === '1' || value === 'true') return true
+  if (value === false || value === 0 || value === '0' || value === 'false') return false
+  return fallback === true
+}
+
 export function normalizeFdcFestivalStatsItem(item, index = 0) {
   const src = item && typeof item === 'object' ? item : {}
   const valueText = String(src.valueText ?? '').trim()
-  const value = Math.max(0, Math.min(999999, Math.round(Number(src.value) || 0)))
-  const label = String(src.label ?? '').trim()
+  let label = String(src.label ?? '').trim()
   const sublabel = String(src.sublabel ?? '').trim()
-  if (!valueText && value <= 0 && !label && !sublabel) return null
+  if (!label && valueText) label = valueText
+  if (!label && sublabel) label = sublabel
+  const value = Math.max(0, Math.min(999999, Math.round(Number(src.value) || 0)))
+  if (!label || value <= 0) return null
   return {
     id: String(src.id || '').trim() || makeFdcItemId('stat'),
     icon: FDC_STAT_ICONS.has(String(src.icon || '').trim())
       ? String(src.icon).trim()
       : 'horse',
     prefix: String(src.prefix ?? '').trim().slice(0, 8),
-    value: valueText ? 0 : value,
-    valueText,
+    value,
     label,
-    sublabel,
     sortOrder: Number.isFinite(Number(src.sortOrder)) ? Number(src.sortOrder) : index,
   }
 }
@@ -311,8 +306,12 @@ export function normalizeFdcFestivalStats(input, defaults = DEFAULT_FDC_FESTIVAL
     .sort((a, b) => a.sortOrder - b.sortOrder)
     .slice(0, 8)
   return {
-    title: String(src.title ?? base.title ?? '').trim() || 'La fiesta en números',
+    title: String(src.title ?? base.title ?? '').trim(),
     subtitle: String(src.subtitle ?? base.subtitle ?? '').trim(),
+    showTitle: normalizeFdcStatShowTitle(
+      Object.prototype.hasOwnProperty.call(src, 'showTitle') ? src.showTitle : undefined,
+      base.showTitle === true,
+    ),
     items,
   }
 }
@@ -357,7 +356,9 @@ export const FDC_HERO_COUNTDOWN_LABEL_COLORS = [
 
 function normalizeCountdownLabelColor(value, fallback = '#ffffff') {
   const expand = (hex) => {
-    const raw = String(hex || '').trim()
+    let raw = String(hex || '').trim()
+    if (/^[0-9a-fA-F]{6}$/.test(raw)) raw = `#${raw}`
+    if (/^[0-9a-fA-F]{3}$/.test(raw)) raw = `#${raw}`
     if (/^#[0-9a-fA-F]{6}$/.test(raw)) return raw.toLowerCase()
     if (/^#[0-9a-fA-F]{3}$/.test(raw)) {
       const c = raw.slice(1)

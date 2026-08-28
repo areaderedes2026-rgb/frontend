@@ -107,7 +107,16 @@ function Separator({ reduceMotion, index }) {
  * Contador regresivo FDC. Flota sobre la portada, justo encima de la navegación.
  */
 export function FdcHeroCountdown({ config, className = '', previewMode = false }) {
-  const normalized = useMemo(() => normalizeFdcHeroCountdown(config), [config])
+  const normalized = useMemo(
+    () => normalizeFdcHeroCountdown(config),
+    [
+      config?.enabled,
+      config?.targetAt,
+      config?.offsetYMobile,
+      config?.offsetYDesktop,
+      config?.labelColor,
+    ],
+  )
   const offsetY = useResponsiveCountdownOffset(
     normalized.offsetYMobile,
     normalized.offsetYDesktop,
@@ -146,15 +155,12 @@ export function FdcHeroCountdown({ config, className = '', previewMode = false }
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: reduceMotion ? 0.15 : 1.05, ease: softEase }}
       >
-        <Motion.p
+        <p
           className="mb-2.5 text-center font-serif text-xs font-semibold uppercase tracking-[0.42em] sm:mb-3 sm:text-sm sm:tracking-[0.5em]"
           style={{ color: normalized.labelColor }}
-          initial={reduceMotion ? false : { opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: reduceMotion ? 0.12 : 0.65, ease: softEase }}
         >
           Faltan
-        </Motion.p>
+        </p>
 
         <div
           className="flex items-start justify-center"

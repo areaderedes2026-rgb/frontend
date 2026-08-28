@@ -645,11 +645,9 @@ export function AdminFdc() {
         : {
             id: makeFdcItemId('stat'),
             icon: 'horse',
-            prefix: '',
+            prefix: '+',
             value: 0,
-            valueText: '',
             label: '',
-            sublabel: '',
             sortOrder: (form.festivalStats?.items || []).length,
           }
     setStatModal({ open: true, index, draft })
@@ -657,19 +655,15 @@ export function AdminFdc() {
 
   function applyStatModal() {
     const draft = statModal.draft || {}
-    const valueText = String(draft.valueText || '').trim()
     const value = Math.max(0, Math.round(Number(draft.value) || 0))
     const label = String(draft.label || '').trim()
-    const sublabel = String(draft.sublabel || '').trim()
-    if (!valueText && value <= 0 && !label && !sublabel) return
+    if (!label || value <= 0) return
     updateFestivalStats((s) => {
       const items = [...(s.items || [])]
       const entry = {
         ...draft,
-        valueText,
-        value: valueText ? 0 : value,
+        value,
         label,
-        sublabel,
         prefix: String(draft.prefix || '').trim(),
         icon: String(draft.icon || 'horse').trim(),
       }
@@ -1161,10 +1155,8 @@ export function AdminFdc() {
           <ModalFooter
             saving={saving}
             applyDisabled={
-              !String(statModal.draft?.valueText || '').trim() &&
-              !(Number(statModal.draft?.value) > 0) &&
-              !String(statModal.draft?.label || '').trim() &&
-              !String(statModal.draft?.sublabel || '').trim()
+              !(Number(statModal.draft?.value) > 0) ||
+              !String(statModal.draft?.label || '').trim()
             }
             onCancel={() => setStatModal({ open: false, index: null, draft: null })}
             onApply={applyStatModal}
@@ -1210,7 +1202,7 @@ export function AdminFdc() {
                 max={999999}
                 className={inputClass}
                 value={Number(statModal.draft.value) || 0}
-                disabled={saving || Boolean(String(statModal.draft.valueText || '').trim())}
+                disabled={saving}
                 onChange={(e) =>
                   setStatModal((m) => ({
                     ...m,
@@ -1220,53 +1212,34 @@ export function AdminFdc() {
               />
             </label>
             <label className={`${labelClass} sm:col-span-2`}>
-              Texto principal (opcional)
-              <input
-                className={inputClass}
-                value={statModal.draft.valueText || ''}
-                disabled={saving}
-                placeholder="Ej.: Jineteadas, Caballos"
-                onChange={(e) =>
-                  setStatModal((m) => ({
-                    ...m,
-                    draft: { ...m.draft, valueText: e.target.value },
-                  }))
-                }
-              />
-              <span className="mt-1 block text-xs font-normal text-slate-500">
-                Si completás este campo, se muestra en lugar del número (ideal para Jineteadas, Caballos
-                peruanos, etc.).
-              </span>
-            </label>
-            <label className={labelClass}>
-              Etiqueta
+              Etiqueta (arriba del número)
               <input
                 className={inputClass}
                 value={statModal.draft.label || ''}
                 disabled={saving}
-                placeholder="Ediciones, Visitantes…"
+                placeholder="Jinetes, Caballos, Puestos…"
                 onChange={(e) =>
                   setStatModal((m) => ({ ...m, draft: { ...m.draft, label: e.target.value } }))
                 }
               />
             </label>
-            <label className={labelClass}>
-              Subtítulo
-              <input
-                className={inputClass}
-                value={statModal.draft.sublabel || ''}
-                disabled={saving}
-                placeholder="Nacionales, Peruanos…"
-                onChange={(e) =>
-                  setStatModal((m) => ({ ...m, draft: { ...m.draft, sublabel: e.target.value } }))
-                }
-              />
-            </label>
-            <div className="sm:col-span-2 flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-              <FdcStatIcon name={statModal.draft.icon || 'horse'} className="h-8 w-8" />
-              <p className="text-xs text-slate-600">
-                Vista previa del ícono seleccionado en la sección pública.
+            <div className="sm:col-span-2 rounded-2xl border border-slate-200 bg-[#f7f7f5] px-4 py-5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                Vista previa
               </p>
+              <div className="mt-3 flex flex-col items-center text-center">
+                <FdcStatIcon name={statModal.draft.icon || 'horse'} className="mb-2.5 h-9 w-9" />
+                {String(statModal.draft.label || '').trim() ? (
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#171b22]/88">
+                    {String(statModal.draft.label || '').trim()}
+                  </p>
+                ) : (
+                  <p className="text-[10px] text-slate-400">Etiqueta</p>
+                )}
+                <p className="mt-1.5 font-serif text-2xl font-bold tabular-nums text-[#171b22]">
+                  {`${statModal.draft.prefix || ''}${Number(statModal.draft.value || 0).toLocaleString('es-AR')}`}
+                </p>
+              </div>
             </div>
           </div>
         ) : null}
@@ -1835,16 +1808,28 @@ export function AdminFdc() {
               <section className={SECTION_CARD}>
                 <h2 className="text-lg font-bold text-slate-900">La fiesta en números</h2>
                 <p className="mt-1 text-sm text-slate-600">
-                  Bloques con ícono, número animado o texto destacado. Se muestran entre la portada y la
-                  cartelera.
+                  Bloques con ícono, etiqueta y número animado. Se muestran entre la portada y la
+                  cartelera. Podés ocultar el título de sección si preferís solo los datos.
                 </p>
+                <label className="mt-4 flex cursor-pointer items-center gap-3">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-slate-300 text-sky-700 focus:ring-sky-600"
+                    checked={form.festivalStats?.showTitle === true}
+                    disabled={saving}
+                    onChange={(e) =>
+                      updateFestivalStats((s) => ({ ...s, showTitle: e.target.checked }))
+                    }
+                  />
+                  <span className="text-sm font-medium text-slate-800">Mostrar título de sección</span>
+                </label>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   <label className={labelClass}>
                     Título de sección
                     <input
                       className={inputClass}
                       value={form.festivalStats?.title || ''}
-                      disabled={saving}
+                      disabled={saving || form.festivalStats?.showTitle !== true}
                       onChange={(e) =>
                         updateFestivalStats((s) => ({ ...s, title: e.target.value }))
                       }
@@ -1856,7 +1841,7 @@ export function AdminFdc() {
                     <input
                       className={inputClass}
                       value={form.festivalStats?.subtitle || ''}
-                      disabled={saving}
+                      disabled={saving || form.festivalStats?.showTitle !== true}
                       onChange={(e) =>
                         updateFestivalStats((s) => ({ ...s, subtitle: e.target.value }))
                       }
@@ -1869,8 +1854,8 @@ export function AdminFdc() {
                     <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
                       <tr>
                         <th className="px-4 py-3">Ícono</th>
-                        <th className="px-4 py-3">Valor</th>
-                        <th className="px-4 py-3">Etiquetas</th>
+                        <th className="px-4 py-3">Etiqueta</th>
+                        <th className="px-4 py-3">Número</th>
                         <th className="px-4 py-3 text-right">Acciones</th>
                       </tr>
                     </thead>
@@ -1883,21 +1868,17 @@ export function AdminFdc() {
                         </tr>
                       ) : (
                         statItems.map((item, idx) => {
-                          const valueText = String(item.valueText || '').trim()
-                          const displayValue = valueText
-                            ? valueText
-                            : `${item.prefix || ''}${Number(item.value || 0).toLocaleString('es-AR')}`
-                          const labels = [item.label, item.sublabel]
-                            .map((l) => String(l || '').trim())
-                            .filter(Boolean)
-                            .join(' · ')
+                          const displayValue = `${item.prefix || ''}${Number(item.value || 0).toLocaleString('es-AR')}`
+                          const label = String(item.label || '').trim() || '—'
                           return (
                             <tr key={item.id || idx} className="hover:bg-slate-50/80">
                               <td className="px-4 py-3">
                                 <FdcStatIcon name={item.icon || 'horse'} className="h-7 w-7" />
                               </td>
-                              <td className="px-4 py-3 font-semibold text-slate-900">{displayValue}</td>
-                              <td className="px-4 py-3 text-slate-600">{labels || '—'}</td>
+                              <td className="px-4 py-3 text-slate-700">{label}</td>
+                              <td className="px-4 py-3 font-semibold tabular-nums text-slate-900">
+                                {displayValue}
+                              </td>
                               <td className="px-4 py-3">
                                 <div className="flex justify-end gap-2">
                                   <button
