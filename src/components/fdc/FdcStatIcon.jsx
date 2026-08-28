@@ -23,12 +23,13 @@ const FDC_STAT_ICON_MAP = {
   ticket: FaTicketSimple,
 }
 
-export function FdcStatIcon({ name, className = 'h-9 w-9 sm:h-10 sm:w-10' }) {
+export function FdcStatIcon({ name, className = 'h-9 w-9 sm:h-10 sm:w-10', usesDarkTone = false }) {
   const key = String(name || '').trim()
   const Icon = FDC_STAT_ICON_MAP[key] || FaHorse
+  const colorClass = usesDarkTone ? 'text-white' : 'text-[#171b22]'
   return (
     <Icon
-      className={`${className} shrink-0 text-[#171b22]`.trim()}
+      className={`${className} shrink-0 ${colorClass}`.trim()}
       aria-hidden
     />
   )

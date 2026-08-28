@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
-import { resolveFdcSectionBackground } from '../../utils/fdcSectionBackground.js'
-import { FdcSectionBackgroundLayers } from './FdcSectionBackgroundLayers.jsx'
-import { Container } from '../ui/Container.jsx'
+import { getFdcSectionOutlineCtaClass } from '../../utils/fdcSectionBackground.js'
+import { useFdcSectionTone } from './FdcSectionToneContext.jsx'
 
 /** Título centrado del módulo FDC. */
 export function FdcSectionTitle({
@@ -187,6 +186,18 @@ export function FdcScheduleSection({ schedule }) {
   const days = schedule?.days || []
   if (days.length === 0) return null
 
+  const { titleTone, usesDarkTone } = useFdcSectionTone(schedule)
+  const borderSubtle = usesDarkTone ? 'border-white/15' : 'border-[#171b22]/15'
+  const divideSubtle = usesDarkTone ? 'divide-white/12' : 'divide-[#171b22]/10'
+  const textPrimary = usesDarkTone ? 'text-white' : 'text-[#171b22]'
+  const textSecondary = usesDarkTone ? 'text-white/90' : 'text-[#3e434d]'
+  const textMuted = usesDarkTone ? 'text-white/50' : 'text-[#6b7280]'
+  const tabInactive = usesDarkTone
+    ? 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
+    : 'bg-[#171b22]/5 text-[#171b22]/70 hover:bg-[#171b22]/10 hover:text-[#171b22]'
+  const emptyText = usesDarkTone ? 'text-white/55' : 'text-[#6b7280]'
+  const accentText = usesDarkTone ? 'text-[#d4b483]' : 'text-[#b8924f]'
+
   const [activeIdx, setActiveIdx] = useState(0)
   const [imageIdx, setImageIdx] = useState(0)
   const [showAllDays, setShowAllDays] = useState(false)
@@ -229,22 +240,22 @@ export function FdcScheduleSection({ schedule }) {
     const { title: itemTitle, note } = splitScheduleText(item.text)
     return (
       <li key={item.id || `${item.time}-${idx}`} className="flex gap-3 py-3.5 sm:gap-4 sm:py-4">
-        <span className="mt-0.5 shrink-0 text-[#d4b483]" aria-hidden>
+        <span className={`mt-0.5 shrink-0 ${accentText}`} aria-hidden>
           <ScheduleClockIcon className="h-[1.15rem] w-[1.15rem] sm:h-5 sm:w-5" />
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
             {item.time ? (
-              <time className="shrink-0 text-sm font-bold tabular-nums text-white sm:text-[15px]">
+              <time className={`shrink-0 text-sm font-bold tabular-nums sm:text-[15px] ${textPrimary}`}>
                 {formatTime(item.time)}
               </time>
             ) : null}
-            <p className="min-w-0 text-sm leading-relaxed text-white/90 sm:text-[15px]">
+            <p className={`min-w-0 text-sm leading-relaxed sm:text-[15px] ${textSecondary}`}>
               {itemTitle}
             </p>
           </div>
           {note ? (
-            <p className="mt-0.5 text-xs leading-relaxed text-white/50 sm:text-[13px]">{note}</p>
+            <p className={`mt-0.5 text-xs leading-relaxed sm:text-[13px] ${textMuted}`}>{note}</p>
           ) : null}
         </div>
       </li>
@@ -256,11 +267,11 @@ export function FdcScheduleSection({ schedule }) {
 
   return (
     <div>
-      <FdcSectionTitle title={title} tone="dark" />
+      <FdcSectionTitle title={title} tone={titleTone} />
 
       {days.length > 1 && !showAllDays ? (
         <div
-          className="mb-6 flex overflow-x-auto rounded-sm border border-white/15 [-ms-overflow-style:none] [scrollbar-width:none] sm:mb-8 [&::-webkit-scrollbar]:hidden"
+          className={`mb-6 flex overflow-x-auto rounded-sm border ${borderSubtle} [-ms-overflow-style:none] [scrollbar-width:none] sm:mb-8 [&::-webkit-scrollbar]:hidden`}
           role="tablist"
           aria-label="Días del cronograma"
         >
@@ -273,10 +284,10 @@ export function FdcScheduleSection({ schedule }) {
                 role="tab"
                 aria-selected={active}
                 onClick={() => setActiveIdx(idx)}
-                className={`min-h-11 shrink-0 flex-1 border-r border-white/15 px-3 py-2.5 text-center text-[10px] font-bold uppercase tracking-[0.1em] transition last:border-r-0 sm:min-h-12 sm:px-4 sm:text-[11px] lg:text-xs ${
+                className={`min-h-11 shrink-0 flex-1 border-r ${borderSubtle} px-3 py-2.5 text-center text-[10px] font-bold uppercase tracking-[0.1em] transition last:border-r-0 sm:min-h-12 sm:px-4 sm:text-[11px] lg:text-xs ${
                   active
                     ? 'bg-[#d4b483] text-[#171b22]'
-                    : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
+                    : tabInactive
                 }`}
               >
                 {day.label || `Día ${idx + 1}`}
@@ -293,23 +304,23 @@ export function FdcScheduleSection({ schedule }) {
       >
         <div className="flex min-w-0 flex-col" role="tabpanel">
           {showAllDays ? (
-            <ul className="flex-1 divide-y divide-white/12">
+            <ul className={`flex-1 divide-y ${divideSubtle}`}>
               {days.map((day) => (
                 <li key={day?.id || day?.label} className="py-4 first:pt-0 last:pb-0">
-                  <p className="mb-1 text-xs font-bold uppercase tracking-[0.14em] text-[#d4b483]">
+                  <p className={`mb-1 text-xs font-bold uppercase tracking-[0.14em] ${accentText}`}>
                     {day?.label}
                   </p>
-                  <ul className="divide-y divide-white/12">
+                  <ul className={`divide-y ${divideSubtle}`}>
                     {(day?.items || []).map((item, idx) => renderActivityRow(item, idx))}
                   </ul>
                 </li>
               ))}
             </ul>
           ) : (
-            <ul className="flex-1 divide-y divide-white/12">
+            <ul className={`flex-1 divide-y ${divideSubtle}`}>
               {(activeDay?.items || []).map((item, idx) => renderActivityRow(item, idx))}
               {(activeDay?.items || []).length === 0 ? (
-                <li className="py-8 text-sm text-white/55">Sin actividades cargadas para este día.</li>
+                <li className={`py-8 text-sm ${emptyText}`}>Sin actividades cargadas para este día.</li>
               ) : null}
             </ul>
           )}
@@ -380,72 +391,70 @@ export function FdcScheduleSection({ schedule }) {
   )
 }
 
-export function FdcTicketsSection({ tickets, hideHeading = false }) {
+export function FdcTicketsSection({ tickets, hideHeading = false, embedded = false }) {
   const title = String(tickets?.title || '').trim()
   if (!title) return null
 
   const bullets = (tickets?.bullets || []).filter(Boolean)
   const ctaUrl = String(tickets?.ctaUrl || '').trim()
-  const sectionBg = resolveFdcSectionBackground(tickets)
-  const titleTone = sectionBg.titleTone
-  const usesDarkTone = sectionBg.usesDarkTone
+  const { titleTone, usesDarkTone } = useFdcSectionTone(tickets)
+
+  const content = (
+    <>
+      {!hideHeading ? <FdcSectionTitle title={title} tone={titleTone} /> : null}
+
+      <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
+        {tickets?.body ? (
+          <p
+            className={`text-sm leading-relaxed sm:text-base ${
+              usesDarkTone ? 'text-white/85' : 'text-[#4b505a]'
+            }`}
+          >
+            {tickets.body}
+          </p>
+        ) : null}
+
+        {bullets.length > 0 ? (
+          <ul
+            className={`${tickets?.body ? 'mt-5' : ''} flex w-full max-w-lg flex-col items-center gap-2.5`}
+          >
+            {bullets.map((bullet) => (
+              <li
+                key={bullet}
+                className={`flex w-full items-start justify-center gap-2 text-sm sm:text-[15px] ${
+                  usesDarkTone ? 'text-white/90' : 'text-[#3e434d]'
+                }`}
+              >
+                <span
+                  className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#d4b483]"
+                  aria-hidden
+                />
+                <span className="text-left">{bullet}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
+        {ctaUrl && tickets?.ctaLabel ? (
+          <SmartLink
+            href={ctaUrl}
+            className="mt-7 inline-flex min-h-11 items-center justify-center rounded-sm bg-[#d4b483] px-6 text-[11px] font-bold uppercase tracking-[0.14em] text-[#171b22] transition hover:bg-[#e2c28a] sm:text-xs"
+          >
+            {tickets.ctaLabel}
+          </SmartLink>
+        ) : null}
+      </div>
+    </>
+  )
+
+  if (embedded) return content
 
   return (
     <section
       id={hideHeading ? undefined : 'entradas'}
-      className={`relative isolate overflow-hidden py-14 sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)] ${sectionBg.sectionClassName}`}
+      className="relative isolate overflow-hidden py-14 sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
     >
-      <FdcSectionBackgroundLayers
-        style={sectionBg.style}
-        imageUrl={sectionBg.imageUrl}
-        overlayOpacity={sectionBg.overlayOpacity}
-      />
-
-      <Container className="relative z-10">
-        {!hideHeading ? <FdcSectionTitle title={title} tone={titleTone} /> : null}
-
-        <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
-          {tickets?.body ? (
-            <p
-              className={`text-sm leading-relaxed sm:text-base ${
-                usesDarkTone ? 'text-white/85' : 'text-[#4b505a]'
-              }`}
-            >
-              {tickets.body}
-            </p>
-          ) : null}
-
-          {bullets.length > 0 ? (
-            <ul
-              className={`${tickets?.body ? 'mt-5' : ''} flex w-full max-w-lg flex-col items-center gap-2.5`}
-            >
-              {bullets.map((bullet) => (
-                <li
-                  key={bullet}
-                  className={`flex w-full items-start justify-center gap-2 text-sm sm:text-[15px] ${
-                    usesDarkTone ? 'text-white/90' : 'text-[#3e434d]'
-                  }`}
-                >
-                  <span
-                    className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#d4b483]"
-                    aria-hidden
-                  />
-                  <span className="text-left">{bullet}</span>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-
-          {ctaUrl && tickets?.ctaLabel ? (
-            <SmartLink
-              href={ctaUrl}
-              className="mt-7 inline-flex min-h-11 items-center justify-center rounded-sm bg-[#d4b483] px-6 text-[11px] font-bold uppercase tracking-[0.14em] text-[#171b22] transition hover:bg-[#e2c28a] sm:text-xs"
-            >
-              {tickets.ctaLabel}
-            </SmartLink>
-          ) : null}
-        </div>
-      </Container>
+      {content}
     </section>
   )
 }
@@ -454,6 +463,7 @@ export function FdcNewsSection({ news }) {
   const items = (news?.items || []).filter((n) => n?.title)
   if (items.length === 0) return null
 
+  const { titleTone, usesDarkTone } = useFdcSectionTone(news)
   const title = String(news?.title || 'Noticias del festival').trim()
   const ctaLabel = String(news?.ctaLabel || '').trim()
   const ctaHref = String(news?.ctaHref || '').trim()
@@ -483,17 +493,14 @@ export function FdcNewsSection({ news }) {
 
   const cta =
     ctaLabel && ctaHref ? (
-      <SmartLink
-        href={ctaHref}
-        className="inline-flex min-h-11 items-center justify-center rounded-md border border-[#171b22]/80 px-5 text-[11px] font-bold uppercase tracking-[0.14em] text-[#171b22] transition hover:bg-[#171b22] hover:text-white sm:text-xs"
-      >
+      <SmartLink href={ctaHref} className={getFdcSectionOutlineCtaClass(usesDarkTone)}>
         {ctaLabel}
       </SmartLink>
     ) : null
 
   return (
     <div>
-      <FdcSectionTitle title={title} tone="light" actions={cta} />
+      <FdcSectionTitle title={title} tone={titleTone} actions={cta} />
 
       <ul className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
         {items.map((item, idx) => {
@@ -565,12 +572,12 @@ export function FdcNewsSection({ news }) {
   )
 }
 
-export function FdcGallerySection({ gallery, hideHeading = false, tone = 'dark' }) {
+export function FdcGallerySection({ gallery, hideHeading = false }) {
   const items = (gallery?.items || []).filter((g) => g?.imageUrl)
   if (items.length === 0) return null
 
+  const { titleTone } = useFdcSectionTone(gallery)
   const title = String(gallery?.title || 'Viví la fiesta').trim()
-  const titleTone = tone === 'light' ? 'light' : 'dark'
 
   return (
     <div id={hideHeading ? undefined : 'galeria'} className="scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]">
@@ -604,12 +611,12 @@ export function FdcGallerySection({ gallery, hideHeading = false, tone = 'dark' 
   )
 }
 
-export function FdcSponsorsSection({ sponsors, hideHeading = false, tone = 'light' }) {
+export function FdcSponsorsSection({ sponsors, hideHeading = false }) {
   const items = (sponsors?.items || []).filter((s) => s?.logoUrl || s?.name)
   if (items.length === 0) return null
 
+  const { titleTone } = useFdcSectionTone(sponsors)
   const title = String(sponsors?.title || 'Auspician y acompañan').trim()
-  const titleTone = tone === 'dark' ? 'dark' : 'light'
 
   return (
     <div className="scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]">
@@ -652,5 +659,29 @@ export function FdcSponsorsSection({ sponsors, hideHeading = false, tone = 'ligh
         })}
       </ul>
     </div>
+  )
+}
+
+/** Encabezado de la sección de preinscripción con tono según fondo. */
+export function FdcFormSectionIntro({ title, fromLabel, untilLabel, formSection = null }) {
+  const { titleTone, usesDarkTone } = useFdcSectionTone(formSection)
+  const heading = String(title || 'Solicitud de puestos comerciales').trim()
+
+  return (
+    <>
+      <FdcSectionTitle title={heading} tone={titleTone} />
+      {fromLabel && untilLabel ? (
+        <p
+          className={`mb-5 text-center text-xs font-medium sm:mb-6 sm:text-sm ${
+            usesDarkTone ? 'text-slate-300' : 'text-[#4b505a]'
+          }`}
+        >
+          Periodo de preinscripción:{' '}
+          <span className={`font-semibold ${usesDarkTone ? 'text-white' : 'text-[#171b22]'}`}>
+            {fromLabel} al {untilLabel}
+          </span>
+        </p>
+      ) : null}
+    </>
   )
 }

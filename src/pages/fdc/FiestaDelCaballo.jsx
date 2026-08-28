@@ -2,10 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   FdcGallerySection,
+  FdcFormSectionIntro,
   FdcNewsSection,
   FdcScheduleSection,
   FdcSectionNav,
-  FdcSectionTitle,
   FdcSponsorsSection,
   FdcTicketsSection,
 } from '../../components/fdc/FdcFestivalSections.jsx'
@@ -14,8 +14,7 @@ import { FdcFestivalHero } from '../../components/fdc/FdcFestivalHero.jsx'
 import { FdcFestivalStatsSection } from '../../components/fdc/FdcFestivalStatsSection.jsx'
 import { FdcHeroCountdown } from '../../components/fdc/FdcHeroCountdown.jsx'
 import { FdcVisitInfoSection } from '../../components/fdc/FdcVisitInfoSection.jsx'
-import { FdcSectionBackgroundLayers } from '../../components/fdc/FdcSectionBackgroundLayers.jsx'
-import { resolveFdcSectionBackground } from '../../utils/fdcSectionBackground.js'
+import { FdcSectionShell } from '../../components/fdc/FdcSectionShell.jsx'
 import { fdcVisitInfoHasContent } from '../../data/fdcContent.js'
 import { FdcStallApplicationForm } from '../../components/fdc/FdcStallApplicationForm.jsx'
 import { RevealOnScroll } from '../../components/home/RevealOnScroll.jsx'
@@ -228,16 +227,6 @@ export function FiestaDelCaballo() {
       ? { label: page.heroSecondaryLabel, href: page.heroSecondaryHref || '#cronograma' }
       : null
 
-  const artistsSectionBg = useMemo(
-    () => resolveFdcSectionBackground(page.artists),
-    [page.artists],
-  )
-
-  const visitSectionBg = useMemo(
-    () => resolveFdcSectionBackground(page.visitInfo),
-    [page.visitInfo],
-  )
-
   const showVisitSection = fdcVisitInfoHasContent(page.visitInfo)
 
   if (submitSuccess) {
@@ -277,153 +266,117 @@ export function FiestaDelCaballo() {
       </div>
 
       {(page.festivalStats?.items || []).length > 0 ? (
-        <section
+        <FdcSectionShell
           id="numeros"
-          className="relative isolate border-y border-[#e8e5dd] bg-[#f7f7f5] py-12 sm:py-14 lg:py-16 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
+          config={page.festivalStats}
+          pyClass="py-12 sm:py-14 lg:py-16"
+          containerClassName="max-w-[min(100%,96rem)]!"
         >
-          <Container className="relative z-10 max-w-[min(100%,96rem)]!">
+          <RevealOnScroll variant="slow">
             <FdcFestivalStatsSection stats={page.festivalStats} />
-          </Container>
-        </section>
+          </RevealOnScroll>
+        </FdcSectionShell>
       ) : null}
 
       {(page.artists?.items || []).some((a) => a?.name) ||
       (page.artists?.dayPosters || []).some((p) => p?.imageUrl) ? (
-        <section
-          id="cartelera"
-          className={`relative isolate overflow-hidden border-y py-14 sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)] ${artistsSectionBg.sectionClassName}`}
-        >
-          <FdcSectionBackgroundLayers
-            style={artistsSectionBg.style}
-            imageUrl={artistsSectionBg.imageUrl}
-            overlayOpacity={artistsSectionBg.overlayOpacity}
-          />
-          <Container className="relative z-10">
-            <RevealOnScroll variant="slow">
-              <FdcArtistsSection artists={page.artists} />
-            </RevealOnScroll>
-          </Container>
-        </section>
+        <FdcSectionShell id="cartelera" config={page.artists}>
+          <RevealOnScroll variant="slow">
+            <FdcArtistsSection artists={page.artists} />
+          </RevealOnScroll>
+        </FdcSectionShell>
       ) : null}
 
       {(page.schedule?.days || []).length > 0 ? (
-        <section
-          id="cronograma"
-          className="relative isolate border-y border-white/10 bg-[#171b22] py-14 text-white sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
-        >
-          <Container className="relative z-10">
-            <RevealOnScroll variant="slow">
-              <FdcScheduleSection schedule={page.schedule} />
-            </RevealOnScroll>
-          </Container>
-        </section>
+        <FdcSectionShell id="cronograma" config={page.schedule}>
+          <RevealOnScroll variant="slow">
+            <FdcScheduleSection schedule={page.schedule} />
+          </RevealOnScroll>
+        </FdcSectionShell>
       ) : null}
 
       {String(page.tickets?.title || '').trim() ? (
-        <RevealOnScroll variant="slow">
-          <FdcTicketsSection tickets={page.tickets} />
-        </RevealOnScroll>
+        <FdcSectionShell id="entradas" config={page.tickets}>
+          <RevealOnScroll variant="slow">
+            <FdcTicketsSection tickets={page.tickets} embedded />
+          </RevealOnScroll>
+        </FdcSectionShell>
       ) : null}
 
       {showVisitSection ? (
-        <section
-          id="info-visita"
-          className={`relative isolate overflow-hidden border-y py-14 sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)] ${visitSectionBg.sectionClassName}`}
-        >
-          <FdcSectionBackgroundLayers
-            style={visitSectionBg.style}
-            imageUrl={visitSectionBg.imageUrl}
-            overlayOpacity={visitSectionBg.overlayOpacity}
-          />
-          <Container className="relative z-10">
-            <RevealOnScroll variant="slow">
-              <FdcVisitInfoSection visitInfo={page.visitInfo} />
-            </RevealOnScroll>
-          </Container>
-        </section>
+        <FdcSectionShell id="info-visita" config={page.visitInfo}>
+          <RevealOnScroll variant="slow">
+            <FdcVisitInfoSection visitInfo={page.visitInfo} />
+          </RevealOnScroll>
+        </FdcSectionShell>
       ) : null}
 
       {(page.news?.items || []).some((n) => n?.title) ? (
-        <section
-          id="noticias"
-          className="relative isolate border-y border-[#e8e5dd] bg-[#f7f7f5] py-14 sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
-        >
-          <Container className="relative z-10">
-            <RevealOnScroll variant="slow">
-              <FdcNewsSection news={page.news} />
-            </RevealOnScroll>
-          </Container>
-        </section>
+        <FdcSectionShell id="noticias" config={page.news}>
+          <RevealOnScroll variant="slow">
+            <FdcNewsSection news={page.news} />
+          </RevealOnScroll>
+        </FdcSectionShell>
       ) : null}
 
       {(page.gallery?.items || []).some((g) => g?.imageUrl) ? (
-        <section
-          id="galeria"
-          className="relative isolate border-y border-white/10 bg-[#171b22] py-14 text-white sm:py-16 lg:py-20 scroll-mt-[calc(var(--navbar-h,5rem)+4rem)]"
-        >
-          <Container className="relative z-10">
-            <RevealOnScroll variant="slow">
-              <FdcGallerySection gallery={page.gallery} tone="dark" />
-            </RevealOnScroll>
-          </Container>
-        </section>
+        <FdcSectionShell id="galeria" config={page.gallery}>
+          <RevealOnScroll variant="slow">
+            <FdcGallerySection gallery={page.gallery} />
+          </RevealOnScroll>
+        </FdcSectionShell>
       ) : null}
 
       {(page.sponsors?.items || []).some((s) => s?.logoUrl || s?.name) ? (
-        <section className="relative isolate border-y border-[#e8e5dd] bg-[#f7f7f5] py-14 sm:py-16 lg:py-20">
-          <Container className="relative z-10">
-            <RevealOnScroll variant="slow">
-              <FdcSponsorsSection sponsors={page.sponsors} tone="light" />
-            </RevealOnScroll>
-          </Container>
-        </section>
+        <FdcSectionShell config={page.sponsors}>
+          <RevealOnScroll variant="slow">
+            <FdcSponsorsSection sponsors={page.sponsors} />
+          </RevealOnScroll>
+        </FdcSectionShell>
       ) : null}
 
-      <section className="relative isolate border-y border-white/10 bg-[#171b22] py-10 text-white outline-none sm:py-12 lg:py-14">
-        <Container className="relative z-10 max-w-[min(100%,96rem)]!">
-          <FdcSectionTitle
-            title={page.ctaTitle || 'Solicitud de puestos comerciales'}
-            tone="dark"
+      <FdcSectionShell
+        config={page.formSection}
+        pyClass="py-10 sm:py-12 lg:py-14"
+        containerClassName="max-w-[min(100%,96rem)]!"
+        scrollMt={false}
+      >
+        <FdcFormSectionIntro
+          title={page.ctaTitle}
+          fromLabel={fromLabel}
+          untilLabel={untilLabel}
+          formSection={page.formSection}
+        />
+        <div
+          id={FDC_FORM_SECTION_ID}
+          tabIndex={-1}
+          className="scroll-mt-[calc(var(--navbar-h,5rem)+5.5rem)] outline-none"
+        >
+          <FdcStallApplicationForm
+            formNotice={page.formNotice}
+            formOpen={formOpen}
+            windowMessage={windowMessage}
+            rubros={page.formRubros}
+            formEyebrow={page.formEyebrow}
+            formHeading={page.formHeading}
+            onSuccess={(result) => {
+              const id = result?.application?.id
+              const email = String(result?.application?.email || '').trim()
+              setSubmitSuccess({
+                id,
+                email,
+                emailQueued: Boolean(result?.emailQueued || result?.emailSent),
+              })
+              setToast({
+                variant: 'success',
+                message: id
+                  ? `Preinscripción enviada. Número de solicitud: #${id}.`
+                  : 'Preinscripción enviada correctamente.',
+              })
+            }}
           />
-          {fromLabel && untilLabel ? (
-            <p className="mb-5 text-center text-xs font-medium text-slate-300 sm:mb-6 sm:text-sm">
-              Periodo de preinscripción:{' '}
-              <span className="font-semibold text-white">
-                {fromLabel} al {untilLabel}
-              </span>
-            </p>
-          ) : null}
-          <div
-            id={FDC_FORM_SECTION_ID}
-            tabIndex={-1}
-            className="scroll-mt-[calc(var(--navbar-h,5rem)+5.5rem)] outline-none"
-          >
-            <FdcStallApplicationForm
-              formNotice={page.formNotice}
-              formOpen={formOpen}
-              windowMessage={windowMessage}
-              rubros={page.formRubros}
-              formEyebrow={page.formEyebrow}
-              formHeading={page.formHeading}
-              onSuccess={(result) => {
-                const id = result?.application?.id
-                const email = String(result?.application?.email || '').trim()
-                setSubmitSuccess({
-                  id,
-                  email,
-                  emailQueued: Boolean(result?.emailQueued || result?.emailSent),
-                })
-                setToast({
-                  variant: 'success',
-                  message: id
-                    ? `Preinscripción enviada. Número de solicitud: #${id}.`
-                    : 'Preinscripción enviada correctamente.',
-                })
-              }}
-            />
-          </div>
-        </Container>
-      </section>
+        </div>
+      </FdcSectionShell>
     </>
   )
 }

@@ -58,3 +58,25 @@ export function resolveFdcSectionBackground(config, { defaultOverlay = 55 } = {}
     usesDarkTone,
   }
 }
+
+export const FDC_SECTION_CTA_OUTLINE_LIGHT =
+  'inline-flex min-h-11 items-center justify-center rounded-md border border-[#171b22]/80 px-5 text-[11px] font-bold uppercase tracking-[0.14em] text-[#171b22] transition hover:bg-[#171b22] hover:text-white sm:text-xs'
+
+export const FDC_SECTION_CTA_OUTLINE_DARK =
+  'inline-flex min-h-11 items-center justify-center rounded-md border border-white/75 px-5 text-[11px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-white hover:text-[#171b22] sm:text-xs'
+
+export function getFdcSectionOutlineCtaClass(usesDarkTone) {
+  return usesDarkTone ? FDC_SECTION_CTA_OUTLINE_DARK : FDC_SECTION_CTA_OUTLINE_LIGHT
+}
+
+/** Normaliza campos de fondo al mergear contenido FDC. */
+export function withFdcSectionBackground(merged, defaults = {}) {
+  const bgImage = String(merged?.backgroundImageUrl || merged?.imageUrl || '').trim()
+  const styleSource = merged?.backgroundStyle ?? defaults?.backgroundStyle
+  return {
+    ...merged,
+    backgroundStyle: normalizeFdcSectionBackgroundStyle(styleSource, bgImage),
+    backgroundImageUrl: String(merged?.backgroundImageUrl || '').trim(),
+    overlayOpacity: normalizeFdcSectionOverlay(merged?.overlayOpacity, defaults?.overlayOpacity ?? 55),
+  }
+}

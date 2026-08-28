@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
-import { resolveFdcSectionBackground } from '../../utils/fdcSectionBackground.js'
+import { useFdcSectionTone } from './FdcSectionToneContext.jsx'
 import { fdcVisitInfoHasContent } from '../../data/fdcContent.js'
 
 function SmartLink({ href, className, children, ...rest }) {
@@ -112,8 +112,7 @@ function FaqAccordion({ items, dark }) {
 export function FdcVisitInfoSection({ visitInfo }) {
   if (!fdcVisitInfoHasContent(visitInfo)) return null
 
-  const sectionBg = resolveFdcSectionBackground(visitInfo)
-  const dark = sectionBg.usesDarkTone
+  const { usesDarkTone: dark } = useFdcSectionTone(visitInfo)
   const directions = visitInfo?.directions || {}
   const faq = visitInfo?.faq || {}
   const faqItems = (faq.items || []).filter((f) => f?.question)

@@ -69,6 +69,11 @@ function mapContentToForm(content) {
         ...d,
         items: (d.items || []).map((it) => ({ ...it })),
       })),
+      backgroundStyle: normalizeFdcSectionBackgroundStyle(
+        merged.schedule?.backgroundStyle,
+        merged.schedule?.backgroundImageUrl,
+      ),
+      overlayOpacity: normalizeOverlay(merged.schedule?.overlayOpacity, 55),
     },
     artists: {
       ...merged.artists,
@@ -92,14 +97,29 @@ function mapContentToForm(content) {
     news: {
       ...merged.news,
       items: (merged.news?.items || []).map((it) => ({ ...it })),
+      backgroundStyle: normalizeFdcSectionBackgroundStyle(
+        merged.news?.backgroundStyle,
+        merged.news?.backgroundImageUrl,
+      ),
+      overlayOpacity: normalizeOverlay(merged.news?.overlayOpacity, 55),
     },
     gallery: {
       ...merged.gallery,
       items: (merged.gallery?.items || []).map((it) => ({ ...it })),
+      backgroundStyle: normalizeFdcSectionBackgroundStyle(
+        merged.gallery?.backgroundStyle,
+        merged.gallery?.backgroundImageUrl,
+      ),
+      overlayOpacity: normalizeOverlay(merged.gallery?.overlayOpacity, 55),
     },
     sponsors: {
       ...merged.sponsors,
       items: (merged.sponsors?.items || []).map((it) => ({ ...it })),
+      backgroundStyle: normalizeFdcSectionBackgroundStyle(
+        merged.sponsors?.backgroundStyle,
+        merged.sponsors?.backgroundImageUrl,
+      ),
+      overlayOpacity: normalizeOverlay(merged.sponsors?.overlayOpacity, 55),
     },
     festivalStats: {
       ...normalizeFdcFestivalStats(merged.festivalStats),
@@ -111,6 +131,14 @@ function mapContentToForm(content) {
         ...normalizeFdcVisitInfo(merged.visitInfo).faq,
         items: (normalizeFdcVisitInfo(merged.visitInfo).faq?.items || []).map((it) => ({ ...it })),
       },
+    },
+    formSection: {
+      ...(merged.formSection || {}),
+      backgroundStyle: normalizeFdcSectionBackgroundStyle(
+        merged.formSection?.backgroundStyle,
+        merged.formSection?.backgroundImageUrl,
+      ),
+      overlayOpacity: normalizeOverlay(merged.formSection?.overlayOpacity, 55),
     },
     usefulInfo: { title: '', items: [] },
     overlayOpacity: normalizeOverlay(merged.overlayOpacity, 65),
@@ -298,6 +326,12 @@ export function AdminFdc() {
           .slice(0, 10),
         ctaLabel: String(form.schedule?.ctaLabel || '').trim(),
         ctaHref: String(form.schedule?.ctaHref || '').trim(),
+        backgroundStyle: normalizeFdcSectionBackgroundStyle(
+          form.schedule?.backgroundStyle,
+          form.schedule?.backgroundImageUrl,
+        ),
+        backgroundImageUrl: String(form.schedule?.backgroundImageUrl || '').trim(),
+        overlayOpacity: normalizeOverlay(form.schedule?.overlayOpacity, 55),
         days: (form.schedule?.days || [])
           .map((day) => ({
             id: String(day?.id || '').trim() || makeFdcItemId('day'),
@@ -357,6 +391,12 @@ export function AdminFdc() {
         title: String(form.news?.title || '').trim(),
         ctaLabel: String(form.news?.ctaLabel || '').trim(),
         ctaHref: String(form.news?.ctaHref || '').trim(),
+        backgroundStyle: normalizeFdcSectionBackgroundStyle(
+          form.news?.backgroundStyle,
+          form.news?.backgroundImageUrl,
+        ),
+        backgroundImageUrl: String(form.news?.backgroundImageUrl || '').trim(),
+        overlayOpacity: normalizeOverlay(form.news?.overlayOpacity, 55),
         items: (form.news?.items || [])
           .map((it) => ({
             id: String(it?.id || '').trim() || makeFdcItemId('news'),
@@ -370,6 +410,12 @@ export function AdminFdc() {
       },
       gallery: {
         title: String(form.gallery?.title || '').trim(),
+        backgroundStyle: normalizeFdcSectionBackgroundStyle(
+          form.gallery?.backgroundStyle,
+          form.gallery?.backgroundImageUrl,
+        ),
+        backgroundImageUrl: String(form.gallery?.backgroundImageUrl || '').trim(),
+        overlayOpacity: normalizeOverlay(form.gallery?.overlayOpacity, 55),
         items: (form.gallery?.items || [])
           .map((it) => ({
             id: String(it?.id || '').trim() || makeFdcItemId('gal'),
@@ -380,6 +426,12 @@ export function AdminFdc() {
       },
       sponsors: {
         title: String(form.sponsors?.title || '').trim(),
+        backgroundStyle: normalizeFdcSectionBackgroundStyle(
+          form.sponsors?.backgroundStyle,
+          form.sponsors?.backgroundImageUrl,
+        ),
+        backgroundImageUrl: String(form.sponsors?.backgroundImageUrl || '').trim(),
+        overlayOpacity: normalizeOverlay(form.sponsors?.overlayOpacity, 55),
         items: (form.sponsors?.items || [])
           .map((it) => ({
             id: String(it?.id || '').trim() || makeFdcItemId('spo'),
@@ -391,6 +443,14 @@ export function AdminFdc() {
       },
       festivalStats: normalizeFdcFestivalStats(form.festivalStats),
       visitInfo: normalizeFdcVisitInfo(form.visitInfo),
+      formSection: {
+        backgroundStyle: normalizeFdcSectionBackgroundStyle(
+          form.formSection?.backgroundStyle,
+          form.formSection?.backgroundImageUrl,
+        ),
+        backgroundImageUrl: String(form.formSection?.backgroundImageUrl || '').trim(),
+        overlayOpacity: normalizeOverlay(form.formSection?.overlayOpacity, 55),
+      },
       usefulInfo: { title: '', items: [] },
       formNotice: String(form.formNotice || ''),
       formRubros: ensureFdcFormRubros(form.formRubros),
@@ -511,6 +571,13 @@ export function AdminFdc() {
     setForm((p) => ({
       ...p,
       visitInfo: typeof updater === 'function' ? updater(p.visitInfo) : updater,
+    }))
+  }
+
+  function updateFormSection(updater) {
+    setForm((p) => ({
+      ...p,
+      formSection: typeof updater === 'function' ? updater(p.formSection || {}) : updater,
     }))
   }
 
@@ -1990,6 +2057,26 @@ export function AdminFdc() {
                   </label>
                 </div>
 
+                <div className="mt-5">
+                  <FdcSectionBackgroundFields
+                    backgroundStyle={form.festivalStats?.backgroundStyle || 'light'}
+                    backgroundImageUrl={form.festivalStats?.backgroundImageUrl || ''}
+                    overlayOpacity={normalizeOverlay(form.festivalStats?.overlayOpacity, 55)}
+                    disabled={saving}
+                    labelClass={labelClass}
+                    onNotify={setToast}
+                    onStyleChange={(style) =>
+                      updateFestivalStats((s) => ({ ...s, backgroundStyle: style }))
+                    }
+                    onImageChange={(url) =>
+                      updateFestivalStats((s) => ({ ...s, backgroundImageUrl: url }))
+                    }
+                    onOverlayChange={(value) =>
+                      updateFestivalStats((s) => ({ ...s, overlayOpacity: value }))
+                    }
+                  />
+                </div>
+
                 <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200">
                   <table className="w-full text-left text-sm">
                     <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -2106,6 +2193,26 @@ export function AdminFdc() {
                       placeholder="Vacío = expandir días"
                     />
                   </label>
+                </div>
+
+                <div className="mt-5">
+                  <FdcSectionBackgroundFields
+                    backgroundStyle={form.schedule?.backgroundStyle || 'dark'}
+                    backgroundImageUrl={form.schedule?.backgroundImageUrl || ''}
+                    overlayOpacity={normalizeOverlay(form.schedule?.overlayOpacity, 55)}
+                    disabled={saving}
+                    labelClass={labelClass}
+                    onNotify={setToast}
+                    onStyleChange={(style) =>
+                      updateSchedule((s) => ({ ...s, backgroundStyle: style }))
+                    }
+                    onImageChange={(url) =>
+                      updateSchedule((s) => ({ ...s, backgroundImageUrl: url }))
+                    }
+                    onOverlayChange={(value) =>
+                      updateSchedule((s) => ({ ...s, overlayOpacity: value }))
+                    }
+                  />
                 </div>
 
                 <div className="mt-5">
@@ -2615,6 +2722,20 @@ export function AdminFdc() {
                   </label>
                 </div>
 
+                <div className="mt-5">
+                  <FdcSectionBackgroundFields
+                    backgroundStyle={form.news?.backgroundStyle || 'light'}
+                    backgroundImageUrl={form.news?.backgroundImageUrl || ''}
+                    overlayOpacity={normalizeOverlay(form.news?.overlayOpacity, 55)}
+                    disabled={saving}
+                    labelClass={labelClass}
+                    onNotify={setToast}
+                    onStyleChange={(style) => updateNews((n) => ({ ...n, backgroundStyle: style }))}
+                    onImageChange={(url) => updateNews((n) => ({ ...n, backgroundImageUrl: url }))}
+                    onOverlayChange={(value) => updateNews((n) => ({ ...n, overlayOpacity: value }))}
+                  />
+                </div>
+
                 <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200">
                   <table className="w-full text-left text-sm">
                     <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -2698,6 +2819,20 @@ export function AdminFdc() {
                   />
                 </label>
 
+                <div className="mt-5">
+                  <FdcSectionBackgroundFields
+                    backgroundStyle={form.gallery?.backgroundStyle || 'dark'}
+                    backgroundImageUrl={form.gallery?.backgroundImageUrl || ''}
+                    overlayOpacity={normalizeOverlay(form.gallery?.overlayOpacity, 55)}
+                    disabled={saving}
+                    labelClass={labelClass}
+                    onNotify={setToast}
+                    onStyleChange={(style) => updateGallery((g) => ({ ...g, backgroundStyle: style }))}
+                    onImageChange={(url) => updateGallery((g) => ({ ...g, backgroundImageUrl: url }))}
+                    onOverlayChange={(value) => updateGallery((g) => ({ ...g, overlayOpacity: value }))}
+                  />
+                </div>
+
                 {galleryItems.length === 0 ? (
                   <p className="mt-4 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
                     Todavía no hay fotos en la galería.
@@ -2765,6 +2900,26 @@ export function AdminFdc() {
                     onChange={(e) => updateSponsors((s) => ({ ...s, title: e.target.value }))}
                   />
                 </label>
+
+                <div className="mt-5">
+                  <FdcSectionBackgroundFields
+                    backgroundStyle={form.sponsors?.backgroundStyle || 'light'}
+                    backgroundImageUrl={form.sponsors?.backgroundImageUrl || ''}
+                    overlayOpacity={normalizeOverlay(form.sponsors?.overlayOpacity, 55)}
+                    disabled={saving}
+                    labelClass={labelClass}
+                    onNotify={setToast}
+                    onStyleChange={(style) =>
+                      updateSponsors((s) => ({ ...s, backgroundStyle: style }))
+                    }
+                    onImageChange={(url) =>
+                      updateSponsors((s) => ({ ...s, backgroundImageUrl: url }))
+                    }
+                    onOverlayChange={(value) =>
+                      updateSponsors((s) => ({ ...s, overlayOpacity: value }))
+                    }
+                  />
+                </div>
 
                 <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200">
                   <table className="w-full text-left text-sm">
@@ -2842,8 +2997,29 @@ export function AdminFdc() {
               <section className={SECTION_CARD}>
                 <h2 className="text-lg font-bold text-slate-900">Preinscripción de puestos</h2>
                 <p className="mt-1 text-sm text-slate-600">
-                  Ventana, textos del formulario y opciones del select de rubro.
+                  Ventana, textos del formulario, fondo de sección y opciones del select de rubro.
                 </p>
+
+                <div className="mt-5">
+                  <FdcSectionBackgroundFields
+                    backgroundStyle={form.formSection?.backgroundStyle || 'dark'}
+                    backgroundImageUrl={form.formSection?.backgroundImageUrl || ''}
+                    overlayOpacity={normalizeOverlay(form.formSection?.overlayOpacity, 55)}
+                    disabled={saving}
+                    labelClass={labelClass}
+                    onNotify={setToast}
+                    onStyleChange={(style) =>
+                      updateFormSection((s) => ({ ...s, backgroundStyle: style }))
+                    }
+                    onImageChange={(url) =>
+                      updateFormSection((s) => ({ ...s, backgroundImageUrl: url }))
+                    }
+                    onOverlayChange={(value) =>
+                      updateFormSection((s) => ({ ...s, overlayOpacity: value }))
+                    }
+                  />
+                </div>
+
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   <label className={labelClass}>
                     Abre el

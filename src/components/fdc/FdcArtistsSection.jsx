@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { AnimatePresence, LayoutGroup, motion as Motion } from 'motion/react'
 import { Link } from 'react-router-dom'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
-import { resolveFdcSectionBackground } from '../../utils/fdcSectionBackground.js'
+import { useFdcSectionTone } from './FdcSectionToneContext.jsx'
 import { FdcSectionTitle } from './FdcFestivalSections.jsx'
 
 const VIEW_CAROUSEL = 'carousel'
@@ -172,9 +172,8 @@ export function FdcArtistsSection({ artists }) {
   const title = String(artists?.title || 'Cartelera artística').trim()
   const ctaLabel = String(artists?.ctaLabel || '').trim() || 'Ver cartelera completa'
   const ctaHref = String(artists?.ctaHref || '').trim()
-  const sectionBg = resolveFdcSectionBackground(artists)
-  const titleTone = sectionBg.titleTone
-  const ctaButtonClass = sectionBg.usesDarkTone ? ctaButtonClassDark : ctaButtonClassLight
+  const { titleTone, usesDarkTone } = useFdcSectionTone(artists)
+  const ctaButtonClass = usesDarkTone ? ctaButtonClassDark : ctaButtonClassLight
   const hasDayPosters = dayPosters.length > 0
   const showingDays = hasDayPosters && (view === VIEW_DAYS || items.length === 0)
 

@@ -5,14 +5,17 @@ import { useCountUp } from '../../hooks/useCountUp.js'
 import { RevealOnScroll } from '../home/RevealOnScroll.jsx'
 import { FdcSectionTitle } from './FdcFestivalSections.jsx'
 import { FdcStatIcon } from './FdcStatIcon.jsx'
+import { useFdcSectionTone } from './FdcSectionToneContext.jsx'
 
 const softEase = [0.22, 1, 0.36, 1]
 
-function FestivalStatBlock({ item, delayMs = 0 }) {
+function FestivalStatBlock({ item, delayMs = 0, usesDarkTone = false }) {
   const label = String(item.label || '').trim()
   const numericValue = Math.max(0, Number(item.value) || 0)
   const { ref, value } = useCountUp(numericValue, { duration: 2400 })
   const displayNumber = formatFdcStatNumber(value, item.prefix || '')
+  const labelClass = usesDarkTone ? 'text-white/88' : 'text-[#171b22]/88'
+  const valueClass = usesDarkTone ? 'text-white' : 'text-[#171b22]'
 
   return (
     <RevealOnScroll variant="newsCardSlow" delayMs={delayMs}>
@@ -30,18 +33,18 @@ function FestivalStatBlock({ item, delayMs = 0 }) {
           viewport={{ once: true }}
           transition={{ duration: 0.55, delay: delayMs / 1000 + 0.05, ease: softEase }}
         >
-          <FdcStatIcon name={item.icon} className="h-full w-full" />
+          <FdcStatIcon name={item.icon} className="h-full w-full" usesDarkTone={usesDarkTone} />
         </Motion.div>
 
         {label ? (
-          <p className="min-h-[2.5rem] text-[10px] font-bold uppercase leading-tight tracking-[0.14em] text-[#171b22]/88 sm:min-h-0 sm:text-[11px] sm:tracking-[0.18em]">
+          <p className={`min-h-[2.5rem] text-[10px] font-bold uppercase leading-tight tracking-[0.14em] sm:min-h-0 sm:text-[11px] sm:tracking-[0.18em] ${labelClass}`}>
             {label}
           </p>
         ) : null}
 
         <p
           ref={ref}
-          className="mt-1.5 font-serif text-[1.65rem] font-bold tabular-nums leading-none tracking-tight text-[#171b22] sm:mt-2 sm:text-[1.75rem] lg:text-3xl"
+          className={`mt-1.5 font-serif text-[1.65rem] font-bold tabular-nums leading-none tracking-tight sm:mt-2 sm:text-[1.75rem] lg:text-3xl ${valueClass}`}
         >
           {displayNumber}
         </p>
@@ -65,6 +68,7 @@ export function FdcFestivalStatsSection({ stats, className = '' }) {
   const items = normalized.items || []
   if (!items.length) return null
 
+  const { titleTone, usesDarkTone } = useFdcSectionTone(normalized)
   const title = String(normalized.title || '').trim()
   const subtitle = String(normalized.subtitle || '').trim()
   const showHeading = normalized.showTitle === true && Boolean(title || subtitle)
@@ -75,7 +79,7 @@ export function FdcFestivalStatsSection({ stats, className = '' }) {
       aria-label={showHeading ? undefined : title || 'Estadísticas del festival'}
     >
       {showHeading ? (
-        <FdcSectionTitle title={title} subtitle={subtitle || undefined} tone="light" />
+        <FdcSectionTitle title={title} subtitle={subtitle || undefined} tone={titleTone} />
       ) : null}
 
       <ul className="mx-auto flex w-full max-w-5xl list-none flex-wrap items-start justify-center gap-x-6 gap-y-10 p-0 sm:gap-x-8 lg:gap-x-10">
@@ -83,7 +87,7 @@ export function FdcFestivalStatsSection({ stats, className = '' }) {
           <Fragment key={item.id || index}>
             <StatItemDivider show={index > 0} />
             <li className="flex justify-center">
-              <FestivalStatBlock item={item} delayMs={70 + index * 80} />
+              <FestivalStatBlock item={item} delayMs={70 + index * 80} usesDarkTone={usesDarkTone} />
             </li>
           </Fragment>
         ))}

@@ -7,6 +7,7 @@ import { normalizeHeroToggle } from './servicesPageContent.js'
 import {
   normalizeFdcSectionBackgroundStyle,
   normalizeFdcSectionOverlay,
+  withFdcSectionBackground,
 } from '../utils/fdcSectionBackground.js'
 
 export const FDC_RUBROS = [
@@ -50,6 +51,9 @@ export const FDC_SCHEDULE_MAX_IMAGES = 10
 
 export const DEFAULT_FDC_SCHEDULE = {
   title: 'Cronograma de actividades',
+  backgroundStyle: 'dark',
+  backgroundImageUrl: '',
+  overlayOpacity: 55,
   featuredImageUrl: '',
   images: [
     {
@@ -192,6 +196,9 @@ export const DEFAULT_FDC_TICKETS = {
 
 export const DEFAULT_FDC_NEWS = {
   title: 'Noticias del festival',
+  backgroundStyle: 'light',
+  backgroundImageUrl: '',
+  overlayOpacity: 55,
   ctaLabel: 'Ver todas las noticias',
   ctaHref: '/noticias',
   items: [],
@@ -199,12 +206,24 @@ export const DEFAULT_FDC_NEWS = {
 
 export const DEFAULT_FDC_GALLERY = {
   title: 'Viví la fiesta',
+  backgroundStyle: 'dark',
+  backgroundImageUrl: '',
+  overlayOpacity: 55,
   items: [],
 }
 
 export const DEFAULT_FDC_SPONSORS = {
   title: 'Auspician y acompañan',
+  backgroundStyle: 'light',
+  backgroundImageUrl: '',
+  overlayOpacity: 55,
   items: [],
+}
+
+export const DEFAULT_FDC_FORM_SECTION = {
+  backgroundStyle: 'dark',
+  backgroundImageUrl: '',
+  overlayOpacity: 55,
 }
 
 export const FDC_STAT_ICON_OPTIONS = [
@@ -225,6 +244,9 @@ export const DEFAULT_FDC_FESTIVAL_STATS = {
   title: 'La fiesta en números',
   subtitle: '',
   showTitle: false,
+  backgroundStyle: 'light',
+  backgroundImageUrl: '',
+  overlayOpacity: 55,
   items: [
     {
       id: 'stat-ed',
@@ -320,6 +342,19 @@ export function normalizeFdcFestivalStats(input, defaults = DEFAULT_FDC_FESTIVAL
     showTitle: normalizeFdcStatShowTitle(
       Object.prototype.hasOwnProperty.call(src, 'showTitle') ? src.showTitle : undefined,
       base.showTitle === true,
+    ),
+    backgroundStyle: normalizeFdcSectionBackgroundStyle(
+      hasInput ? src.backgroundStyle : base.backgroundStyle,
+      String(hasInput ? src.backgroundImageUrl : base.backgroundImageUrl || '').trim(),
+    ),
+    backgroundImageUrl: String(
+      hasInput && src.backgroundImageUrl != null
+        ? src.backgroundImageUrl
+        : base.backgroundImageUrl || '',
+    ).trim(),
+    overlayOpacity: normalizeFdcSectionOverlay(
+      hasInput ? src.overlayOpacity : base.overlayOpacity,
+      base.overlayOpacity ?? 55,
     ),
     items,
   }
@@ -596,6 +631,7 @@ export const DEFAULT_FDC_CONTENT = {
   sponsors: DEFAULT_FDC_SPONSORS,
   festivalStats: DEFAULT_FDC_FESTIVAL_STATS,
   visitInfo: DEFAULT_FDC_VISIT_INFO,
+  formSection: DEFAULT_FDC_FORM_SECTION,
   usefulInfo: DEFAULT_FDC_USEFUL_INFO,
   formNotice:
     'IMPORTANTE: La presente preinscripción no implica la adjudicación del espacio. La organización evaluará cada solicitud de acuerdo con la disponibilidad de lugares y el cumplimiento de los requisitos establecidos.',
@@ -699,6 +735,9 @@ export function mergeFdcContent(base, remote) {
         'ctaHref',
         'days',
         'images',
+        'backgroundStyle',
+        'backgroundImageUrl',
+        'overlayOpacity',
       ])
       // Si hay schedule remoto, no mezclar fotos demo del default: usar `images` del
       // servidor o migrar desde `featuredImageUrl` legacy.
@@ -711,11 +750,14 @@ export function mergeFdcContent(base, remote) {
             }
           : merged,
       )
-      return {
-        ...merged,
-        images,
-        featuredImageUrl: images[0]?.imageUrl || String(merged.featuredImageUrl || '').trim(),
-      }
+      return withFdcSectionBackground(
+        {
+          ...merged,
+          images,
+          featuredImageUrl: images[0]?.imageUrl || String(merged.featuredImageUrl || '').trim(),
+        },
+        defaults.schedule,
+      )
     })(),
     artists: (() => {
       const merged = mergeNamedSection(defaults.artists, remote.artists, [
@@ -728,24 +770,21 @@ export function mergeFdcContent(base, remote) {
         'backgroundImageUrl',
         'overlayOpacity',
       ])
-      const bgImage = String(merged.backgroundImageUrl || '').trim()
-      return {
-        ...merged,
-        dayPosters: normalizeFdcArtistDayPosters(
-          remote.artists && typeof remote.artists === 'object'
-            ? {
-                dayPosters: Array.isArray(remote.artists.dayPosters)
-                  ? remote.artists.dayPosters
-                  : [],
-              }
-            : merged,
-        ),
-        backgroundStyle: normalizeFdcSectionBackgroundStyle(merged.backgroundStyle, bgImage),
-        overlayOpacity: normalizeFdcSectionOverlay(
-          merged.overlayOpacity,
-          defaults.artists?.overlayOpacity ?? 55,
-        ),
-      }
+      return withFdcSectionBackground(
+        {
+          ...merged,
+          dayPosters: normalizeFdcArtistDayPosters(
+            remote.artists && typeof remote.artists === 'object'
+              ? {
+                  dayPosters: Array.isArray(remote.artists.dayPosters)
+                    ? remote.artists.dayPosters
+                    : [],
+                }
+              : merged,
+          ),
+        },
+        defaults.artists,
+      )
     })(),
     tickets: (() => {
       const merged = mergeNamedSection(defaults.tickets, remote.tickets, [
@@ -760,27 +799,51 @@ export function mergeFdcContent(base, remote) {
       ])
       const ticketImage = String(merged.imageUrl || '').trim()
       return {
-        ...merged,
+        ...withFdcSectionBackground(merged, defaults.tickets),
         backgroundStyle: normalizeFdcSectionBackgroundStyle(merged.backgroundStyle, ticketImage),
-        overlayOpacity: normalizeFdcSectionOverlay(
-          merged.overlayOpacity,
-          defaults.tickets?.overlayOpacity ?? 55,
-        ),
       }
     })(),
-    news: mergeNamedSection(defaults.news, remote.news, [
-      'title',
-      'ctaLabel',
-      'ctaHref',
-      'items',
-    ]),
-    gallery: mergeNamedSection(defaults.gallery, remote.gallery, ['title', 'items']),
-    sponsors: mergeNamedSection(defaults.sponsors, remote.sponsors, ['title', 'items']),
+    news: withFdcSectionBackground(
+      mergeNamedSection(defaults.news, remote.news, [
+        'title',
+        'ctaLabel',
+        'ctaHref',
+        'items',
+        'backgroundStyle',
+        'backgroundImageUrl',
+        'overlayOpacity',
+      ]),
+      defaults.news,
+    ),
+    gallery: withFdcSectionBackground(
+      mergeNamedSection(defaults.gallery, remote.gallery, [
+        'title',
+        'items',
+        'backgroundStyle',
+        'backgroundImageUrl',
+        'overlayOpacity',
+      ]),
+      defaults.gallery,
+    ),
+    sponsors: withFdcSectionBackground(
+      mergeNamedSection(defaults.sponsors, remote.sponsors, [
+        'title',
+        'items',
+        'backgroundStyle',
+        'backgroundImageUrl',
+        'overlayOpacity',
+      ]),
+      defaults.sponsors,
+    ),
     festivalStats: normalizeFdcFestivalStats(
       remote.festivalStats ?? defaults.festivalStats,
       defaults.festivalStats,
     ),
     visitInfo: normalizeFdcVisitInfo(remote.visitInfo ?? defaults.visitInfo, defaults.visitInfo),
+    formSection: withFdcSectionBackground(
+      remote.formSection ?? remote.usefulInfo?.formSection ?? defaults.formSection,
+      defaults.formSection,
+    ),
     usefulInfo: { title: '', items: [] },
     formNotice: String(remote.formNotice ?? defaults.formNotice ?? ''),
     formRubros: ensureFdcFormRubros(
