@@ -217,39 +217,3 @@ export async function updateFdcWhatsappTemplate(payload) {
     updatedAt: data.updatedAt || null,
   }
 }
-
-export async function fetchFdcLocalityFilterGroups() {
-  const b = base()
-  if (!b) return { groups: [], updatedAt: null }
-  const res = await fetch(`${b}/api/fdc/admin/locality-filter-groups`, {
-    headers: jsonAuthHeaders(),
-  })
-  notifyUnauthorizedIfNeeded(res)
-  if (!res.ok) {
-    throw new Error((await apiErrorMessage(res)) || 'No se pudieron cargar las agrupaciones.')
-  }
-  const data = await res.json().catch(() => ({}))
-  return {
-    groups: Array.isArray(data.groups) ? data.groups : [],
-    updatedAt: data.updatedAt || null,
-  }
-}
-
-export async function updateFdcLocalityFilterGroups(payload) {
-  const b = base()
-  if (!b) throw new Error('Configurá VITE_API_URL.')
-  const res = await fetch(`${b}/api/fdc/admin/locality-filter-groups`, {
-    method: 'PUT',
-    headers: jsonAuthHeaders(),
-    body: JSON.stringify(payload),
-  })
-  notifyUnauthorizedIfNeeded(res)
-  if (!res.ok) {
-    throw await errorFromApiResponse(res, 'No se pudieron guardar las agrupaciones.')
-  }
-  const data = await res.json().catch(() => ({}))
-  return {
-    groups: Array.isArray(data.groups) ? data.groups : [],
-    updatedAt: data.updatedAt || null,
-  }
-}

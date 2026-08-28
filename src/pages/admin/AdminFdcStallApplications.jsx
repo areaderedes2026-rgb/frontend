@@ -1,19 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
-import { FdcLocalityGroupManager } from '../../components/admin/FdcLocalityGroupManager.jsx'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
 import { Modal } from '../../components/ui/Modal.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
 import { inputClass, labelClass, textareaClass } from '../../components/ui/formStyles.js'
 import {
   deleteFdcStallApplication,
-  fetchFdcLocalityFilterGroups,
   fetchFdcStallApplicationAdminById,
   fetchFdcStallApplicationsAdmin,
   fetchFdcWhatsappTemplate,
   resendFdcStallApplicationEmail,
-  updateFdcLocalityFilterGroups,
   updateFdcStallApplicationStatus,
   updateFdcWhatsappTemplate,
 } from '../../services/fdcService.js'
@@ -27,12 +24,6 @@ import {
   openFdcStallWhatsApp,
 } from '../../utils/fdcWhatsapp.js'
 import { downloadFdcStallApplicationsPdf } from '../../utils/fdcStallApplicationsPdf.js'
-import {
-  applicationLocalityFilterKey,
-  buildLocalityFilterOptions,
-  localityFilterLabel,
-  normalizeLocalityFilterGroups,
-} from '../../utils/fdcStallApplicationFilters.js'
 
 const PAGE_SIZE_OPTIONS = [20, 50, 100, 200]
 
@@ -142,9 +133,6 @@ export function AdminFdcStallApplications() {
   const [whatsappModalOpen, setWhatsappModalOpen] = useState(false)
   const [whatsappDraft, setWhatsappDraft] = useState('')
   const [whatsappSaving, setWhatsappSaving] = useState(false)
-  const [localityGroups, setLocalityGroups] = useState([])
-  const [localityGroupsUpdatedAt, setLocalityGroupsUpdatedAt] = useState(null)
-  const [localityGroupsSaving, setLocalityGroupsSaving] = useState(false)
 
   const dismissToast = useCallback(() => setToast(null), [])
 
@@ -178,12 +166,6 @@ export function AdminFdcStallApplications() {
         setWhatsappUpdatedAt(data.updatedAt || null)
       })
       .catch(() => {})
-    fetchFdcLocalityFilterGroups()
-      .then((data) => {
-        setLocalityGroups(normalizeLocalityFilterGroups(data.groups))
-        setLocalityGroupsUpdatedAt(data.updatedAt || null)
-      })
-      .catch(() => {})
   }, [])
 
   const rubroOptions = useMemo(() => {
@@ -203,20 +185,21 @@ export function AdminFdcStallApplications() {
       })
   }, [items])
 
-  const localityOptions = useMemo(
-    () => buildLocalityFilterOptions(items, localityGroups),
-    [items, localityGroups],
-  )
+  const localityOptions = useMemo(() => {
+    const set = new Set()
+    for (const app of items) {
+      const loc = String(app.locality || '').trim()
+      if (loc) set.add(loc)
+    }
+    return [...set].sort((a, b) => a.localeCompare(b, 'es'))
+  }, [items])
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     return items.filter((app) => {
       if (rubroFilter !== 'all' && rubroFilterKey(app) !== rubroFilter) return false
-      if (
-        localityFilter !== 'all' &&
-        applicationLocalityFilterKey(app, localityGroups) !== localityFilter
-      ) {
-        return false
+      if (localityFilter !== 'all') {
+        if (String(app.locality || '').trim() !== localityFilter) return false
       }
       if (participatedFilter === 'yes' && !app.participatedBefore) return false
       if (participatedFilter === 'no' && app.participatedBefore) return false
@@ -275,10 +258,7 @@ export function AdminFdcStallApplications() {
       const rubro = rubroOptions.find((r) => r.value === rubroFilter)?.label || rubroFilter
       parts.push(`Rubro: ${rubro}`)
     }
-    if (localityFilter !== 'all') {
-      const loc = localityFilterLabel(localityFilter, localityOptions) || localityFilter
-      parts.push(`Localidad: ${loc}`)
-    }
+    if (localityFilter !== 'all') parts.push(`Localidad: ${localityFilter}`)
     if (participatedFilter === 'yes') parts.push('Participó antes: Sí')
     if (participatedFilter === 'no') parts.push('Participó antes: No')
     if (dateFrom) parts.push(`Desde: ${dateFrom}`)
@@ -294,7 +274,6 @@ export function AdminFdcStallApplications() {
     dateUntil,
     search,
     rubroOptions,
-    localityOptions,
   ])
 
   const hasExtraFilters =
@@ -312,38 +291,6 @@ export function AdminFdcStallApplications() {
     setDateFrom('')
     setDateUntil('')
     setSearch('')
-  }
-
-  async function handleSaveLocalityGroups(nextGroups) {
-    setLocalityGroupsSaving(true)
-    try {
-      const data = await updateFdcLocalityFilterGroups({
-        groups: nextGroups,
-        expectedUpdatedAt: localityGroupsUpdatedAt,
-      })
-      const normalized = normalizeLocalityFilterGroups(data.groups)
-      setLocalityGroups(normalized)
-      setLocalityGroupsUpdatedAt(data.updatedAt || null)
-      if (localityFilter !== 'all') {
-        const nextOptions = buildLocalityFilterOptions(items, normalized)
-        if (!nextOptions.some((opt) => opt.value === localityFilter)) {
-          setLocalityFilter('all')
-        }
-      }
-      setToast({ variant: 'success', message: 'Agrupaciones de localidad guardadas.' })
-    } catch (e) {
-      if (isConcurrencyConflictError(e)) {
-        setToast({
-          variant: 'error',
-          message: 'Otro usuario modificó la configuración. Recargá la página.',
-        })
-      } else {
-        setToast({ variant: 'error', message: e.message || 'No se pudieron guardar.' })
-      }
-      throw e
-    } finally {
-      setLocalityGroupsSaving(false)
-    }
   }
 
   async function openDetail(id) {
@@ -741,9 +688,9 @@ export function AdminFdcStallApplications() {
                     onChange={(e) => setLocalityFilter(e.target.value)}
                   >
                     <option value="all">Todas</option>
-                    {localityOptions.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
+                    {localityOptions.map((loc) => (
+                      <option key={loc} value={loc}>
+                        {loc}
                       </option>
                     ))}
                   </select>
@@ -806,13 +753,6 @@ export function AdminFdcStallApplications() {
                 </div>
               </div>
             </div>
-
-            <FdcLocalityGroupManager
-              items={items}
-              groups={localityGroups}
-              saving={localityGroupsSaving}
-              onSave={handleSaveLocalityGroups}
-            />
 
             {loading ? (
               <div className="h-48 animate-pulse rounded-xl bg-slate-100" />
