@@ -715,7 +715,7 @@
   border: none;
 }
 
-/* FDC: ajuste vertical del contador (móvil / escritorio) */
+/* FDC: ajuste vertical del contador sobre la portada (móvil / escritorio) */
 .fdc-hero-countdown-offset {
   transform: translateY(var(--fdc-countdown-y-mobile, 0px));
 }

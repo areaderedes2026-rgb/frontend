@@ -241,19 +241,21 @@ export function FiestaDelCaballo() {
       {toast ? <Toast variant={toast.variant} message={toast.message} onDismiss={dismissToast} /> : null}
 
       <div className="relative -mt-[calc(var(--navbar-h,5rem)+1.5rem)] flex h-dvh max-h-dvh flex-col sm:-mt-[calc(var(--navbar-h,5rem)+2rem)]">
-        <FdcFestivalHero
-          contentReady={hydrated}
-          imageUrl={hydrated ? heroImage : ''}
-          imageUrlMobile={hydrated ? page.heroImageUrlMobile : ''}
-          overlayOpacity={0}
-          eyebrow={page.showHeroBadge !== false ? page.heroEyebrow : ''}
-          title={page.showHeroTitle !== false ? page.heroTitle : ''}
-          subtitle={page.showHeroSubtitle !== false ? page.heroSubtitle : ''}
-          primaryCta={hydrated ? primaryCta : null}
-          secondaryCta={hydrated ? secondaryCta : null}
-          onHashNavigate={handleHashNavigate}
-        />
-        {hydrated ? <FdcHeroCountdown config={page.heroCountdown} /> : null}
+        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+          <FdcFestivalHero
+            contentReady={hydrated}
+            imageUrl={hydrated ? heroImage : ''}
+            imageUrlMobile={hydrated ? page.heroImageUrlMobile : ''}
+            overlayOpacity={0}
+            eyebrow={page.showHeroBadge !== false ? page.heroEyebrow : ''}
+            title={page.showHeroTitle !== false ? page.heroTitle : ''}
+            subtitle={page.showHeroSubtitle !== false ? page.heroSubtitle : ''}
+            primaryCta={hydrated ? primaryCta : null}
+            secondaryCta={hydrated ? secondaryCta : null}
+            onHashNavigate={handleHashNavigate}
+          />
+          {hydrated ? <FdcHeroCountdown config={page.heroCountdown} /> : null}
+        </div>
         <FdcSectionNav items={page.sectionNav} onHashNavigate={handleHashNavigate} />
       </div>
 

@@ -1156,19 +1156,21 @@ export function AdminFdc() {
                     </button>
                   </div>
                   <div className="flex h-[min(70vh,36rem)] flex-col">
-                    <FdcFestivalHero
-                      previewMode
-                      contentReady
-                      imageUrl={form.heroImageUrl || ''}
-                      imageUrlMobile={form.heroImageUrlMobile || ''}
-                      overlayOpacity={0}
-                      eyebrow={form.showHeroBadge !== false ? form.heroEyebrow : ''}
-                      title={form.showHeroTitle !== false ? form.heroTitle : ''}
-                      subtitle={form.showHeroSubtitle !== false ? form.heroSubtitle : ''}
-                      primaryCta={heroPrimaryCta}
-                      secondaryCta={heroSecondaryCta}
-                    />
-                    <FdcHeroCountdown config={form.heroCountdown} previewMode />
+                    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+                      <FdcFestivalHero
+                        previewMode
+                        contentReady
+                        imageUrl={form.heroImageUrl || ''}
+                        imageUrlMobile={form.heroImageUrlMobile || ''}
+                        overlayOpacity={0}
+                        eyebrow={form.showHeroBadge !== false ? form.heroEyebrow : ''}
+                        title={form.showHeroTitle !== false ? form.heroTitle : ''}
+                        subtitle={form.showHeroSubtitle !== false ? form.heroSubtitle : ''}
+                        primaryCta={heroPrimaryCta}
+                        secondaryCta={heroSecondaryCta}
+                      />
+                      <FdcHeroCountdown config={form.heroCountdown} previewMode />
+                    </div>
                     <FdcSectionNav
                       items={(form.sectionNav || []).slice(0, 5)}
                       onHashNavigate={() => {}}
@@ -1179,9 +1181,9 @@ export function AdminFdc() {
                 <section className={SECTION_CARD}>
                   <h2 className="text-base font-bold text-slate-900">Contador regresivo</h2>
                   <p className="mt-1 text-sm text-slate-600">
-                    Solo números (días, horas, minutos y segundos), centrado entre la portada y la
-                    barra de navegación. Ajustá la posición vertical por separado en móvil y
-                    escritorio.
+                    Solo números (días, horas, minutos y segundos), flotando sobre la portada justo
+                    encima de la navegación. Ajustá la posición vertical por separado en móvil y
+                    escritorio sin cortar la imagen.
                   </p>
                   <div className="mt-4 space-y-4">
                     <label className="flex cursor-pointer items-center gap-3">
@@ -1245,7 +1247,8 @@ export function AdminFdc() {
                           }
                         />
                         <span className="mt-1 block text-xs font-normal text-slate-500">
-                          Valores negativos suben el contador; positivos lo bajan.
+                          Valores negativos lo suben sobre la imagen; positivos lo bajan hacia la
+                          navegación.
                         </span>
                       </label>
                       <label className={labelClass}>

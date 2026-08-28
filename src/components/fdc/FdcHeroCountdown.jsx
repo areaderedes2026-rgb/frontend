@@ -81,7 +81,7 @@ function Separator({ reduceMotion, index }) {
 }
 
 /**
- * Contador regresivo FDC (solo números). Se ubica entre la portada y la barra de navegación.
+ * Contador regresivo FDC (solo números). Flota sobre la portada, justo encima de la navegación.
  */
 export function FdcHeroCountdown({ config, className = '', previewMode = false }) {
   const normalized = useMemo(() => normalizeFdcHeroCountdown(config), [config])
@@ -110,7 +110,7 @@ export function FdcHeroCountdown({ config, className = '', previewMode = false }
 
   return (
     <div
-      className={`relative z-20 shrink-0 px-3 pb-1 pt-0 sm:px-4 sm:pb-1.5 lg:px-6 ${className}`.trim()}
+      className={`pointer-events-none absolute inset-x-0 bottom-0 z-20 flex justify-center px-3 sm:px-4 lg:px-6 ${className}`.trim()}
       style={{
         '--fdc-countdown-y-mobile': `${normalized.offsetYMobile}px`,
         '--fdc-countdown-y-desktop': `${normalized.offsetYDesktop}px`,
@@ -118,7 +118,7 @@ export function FdcHeroCountdown({ config, className = '', previewMode = false }
       aria-hidden={previewMode ? undefined : false}
     >
       <Motion.div
-        className="fdc-hero-countdown-offset mx-auto flex max-w-full justify-center"
+        className="fdc-hero-countdown-offset pointer-events-auto mx-auto flex max-w-full justify-center"
         initial={reduceMotion ? false : { opacity: 0, y: 24, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: reduceMotion ? 0.15 : 1.05, ease: softEase }}
