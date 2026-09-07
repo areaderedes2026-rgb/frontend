@@ -417,6 +417,7 @@ export function FdcMapInteractiveSection({ visitInfo }) {
           center={center}
           zoom={zoom}
           points={mapPoints}
+          allPoints={points}
           activePointId={activePointId}
           onSelectPoint={setActivePointId}
           dark={dark}
