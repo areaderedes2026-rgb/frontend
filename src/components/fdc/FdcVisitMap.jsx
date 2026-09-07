@@ -1,8 +1,8 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet'
+import { CircleMarker, MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from 'react-leaflet'
 
 function buildMarkerIcon(active = false, dark = false) {
   const color = active ? '#c4a574' : dark ? '#0c1017' : '#171b22'
@@ -15,6 +15,100 @@ function buildMarkerIcon(active = false, dark = false) {
     iconAnchor: [size / 2, size / 2],
     popupAnchor: [0, -16],
   })
+}
+
+function buildUserIcon() {
+  return L.divIcon({
+    className: 'fdc-user-map-marker',
+    html: `<div style="width:18px;height:18px;border-radius:9999px;background:#2563eb;border:3px solid #ffffff;box-shadow:0 0 0 6px rgba(37,99,235,0.28),0 8px 18px -8px rgba(0,0,0,0.55);"></div>`,
+    iconSize: [18, 18],
+    iconAnchor: [9, 9],
+    popupAnchor: [0, -10],
+  })
+}
+
+const ROUTE_ENDPOINTS = {
+  driving: [
+    'https://router.project-osrm.org/route/v1/driving',
+    'https://routing.openstreetmap.de/routed-car/route/v1/driving',
+  ],
+  foot: ['https://routing.openstreetmap.de/routed-foot/route/v1/driving'],
+}
+
+function formatRouteDistance(meters) {
+  const m = Number(meters) || 0
+  if (m < 1000) return `${Math.round(m)} m`
+  return `${(m / 1000).toFixed(m >= 10000 ? 0 : 1).replace('.', ',')} km`
+}
+
+function formatRouteDuration(seconds) {
+  const s = Math.max(0, Math.round(Number(seconds) || 0))
+  if (s < 60) return `${s} seg`
+  const mins = Math.round(s / 60)
+  if (mins < 60) return `${mins} min`
+  const h = Math.floor(mins / 60)
+  const rem = mins % 60
+  return rem ? `${h} h ${rem} min` : `${h} h`
+}
+
+async function fetchOsrmRoute(from, to, profile = 'driving') {
+  const fromLng = Number(from.lng)
+  const fromLat = Number(from.lat)
+  const toLng = Number(to.lng)
+  const toLat = Number(to.lat)
+  if (
+    !Number.isFinite(fromLng) ||
+    !Number.isFinite(fromLat) ||
+    !Number.isFinite(toLng) ||
+    !Number.isFinite(toLat)
+  ) {
+    throw new Error('Coordenadas inválidas para calcular la ruta.')
+  }
+
+  const endpoints = ROUTE_ENDPOINTS[profile] || ROUTE_ENDPOINTS.driving
+  const coords = `${fromLng},${fromLat};${toLng},${toLat}`
+  const query = 'overview=full&geometries=geojson&steps=false'
+
+  let lastError = null
+  for (const base of endpoints) {
+    try {
+      const res = await fetch(`${base}/${coords}?${query}`)
+      if (!res.ok) {
+        lastError = new Error(`No se pudo calcular la ruta (${res.status}).`)
+        continue
+      }
+      const data = await res.json()
+      if (data?.code && data.code !== 'Ok') {
+        lastError = new Error('No hay una ruta disponible entre esos puntos.')
+        continue
+      }
+      const route = data?.routes?.[0]
+      const geometry = route?.geometry?.coordinates
+      if (!Array.isArray(geometry) || geometry.length < 2) {
+        lastError = new Error('La ruta recibida no es válida.')
+        continue
+      }
+      return {
+        coordinates: geometry.map(([lng, lat]) => [lat, lng]),
+        distance: Number(route.distance) || 0,
+        duration: Number(route.duration) || 0,
+        profile,
+      }
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error('Error de red al calcular la ruta.')
+    }
+  }
+  throw lastError || new Error('No se pudo calcular la ruta.')
+}
+
+function geolocationErrorMessage(error) {
+  if (!error) return 'No se pudo obtener tu ubicación.'
+  if (error.code === 1) {
+    return 'Permiso denegado. Activá la ubicación en el navegador para ver la ruta.'
+  }
+  if (error.code === 2) return 'No se pudo determinar tu ubicación. Probá de nuevo al aire libre.'
+  if (error.code === 3) return 'Se agotó el tiempo al buscar tu ubicación. Probá de nuevo.'
+  return error.message || 'No se pudo obtener tu ubicación.'
 }
 
 function MapResizeController({ revision = 0 }) {
@@ -57,7 +151,7 @@ function MapFocusController({
       map.flyToBounds(bounds, {
         animate,
         duration,
-        padding: [56, 56],
+        padding: [56, 72],
         maxZoom: 16,
       })
       return
@@ -76,7 +170,6 @@ function MapFocusController({
     } else {
       map.setView([lat, lng], focusZoom, { animate: false })
     }
-    // focusKey evita re-disparos por cambios de referencia del objeto point
   }, [animate, defaultCenter, defaultZoom, fitBounds, focusKey, map, point])
   return null
 }
@@ -105,6 +198,8 @@ function LeafletMapView({
   animateFocus = true,
   mapKey = 'map',
   focusToken = '',
+  userLocation = null,
+  routeCoordinates = null,
 }) {
   const safeZoom = Math.min(18, Math.max(10, Number(zoom) || 14))
   const mapCenter = useMemo(
@@ -132,13 +227,15 @@ function LeafletMapView({
     () => ({
       base: buildMarkerIcon(false, dark),
       active: buildMarkerIcon(true, dark),
+      user: buildUserIcon(),
     }),
     [dark],
   )
 
-  const focusKey = fitBounds?.length >= 2
-    ? `bounds:${fitBounds.map((c) => c.join(',')).join('|')}`
-    : `point:${selectedPoint?.id || 'none'}:${focusToken}`
+  const focusKey =
+    fitBounds?.length >= 2
+      ? `bounds:${fitBounds.length}:${fitBounds[0]?.join(',')}:${fitBounds[fitBounds.length - 1]?.join(',')}:${focusToken}`
+      : `point:${selectedPoint?.id || 'none'}:${focusToken}`
 
   return (
     <MapContainer
@@ -159,6 +256,43 @@ function LeafletMapView({
         url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
         maxZoom={19}
       />
+      {Array.isArray(routeCoordinates) && routeCoordinates.length >= 2 ? (
+        <Polyline
+          positions={routeCoordinates}
+          pathOptions={{
+            color: '#2563eb',
+            weight: 5,
+            opacity: 0.9,
+            lineCap: 'round',
+            lineJoin: 'round',
+          }}
+        />
+      ) : null}
+      {userLocation &&
+      Number.isFinite(Number(userLocation.lat)) &&
+      Number.isFinite(Number(userLocation.lng)) ? (
+        <>
+          <CircleMarker
+            center={[Number(userLocation.lat), Number(userLocation.lng)]}
+            radius={18}
+            pathOptions={{
+              color: '#2563eb',
+              fillColor: '#2563eb',
+              fillOpacity: 0.12,
+              weight: 0,
+            }}
+          />
+          <Marker
+            position={[Number(userLocation.lat), Number(userLocation.lng)]}
+            icon={markerIcons.user}
+            zIndexOffset={1000}
+          >
+            <Popup>
+              <p className="text-sm font-bold text-[#171b22]">Tu ubicación</p>
+            </Popup>
+          </Marker>
+        </>
+      ) : null}
       {activePoints.map((point) => {
         const active = point.id === (selectedPoint?.id || '')
         return (
@@ -242,16 +376,34 @@ function FdcVisitMapFullscreen({
 }) {
   const titleId = useId()
   const closeRef = useRef(null)
+  const routeRequestId = useRef(0)
   const [mounted, setMounted] = useState(false)
   const [modalActiveId, setModalActiveId] = useState(activePointId || '')
-  const [focusMode, setFocusMode] = useState('all') // 'all' | 'point'
+  const [focusMode, setFocusMode] = useState('all') // 'all' | 'point' | 'route'
   const [focusToken, setFocusToken] = useState(0)
+
+  const [userLocation, setUserLocation] = useState(null)
+  const [locating, setLocating] = useState(false)
+  const [locationError, setLocationError] = useState('')
+  const [routeProfile, setRouteProfile] = useState('driving')
+  const [routeEnabled, setRouteEnabled] = useState(true)
+  const [route, setRoute] = useState(null)
+  const [routing, setRouting] = useState(false)
+  const [routeError, setRouteError] = useState('')
 
   useBodyScrollLock(open)
 
   useEffect(() => {
     if (!open) {
       setMounted(false)
+      setUserLocation(null)
+      setLocating(false)
+      setLocationError('')
+      setRoute(null)
+      setRouting(false)
+      setRouteError('')
+      setRouteProfile('driving')
+      setRouteEnabled(true)
       return
     }
     setModalActiveId(activePointId || '')
@@ -284,27 +436,130 @@ function FdcVisitMapFullscreen({
     [points],
   )
 
+  const selectedDestination = useMemo(
+    () => allPoints.find((p) => p.id === modalActiveId) || null,
+    [allPoints, modalActiveId],
+  )
+
   const initialFitBounds = useMemo(() => {
     if (allPoints.length < 2) return null
     return allPoints.map((p) => [Number(p.lat), Number(p.lng)])
   }, [allPoints])
 
+  const clearRoute = useCallback(() => {
+    routeRequestId.current += 1
+    setRoute(null)
+    setRouteError('')
+    setRouting(false)
+  }, [])
+
+  const requestUserLocation = useCallback(() => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      setLocationError('Tu navegador no admite geolocalización.')
+      return
+    }
+    if (typeof window !== 'undefined' && !window.isSecureContext) {
+      setLocationError('La ubicación solo funciona en HTTPS o en localhost.')
+      return
+    }
+
+    setLocating(true)
+    setLocationError('')
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const next = {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+        }
+        setUserLocation(next)
+        setLocating(false)
+        setLocationError('')
+        setRouteEnabled(true)
+        setFocusMode('route')
+        setFocusToken((n) => n + 1)
+      },
+      (err) => {
+        setLocating(false)
+        setLocationError(geolocationErrorMessage(err))
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 30000,
+      },
+    )
+  }, [])
+
+  const computeRoute = useCallback(async (destination, fromLocation, profile) => {
+    if (!fromLocation || !destination) return
+    const reqId = ++routeRequestId.current
+    setRouting(true)
+    setRouteError('')
+    try {
+      const nextRoute = await fetchOsrmRoute(fromLocation, destination, profile)
+      if (reqId !== routeRequestId.current) return
+      setRoute(nextRoute)
+      setFocusMode('route')
+      setFocusToken((n) => n + 1)
+    } catch (err) {
+      if (reqId !== routeRequestId.current) return
+      setRoute(null)
+      setRouteError(err?.message || 'No se pudo calcular la ruta.')
+    } finally {
+      if (reqId === routeRequestId.current) setRouting(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!open || !routeEnabled || !userLocation || !selectedDestination) {
+      if (!routeEnabled) return
+      if (!userLocation || !selectedDestination) clearRoute()
+      return
+    }
+    void computeRoute(selectedDestination, userLocation, routeProfile)
+  }, [
+    clearRoute,
+    computeRoute,
+    open,
+    routeEnabled,
+    routeProfile,
+    selectedDestination,
+    userLocation,
+  ])
+
   function handleSelect(pointId) {
     setModalActiveId(pointId)
-    setFocusMode('point')
+    setRouteEnabled(true)
+    setFocusMode(userLocation ? 'route' : 'point')
     setFocusToken((n) => n + 1)
     onSelectPoint?.(pointId)
   }
 
   if (!open || typeof document === 'undefined') return null
 
-  const effectiveFitBounds = focusMode === 'all' ? initialFitBounds : null
+  const routeFitBounds =
+    focusMode === 'route' && Array.isArray(route?.coordinates) && route.coordinates.length >= 2
+      ? route.coordinates
+      : focusMode === 'route' && userLocation && selectedDestination
+        ? [
+            [Number(userLocation.lat), Number(userLocation.lng)],
+            [Number(selectedDestination.lat), Number(selectedDestination.lng)],
+          ]
+        : null
+
+  const effectiveFitBounds =
+    routeFitBounds || (focusMode === 'all' ? initialFitBounds : null)
+
   const mapActiveId =
-    focusMode === 'point'
+    focusMode === 'point' || focusMode === 'route'
       ? modalActiveId
       : allPoints.length < 2
         ? modalActiveId || allPoints[0]?.id || ''
         : modalActiveId
+
+  const geoSupported =
+    typeof navigator !== 'undefined' && Boolean(navigator.geolocation)
 
   return createPortal(
     <div
@@ -313,26 +568,115 @@ function FdcVisitMapFullscreen({
       aria-modal="true"
       aria-labelledby={titleId}
     >
-      <div className="relative z-20 flex shrink-0 items-center justify-between gap-3 border-b border-white/10 bg-[#0c1017]/95 px-3 py-3 backdrop-blur sm:px-5">
-        <div className="min-w-0">
-          <h2 id={titleId} className="truncate font-serif text-base font-bold text-white sm:text-lg">
-            Mapa interactivo
-          </h2>
-          <p className="mt-0.5 text-xs text-white/55 sm:text-sm">
-            {allPoints.length} ubicación{allPoints.length === 1 ? '' : 'es'} · Arrastrá, acercá y tocá los
-            marcadores
-          </p>
+      <div className="relative z-20 flex shrink-0 flex-col gap-3 border-b border-white/10 bg-[#0c1017]/95 px-3 py-3 backdrop-blur sm:px-5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h2 id={titleId} className="truncate font-serif text-base font-bold text-white sm:text-lg">
+              Mapa interactivo
+            </h2>
+            <p className="mt-0.5 text-xs text-white/55 sm:text-sm">
+              {userLocation
+                ? 'Elegí un destino para ver la ruta desde tu ubicación'
+                : `${allPoints.length} ubicación${allPoints.length === 1 ? '' : 'es'} · Activá tu ubicación para ver cómo llegar`}
+            </p>
+          </div>
+          <button
+            ref={closeRef}
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-white px-4 text-sm font-semibold text-[#171b22] shadow-lg transition hover:bg-[#f4f1ea] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d4b483]"
+            aria-label="Cerrar mapa a pantalla completa"
+          >
+            <CloseIcon />
+            <span className="hidden sm:inline">Cerrar</span>
+          </button>
         </div>
-        <button
-          ref={closeRef}
-          type="button"
-          onClick={onClose}
-          className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-white px-4 text-sm font-semibold text-[#171b22] shadow-lg transition hover:bg-[#f4f1ea] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d4b483]"
-          aria-label="Cerrar mapa a pantalla completa"
-        >
-          <CloseIcon />
-          <span className="hidden sm:inline">Cerrar</span>
-        </button>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={requestUserLocation}
+            disabled={!geoSupported || locating}
+            className="inline-flex min-h-10 items-center gap-2 rounded-full bg-[#2563eb] px-3.5 text-xs font-semibold text-white transition hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm"
+          >
+            <span aria-hidden>📍</span>
+            {locating ? 'Obteniendo ubicación…' : userLocation ? 'Actualizar mi ubicación' : 'Usar mi ubicación'}
+          </button>
+
+          <div className="inline-flex rounded-full border border-white/15 bg-white/5 p-0.5">
+            <button
+              type="button"
+              onClick={() => {
+                setRouteProfile('driving')
+                setRouteEnabled(true)
+              }}
+              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition sm:text-sm ${
+                routeProfile === 'driving'
+                  ? 'bg-white text-[#171b22]'
+                  : 'text-white/70 hover:text-white'
+              }`}
+            >
+              En auto
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setRouteProfile('foot')
+                setRouteEnabled(true)
+              }}
+              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition sm:text-sm ${
+                routeProfile === 'foot'
+                  ? 'bg-white text-[#171b22]'
+                  : 'text-white/70 hover:text-white'
+              }`}
+            >
+              A pie
+            </button>
+          </div>
+
+          {route || routeEnabled === false ? (
+            <button
+              type="button"
+              onClick={() => {
+                setRouteEnabled(false)
+                clearRoute()
+                setFocusMode(selectedDestination ? 'point' : 'all')
+                setFocusToken((n) => n + 1)
+              }}
+              className="inline-flex min-h-10 items-center rounded-full border border-white/20 px-3 text-xs font-semibold text-white/80 transition hover:bg-white/10 hover:text-white sm:text-sm"
+            >
+              Quitar ruta
+            </button>
+          ) : null}
+        </div>
+
+        {locationError ? (
+          <p className="rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs text-amber-100 sm:text-sm">
+            {locationError}
+          </p>
+        ) : null}
+        {routeError ? (
+          <p className="rounded-xl border border-rose-400/30 bg-rose-400/10 px-3 py-2 text-xs text-rose-100 sm:text-sm">
+            {routeError}
+          </p>
+        ) : null}
+        {routing ? (
+          <p className="text-xs text-sky-200/90 sm:text-sm">Calculando la mejor ruta…</p>
+        ) : null}
+        {route && selectedDestination ? (
+          <p className="text-xs text-white/80 sm:text-sm">
+            Hasta <span className="font-semibold text-[#d4b483]">{selectedDestination.title}</span>
+            {' · '}
+            {formatRouteDistance(route.distance)}
+            {' · '}
+            aprox. {formatRouteDuration(route.duration)}
+            {routeProfile === 'foot' ? ' caminando' : ' en auto'}
+          </p>
+        ) : userLocation && !selectedDestination ? (
+          <p className="text-xs text-white/60 sm:text-sm">
+            Tocá una ubicación abajo o un marcador para trazar la ruta.
+          </p>
+        ) : null}
       </div>
 
       <div className="relative min-h-0 flex-1">
@@ -347,8 +691,10 @@ function FdcVisitMapFullscreen({
             dark
             interactive
             fitBounds={effectiveFitBounds}
-            animateFocus={focusMode === 'point'}
+            animateFocus={focusMode !== 'all'}
             focusToken={String(focusToken)}
+            userLocation={userLocation}
+            routeCoordinates={route?.coordinates || null}
             className="[&_.leaflet-control-attribution]:text-[10px]"
           />
         ) : (
@@ -397,6 +743,7 @@ function FdcVisitMapFullscreen({
 
 /**
  * Vista previa bloqueada (solo foco desde la lista) + modal fullscreen navegable.
+ * Geolocalización y rutas solo en el mapa en grande (no altera la vista embebida).
  */
 export function FdcVisitMap({
   center,

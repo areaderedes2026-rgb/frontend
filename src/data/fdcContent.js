@@ -378,7 +378,7 @@ export const DEFAULT_FDC_VISIT_INFO = {
     showTitle: true,
     title: 'Mapa interactivo',
     description:
-      'Elegí una ubicación de la lista para verla en el mapa. Tocá el mapa para abrirlo en grande, ver todas las ubicaciones y navegar con libertad.',
+      'Elegí una ubicación de la lista para verla en el mapa. Tocá el mapa para abrirlo en grande, usar tu ubicación y ver la ruta hasta el lugar que elijas.',
     center: { lat: -26.2312, lng: -65.2818 },
     zoom: 14,
     points: [
