@@ -376,7 +376,7 @@ export const DEFAULT_FDC_VISIT_INFO = {
   overlayOpacity: 55,
   directions: {
     showTitle: true,
-    title: '¿Cómo llegar?',
+    title: 'Mapa interactivo',
     address: 'Hipódromo Municipal de Trancas, Ruta 9 Km 1308, Trancas, Tucumán',
     mapButtonLabel: 'Ver en mapa',
     mapUrl:
@@ -389,6 +389,9 @@ export const DEFAULT_FDC_VISIT_INFO = {
   faq: {
     showTitle: true,
     title: 'Preguntas frecuentes',
+    backgroundStyle: 'light',
+    backgroundImageUrl: '',
+    overlayOpacity: 55,
     ctaLabel: 'Ver todas las preguntas',
     ctaHref: '',
     items: [
@@ -425,6 +428,15 @@ function normalizeFdcVisitShowTitle(value, fallback = true) {
   if (value === true || value === 1 || value === '1' || value === 'true') return true
   if (value === false || value === 0 || value === '0' || value === 'false') return false
   return fallback === true
+}
+
+/** Migra el título legacy «¿Cómo llegar?» → «Mapa interactivo». */
+function normalizeFdcMapSectionTitle(raw, fallback = 'Mapa interactivo') {
+  const title = String(raw ?? '').trim()
+  if (!title || /^¿?c[oó]mo llegar\??$/i.test(title)) {
+    return String(fallback || 'Mapa interactivo').trim() || 'Mapa interactivo'
+  }
+  return title
 }
 
 export function normalizeFdcVisitFaqItem(item, index = 0) {
@@ -472,7 +484,10 @@ export function normalizeFdcVisitInfo(input, defaults = DEFAULT_FDC_VISIT_INFO) 
         directionsSrc.showTitle,
         base.directions?.showTitle !== false,
       ),
-      title: String(directionsSrc.title ?? base.directions?.title ?? '¿Cómo llegar?').trim(),
+      title: normalizeFdcMapSectionTitle(
+        directionsSrc.title ?? base.directions?.title,
+        base.directions?.title || 'Mapa interactivo',
+      ),
       address: String(directionsSrc.address ?? base.directions?.address ?? '').trim(),
       mapButtonLabel: String(
         directionsSrc.mapButtonLabel ?? base.directions?.mapButtonLabel ?? 'Ver en mapa',
@@ -492,26 +507,61 @@ export function normalizeFdcVisitInfo(input, defaults = DEFAULT_FDC_VISIT_INFO) 
         return Number.isFinite(n) ? Math.min(18, Math.max(10, Math.round(n))) : 14
       })(),
     },
-    faq: {
-      showTitle: normalizeFdcVisitShowTitle(faqSrc.showTitle, base.faq?.showTitle !== false),
-      title: String(faqSrc.title ?? base.faq?.title ?? 'Preguntas frecuentes').trim(),
-      ctaLabel: String(faqSrc.ctaLabel ?? base.faq?.ctaLabel ?? '').trim(),
-      ctaHref: String(faqSrc.ctaHref ?? base.faq?.ctaHref ?? '').trim(),
-      items,
-    },
+    faq: (() => {
+      const faqBgImage = String(
+        faqSrc.backgroundImageUrl != null
+          ? faqSrc.backgroundImageUrl
+          : base.faq?.backgroundImageUrl || '',
+      ).trim()
+      return {
+        showTitle: normalizeFdcVisitShowTitle(faqSrc.showTitle, base.faq?.showTitle !== false),
+        title: String(faqSrc.title ?? base.faq?.title ?? 'Preguntas frecuentes').trim(),
+        backgroundStyle: normalizeFdcSectionBackgroundStyle(
+          faqSrc.backgroundStyle ?? base.faq?.backgroundStyle ?? 'light',
+          faqBgImage,
+        ),
+        backgroundImageUrl: faqBgImage,
+        overlayOpacity: normalizeFdcSectionOverlay(
+          faqSrc.overlayOpacity ?? base.faq?.overlayOpacity,
+          base.faq?.overlayOpacity ?? 55,
+        ),
+        ctaLabel: String(faqSrc.ctaLabel ?? base.faq?.ctaLabel ?? '').trim(),
+        ctaHref: String(faqSrc.ctaHref ?? base.faq?.ctaHref ?? '').trim(),
+        items,
+      }
+    })(),
   }
 }
 
-export function fdcVisitInfoHasContent(visitInfo) {
+export function fdcVisitDirectionsHasContent(visitInfo) {
   const normalized = normalizeFdcVisitInfo(visitInfo)
   const d = normalized.directions || {}
-  const hasDirections = Boolean(
+  return Boolean(
     String(d.address || '').trim() ||
       String(d.mapUrl || '').trim() ||
       String(d.mapImageUrl || '').trim() ||
       (Number.isFinite(Number(d.mapLat)) && Number.isFinite(Number(d.mapLng))),
   )
-  return hasDirections || (normalized.faq?.items || []).length > 0
+}
+
+export function fdcVisitFaqHasContent(visitInfo) {
+  const normalized = normalizeFdcVisitInfo(visitInfo)
+  return (normalized.faq?.items || []).length > 0
+}
+
+export function fdcVisitInfoHasContent(visitInfo) {
+  return fdcVisitDirectionsHasContent(visitInfo) || fdcVisitFaqHasContent(visitInfo)
+}
+
+/** Config de fondo para la sección FAQ (independiente del mapa). */
+export function resolveFdcFaqSectionBackgroundConfig(visitInfo) {
+  const normalized = normalizeFdcVisitInfo(visitInfo)
+  const faq = normalized.faq || {}
+  return {
+    backgroundStyle: faq.backgroundStyle || 'light',
+    backgroundImageUrl: faq.backgroundImageUrl || '',
+    overlayOpacity: faq.overlayOpacity ?? 55,
+  }
 }
 
 export const DEFAULT_FDC_SECTION_NAV = [

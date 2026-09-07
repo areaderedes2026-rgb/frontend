@@ -13,6 +13,16 @@ export const FDC_FORM_HASH_ALIASES = new Set([
   'postularme',
 ])
 
+const FDC_HASH_ALIASES = {
+  'info-visita': 'mapa-interactivo',
+  'como-llegar': 'mapa-interactivo',
+  'cómo-llegar': 'mapa-interactivo',
+  llegada: 'mapa-interactivo',
+  mapa: 'mapa-interactivo',
+  faq: 'preguntas-frecuentes',
+  preguntas: 'preguntas-frecuentes',
+}
+
 export function resolveFdcHashTargetId(hash) {
   const raw = String(hash || '')
     .replace(/^#/, '')
@@ -20,7 +30,7 @@ export function resolveFdcHashTargetId(hash) {
     .toLowerCase()
   if (!raw) return null
   if (FDC_FORM_HASH_ALIASES.has(raw)) return FDC_FORM_SECTION_ID
-  return raw
+  return FDC_HASH_ALIASES[raw] || raw
 }
 
 function prefersReducedMotion() {

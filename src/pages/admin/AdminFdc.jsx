@@ -6,7 +6,10 @@ import { SingleImageUploadField } from '../../components/admin/SingleImageUpload
 import { FdcSectionBackgroundFields } from '../../components/admin/FdcSectionBackgroundFields.jsx'
 import { FdcFestivalHero } from '../../components/fdc/FdcFestivalHero.jsx'
 import { FdcStatIcon, FdcFestivalStatsSection } from '../../components/fdc/FdcFestivalStatsSection.jsx'
-import { FdcVisitInfoSection } from '../../components/fdc/FdcVisitInfoSection.jsx'
+import {
+  FdcFaqSection,
+  FdcMapInteractiveSection,
+} from '../../components/fdc/FdcVisitInfoSection.jsx'
 import { FdcHeroCountdown } from '../../components/fdc/FdcHeroCountdown.jsx'
 import { FdcSectionNav } from '../../components/fdc/FdcFestivalSections.jsx'
 import { Modal } from '../../components/ui/Modal.jsx'
@@ -29,6 +32,7 @@ import {
   normalizeFdcFestivalStats,
   normalizeFdcHeroCountdown,
   normalizeFdcVisitInfo,
+  resolveFdcFaqSectionBackgroundConfig,
 } from '../../data/fdcContent.js'
 import { normalizeHeroToggle } from '../../data/servicesPageContent.js'
 import { useContentEditorConcurrencyConflict } from '../../hooks/useContentEditorConcurrencyConflict.jsx'
@@ -181,7 +185,7 @@ const TABS = [
   { id: 'estadisticas', label: 'Estadísticas' },
   { id: 'cronograma', label: 'Cronograma' },
   { id: 'entradas', label: 'Entradas' },
-  { id: 'info-visita', label: 'Llegada y FAQ' },
+  { id: 'info-visita', label: 'Mapa y FAQ' },
   { id: 'noticias', label: 'Noticias' },
   { id: 'galeria', label: 'Galería' },
   { id: 'auspiciantes', label: 'Auspiciantes' },
@@ -2425,38 +2429,43 @@ export function AdminFdc() {
               </section>
             ) : null}
 
-            {/* Llegada y FAQ */}
+            {/* Mapa interactivo y FAQ */}
             {activeTab === 'info-visita' ? (
               <section className={SECTION_CARD}>
-                <h2 className="text-lg font-bold text-slate-900">Cómo llegar y preguntas frecuentes</h2>
+                <h2 className="text-lg font-bold text-slate-900">
+                  Mapa interactivo y preguntas frecuentes
+                </h2>
                 <p className="mt-1 text-sm text-slate-600">
-                  Sección debajo de Entradas. Podés ocultar cada título por separado y elegir el fondo
-                  de la sección.
+                  Son dos secciones distintas en la web: primero el mapa y debajo las preguntas
+                  frecuentes. Cada una puede tener su propio fondo.
                 </p>
 
-                <div className="mt-5">
-                  <FdcSectionBackgroundFields
-                    backgroundStyle={form.visitInfo?.backgroundStyle || 'light'}
-                    backgroundImageUrl={form.visitInfo?.backgroundImageUrl || ''}
-                    overlayOpacity={normalizeOverlay(form.visitInfo?.overlayOpacity, 55)}
-                    disabled={saving}
-                    labelClass={labelClass}
-                    onNotify={setToast}
-                    onStyleChange={(style) =>
-                      updateVisitInfo((v) => ({ ...v, backgroundStyle: style }))
-                    }
-                    onImageChange={(url) =>
-                      updateVisitInfo((v) => ({ ...v, backgroundImageUrl: url }))
-                    }
-                    onOverlayChange={(value) =>
-                      updateVisitInfo((v) => ({ ...v, overlayOpacity: value }))
-                    }
-                  />
-                </div>
-
-                <div className="mt-8 grid gap-8 lg:grid-cols-2">
+                <div className="mt-8 space-y-8">
                   <div className="rounded-2xl border border-slate-200 p-4 sm:p-5">
-                    <h3 className="text-base font-bold text-slate-900">¿Cómo llegar?</h3>
+                    <h3 className="text-base font-bold text-slate-900">Mapa interactivo</h3>
+                    <p className="mt-1 text-sm text-slate-600">
+                      Ancla: <code className="text-xs">#mapa-interactivo</code>
+                    </p>
+
+                    <div className="mt-5">
+                      <FdcSectionBackgroundFields
+                        backgroundStyle={form.visitInfo?.backgroundStyle || 'light'}
+                        backgroundImageUrl={form.visitInfo?.backgroundImageUrl || ''}
+                        overlayOpacity={normalizeOverlay(form.visitInfo?.overlayOpacity, 55)}
+                        disabled={saving}
+                        labelClass={labelClass}
+                        onNotify={setToast}
+                        onStyleChange={(style) =>
+                          updateVisitInfo((v) => ({ ...v, backgroundStyle: style }))
+                        }
+                        onImageChange={(url) =>
+                          updateVisitInfo((v) => ({ ...v, backgroundImageUrl: url }))
+                        }
+                        onOverlayChange={(value) =>
+                          updateVisitInfo((v) => ({ ...v, overlayOpacity: value }))
+                        }
+                      />
+                    </div>
                     <label className="mt-4 flex cursor-pointer items-center gap-3">
                       <input
                         type="checkbox"
@@ -2479,6 +2488,7 @@ export function AdminFdc() {
                           className={inputClass}
                           value={form.visitInfo?.directions?.title || ''}
                           disabled={saving || form.visitInfo?.directions?.showTitle === false}
+                          placeholder="Mapa interactivo"
                           onChange={(e) =>
                             updateVisitInfo((v) => ({
                               ...v,
@@ -2488,7 +2498,7 @@ export function AdminFdc() {
                         />
                       </label>
                       <label className={labelClass}>
-                        Dirección
+                        Dirección / lugar
                         <textarea
                           className={textareaClass}
                           value={form.visitInfo?.directions?.address || ''}
@@ -2598,10 +2608,57 @@ export function AdminFdc() {
                         </label>
                       </div>
                     </div>
+
+                    <div className="mt-6 overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#f7f7f5] p-4">
+                      <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Vista previa · Mapa
+                      </p>
+                      <FdcMapInteractiveSection visitInfo={form.visitInfo} />
+                    </div>
                   </div>
 
                   <div className="rounded-2xl border border-slate-200 p-4 sm:p-5">
                     <h3 className="text-base font-bold text-slate-900">Preguntas frecuentes</h3>
+                    <p className="mt-1 text-sm text-slate-600">
+                      Ancla: <code className="text-xs">#preguntas-frecuentes</code>
+                    </p>
+
+                    <div className="mt-5">
+                      <FdcSectionBackgroundFields
+                        backgroundStyle={
+                          form.visitInfo?.faq?.backgroundStyle ||
+                          resolveFdcFaqSectionBackgroundConfig(form.visitInfo).backgroundStyle
+                        }
+                        backgroundImageUrl={form.visitInfo?.faq?.backgroundImageUrl || ''}
+                        overlayOpacity={normalizeOverlay(
+                          form.visitInfo?.faq?.overlayOpacity ??
+                            resolveFdcFaqSectionBackgroundConfig(form.visitInfo).overlayOpacity,
+                          55,
+                        )}
+                        disabled={saving}
+                        labelClass={labelClass}
+                        onNotify={setToast}
+                        onStyleChange={(style) =>
+                          updateVisitInfo((v) => ({
+                            ...v,
+                            faq: { ...(v.faq || {}), backgroundStyle: style },
+                          }))
+                        }
+                        onImageChange={(url) =>
+                          updateVisitInfo((v) => ({
+                            ...v,
+                            faq: { ...(v.faq || {}), backgroundImageUrl: url },
+                          }))
+                        }
+                        onOverlayChange={(value) =>
+                          updateVisitInfo((v) => ({
+                            ...v,
+                            faq: { ...(v.faq || {}), overlayOpacity: value },
+                          }))
+                        }
+                      />
+                    </div>
+
                     <label className="mt-4 flex cursor-pointer items-center gap-3">
                       <input
                         type="checkbox"
@@ -2726,14 +2783,14 @@ export function AdminFdc() {
                     >
                       + Agregar pregunta
                     </button>
-                  </div>
-                </div>
 
-                <div className="mt-8 overflow-hidden rounded-3xl border border-[#ddd7ca] bg-[#f7f7f5] p-4 sm:p-6">
-                  <p className="mb-4 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Vista previa
-                  </p>
-                  <FdcVisitInfoSection visitInfo={form.visitInfo} />
+                    <div className="mt-6 overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#f7f7f5] p-4">
+                      <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Vista previa · FAQ
+                      </p>
+                      <FdcFaqSection visitInfo={form.visitInfo} />
+                    </div>
+                  </div>
                 </div>
               </section>
             ) : null}

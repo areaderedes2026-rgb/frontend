@@ -13,20 +13,25 @@ import { FdcArtistsSection } from '../../components/fdc/FdcArtistsSection.jsx'
 import { FdcFestivalHero } from '../../components/fdc/FdcFestivalHero.jsx'
 import { FdcFestivalStatsSection } from '../../components/fdc/FdcFestivalStatsSection.jsx'
 import { FdcHeroCountdown } from '../../components/fdc/FdcHeroCountdown.jsx'
-import { FdcVisitInfoSection } from '../../components/fdc/FdcVisitInfoSection.jsx'
+import {
+  FdcFaqSection,
+  FdcMapInteractiveSection,
+} from '../../components/fdc/FdcVisitInfoSection.jsx'
 import { FdcSectionShell } from '../../components/fdc/FdcSectionShell.jsx'
-import { fdcVisitInfoHasContent } from '../../data/fdcContent.js'
+import {
+  DEFAULT_FDC_CONTENT,
+  FDC_DEFAULT_HERO_IMAGE,
+  fdcVisitDirectionsHasContent,
+  fdcVisitFaqHasContent,
+  formatFdcDateLabel,
+  getFdcFormWindowState,
+  mergeFdcContent,
+  resolveFdcFaqSectionBackgroundConfig,
+} from '../../data/fdcContent.js'
 import { FdcStallApplicationForm } from '../../components/fdc/FdcStallApplicationForm.jsx'
 import { RevealOnScroll } from '../../components/home/RevealOnScroll.jsx'
 import { Container } from '../../components/ui/Container.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
-import {
-  DEFAULT_FDC_CONTENT,
-  FDC_DEFAULT_HERO_IMAGE,
-  formatFdcDateLabel,
-  getFdcFormWindowState,
-  mergeFdcContent,
-} from '../../data/fdcContent.js'
 import { fetchFdcContent } from '../../services/fdcService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
 import { ROUTES } from '../../utils/constants.js'
@@ -227,7 +232,9 @@ export function FiestaDelCaballo() {
       ? { label: page.heroSecondaryLabel, href: page.heroSecondaryHref || '#cronograma' }
       : null
 
-  const showVisitSection = fdcVisitInfoHasContent(page.visitInfo)
+  const showMapSection = fdcVisitDirectionsHasContent(page.visitInfo)
+  const showFaqSection = fdcVisitFaqHasContent(page.visitInfo)
+  const faqSectionBg = resolveFdcFaqSectionBackgroundConfig(page.visitInfo)
 
   if (submitSuccess) {
     return (
@@ -303,10 +310,18 @@ export function FiestaDelCaballo() {
         </FdcSectionShell>
       ) : null}
 
-      {showVisitSection ? (
-        <FdcSectionShell id="info-visita" config={page.visitInfo}>
+      {showMapSection ? (
+        <FdcSectionShell id="mapa-interactivo" config={page.visitInfo}>
           <RevealOnScroll variant="slow">
-            <FdcVisitInfoSection visitInfo={page.visitInfo} />
+            <FdcMapInteractiveSection visitInfo={page.visitInfo} />
+          </RevealOnScroll>
+        </FdcSectionShell>
+      ) : null}
+
+      {showFaqSection ? (
+        <FdcSectionShell id="preguntas-frecuentes" config={faqSectionBg}>
+          <RevealOnScroll variant="slow">
+            <FdcFaqSection visitInfo={page.visitInfo} />
           </RevealOnScroll>
         </FdcSectionShell>
       ) : null}

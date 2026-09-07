@@ -1,9 +1,13 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { fdcVisitInfoHasContent } from '../../data/fdcContent.js'
+import {
+  fdcVisitDirectionsHasContent,
+  fdcVisitFaqHasContent,
+} from '../../data/fdcContent.js'
 import { resolveFdcVisitMapCoords } from '../../utils/fdcVisitMap.js'
 import { FdcVisitMap } from './FdcVisitMap.jsx'
 import { useFdcSectionTone } from './FdcSectionToneContext.jsx'
+import { FdcSectionTitle } from './FdcFestivalSections.jsx'
 
 function SmartLink({ href, className, children, ...rest }) {
   const target = String(href || '').trim() || '#'
@@ -25,20 +29,6 @@ function SmartLink({ href, className, children, ...rest }) {
     <Link to={target} className={className} {...rest}>
       {children}
     </Link>
-  )
-}
-
-function BlockTitle({ title, showTitle, dark, className = '' }) {
-  const text = String(title || '').trim()
-  if (!showTitle || !text) return null
-  return (
-    <h2
-      className={`font-serif text-lg font-bold uppercase tracking-[0.06em] sm:text-xl lg:text-2xl ${
-        dark ? 'text-white' : 'text-[#171b22]'
-      } ${className}`.trim()}
-    >
-      {text}
-    </h2>
   )
 }
 
@@ -77,7 +67,7 @@ function splitVenueAddress(address) {
   return { venue: parts[0], detail: raw }
 }
 
-function DirectionsPanel({ directions, address, mapUrl, mapButtonLabel, dark }) {
+function DirectionsPanel({ address, mapUrl, mapButtonLabel, dark }) {
   const { venue, detail } = splitVenueAddress(address)
   const showDetail = Boolean(detail && detail.toLowerCase() !== venue.toLowerCase())
 
@@ -93,20 +83,9 @@ function DirectionsPanel({ directions, address, mapUrl, mapButtonLabel, dark }) 
     ? 'border border-white/20 bg-white/10 text-white hover:border-white/35 hover:bg-white/15'
     : 'border border-[#171b22] bg-[#171b22] text-white hover:bg-[#2a313b] hover:border-[#2a313b]'
 
-  const titleGap =
-    directions.showTitle !== false && String(directions.title || '').trim()
-      ? 'mt-4 sm:mt-5'
-      : ''
-
   return (
     <aside className="flex min-w-0 flex-col lg:max-w-[13.5rem] xl:max-w-[14.5rem]">
-      <BlockTitle
-        title={directions.title}
-        showTitle={directions.showTitle !== false}
-        dark={dark}
-      />
-
-      <div className={`${titleGap} flex flex-col gap-4`}>
+      <div className="flex flex-col gap-4">
         {address ? (
           <div className={`rounded-2xl border p-4 sm:p-[1.125rem] ${cardClass}`}>
             <div className="flex items-start gap-3">
@@ -204,82 +183,107 @@ function FaqAccordion({ items, dark }) {
   )
 }
 
-export function FdcVisitInfoSection({ visitInfo }) {
-  if (!fdcVisitInfoHasContent(visitInfo)) return null
+/** Sección pública: Mapa interactivo (lugar + mapa). */
+export function FdcMapInteractiveSection({ visitInfo }) {
+  if (!fdcVisitDirectionsHasContent(visitInfo)) return null
 
-  const { usesDarkTone: dark } = useFdcSectionTone(visitInfo)
+  const { titleTone, usesDarkTone: dark } = useFdcSectionTone(visitInfo)
   const directions = visitInfo?.directions || {}
-  const faq = visitInfo?.faq || {}
-  const faqItems = (faq.items || []).filter((f) => f?.question)
-
   const address = String(directions.address || '').trim()
   const mapUrl = String(directions.mapUrl || '').trim()
   const mapButtonLabel = String(directions.mapButtonLabel || '').trim() || 'Ver en mapa'
+  const mapCoords = resolveFdcVisitMapCoords(directions)
+  const showMap = Number.isFinite(mapCoords.lat) && Number.isFinite(mapCoords.lng)
+  const venueLabel = splitVenueAddress(address).venue || address
+  const sectionTitle = String(directions.title || 'Mapa interactivo').trim()
+  const showTitle = directions.showTitle !== false && Boolean(sectionTitle)
+
+  const hasSidePanel = Boolean(address || mapUrl)
+  const gridClass =
+    hasSidePanel && showMap
+      ? 'lg:grid-cols-[minmax(11rem,0.55fr)_minmax(0,1fr)]'
+      : 'mx-auto max-w-3xl'
+
+  return (
+    <div>
+      {showTitle ? <FdcSectionTitle title={sectionTitle} tone={titleTone} /> : null}
+
+      <div className={`grid gap-8 xl:gap-10 ${gridClass}`}>
+        {hasSidePanel ? (
+          <DirectionsPanel
+            address={address}
+            mapUrl={mapUrl}
+            mapButtonLabel={mapButtonLabel}
+            dark={dark}
+          />
+        ) : null}
+
+        {showMap ? (
+          <div className="min-w-0 lg:min-h-[17.5rem]">
+            <FdcVisitMap
+              center={mapCoords}
+              zoom={mapCoords.zoom}
+              label={venueLabel}
+              address={address}
+              dark={dark}
+            />
+          </div>
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
+/** Sección pública: Preguntas frecuentes. */
+export function FdcFaqSection({ visitInfo }) {
+  if (!fdcVisitFaqHasContent(visitInfo)) return null
+
+  const faq = visitInfo?.faq || {}
+  const faqToneConfig = {
+    backgroundStyle: faq.backgroundStyle ?? visitInfo?.backgroundStyle,
+    backgroundImageUrl: faq.backgroundImageUrl ?? '',
+    overlayOpacity: faq.overlayOpacity ?? visitInfo?.overlayOpacity,
+  }
+  const { titleTone, usesDarkTone: dark } = useFdcSectionTone(faqToneConfig)
+  const faqItems = (faq.items || []).filter((f) => f?.question)
   const ctaLabel = String(faq.ctaLabel || '').trim()
   const ctaHref = String(faq.ctaHref || '').trim()
-  const mapCoords = resolveFdcVisitMapCoords(directions)
-  const hasDirections = Boolean(address || mapUrl || mapCoords)
-  const hasFaq = faqItems.length > 0
-  const showMap = Number.isFinite(mapCoords.lat) && Number.isFinite(mapCoords.lng)
+  const sectionTitle = String(faq.title || 'Preguntas frecuentes').trim()
+  const showTitle = faq.showTitle !== false && Boolean(sectionTitle)
 
   const faqCtaClass = dark
     ? 'inline-flex min-h-11 items-center justify-center rounded-sm border border-white/75 px-5 text-[11px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-white hover:text-[#171b22] sm:text-xs'
     : 'inline-flex min-h-11 items-center justify-center rounded-sm border border-[#d4b483] px-5 text-[11px] font-bold uppercase tracking-[0.14em] text-[#171b22] transition hover:bg-[#d4b483]/10 sm:text-xs'
 
-  const gridClass =
-    hasDirections && showMap && hasFaq
-      ? 'lg:grid-cols-[minmax(11rem,0.62fr)_minmax(0,1.48fr)_minmax(0,1.15fr)]'
-      : hasDirections && showMap
-        ? 'lg:grid-cols-[minmax(11rem,0.65fr)_minmax(0,1fr)]'
-        : hasDirections && hasFaq
-          ? 'lg:grid-cols-[minmax(11rem,0.65fr)_minmax(0,1fr)]'
-          : 'mx-auto max-w-3xl'
+  return (
+    <div className="mx-auto max-w-3xl">
+      {showTitle ? <FdcSectionTitle title={sectionTitle} tone={titleTone} /> : null}
+      <FaqAccordion items={faqItems} dark={dark} />
+      {ctaLabel && ctaHref ? (
+        <div className="mt-6 flex justify-center">
+          <SmartLink href={ctaHref} className={faqCtaClass}>
+            {ctaLabel}
+          </SmartLink>
+        </div>
+      ) : ctaLabel ? (
+        <div className="mt-6 flex justify-center">
+          <span className={`${faqCtaClass} cursor-default opacity-80`}>{ctaLabel}</span>
+        </div>
+      ) : null}
+    </div>
+  )
+}
 
-  const venueLabel = splitVenueAddress(address).venue || address
+/** Vista previa admin: ambas secciones apiladas. */
+export function FdcVisitInfoSection({ visitInfo }) {
+  const showMap = fdcVisitDirectionsHasContent(visitInfo)
+  const showFaq = fdcVisitFaqHasContent(visitInfo)
+  if (!showMap && !showFaq) return null
 
   return (
-    <div className={`grid gap-8 xl:gap-10 ${gridClass}`}>
-      {hasDirections ? (
-        <DirectionsPanel
-          directions={directions}
-          address={address}
-          mapUrl={mapUrl}
-          mapButtonLabel={mapButtonLabel}
-          dark={dark}
-        />
-      ) : null}
-
-      {showMap ? (
-        <div className="min-w-0 lg:min-h-[17.5rem]">
-          <FdcVisitMap
-            center={mapCoords}
-            zoom={mapCoords.zoom}
-            label={venueLabel}
-            address={address}
-            dark={dark}
-          />
-        </div>
-      ) : null}
-
-      {hasFaq ? (
-        <div className="min-w-0">
-          <BlockTitle title={faq.title} showTitle={faq.showTitle !== false} dark={dark} />
-          <div className={faq.showTitle !== false && String(faq.title || '').trim() ? 'mt-4 sm:mt-5' : ''}>
-            <FaqAccordion items={faqItems} dark={dark} />
-            {ctaLabel && ctaHref ? (
-              <div className="mt-6 flex justify-center lg:justify-start">
-                <SmartLink href={ctaHref} className={faqCtaClass}>
-                  {ctaLabel}
-                </SmartLink>
-              </div>
-            ) : ctaLabel ? (
-              <div className="mt-6 flex justify-center lg:justify-start">
-                <span className={`${faqCtaClass} cursor-default opacity-80`}>{ctaLabel}</span>
-              </div>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
+    <div className="space-y-10">
+      {showMap ? <FdcMapInteractiveSection visitInfo={visitInfo} /> : null}
+      {showFaq ? <FdcFaqSection visitInfo={visitInfo} /> : null}
     </div>
   )
 }
