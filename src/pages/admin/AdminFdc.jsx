@@ -6,6 +6,7 @@ import { SingleImageUploadField } from '../../components/admin/SingleImageUpload
 import { FdcSectionBackgroundFields } from '../../components/admin/FdcSectionBackgroundFields.jsx'
 import { FdcFestivalHero } from '../../components/fdc/FdcFestivalHero.jsx'
 import { FdcStatIcon, FdcFestivalStatsSection } from '../../components/fdc/FdcFestivalStatsSection.jsx'
+import { FdcMapLocationIcon } from '../../components/fdc/FdcMapLocationIcon.jsx'
 import {
   FdcFaqSection,
   FdcMapInteractiveSection,
@@ -21,6 +22,7 @@ import {
   FDC_ARTISTS_MAX_DAY_POSTERS,
   FDC_SCHEDULE_MAX_IMAGES,
   FDC_STAT_ICON_OPTIONS,
+  FDC_MAP_LOCATION_ICON_OPTIONS,
   FDC_HERO_COUNTDOWN_LABEL_COLORS,
   applyHeroCoverToFdcContent,
   ensureFdcFormRubros,
@@ -31,6 +33,7 @@ import {
   mergeFdcContent,
   normalizeFdcFestivalStats,
   normalizeFdcHeroCountdown,
+  normalizeFdcMapLocationIcon,
   normalizeFdcVisitInfo,
   resolveFdcFaqSectionBackgroundConfig,
 } from '../../data/fdcContent.js'
@@ -841,6 +844,7 @@ export function AdminFdc() {
             address: '',
             lat: center.lat ?? -26.2312,
             lng: center.lng ?? -65.2818,
+            icon: 'pin',
             isActive: true,
             sortOrder: points.length * 10,
           }
@@ -877,6 +881,7 @@ export function AdminFdc() {
         address,
         lat: Math.min(90, Math.max(-90, lat)),
         lng: Math.min(180, Math.max(-180, lng)),
+        icon: normalizeFdcMapLocationIcon(draft.icon, 'pin'),
         isActive: draft.isActive !== false,
         sortOrder: Math.max(0, Math.round(Number(draft.sortOrder) || points.length * 10)),
       }
@@ -1563,6 +1568,34 @@ export function AdminFdc() {
                   }))
                 }
               />
+            </label>
+            <label className={`${labelClass} md:col-span-2`}>
+              Ícono
+              <select
+                className={inputClass}
+                value={normalizeFdcMapLocationIcon(visitMapPointModal.draft.icon, 'pin')}
+                disabled={saving}
+                onChange={(e) =>
+                  setVisitMapPointModal((m) => ({
+                    ...m,
+                    draft: { ...m.draft, icon: e.target.value },
+                  }))
+                }
+              >
+                {FDC_MAP_LOCATION_ICON_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <span className="mt-2 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                <FdcMapLocationIcon
+                  name={visitMapPointModal.draft.icon}
+                  className="h-5 w-5"
+                  tone="dark"
+                />
+                Vista previa del ícono
+              </span>
             </label>
             <label className={labelClass}>
               Subtítulo
@@ -2822,6 +2855,7 @@ export function AdminFdc() {
                       <table className="w-full text-left text-sm">
                         <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
                           <tr>
+                            <th className="px-4 py-3">Ícono</th>
                             <th className="px-4 py-3">Título</th>
                             <th className="px-4 py-3">Dirección</th>
                             <th className="px-4 py-3">Coordenadas</th>
@@ -2832,7 +2866,7 @@ export function AdminFdc() {
                         <tbody className="divide-y divide-slate-100">
                           {visitMapPoints.length === 0 ? (
                             <tr>
-                              <td colSpan={5} className="px-4 py-6 text-center text-slate-500">
+                              <td colSpan={6} className="px-4 py-6 text-center text-slate-500">
                                 Todavía no hay ubicaciones. Agregá al menos una para mostrar el
                                 mapa.
                               </td>
@@ -2847,6 +2881,15 @@ export function AdminFdc() {
                               )
                               .map(({ item, idx }) => (
                                 <tr key={item.id || idx} className="hover:bg-slate-50/80">
+                                  <td className="px-4 py-3">
+                                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-slate-50">
+                                      <FdcMapLocationIcon
+                                        name={item.icon}
+                                        className="h-4 w-4"
+                                        tone="dark"
+                                      />
+                                    </span>
+                                  </td>
                                   <td className="px-4 py-3">
                                     <p className="font-medium text-slate-900">
                                       {item.title || '—'}

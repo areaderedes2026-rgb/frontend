@@ -3,14 +3,16 @@ import { createPortal } from 'react-dom'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { CircleMarker, MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from 'react-leaflet'
+import { getFdcMapLocationEmoji, FdcMapLocationIcon } from './FdcMapLocationIcon.jsx'
 
-function buildMarkerIcon(active = false, dark = false) {
+function buildMarkerIcon(active = false, dark = false, iconName = 'pin') {
   const color = active ? '#c4a574' : dark ? '#0c1017' : '#171b22'
   const border = active ? '#ffffff' : '#d4b483'
   const size = active ? 40 : 34
+  const emoji = getFdcMapLocationEmoji(iconName)
   return L.divIcon({
     className: 'fdc-visit-map-marker',
-    html: `<div style="width:${size}px;height:${size}px;border-radius:9999px;background:${color};color:#ffffff;border:2px solid ${border};display:flex;align-items:center;justify-content:center;box-shadow:0 10px 24px -10px rgba(0,0,0,0.65);font-size:15px;line-height:1;">📍</div>`,
+    html: `<div style="width:${size}px;height:${size}px;border-radius:9999px;background:${color};color:#ffffff;border:2px solid ${border};display:flex;align-items:center;justify-content:center;box-shadow:0 10px 24px -10px rgba(0,0,0,0.65);font-size:${active ? 16 : 14}px;line-height:1;">${emoji}</div>`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
     popupAnchor: [0, -16],
@@ -223,14 +225,21 @@ function LeafletMapView({
     [activePointId, activePoints],
   )
 
-  const markerIcons = useMemo(
-    () => ({
-      base: buildMarkerIcon(false, dark),
-      active: buildMarkerIcon(true, dark),
+  const markerIcons = useMemo(() => {
+    const cache = new Map()
+    function iconFor(point, active) {
+      const iconName = point?.icon || 'pin'
+      const key = `${iconName}:${active ? '1' : '0'}`
+      if (!cache.has(key)) {
+        cache.set(key, buildMarkerIcon(Boolean(active), dark, iconName))
+      }
+      return cache.get(key)
+    }
+    return {
+      iconFor,
       user: buildUserIcon(),
-    }),
-    [dark],
-  )
+    }
+  }, [dark])
 
   const focusKey =
     fitBounds?.length >= 2
@@ -299,7 +308,7 @@ function LeafletMapView({
           <Marker
             key={point.id}
             position={[Number(point.lat), Number(point.lng)]}
-            icon={active ? markerIcons.active : markerIcons.base}
+            icon={markerIcons.iconFor(point, active)}
             eventHandlers={{
               click: () => onSelectPoint?.(point.id),
             }}
@@ -713,22 +722,36 @@ function FdcVisitMapFullscreen({
                     key={point.id}
                     type="button"
                     onClick={() => handleSelect(point.id)}
-                    className={`inline-flex max-w-[14rem] shrink-0 flex-col rounded-2xl border px-3 py-2 text-left transition ${
+                    className={`inline-flex max-w-[16rem] shrink-0 items-start gap-2 rounded-2xl border px-3 py-2 text-left transition ${
                       active
                         ? 'border-[#d4b483] bg-[#d4b483] text-[#171b22] shadow-lg'
                         : 'border-white/20 bg-[#171b22]/85 text-white backdrop-blur hover:border-white/40'
                     }`}
                   >
-                    <span className="truncate text-xs font-bold sm:text-sm">{point.title}</span>
-                    {point.address ? (
-                      <span
-                        className={`mt-0.5 truncate text-[10px] sm:text-[11px] ${
-                          active ? 'text-[#171b22]/75' : 'text-white/55'
-                        }`}
-                      >
-                        {point.address}
-                      </span>
-                    ) : null}
+                    <span
+                      className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
+                        active ? 'bg-[#171b22]/10' : 'bg-white/10'
+                      }`}
+                      aria-hidden
+                    >
+                      <FdcMapLocationIcon
+                        name={point.icon}
+                        className="h-3.5 w-3.5"
+                        tone={active ? 'dark' : 'light'}
+                      />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-xs font-bold sm:text-sm">{point.title}</span>
+                      {point.address ? (
+                        <span
+                          className={`mt-0.5 block truncate text-[10px] sm:text-[11px] ${
+                            active ? 'text-[#171b22]/75' : 'text-white/55'
+                          }`}
+                        >
+                          {point.address}
+                        </span>
+                      ) : null}
+                    </span>
                   </button>
                 )
               })}

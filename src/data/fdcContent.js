@@ -240,6 +240,36 @@ export const FDC_STAT_ICON_OPTIONS = [
 
 const FDC_STAT_ICONS = new Set(FDC_STAT_ICON_OPTIONS.map((o) => o.value))
 
+/** Íconos elegibles para ubicaciones del mapa FDC. */
+export const FDC_MAP_LOCATION_ICON_OPTIONS = [
+  { value: 'pin', label: 'Pin / ubicación' },
+  { value: 'horse', label: 'Caballo / predio' },
+  { value: 'stage', label: 'Escenario / música' },
+  { value: 'food', label: 'Gastronomía' },
+  { value: 'market', label: 'Feria / puestos' },
+  { value: 'ticket', label: 'Boletería / entradas' },
+  { value: 'parking', label: 'Estacionamiento' },
+  { value: 'info', label: 'Información' },
+  { value: 'restroom', label: 'Baños' },
+  { value: 'camping', label: 'Camping' },
+  { value: 'medical', label: 'Salud / primeros auxilios' },
+  { value: 'hotel', label: 'Alojamiento' },
+  { value: 'water', label: 'Agua / bebedero' },
+  { value: 'park', label: 'Plaza / parque' },
+  { value: 'bus', label: 'Transporte / colectivo' },
+  { value: 'car', label: 'Acceso / auto' },
+  { value: 'landmark', label: 'Punto de interés' },
+]
+
+const FDC_MAP_LOCATION_ICONS = new Set(FDC_MAP_LOCATION_ICON_OPTIONS.map((o) => o.value))
+
+export function normalizeFdcMapLocationIcon(value, fallback = 'pin') {
+  const key = String(value || '').trim()
+  if (FDC_MAP_LOCATION_ICONS.has(key)) return key
+  const fb = String(fallback || '').trim()
+  return FDC_MAP_LOCATION_ICONS.has(fb) ? fb : 'pin'
+}
+
 export const DEFAULT_FDC_FESTIVAL_STATS = {
   title: 'La fiesta en números',
   subtitle: '',
@@ -389,6 +419,7 @@ export const DEFAULT_FDC_VISIT_INFO = {
         address: 'Ruta 9 Km 1308, Trancas, Tucumán',
         lat: -26.2312,
         lng: -65.2818,
+        icon: 'horse',
         isActive: true,
         sortOrder: 10,
       },
@@ -463,6 +494,7 @@ export function normalizeFdcVisitMapPoint(item, index = 0) {
     address,
     lat: Math.min(90, Math.max(-90, lat)),
     lng: Math.min(180, Math.max(-180, lng)),
+    icon: normalizeFdcMapLocationIcon(src.icon, 'pin'),
     isActive: src.isActive !== false && src.isActive !== 0 && src.isActive !== '0',
     sortOrder: Number.isFinite(Number(src.sortOrder)) ? Math.max(0, Math.round(Number(src.sortOrder))) : index * 10,
   }

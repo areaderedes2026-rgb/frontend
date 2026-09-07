@@ -5,6 +5,7 @@ import {
   fdcVisitFaqHasContent,
 } from '../../data/fdcContent.js'
 import { FdcVisitMap } from './FdcVisitMap.jsx'
+import { FdcMapLocationIcon } from './FdcMapLocationIcon.jsx'
 import { useFdcSectionTone } from './FdcSectionToneContext.jsx'
 import { FdcSectionTitle } from './FdcFestivalSections.jsx'
 
@@ -41,14 +42,6 @@ function normalizeSearchText(value) {
 function pointSearchText(point) {
   return normalizeSearchText(
     [point?.title, point?.subtitle, point?.address, point?.id].filter(Boolean).join(' '),
-  )
-}
-
-function PinIcon({ className = 'h-4 w-4' }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7Zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5Z" />
-    </svg>
   )
 }
 
@@ -203,7 +196,11 @@ function LocationsPanel({
                     }`}
                     aria-hidden
                   >
-                    <PinIcon className="h-4 w-4" />
+                    <FdcMapLocationIcon
+                      name={point.icon}
+                      className="h-4 w-4"
+                      tone={active && !dark ? 'accent' : dark ? 'accent' : 'dark'}
+                    />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span
