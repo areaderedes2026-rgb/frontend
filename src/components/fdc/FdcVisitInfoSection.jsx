@@ -1,10 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   fdcVisitDirectionsHasContent,
   fdcVisitFaqHasContent,
 } from '../../data/fdcContent.js'
-import { resolveFdcVisitMapCoords } from '../../utils/fdcVisitMap.js'
 import { FdcVisitMap } from './FdcVisitMap.jsx'
 import { useFdcSectionTone } from './FdcSectionToneContext.jsx'
 import { FdcSectionTitle } from './FdcFestivalSections.jsx'
@@ -40,85 +39,100 @@ function PinIcon({ className = 'h-4 w-4' }) {
   )
 }
 
-function ExternalMapIcon({ className = 'h-4 w-4' }) {
+function LocationsPanel({ points, activePointId, onSelect, dark }) {
   return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      aria-hidden
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M13.5 6H18v4.5M18 6l-7.5 7.5M10.5 6H6a1.5 1.5 0 0 0-1.5 1.5v10.5A1.5 1.5 0 0 0 6 19.5h10.5a1.5 1.5 0 0 0 1.5-1.5V13"
-      />
-    </svg>
-  )
-}
-
-function splitVenueAddress(address) {
-  const raw = String(address || '').trim()
-  if (!raw) return { venue: '', detail: '' }
-  const parts = raw.split(',').map((part) => part.trim()).filter(Boolean)
-  if (parts.length <= 1) return { venue: raw, detail: '' }
-  return { venue: parts[0], detail: raw }
-}
-
-function DirectionsPanel({ address, mapUrl, mapButtonLabel, dark }) {
-  const { venue, detail } = splitVenueAddress(address)
-  const showDetail = Boolean(detail && detail.toLowerCase() !== venue.toLowerCase())
-
-  const cardClass = dark
-    ? 'border-white/12 bg-white/[0.06] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
-    : 'border-[#e8e4dc] bg-white shadow-[0_14px_36px_-28px_rgba(23,27,34,0.35)] ring-1 ring-[#171b22]/[0.04]'
-  const venueClass = dark ? 'text-white' : 'text-[#171b22]'
-  const detailClass = dark ? 'text-white/75' : 'text-[#4b505a]'
-  const pinBadgeClass = dark
-    ? 'bg-[#d4b483]/15 text-[#d4b483] ring-1 ring-[#d4b483]/30'
-    : 'bg-[#171b22] text-[#d4b483] ring-1 ring-[#171b22]/10'
-  const mapBtnClass = dark
-    ? 'border border-white/20 bg-white/10 text-white hover:border-white/35 hover:bg-white/15'
-    : 'border border-[#171b22] bg-[#171b22] text-white hover:bg-[#2a313b] hover:border-[#2a313b]'
-
-  return (
-    <aside className="flex min-w-0 flex-col lg:max-w-[13.5rem] xl:max-w-[14.5rem]">
-      <div className="flex flex-col gap-4">
-        {address ? (
-          <div className={`rounded-2xl border p-4 sm:p-[1.125rem] ${cardClass}`}>
-            <div className="flex items-start gap-3">
-              <span
-                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${pinBadgeClass}`}
-                aria-hidden
+    <aside className="flex min-w-0 flex-col">
+      <p
+        className={`mb-3 text-[10px] font-bold uppercase tracking-[0.18em] sm:text-[11px] ${
+          dark ? 'text-[#d4b483]' : 'text-[#8a7048]'
+        }`}
+      >
+        Ubicaciones
+      </p>
+      <ul
+        className={`flex max-h-[22rem] flex-col gap-2 overflow-y-auto pr-1 sm:max-h-[26rem] ${
+          dark ? '[scrollbar-color:rgba(255,255,255,0.25)_transparent]' : ''
+        }`}
+        role="listbox"
+        aria-label="Ubicaciones del festival"
+      >
+        {points.map((point) => {
+          const active = point.id === activePointId
+          return (
+            <li key={point.id}>
+              <button
+                type="button"
+                role="option"
+                aria-selected={active}
+                onClick={() => onSelect(point.id)}
+                className={`flex w-full items-start gap-3 rounded-2xl border px-3.5 py-3 text-left transition sm:px-4 sm:py-3.5 ${
+                  active
+                    ? dark
+                      ? 'border-[#d4b483]/60 bg-white/10 shadow-[0_10px_28px_-18px_rgba(0,0,0,0.55)]'
+                      : 'border-[#171b22] bg-[#171b22] text-white shadow-[0_14px_32px_-20px_rgba(23,27,34,0.55)]'
+                    : dark
+                      ? 'border-white/12 bg-white/[0.04] text-white/90 hover:border-white/25 hover:bg-white/[0.08]'
+                      : 'border-[#e8e4dc] bg-white text-[#171b22] hover:border-[#d4b483]/70 hover:bg-[#faf8f4]'
+                }`}
               >
-                <PinIcon className="h-[1.125rem] w-[1.125rem]" />
-              </span>
-              <div className="min-w-0 pt-0.5">
-                {venue ? (
-                  <p className={`font-serif text-[1.05rem] font-bold leading-snug sm:text-lg ${venueClass}`}>
-                    {venue}
-                  </p>
-                ) : null}
-                {showDetail ? (
-                  <p className={`mt-1.5 text-xs leading-relaxed sm:text-[13px] ${detailClass}`}>{detail}</p>
-                ) : null}
-              </div>
-            </div>
-          </div>
-        ) : null}
-
-        {mapUrl ? (
-          <SmartLink
-            href={mapUrl}
-            className={`group inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.16em] transition sm:text-[11px] ${mapBtnClass}`}
-          >
-            <ExternalMapIcon className="h-3.5 w-3.5 shrink-0 opacity-90 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-            <span className="truncate">{mapButtonLabel}</span>
-          </SmartLink>
-        ) : null}
-      </div>
+                <span
+                  className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
+                    active
+                      ? dark
+                        ? 'bg-[#d4b483]/20 text-[#d4b483]'
+                        : 'bg-white/15 text-[#d4b483]'
+                      : dark
+                        ? 'bg-white/8 text-[#d4b483]'
+                        : 'bg-[#171b22]/[0.06] text-[#171b22]'
+                  }`}
+                  aria-hidden
+                >
+                  <PinIcon className="h-4 w-4" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span
+                    className={`block font-serif text-[15px] font-bold leading-snug sm:text-base ${
+                      active && !dark ? 'text-white' : ''
+                    }`}
+                  >
+                    {point.title}
+                  </span>
+                  {point.subtitle ? (
+                    <span
+                      className={`mt-0.5 block text-xs font-medium ${
+                        active
+                          ? dark
+                            ? 'text-white/70'
+                            : 'text-white/75'
+                          : dark
+                            ? 'text-white/55'
+                            : 'text-[#6b7280]'
+                      }`}
+                    >
+                      {point.subtitle}
+                    </span>
+                  ) : null}
+                  {point.address ? (
+                    <span
+                      className={`mt-1 block text-xs leading-relaxed ${
+                        active
+                          ? dark
+                            ? 'text-white/65'
+                            : 'text-white/70'
+                          : dark
+                            ? 'text-white/45'
+                            : 'text-[#4b505a]'
+                      }`}
+                    >
+                      {point.address}
+                    </span>
+                  ) : null}
+                </span>
+              </button>
+            </li>
+          )
+        })}
+      </ul>
     </aside>
   )
 }
@@ -183,52 +197,65 @@ function FaqAccordion({ items, dark }) {
   )
 }
 
-/** Sección pública: Mapa interactivo (lugar + mapa). */
+/** Sección pública: Mapa interactivo (lista de ubicaciones + mapa). */
 export function FdcMapInteractiveSection({ visitInfo }) {
-  if (!fdcVisitDirectionsHasContent(visitInfo)) return null
-
   const { titleTone, usesDarkTone: dark } = useFdcSectionTone(visitInfo)
   const directions = visitInfo?.directions || {}
-  const address = String(directions.address || '').trim()
-  const mapUrl = String(directions.mapUrl || '').trim()
-  const mapButtonLabel = String(directions.mapButtonLabel || '').trim() || 'Ver en mapa'
-  const mapCoords = resolveFdcVisitMapCoords(directions)
-  const showMap = Number.isFinite(mapCoords.lat) && Number.isFinite(mapCoords.lng)
-  const venueLabel = splitVenueAddress(address).venue || address
+  const points = useMemo(
+    () =>
+      (directions.points || [])
+        .filter(
+          (p) =>
+            p?.isActive !== false &&
+            Number.isFinite(Number(p?.lat)) &&
+            Number.isFinite(Number(p?.lng)) &&
+            (String(p?.title || '').trim() || String(p?.address || '').trim()),
+        )
+        .sort((a, b) => (Number(a.sortOrder) || 0) - (Number(b.sortOrder) || 0)),
+    [directions.points],
+  )
+
+  const [activePointId, setActivePointId] = useState('')
+
+  useEffect(() => {
+    if (!points.length) {
+      setActivePointId('')
+      return
+    }
+    setActivePointId((prev) =>
+      points.some((p) => p.id === prev) ? prev : points[0].id,
+    )
+  }, [points])
+
+  if (!fdcVisitDirectionsHasContent(visitInfo) || points.length === 0) return null
+
   const sectionTitle = String(directions.title || 'Mapa interactivo').trim()
   const showTitle = directions.showTitle !== false && Boolean(sectionTitle)
-
-  const hasSidePanel = Boolean(address || mapUrl)
-  const gridClass =
-    hasSidePanel && showMap
-      ? 'lg:grid-cols-[minmax(11rem,0.55fr)_minmax(0,1fr)]'
-      : 'mx-auto max-w-3xl'
+  const center = directions.center || {
+    lat: Number(points[0]?.lat) || -26.2312,
+    lng: Number(points[0]?.lng) || -65.2818,
+  }
+  const zoom = Number(directions.zoom) || 14
 
   return (
     <div>
       {showTitle ? <FdcSectionTitle title={sectionTitle} tone={titleTone} /> : null}
 
-      <div className={`grid gap-8 xl:gap-10 ${gridClass}`}>
-        {hasSidePanel ? (
-          <DirectionsPanel
-            address={address}
-            mapUrl={mapUrl}
-            mapButtonLabel={mapButtonLabel}
-            dark={dark}
-          />
-        ) : null}
-
-        {showMap ? (
-          <div className="min-w-0 lg:min-h-[17.5rem]">
-            <FdcVisitMap
-              center={mapCoords}
-              zoom={mapCoords.zoom}
-              label={venueLabel}
-              address={address}
-              dark={dark}
-            />
-          </div>
-        ) : null}
+      <div className="grid gap-6 lg:grid-cols-[minmax(14rem,0.85fr)_minmax(0,1.4fr)] lg:items-stretch xl:gap-8">
+        <LocationsPanel
+          points={points}
+          activePointId={activePointId}
+          onSelect={setActivePointId}
+          dark={dark}
+        />
+        <FdcVisitMap
+          center={center}
+          zoom={zoom}
+          points={points}
+          activePointId={activePointId}
+          onSelectPoint={setActivePointId}
+          dark={dark}
+        />
       </div>
     </div>
   )

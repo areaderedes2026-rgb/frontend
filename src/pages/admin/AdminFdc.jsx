@@ -129,13 +129,21 @@ function mapContentToForm(content) {
       ...normalizeFdcFestivalStats(merged.festivalStats),
       items: (normalizeFdcFestivalStats(merged.festivalStats).items || []).map((it) => ({ ...it })),
     },
-    visitInfo: {
-      ...normalizeFdcVisitInfo(merged.visitInfo),
-      faq: {
-        ...normalizeFdcVisitInfo(merged.visitInfo).faq,
-        items: (normalizeFdcVisitInfo(merged.visitInfo).faq?.items || []).map((it) => ({ ...it })),
-      },
-    },
+    visitInfo: (() => {
+      const visit = normalizeFdcVisitInfo(merged.visitInfo)
+      return {
+        ...visit,
+        directions: {
+          ...visit.directions,
+          center: { ...(visit.directions?.center || {}) },
+          points: (visit.directions?.points || []).map((it) => ({ ...it })),
+        },
+        faq: {
+          ...visit.faq,
+          items: (visit.faq?.items || []).map((it) => ({ ...it })),
+        },
+      }
+    })(),
     formSection: {
       ...(merged.formSection || {}),
       backgroundStyle: normalizeFdcSectionBackgroundStyle(
@@ -241,6 +249,11 @@ export function AdminFdc() {
   const [sponsorModal, setSponsorModal] = useState({ open: false, index: null, draft: null })
   const [statModal, setStatModal] = useState({ open: false, index: null, draft: null })
   const [visitFaqModal, setVisitFaqModal] = useState({ open: false, index: null, draft: null })
+  const [visitMapPointModal, setVisitMapPointModal] = useState({
+    open: false,
+    index: null,
+    draft: null,
+  })
 
   const dismissToast = useCallback(() => setToast(null), [])
   const apiAvailable = isApiConfigured()
@@ -815,6 +828,68 @@ export function AdminFdc() {
     setVisitFaqModal({ open: false, index: null, draft: null })
   }
 
+  function openVisitMapPointModal(index = null) {
+    const points = form.visitInfo?.directions?.points || []
+    const center = form.visitInfo?.directions?.center || {}
+    const draft =
+      index != null
+        ? { ...points[index] }
+        : {
+            id: makeFdcItemId('loc'),
+            title: '',
+            subtitle: '',
+            address: '',
+            lat: center.lat ?? -26.2312,
+            lng: center.lng ?? -65.2818,
+            isActive: true,
+            sortOrder: points.length * 10,
+          }
+    setVisitMapPointModal({ open: true, index, draft })
+  }
+
+  function applyVisitMapPointModal() {
+    const draft = visitMapPointModal.draft || {}
+    const title = String(draft.title || '').trim()
+    const subtitle = String(draft.subtitle || '').trim()
+    const address = String(draft.address || '').trim()
+    const lat = Number(draft.lat)
+    const lng = Number(draft.lng)
+    if (!title && !subtitle && !address) {
+      setToast({
+        variant: 'error',
+        message: 'Completá al menos título, subtítulo o dirección.',
+      })
+      return
+    }
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      setToast({
+        variant: 'error',
+        message: 'Latitud y longitud deben ser valores numéricos válidos.',
+      })
+      return
+    }
+    updateVisitInfo((v) => {
+      const points = [...(v.directions?.points || [])]
+      const entry = {
+        id: String(draft.id || '').trim() || makeFdcItemId('loc'),
+        title: title || subtitle || address,
+        subtitle,
+        address,
+        lat: Math.min(90, Math.max(-90, lat)),
+        lng: Math.min(180, Math.max(-180, lng)),
+        isActive: draft.isActive !== false,
+        sortOrder: Math.max(0, Math.round(Number(draft.sortOrder) || points.length * 10)),
+      }
+      if (visitMapPointModal.index == null) points.push(entry)
+      else points[visitMapPointModal.index] = entry
+      return {
+        ...v,
+        directions: { ...(v.directions || {}), points },
+      }
+    })
+    setVisitMapPointModal({ open: false, index: null, draft: null })
+  }
+
   const scheduleImages = form.schedule?.images || []
   const scheduleDays = form.schedule?.days || []
   const artistItems = form.artists?.items || []
@@ -824,6 +899,7 @@ export function AdminFdc() {
   const sponsorItems = form.sponsors?.items || []
   const statItems = form.festivalStats?.items || []
   const visitFaqItems = form.visitInfo?.faq?.items || []
+  const visitMapPoints = form.visitInfo?.directions?.points || []
 
   return (
     <>
@@ -1432,6 +1508,157 @@ export function AdminFdc() {
                   }))
                 }
               />
+            </label>
+          </div>
+        ) : null}
+      </Modal>
+
+      {/* Ubicación mapa FDC modal */}
+      <Modal
+        open={visitMapPointModal.open}
+        onClose={() => setVisitMapPointModal({ open: false, index: null, draft: null })}
+        title={
+          visitMapPointModal.index == null ? 'Agregar ubicación' : 'Editar ubicación'
+        }
+        size="wide"
+        footer={
+          <ModalFooter
+            saving={saving}
+            applyDisabled={
+              !String(visitMapPointModal.draft?.title || '').trim() &&
+              !String(visitMapPointModal.draft?.subtitle || '').trim() &&
+              !String(visitMapPointModal.draft?.address || '').trim()
+            }
+            onCancel={() => setVisitMapPointModal({ open: false, index: null, draft: null })}
+            onApply={applyVisitMapPointModal}
+          />
+        }
+      >
+        {visitMapPointModal.draft ? (
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className={labelClass}>
+              ID
+              <input
+                className={inputClass}
+                value={visitMapPointModal.draft.id || ''}
+                disabled={saving}
+                onChange={(e) =>
+                  setVisitMapPointModal((m) => ({
+                    ...m,
+                    draft: { ...m.draft, id: e.target.value },
+                  }))
+                }
+              />
+            </label>
+            <label className={labelClass}>
+              Título
+              <input
+                className={inputClass}
+                value={visitMapPointModal.draft.title || ''}
+                disabled={saving}
+                onChange={(e) =>
+                  setVisitMapPointModal((m) => ({
+                    ...m,
+                    draft: { ...m.draft, title: e.target.value },
+                  }))
+                }
+              />
+            </label>
+            <label className={labelClass}>
+              Subtítulo
+              <input
+                className={inputClass}
+                value={visitMapPointModal.draft.subtitle || ''}
+                disabled={saving}
+                onChange={(e) =>
+                  setVisitMapPointModal((m) => ({
+                    ...m,
+                    draft: { ...m.draft, subtitle: e.target.value },
+                  }))
+                }
+              />
+            </label>
+            <label className={labelClass}>
+              Dirección
+              <input
+                className={inputClass}
+                value={visitMapPointModal.draft.address || ''}
+                disabled={saving}
+                onChange={(e) =>
+                  setVisitMapPointModal((m) => ({
+                    ...m,
+                    draft: { ...m.draft, address: e.target.value },
+                  }))
+                }
+              />
+            </label>
+            <label className={labelClass}>
+              Latitud
+              <input
+                className={inputClass}
+                type="number"
+                step="any"
+                value={visitMapPointModal.draft.lat ?? ''}
+                disabled={saving}
+                onChange={(e) =>
+                  setVisitMapPointModal((m) => ({
+                    ...m,
+                    draft: {
+                      ...m.draft,
+                      lat: e.target.value === '' ? '' : Number(e.target.value),
+                    },
+                  }))
+                }
+              />
+            </label>
+            <label className={labelClass}>
+              Longitud
+              <input
+                className={inputClass}
+                type="number"
+                step="any"
+                value={visitMapPointModal.draft.lng ?? ''}
+                disabled={saving}
+                onChange={(e) =>
+                  setVisitMapPointModal((m) => ({
+                    ...m,
+                    draft: {
+                      ...m.draft,
+                      lng: e.target.value === '' ? '' : Number(e.target.value),
+                    },
+                  }))
+                }
+              />
+            </label>
+            <label className={labelClass}>
+              Orden
+              <input
+                className={inputClass}
+                type="number"
+                value={visitMapPointModal.draft.sortOrder ?? 0}
+                disabled={saving}
+                onChange={(e) =>
+                  setVisitMapPointModal((m) => ({
+                    ...m,
+                    draft: { ...m.draft, sortOrder: Number(e.target.value) || 0 },
+                  }))
+                }
+              />
+            </label>
+            <label className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 md:mt-6">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-slate-300 text-sky-700 focus:ring-sky-600"
+                checked={visitMapPointModal.draft.isActive !== false}
+                disabled={saving}
+                onChange={(e) =>
+                  setVisitMapPointModal((m) => ({
+                    ...m,
+                    draft: { ...m.draft, isActive: e.target.checked },
+                  }))
+                }
+              />
+              Activo (visible en la web)
             </label>
           </div>
         ) : null}
@@ -2497,62 +2724,14 @@ export function AdminFdc() {
                           }
                         />
                       </label>
-                      <label className={labelClass}>
-                        Dirección / lugar
-                        <textarea
-                          className={textareaClass}
-                          value={form.visitInfo?.directions?.address || ''}
-                          disabled={saving}
-                          rows={2}
-                          onChange={(e) =>
-                            updateVisitInfo((v) => ({
-                              ...v,
-                              directions: { ...(v.directions || {}), address: e.target.value },
-                            }))
-                          }
-                        />
-                      </label>
-                      <label className={labelClass}>
-                        Texto del botón mapa
-                        <input
-                          className={inputClass}
-                          value={form.visitInfo?.directions?.mapButtonLabel || ''}
-                          disabled={saving}
-                          onChange={(e) =>
-                            updateVisitInfo((v) => ({
-                              ...v,
-                              directions: { ...(v.directions || {}), mapButtonLabel: e.target.value },
-                            }))
-                          }
-                        />
-                      </label>
-                      <label className={labelClass}>
-                        URL del mapa (Google Maps)
-                        <input
-                          className={inputClass}
-                          value={form.visitInfo?.directions?.mapUrl || ''}
-                          disabled={saving}
-                          placeholder="https://maps.google.com/…"
-                          onChange={(e) =>
-                            updateVisitInfo((v) => ({
-                              ...v,
-                              directions: { ...(v.directions || {}), mapUrl: e.target.value },
-                            }))
-                          }
-                        />
-                        <span className="mt-1 text-xs font-normal text-slate-500">
-                          Se usa para el botón «Ver en mapa». Si no cargás coordenadas, también puede
-                          inferir la ubicación desde esta URL.
-                        </span>
-                      </label>
                       <div className="grid gap-3 sm:grid-cols-3">
                         <label className={labelClass}>
-                          Latitud
+                          Latitud del centro
                           <input
                             className={inputClass}
                             type="number"
                             step="any"
-                            value={form.visitInfo?.directions?.mapLat ?? ''}
+                            value={form.visitInfo?.directions?.center?.lat ?? ''}
                             disabled={saving}
                             placeholder="-26.2312"
                             onChange={(e) =>
@@ -2560,19 +2739,23 @@ export function AdminFdc() {
                                 ...v,
                                 directions: {
                                   ...(v.directions || {}),
-                                  mapLat: e.target.value === '' ? null : Number(e.target.value),
+                                  center: {
+                                    ...(v.directions?.center || {}),
+                                    lat:
+                                      e.target.value === '' ? '' : Number(e.target.value),
+                                  },
                                 },
                               }))
                             }
                           />
                         </label>
                         <label className={labelClass}>
-                          Longitud
+                          Longitud del centro
                           <input
                             className={inputClass}
                             type="number"
                             step="any"
-                            value={form.visitInfo?.directions?.mapLng ?? ''}
+                            value={form.visitInfo?.directions?.center?.lng ?? ''}
                             disabled={saving}
                             placeholder="-65.2818"
                             onChange={(e) =>
@@ -2580,27 +2763,31 @@ export function AdminFdc() {
                                 ...v,
                                 directions: {
                                   ...(v.directions || {}),
-                                  mapLng: e.target.value === '' ? null : Number(e.target.value),
+                                  center: {
+                                    ...(v.directions?.center || {}),
+                                    lng:
+                                      e.target.value === '' ? '' : Number(e.target.value),
+                                  },
                                 },
                               }))
                             }
                           />
                         </label>
                         <label className={labelClass}>
-                          Zoom del mapa
+                          Zoom inicial (10-18)
                           <input
                             className={inputClass}
                             type="number"
                             min={10}
                             max={18}
-                            value={form.visitInfo?.directions?.mapZoom ?? 14}
+                            value={form.visitInfo?.directions?.zoom ?? 14}
                             disabled={saving}
                             onChange={(e) =>
                               updateVisitInfo((v) => ({
                                 ...v,
                                 directions: {
                                   ...(v.directions || {}),
-                                  mapZoom: Number(e.target.value) || 14,
+                                  zoom: Number(e.target.value) || 14,
                                 },
                               }))
                             }
@@ -2608,6 +2795,97 @@ export function AdminFdc() {
                         </label>
                       </div>
                     </div>
+
+                    <div className="mt-5 overflow-hidden rounded-xl border border-slate-200">
+                      <table className="w-full text-left text-sm">
+                        <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          <tr>
+                            <th className="px-4 py-3">Título</th>
+                            <th className="px-4 py-3">Dirección</th>
+                            <th className="px-4 py-3">Coordenadas</th>
+                            <th className="px-4 py-3">Estado</th>
+                            <th className="px-4 py-3 text-right">Acciones</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {visitMapPoints.length === 0 ? (
+                            <tr>
+                              <td colSpan={5} className="px-4 py-6 text-center text-slate-500">
+                                Todavía no hay ubicaciones. Agregá al menos una para mostrar el
+                                mapa.
+                              </td>
+                            </tr>
+                          ) : (
+                            [...visitMapPoints]
+                              .map((item, idx) => ({ item, idx }))
+                              .sort(
+                                (a, b) =>
+                                  (Number(a.item.sortOrder) || 0) -
+                                  (Number(b.item.sortOrder) || 0),
+                              )
+                              .map(({ item, idx }) => (
+                                <tr key={item.id || idx} className="hover:bg-slate-50/80">
+                                  <td className="px-4 py-3">
+                                    <p className="font-medium text-slate-900">
+                                      {item.title || '—'}
+                                    </p>
+                                    {item.subtitle ? (
+                                      <p className="text-xs text-slate-500">{item.subtitle}</p>
+                                    ) : null}
+                                  </td>
+                                  <td className="px-4 py-3 text-slate-600">
+                                    {item.address || '—'}
+                                  </td>
+                                  <td className="px-4 py-3 font-mono text-xs text-slate-600">
+                                    {item.lat}, {item.lng}
+                                  </td>
+                                  <td className="px-4 py-3 text-slate-700">
+                                    {item.isActive !== false ? 'Activo' : 'Inactivo'}
+                                  </td>
+                                  <td className="px-4 py-3">
+                                    <div className="flex justify-end gap-2">
+                                      <button
+                                        type="button"
+                                        className={ACTION_NEUTRAL}
+                                        disabled={saving}
+                                        onClick={() => openVisitMapPointModal(idx)}
+                                      >
+                                        Editar
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className={ACTION_DANGER}
+                                        disabled={saving}
+                                        onClick={() =>
+                                          updateVisitInfo((v) => ({
+                                            ...v,
+                                            directions: {
+                                              ...(v.directions || {}),
+                                              points: (v.directions?.points || []).filter(
+                                                (_, i) => i !== idx,
+                                              ),
+                                            },
+                                          }))
+                                        }
+                                      >
+                                        Eliminar
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                    <button
+                      type="button"
+                      className={`${ACTION_ADD} mt-3`}
+                      disabled={saving}
+                      onClick={() => openVisitMapPointModal(null)}
+                    >
+                      + Agregar ubicación
+                    </button>
 
                     <div className="mt-6 overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#f7f7f5] p-4">
                       <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">

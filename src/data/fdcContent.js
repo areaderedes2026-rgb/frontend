@@ -377,14 +377,20 @@ export const DEFAULT_FDC_VISIT_INFO = {
   directions: {
     showTitle: true,
     title: 'Mapa interactivo',
-    address: 'Hipódromo Municipal de Trancas, Ruta 9 Km 1308, Trancas, Tucumán',
-    mapButtonLabel: 'Ver en mapa',
-    mapUrl:
-      'https://www.google.com/maps/search/?api=1&query=Hip%C3%B3dromo+Municipal+de+Trancas+Trancas+Tucum%C3%A1n',
-    mapImageUrl: '',
-    mapLat: -26.2312,
-    mapLng: -65.2818,
-    mapZoom: 14,
+    center: { lat: -26.2312, lng: -65.2818 },
+    zoom: 14,
+    points: [
+      {
+        id: 'fdc-predio',
+        title: 'Hipódromo Municipal de Trancas',
+        subtitle: 'Predio principal',
+        address: 'Ruta 9 Km 1308, Trancas, Tucumán',
+        lat: -26.2312,
+        lng: -65.2818,
+        isActive: true,
+        sortOrder: 10,
+      },
+    ],
   },
   faq: {
     showTitle: true,
@@ -439,6 +445,64 @@ function normalizeFdcMapSectionTitle(raw, fallback = 'Mapa interactivo') {
   return title
 }
 
+export function normalizeFdcVisitMapPoint(item, index = 0) {
+  const src = item && typeof item === 'object' ? item : {}
+  const lat = Number(src.lat)
+  const lng = Number(src.lng)
+  const title = String(src.title ?? '').trim()
+  const subtitle = String(src.subtitle ?? '').trim()
+  const address = String(src.address ?? '').trim()
+  if (!title && !subtitle && !address) return null
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
+  return {
+    id: String(src.id || '').trim() || makeFdcItemId('loc'),
+    title: title || subtitle || address,
+    subtitle,
+    address,
+    lat: Math.min(90, Math.max(-90, lat)),
+    lng: Math.min(180, Math.max(-180, lng)),
+    isActive: src.isActive !== false && src.isActive !== 0 && src.isActive !== '0',
+    sortOrder: Number.isFinite(Number(src.sortOrder)) ? Math.max(0, Math.round(Number(src.sortOrder))) : index * 10,
+  }
+}
+
+function migrateLegacyFdcDirectionsPoints(directionsSrc, baseDirections = {}) {
+  // Si ya viene `points` (aunque esté vacío), no reinyectar legacy ni defaults.
+  if (Array.isArray(directionsSrc?.points)) {
+    return directionsSrc.points
+      .map((it, idx) => normalizeFdcVisitMapPoint(it, idx))
+      .filter(Boolean)
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .slice(0, 40)
+  }
+
+  const legacyLat = Number(directionsSrc?.mapLat ?? directionsSrc?.center?.lat)
+  const legacyLng = Number(directionsSrc?.mapLng ?? directionsSrc?.center?.lng)
+  const legacyAddress = String(directionsSrc?.address || '').trim()
+  if (Number.isFinite(legacyLat) && Number.isFinite(legacyLng)) {
+    const venue = legacyAddress.split(',')[0]?.trim() || legacyAddress || 'Ubicación del festival'
+    return [
+      normalizeFdcVisitMapPoint(
+        {
+          id: 'fdc-legacy',
+          title: venue,
+          subtitle: '',
+          address: legacyAddress,
+          lat: legacyLat,
+          lng: legacyLng,
+          isActive: true,
+          sortOrder: 10,
+        },
+        0,
+      ),
+    ].filter(Boolean)
+  }
+
+  return (baseDirections?.points || [])
+    .map((it, idx) => normalizeFdcVisitMapPoint(it, idx))
+    .filter(Boolean)
+}
+
 export function normalizeFdcVisitFaqItem(item, index = 0) {
   const src = item && typeof item === 'object' ? item : {}
   const question = String(src.question ?? '').trim()
@@ -479,34 +543,38 @@ export function normalizeFdcVisitInfo(input, defaults = DEFAULT_FDC_VISIT_INFO) 
       hasInput ? src.overlayOpacity : base.overlayOpacity,
       base.overlayOpacity ?? 55,
     ),
-    directions: {
-      showTitle: normalizeFdcVisitShowTitle(
-        directionsSrc.showTitle,
-        base.directions?.showTitle !== false,
-      ),
-      title: normalizeFdcMapSectionTitle(
-        directionsSrc.title ?? base.directions?.title,
-        base.directions?.title || 'Mapa interactivo',
-      ),
-      address: String(directionsSrc.address ?? base.directions?.address ?? '').trim(),
-      mapButtonLabel: String(
-        directionsSrc.mapButtonLabel ?? base.directions?.mapButtonLabel ?? 'Ver en mapa',
-      ).trim(),
-      mapUrl: String(directionsSrc.mapUrl ?? base.directions?.mapUrl ?? '').trim(),
-      mapImageUrl: String(directionsSrc.mapImageUrl ?? base.directions?.mapImageUrl ?? '').trim(),
-      mapLat: (() => {
-        const n = Number(directionsSrc.mapLat ?? base.directions?.mapLat)
-        return Number.isFinite(n) ? Math.min(90, Math.max(-90, n)) : null
-      })(),
-      mapLng: (() => {
-        const n = Number(directionsSrc.mapLng ?? base.directions?.mapLng)
-        return Number.isFinite(n) ? Math.min(180, Math.max(-180, n)) : null
-      })(),
-      mapZoom: (() => {
-        const n = Number(directionsSrc.mapZoom ?? base.directions?.mapZoom)
-        return Number.isFinite(n) ? Math.min(18, Math.max(10, Math.round(n))) : 14
-      })(),
-    },
+    directions: (() => {
+      const points = migrateLegacyFdcDirectionsPoints(directionsSrc, base.directions || {})
+      const centerSrc =
+        directionsSrc.center && typeof directionsSrc.center === 'object'
+          ? directionsSrc.center
+          : {}
+      const centerLat = Number(
+        centerSrc.lat ?? directionsSrc.mapLat ?? base.directions?.center?.lat ?? points[0]?.lat,
+      )
+      const centerLng = Number(
+        centerSrc.lng ?? directionsSrc.mapLng ?? base.directions?.center?.lng ?? points[0]?.lng,
+      )
+      const zoomRaw = Number(
+        directionsSrc.zoom ?? directionsSrc.mapZoom ?? base.directions?.zoom ?? 14,
+      )
+      return {
+        showTitle: normalizeFdcVisitShowTitle(
+          directionsSrc.showTitle,
+          base.directions?.showTitle !== false,
+        ),
+        title: normalizeFdcMapSectionTitle(
+          directionsSrc.title ?? base.directions?.title,
+          base.directions?.title || 'Mapa interactivo',
+        ),
+        center: {
+          lat: Number.isFinite(centerLat) ? Math.min(90, Math.max(-90, centerLat)) : -26.2312,
+          lng: Number.isFinite(centerLng) ? Math.min(180, Math.max(-180, centerLng)) : -65.2818,
+        },
+        zoom: Number.isFinite(zoomRaw) ? Math.min(18, Math.max(10, Math.round(zoomRaw))) : 14,
+        points,
+      }
+    })(),
     faq: (() => {
       const faqBgImage = String(
         faqSrc.backgroundImageUrl != null
@@ -535,13 +603,14 @@ export function normalizeFdcVisitInfo(input, defaults = DEFAULT_FDC_VISIT_INFO) 
 
 export function fdcVisitDirectionsHasContent(visitInfo) {
   const normalized = normalizeFdcVisitInfo(visitInfo)
-  const d = normalized.directions || {}
-  return Boolean(
-    String(d.address || '').trim() ||
-      String(d.mapUrl || '').trim() ||
-      String(d.mapImageUrl || '').trim() ||
-      (Number.isFinite(Number(d.mapLat)) && Number.isFinite(Number(d.mapLng))),
+  const points = (normalized.directions?.points || []).filter(
+    (p) =>
+      p?.isActive !== false &&
+      Number.isFinite(Number(p?.lat)) &&
+      Number.isFinite(Number(p?.lng)) &&
+      (String(p?.title || '').trim() || String(p?.address || '').trim()),
   )
+  return points.length > 0
 }
 
 export function fdcVisitFaqHasContent(visitInfo) {
