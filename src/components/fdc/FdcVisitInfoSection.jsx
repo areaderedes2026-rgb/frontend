@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   fdcVisitDirectionsHasContent,
@@ -31,6 +31,19 @@ function SmartLink({ href, className, children, ...rest }) {
   )
 }
 
+function normalizeSearchText(value) {
+  return String(value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+}
+
+function pointSearchText(point) {
+  return normalizeSearchText(
+    [point?.title, point?.subtitle, point?.address, point?.id].filter(Boolean).join(' '),
+  )
+}
+
 function PinIcon({ className = 'h-4 w-4' }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
@@ -39,7 +52,39 @@ function PinIcon({ className = 'h-4 w-4' }) {
   )
 }
 
-function LocationsPanel({ points, activePointId, onSelect, dark }) {
+function SearchIcon({ className = 'h-4 w-4' }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      aria-hidden
+    >
+      <circle cx="11" cy="11" r="7" />
+      <path strokeLinecap="round" d="M20 20l-3-3" />
+    </svg>
+  )
+}
+
+function LocationsPanel({
+  points,
+  filteredPoints,
+  searchQuery,
+  onSearchChange,
+  onClearSearch,
+  activePointId,
+  onSelect,
+  dark,
+}) {
+  const searchRef = useRef(null)
+  const isSearching = Boolean(normalizeSearchText(searchQuery.trim()))
+
+  const inputClass = dark
+    ? 'w-full rounded-full border border-white/15 bg-white/[0.06] py-2.5 pr-10 pl-10 text-sm text-white shadow-sm transition placeholder:text-white/40 focus:border-[#d4b483]/50 focus:outline-none focus:ring-2 focus:ring-[#d4b483]/25'
+    : 'w-full rounded-full border border-[#e0dbd0] bg-white py-2.5 pr-10 pl-10 text-sm text-[#171b22] shadow-sm transition placeholder:text-slate-400 focus:border-[#d4b483]/70 focus:outline-none focus:ring-2 focus:ring-[#d4b483]/30'
+
   return (
     <aside className="flex min-w-0 flex-col">
       <p
@@ -49,90 +94,168 @@ function LocationsPanel({ points, activePointId, onSelect, dark }) {
       >
         Ubicaciones
       </p>
+
+      <div className="relative mb-3">
+        <label htmlFor="fdc-map-search" className="sr-only">
+          Buscar ubicación
+        </label>
+        <span
+          className={`pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 ${
+            dark ? 'text-white/40' : 'text-slate-400'
+          }`}
+        >
+          <SearchIcon />
+        </span>
+        <input
+          ref={searchRef}
+          id="fdc-map-search"
+          type="search"
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
+          placeholder="Buscar ubicación..."
+          autoComplete="off"
+          className={inputClass}
+        />
+        {searchQuery ? (
+          <button
+            type="button"
+            onClick={() => {
+              onClearSearch()
+              searchRef.current?.focus()
+            }}
+            className={`absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full transition ${
+              dark
+                ? 'text-white/45 hover:bg-white/10 hover:text-white'
+                : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700'
+            }`}
+            aria-label="Limpiar búsqueda"
+          >
+            <span className="text-lg leading-none" aria-hidden>
+              ×
+            </span>
+          </button>
+        ) : null}
+      </div>
+
+      {isSearching ? (
+        <p className={`mb-2 text-xs font-medium ${dark ? 'text-white/55' : 'text-slate-500'}`}>
+          {filteredPoints.length === 0 ? (
+            'No hay ubicaciones que coincidan.'
+          ) : (
+            <>
+              <span className={dark ? 'font-semibold text-[#d4b483]' : 'font-semibold text-[#8a7048]'}>
+                {filteredPoints.length}
+              </span>
+              {filteredPoints.length === 1 ? ' resultado' : ' resultados'}
+            </>
+          )}
+        </p>
+      ) : null}
+
       <ul
-        className={`flex max-h-[22rem] flex-col gap-2 overflow-y-auto pr-1 sm:max-h-[26rem] ${
+        className={`flex max-h-[18rem] flex-col gap-2 overflow-y-auto pr-1 sm:max-h-[22rem] lg:max-h-[26rem] ${
           dark ? '[scrollbar-color:rgba(255,255,255,0.25)_transparent]' : ''
         }`}
         role="listbox"
         aria-label="Ubicaciones del festival"
       >
-        {points.map((point) => {
-          const active = point.id === activePointId
-          return (
-            <li key={point.id}>
-              <button
-                type="button"
-                role="option"
-                aria-selected={active}
-                onClick={() => onSelect(point.id)}
-                className={`flex w-full items-start gap-3 rounded-2xl border px-3.5 py-3 text-left transition sm:px-4 sm:py-3.5 ${
-                  active
-                    ? dark
-                      ? 'border-[#d4b483]/60 bg-white/10 shadow-[0_10px_28px_-18px_rgba(0,0,0,0.55)]'
-                      : 'border-[#171b22] bg-[#171b22] text-white shadow-[0_14px_32px_-20px_rgba(23,27,34,0.55)]'
-                    : dark
-                      ? 'border-white/12 bg-white/[0.04] text-white/90 hover:border-white/25 hover:bg-white/[0.08]'
-                      : 'border-[#e8e4dc] bg-white text-[#171b22] hover:border-[#d4b483]/70 hover:bg-[#faf8f4]'
-                }`}
-              >
-                <span
-                  className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
+        {filteredPoints.length === 0 ? (
+          <li
+            className={`rounded-2xl border border-dashed px-4 py-6 text-center text-sm ${
+              dark
+                ? 'border-white/15 text-white/50'
+                : 'border-[#e8e4dc] text-slate-500'
+            }`}
+          >
+            {isSearching
+              ? 'Probá con otro nombre, dirección o palabra clave.'
+              : 'No hay ubicaciones disponibles.'}
+          </li>
+        ) : (
+          filteredPoints.map((point) => {
+            const active = point.id === activePointId
+            return (
+              <li key={point.id}>
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={active}
+                  onClick={() => onSelect(point.id)}
+                  className={`flex w-full items-start gap-3 rounded-2xl border px-3.5 py-3 text-left transition sm:px-4 sm:py-3.5 ${
                     active
                       ? dark
-                        ? 'bg-[#d4b483]/20 text-[#d4b483]'
-                        : 'bg-white/15 text-[#d4b483]'
+                        ? 'border-[#d4b483]/60 bg-white/10 shadow-[0_10px_28px_-18px_rgba(0,0,0,0.55)]'
+                        : 'border-[#171b22] bg-[#171b22] text-white shadow-[0_14px_32px_-20px_rgba(23,27,34,0.55)]'
                       : dark
-                        ? 'bg-white/8 text-[#d4b483]'
-                        : 'bg-[#171b22]/[0.06] text-[#171b22]'
+                        ? 'border-white/12 bg-white/[0.04] text-white/90 hover:border-white/25 hover:bg-white/[0.08]'
+                        : 'border-[#e8e4dc] bg-white text-[#171b22] hover:border-[#d4b483]/70 hover:bg-[#faf8f4]'
                   }`}
-                  aria-hidden
                 >
-                  <PinIcon className="h-4 w-4" />
-                </span>
-                <span className="min-w-0 flex-1">
                   <span
-                    className={`block font-serif text-[15px] font-bold leading-snug sm:text-base ${
-                      active && !dark ? 'text-white' : ''
+                    className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
+                      active
+                        ? dark
+                          ? 'bg-[#d4b483]/20 text-[#d4b483]'
+                          : 'bg-white/15 text-[#d4b483]'
+                        : dark
+                          ? 'bg-white/8 text-[#d4b483]'
+                          : 'bg-[#171b22]/[0.06] text-[#171b22]'
                     }`}
+                    aria-hidden
                   >
-                    {point.title}
+                    <PinIcon className="h-4 w-4" />
                   </span>
-                  {point.subtitle ? (
+                  <span className="min-w-0 flex-1">
                     <span
-                      className={`mt-0.5 block text-xs font-medium ${
-                        active
-                          ? dark
-                            ? 'text-white/70'
-                            : 'text-white/75'
-                          : dark
-                            ? 'text-white/55'
-                            : 'text-[#6b7280]'
+                      className={`block font-serif text-[15px] font-bold leading-snug sm:text-base ${
+                        active && !dark ? 'text-white' : ''
                       }`}
                     >
-                      {point.subtitle}
+                      {point.title}
                     </span>
-                  ) : null}
-                  {point.address ? (
-                    <span
-                      className={`mt-1 block text-xs leading-relaxed ${
-                        active
-                          ? dark
-                            ? 'text-white/65'
-                            : 'text-white/70'
-                          : dark
-                            ? 'text-white/45'
-                            : 'text-[#4b505a]'
-                      }`}
-                    >
-                      {point.address}
-                    </span>
-                  ) : null}
-                </span>
-              </button>
-            </li>
-          )
-        })}
+                    {point.subtitle ? (
+                      <span
+                        className={`mt-0.5 block text-xs font-medium ${
+                          active
+                            ? dark
+                              ? 'text-white/70'
+                              : 'text-white/75'
+                            : dark
+                              ? 'text-white/55'
+                              : 'text-[#6b7280]'
+                        }`}
+                      >
+                        {point.subtitle}
+                      </span>
+                    ) : null}
+                    {point.address ? (
+                      <span
+                        className={`mt-1 block text-xs leading-relaxed ${
+                          active
+                            ? dark
+                              ? 'text-white/65'
+                              : 'text-white/70'
+                            : dark
+                              ? 'text-white/45'
+                              : 'text-[#4b505a]'
+                        }`}
+                      >
+                        {point.address}
+                      </span>
+                    ) : null}
+                  </span>
+                </button>
+              </li>
+            )
+          })
+        )}
       </ul>
+
+      {!isSearching && points.length > 0 ? (
+        <p className={`mt-2 text-[11px] ${dark ? 'text-white/40' : 'text-slate-400'}`}>
+          {points.length} ubicación{points.length === 1 ? '' : 'es'}
+        </p>
+      ) : null}
     </aside>
   )
 }
@@ -216,20 +339,44 @@ export function FdcMapInteractiveSection({ visitInfo }) {
   )
 
   const [activePointId, setActivePointId] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const normalizedQuery = useMemo(
+    () => normalizeSearchText(searchQuery.trim()),
+    [searchQuery],
+  )
+
+  const filteredPoints = useMemo(() => {
+    if (!normalizedQuery) return points
+    return points.filter((point) => pointSearchText(point).includes(normalizedQuery))
+  }, [normalizedQuery, points])
+
+  const isSearching = normalizedQuery.length > 0
+
+  const mapPoints = useMemo(() => {
+    if (!isSearching) return points
+    return filteredPoints
+  }, [filteredPoints, isSearching, points])
+
+  const mapFitBounds = useMemo(() => {
+    if (!isSearching || filteredPoints.length < 2) return null
+    return filteredPoints.map((point) => [Number(point.lat), Number(point.lng)])
+  }, [filteredPoints, isSearching])
 
   useEffect(() => {
-    if (!points.length) {
+    if (!filteredPoints.length) {
       setActivePointId('')
       return
     }
     setActivePointId((prev) =>
-      points.some((p) => p.id === prev) ? prev : points[0].id,
+      filteredPoints.some((p) => p.id === prev) ? prev : filteredPoints[0].id,
     )
-  }, [points])
+  }, [filteredPoints])
 
   if (!fdcVisitDirectionsHasContent(visitInfo) || points.length === 0) return null
 
   const sectionTitle = String(directions.title || 'Mapa interactivo').trim()
+  const sectionDescription = String(directions.description || '').trim()
   const showTitle = directions.showTitle !== false && Boolean(sectionTitle)
   const center = directions.center || {
     lat: Number(points[0]?.lat) || -26.2312,
@@ -239,11 +386,29 @@ export function FdcMapInteractiveSection({ visitInfo }) {
 
   return (
     <div>
-      {showTitle ? <FdcSectionTitle title={sectionTitle} tone={titleTone} /> : null}
+      {showTitle ? (
+        <FdcSectionTitle
+          title={sectionTitle}
+          subtitle={sectionDescription || undefined}
+          tone={titleTone}
+        />
+      ) : sectionDescription ? (
+        <p
+          className={`mb-7 text-center text-sm leading-relaxed sm:mb-9 sm:text-base ${
+            dark ? 'text-slate-300' : 'text-[#4b505a]'
+          }`}
+        >
+          <span className="mx-auto block max-w-2xl">{sectionDescription}</span>
+        </p>
+      ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(14rem,0.85fr)_minmax(0,1.4fr)] lg:items-stretch xl:gap-8">
+      <div className="grid gap-6 lg:grid-cols-[minmax(14rem,0.85fr)_minmax(0,1.4fr)] lg:items-start xl:gap-8">
         <LocationsPanel
           points={points}
+          filteredPoints={filteredPoints}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onClearSearch={() => setSearchQuery('')}
           activePointId={activePointId}
           onSelect={setActivePointId}
           dark={dark}
@@ -251,10 +416,11 @@ export function FdcMapInteractiveSection({ visitInfo }) {
         <FdcVisitMap
           center={center}
           zoom={zoom}
-          points={points}
+          points={mapPoints}
           activePointId={activePointId}
           onSelectPoint={setActivePointId}
           dark={dark}
+          fitBounds={mapFitBounds}
         />
       </div>
     </div>

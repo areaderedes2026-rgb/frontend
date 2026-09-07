@@ -25,7 +25,7 @@ const TOGGLEABLE_HANDLERS = [
   'keyboard',
 ]
 
-function MapResizeController() {
+function MapResizeController({ revision = 0 }) {
   const map = useMap()
   useEffect(() => {
     if (!map) return
@@ -34,16 +34,18 @@ function MapResizeController() {
     run()
     const t1 = window.setTimeout(run, 120)
     const t2 = window.setTimeout(run, 480)
+    const t3 = window.setTimeout(run, 700)
     const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => run()) : null
     if (ro && container?.parentElement) ro.observe(container.parentElement)
     window.addEventListener('resize', run)
     return () => {
       window.clearTimeout(t1)
       window.clearTimeout(t2)
+      window.clearTimeout(t3)
       ro?.disconnect()
       window.removeEventListener('resize', run)
     }
-  }, [map])
+  }, [map, revision])
   return null
 }
 
@@ -65,11 +67,23 @@ function MapInteractivityController({ interactive }) {
   return null
 }
 
-function MapFocusController({ point, defaultCenter, defaultZoom }) {
+function MapFocusController({ point, defaultCenter, defaultZoom, fitBounds }) {
   const map = useMap()
   useEffect(() => {
     if (!map) return
     map.invalidateSize()
+
+    if (fitBounds?.length >= 2) {
+      const bounds = L.latLngBounds(fitBounds.map(([lat, lng]) => [lat, lng]))
+      map.flyToBounds(bounds, {
+        animate: true,
+        duration: 0.75,
+        padding: [48, 48],
+        maxZoom: 16,
+      })
+      return
+    }
+
     if (!point) {
       map.flyTo(defaultCenter, defaultZoom, { animate: true, duration: 0.75 })
       return
@@ -79,12 +93,13 @@ function MapFocusController({ point, defaultCenter, defaultZoom }) {
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return
     const focusZoom = Math.min(18, Math.max(defaultZoom + 2, 16))
     map.flyTo([lat, lng], focusZoom, { animate: true, duration: 0.85 })
-  }, [defaultCenter, defaultZoom, map, point])
+  }, [defaultCenter, defaultZoom, fitBounds, map, point])
   return null
 }
 
 /**
  * Mapa FDC multi-punto (Leaflet), mismo patrón que el mapa de Inicio.
+ * Al activarlo se agranda y habilita interacción.
  */
 export function FdcVisitMap({
   center,
@@ -94,6 +109,7 @@ export function FdcVisitMap({
   onSelectPoint,
   dark = false,
   className = '',
+  fitBounds = null,
 }) {
   const [interactive, setInteractive] = useState(false)
   const safeZoom = Math.min(18, Math.max(10, Number(zoom) || 14))
@@ -135,9 +151,13 @@ export function FdcVisitMap({
     setInteractive(true)
   }
 
+  const sizeClass = interactive
+    ? 'h-[28rem] sm:h-[34rem] lg:h-[36rem] lg:min-h-[36rem]'
+    : 'h-64 sm:h-80 lg:h-full lg:min-h-[22rem]'
+
   return (
     <div
-      className={`fdc-visit-map relative h-64 overflow-hidden rounded-2xl border shadow-[0_16px_40px_-24px_rgba(23,27,34,0.35)] ring-1 sm:h-80 lg:h-full lg:min-h-[22rem] ${frameClass} ${className}`.trim()}
+      className={`fdc-visit-map relative overflow-hidden rounded-2xl border shadow-[0_16px_40px_-24px_rgba(23,27,34,0.35)] ring-1 transition-[height,min-height] duration-500 ease-out ${sizeClass} ${frameClass} ${className}`.trim()}
     >
       <MapContainer
         center={mapCenter}
@@ -181,12 +201,13 @@ export function FdcVisitMap({
             </Marker>
           )
         })}
-        <MapResizeController />
+        <MapResizeController revision={interactive ? 1 : 0} />
         <MapInteractivityController interactive={interactive} />
         <MapFocusController
-          point={selectedPoint}
+          point={fitBounds?.length >= 2 ? null : selectedPoint}
           defaultCenter={mapCenter}
           defaultZoom={safeZoom}
+          fitBounds={fitBounds}
         />
       </MapContainer>
 

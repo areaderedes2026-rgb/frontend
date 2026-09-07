@@ -2724,6 +2724,28 @@ export function AdminFdc() {
                           }
                         />
                       </label>
+                      <label className={labelClass}>
+                        Descripción (cómo usar el mapa)
+                        <textarea
+                          className={textareaClass}
+                          rows={3}
+                          value={form.visitInfo?.directions?.description || ''}
+                          disabled={saving}
+                          placeholder="Buscá o elegí una ubicación… Tocá el mapa para activarlo…"
+                          onChange={(e) =>
+                            updateVisitInfo((v) => ({
+                              ...v,
+                              directions: {
+                                ...(v.directions || {}),
+                                description: e.target.value,
+                              },
+                            }))
+                          }
+                        />
+                        <span className="mt-1 text-xs font-normal text-slate-500">
+                          Se muestra debajo del título. Dejala vacía si no querés mostrar texto.
+                        </span>
+                      </label>
                       <div className="grid gap-3 sm:grid-cols-3">
                         <label className={labelClass}>
                           Latitud del centro

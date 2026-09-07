@@ -377,6 +377,8 @@ export const DEFAULT_FDC_VISIT_INFO = {
   directions: {
     showTitle: true,
     title: 'Mapa interactivo',
+    description:
+      'Buscá o elegí una ubicación de la lista. Tocá el mapa para activarlo, agrandarlo y moverte con libertad; usá el candado para bloquearlo otra vez.',
     center: { lat: -26.2312, lng: -65.2818 },
     zoom: 14,
     points: [
@@ -567,6 +569,9 @@ export function normalizeFdcVisitInfo(input, defaults = DEFAULT_FDC_VISIT_INFO) 
           directionsSrc.title ?? base.directions?.title,
           base.directions?.title || 'Mapa interactivo',
         ),
+        description: String(
+          directionsSrc.description ?? base.directions?.description ?? '',
+        ).trim(),
         center: {
           lat: Number.isFinite(centerLat) ? Math.min(90, Math.max(-90, centerLat)) : -26.2312,
           lng: Number.isFinite(centerLng) ? Math.min(180, Math.max(-180, centerLng)) : -65.2818,
