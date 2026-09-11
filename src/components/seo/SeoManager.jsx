@@ -124,7 +124,7 @@ function routeSeo(pathname) {
     return {
       title: 'Fiesta del Caballo 2026 | Municipalidad de Trancas',
       description:
-        'Fiesta Nacional e Internacional del Caballo en Trancas. Preinscripcion de puestos comerciales y novedades del evento.',
+        'Fiesta Nacional e Internacional del Caballo en Trancas: cronograma, cartelera, entradas, mapa y novedades del evento.',
     }
   }
   if (pathname === '/gobierno/oferta-academica') {

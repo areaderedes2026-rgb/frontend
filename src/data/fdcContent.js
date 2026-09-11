@@ -221,6 +221,8 @@ export const DEFAULT_FDC_SPONSORS = {
 }
 
 export const DEFAULT_FDC_FORM_SECTION = {
+  /** Si es false, la sección no se muestra en la web pública (se puede reactivar desde admin). */
+  visible: false,
   backgroundStyle: 'dark',
   backgroundImageUrl: '',
   overlayOpacity: 55,
@@ -675,7 +677,6 @@ export const DEFAULT_FDC_SECTION_NAV = [
   { id: 'nav-cartelera', label: 'Cartelera', href: '#cartelera', icon: 'music' },
   { id: 'nav-entradas', label: 'Entradas', href: '#entradas', icon: 'ticket' },
   { id: 'nav-noticias', label: 'Noticias', href: '#noticias', icon: 'news' },
-  { id: 'nav-puestos', label: 'Puestos', href: '#solicitud-puestos', icon: 'store' },
 ]
 
 /** Contador regresivo sobre la portada (encima de la barra de navegación). */
@@ -1012,10 +1013,18 @@ export function mergeFdcContent(base, remote) {
       defaults.festivalStats,
     ),
     visitInfo: normalizeFdcVisitInfo(remote.visitInfo ?? defaults.visitInfo, defaults.visitInfo),
-    formSection: withFdcSectionBackground(
-      remote.formSection ?? remote.usefulInfo?.formSection ?? defaults.formSection,
-      defaults.formSection,
-    ),
+    formSection: (() => {
+      const raw = remote.formSection ?? remote.usefulInfo?.formSection ?? defaults.formSection
+      const merged = withFdcSectionBackground(raw, defaults.formSection)
+      const visibleRaw =
+        raw && typeof raw === 'object' && Object.prototype.hasOwnProperty.call(raw, 'visible')
+          ? raw.visible
+          : defaults.formSection?.visible
+      return {
+        ...merged,
+        visible: normalizeFdcFormSectionVisible(visibleRaw, false),
+      }
+    })(),
     usefulInfo: { title: '', items: [] },
     formNotice: String(remote.formNotice ?? defaults.formNotice ?? ''),
     formRubros: ensureFdcFormRubros(
@@ -1134,6 +1143,37 @@ export function getFdcFormWindowState(content, now = new Date()) {
   if (from && today < from) return 'before'
   if (until && today > until) return 'after'
   return 'open'
+}
+
+/** Visible en la web pública (formulario + anclas relacionadas). */
+export function normalizeFdcFormSectionVisible(value, fallback = false) {
+  if (value === true || value === 1 || value === '1' || value === 'true') return true
+  if (value === false || value === 0 || value === '0' || value === 'false') return false
+  return fallback === true
+}
+
+export function isFdcPreinscriptionVisible(content) {
+  return normalizeFdcFormSectionVisible(content?.formSection?.visible, false)
+}
+
+/** Detecta enlaces/anclas a la sección de preinscripción. */
+export function isFdcPreinscriptionHref(href) {
+  const raw = String(href || '').trim().toLowerCase()
+  if (!raw) return false
+  const hash = raw.includes('#') ? raw.slice(raw.indexOf('#') + 1) : raw.replace(/^\//, '')
+  const id = hash.split(/[/?]/)[0] || ''
+  return (
+    id === 'solicitud-puestos' ||
+    id === 'preinscripcion' ||
+    id === 'preinscripción' ||
+    id === 'puestos'
+  )
+}
+
+export function filterFdcPublicSectionNav(items, { preinscriptionVisible = false } = {}) {
+  const list = Array.isArray(items) ? items : []
+  if (preinscriptionVisible) return list
+  return list.filter((item) => !isFdcPreinscriptionHref(item?.href))
 }
 
 export function formatFdcDateLabel(ymd) {

@@ -149,6 +149,7 @@ function mapContentToForm(content) {
     })(),
     formSection: {
       ...(merged.formSection || {}),
+      visible: merged.formSection?.visible === true,
       backgroundStyle: normalizeFdcSectionBackgroundStyle(
         merged.formSection?.backgroundStyle,
         merged.formSection?.backgroundImageUrl,
@@ -464,6 +465,7 @@ export function AdminFdc() {
       festivalStats: normalizeFdcFestivalStats(form.festivalStats),
       visitInfo: normalizeFdcVisitInfo(form.visitInfo),
       formSection: {
+        visible: form.formSection?.visible === true,
         backgroundStyle: normalizeFdcSectionBackgroundStyle(
           form.formSection?.backgroundStyle,
           form.formSection?.backgroundImageUrl,
@@ -3452,6 +3454,35 @@ export function AdminFdc() {
                 <p className="mt-1 text-sm text-slate-600">
                   Ventana, textos del formulario, fondo de sección y opciones del select de rubro.
                 </p>
+
+                <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+                  <input
+                    type="checkbox"
+                    className="mt-1 h-4 w-4 rounded border-slate-300 text-sky-700 focus:ring-sky-600"
+                    checked={form.formSection?.visible === true}
+                    disabled={saving}
+                    onChange={(e) =>
+                      updateFormSection((s) => ({ ...s, visible: e.target.checked }))
+                    }
+                  />
+                  <span>
+                    <span className="block text-sm font-semibold text-slate-900">
+                      Mostrar preinscripción en la web pública
+                    </span>
+                    <span className="mt-0.5 block text-xs text-slate-600">
+                      Si está desactivado, se ocultan el formulario, el ancla y los enlaces a puestos
+                      en la página. La configuración y la bandeja de solicitudes se mantienen para
+                      reactivar más adelante.
+                    </span>
+                  </span>
+                </label>
+
+                {form.formSection?.visible !== true ? (
+                  <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+                    La sección está oculta para el público. Activá el casillero de arriba y guardá
+                    para volver a mostrarla.
+                  </p>
+                ) : null}
 
                 <div className="mt-5">
                   <FdcSectionBackgroundFields

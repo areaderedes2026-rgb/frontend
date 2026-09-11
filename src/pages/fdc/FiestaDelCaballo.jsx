@@ -24,7 +24,10 @@ import {
   fdcVisitDirectionsHasContent,
   fdcVisitFaqHasContent,
   formatFdcDateLabel,
+  filterFdcPublicSectionNav,
   getFdcFormWindowState,
+  isFdcPreinscriptionHref,
+  isFdcPreinscriptionVisible,
   mergeFdcContent,
   resolveFdcFaqSectionBackgroundConfig,
 } from '../../data/fdcContent.js'
@@ -163,6 +166,12 @@ export function FiestaDelCaballo() {
     if (!hydrated || submitSuccess) return
     const targetId = resolveFdcHashTargetId(location.hash)
     if (!targetId) return
+    if (
+      !isFdcPreinscriptionVisible(page) &&
+      (targetId === FDC_FORM_SECTION_ID || isFdcPreinscriptionHref(location.hash))
+    ) {
+      return
+    }
 
     let attempts = 0
     let retryTimer = 0
@@ -195,7 +204,7 @@ export function FiestaDelCaballo() {
       window.clearTimeout(retryTimer)
       cancelSettled()
     }
-  }, [hydrated, location.hash, submitSuccess])
+  }, [hydrated, location.hash, page, submitSuccess])
 
   useEffect(() => {
     if (!submitSuccess) return
@@ -211,6 +220,7 @@ export function FiestaDelCaballo() {
 
   const windowState = useMemo(() => getFdcFormWindowState(page), [page])
   const formOpen = windowState === 'open'
+  const preinscriptionVisible = isFdcPreinscriptionVisible(page)
   const fromLabel = formatFdcDateLabel(page.formOpenFrom)
   const untilLabel = formatFdcDateLabel(page.formOpenUntil)
   const windowMessage =
@@ -223,14 +233,26 @@ export function FiestaDelCaballo() {
   const heroImage =
     page.heroImageUrl?.trim() || DEFAULT_FDC_CONTENT.heroImageUrl?.trim() || FDC_DEFAULT_HERO_IMAGE
 
-  const primaryCta =
-    page.showPrimaryButton !== false && page.heroPrimaryLabel
-      ? { label: page.heroPrimaryLabel, href: page.heroPrimaryHref || '#solicitud-puestos' }
-      : null
-  const secondaryCta =
-    page.showSecondaryButton !== false && page.heroSecondaryLabel
-      ? { label: page.heroSecondaryLabel, href: page.heroSecondaryHref || '#cronograma' }
-      : null
+  const primaryCta = (() => {
+    if (page.showPrimaryButton === false || !page.heroPrimaryLabel) return null
+    const href = page.heroPrimaryHref || '#solicitud-puestos'
+    if (!preinscriptionVisible && isFdcPreinscriptionHref(href)) return null
+    return { label: page.heroPrimaryLabel, href }
+  })()
+  const secondaryCta = (() => {
+    if (page.showSecondaryButton === false || !page.heroSecondaryLabel) return null
+    const href = page.heroSecondaryHref || '#cronograma'
+    if (!preinscriptionVisible && isFdcPreinscriptionHref(href)) return null
+    return { label: page.heroSecondaryLabel, href }
+  })()
+
+  const publicSectionNav = useMemo(
+    () =>
+      filterFdcPublicSectionNav(page.sectionNav, {
+        preinscriptionVisible,
+      }),
+    [page.sectionNav, preinscriptionVisible],
+  )
 
   const showMapSection = fdcVisitDirectionsHasContent(page.visitInfo)
   const showFaqSection = fdcVisitFaqHasContent(page.visitInfo)
@@ -269,7 +291,7 @@ export function FiestaDelCaballo() {
           />
           {hydrated ? <FdcHeroCountdown config={page.heroCountdown} /> : null}
         </div>
-        <FdcSectionNav items={page.sectionNav} onHashNavigate={handleHashNavigate} />
+        <FdcSectionNav items={publicSectionNav} onHashNavigate={handleHashNavigate} />
       </div>
 
       {(page.festivalStats?.items || []).length > 0 ? (
@@ -350,48 +372,50 @@ export function FiestaDelCaballo() {
         </FdcSectionShell>
       ) : null}
 
-      <FdcSectionShell
-        config={page.formSection}
-        pyClass="py-10 sm:py-12 lg:py-14"
-        containerClassName="max-w-[min(100%,96rem)]!"
-        scrollMt={false}
-      >
-        <FdcFormSectionIntro
-          title={page.ctaTitle}
-          fromLabel={fromLabel}
-          untilLabel={untilLabel}
-          formSection={page.formSection}
-        />
-        <div
-          id={FDC_FORM_SECTION_ID}
-          tabIndex={-1}
-          className="scroll-mt-[calc(var(--navbar-h,5rem)+5.5rem)] outline-none"
+      {preinscriptionVisible ? (
+        <FdcSectionShell
+          config={page.formSection}
+          pyClass="py-10 sm:py-12 lg:py-14"
+          containerClassName="max-w-[min(100%,96rem)]!"
+          scrollMt={false}
         >
-          <FdcStallApplicationForm
-            formNotice={page.formNotice}
-            formOpen={formOpen}
-            windowMessage={windowMessage}
-            rubros={page.formRubros}
-            formEyebrow={page.formEyebrow}
-            formHeading={page.formHeading}
-            onSuccess={(result) => {
-              const id = result?.application?.id
-              const email = String(result?.application?.email || '').trim()
-              setSubmitSuccess({
-                id,
-                email,
-                emailQueued: Boolean(result?.emailQueued || result?.emailSent),
-              })
-              setToast({
-                variant: 'success',
-                message: id
-                  ? `Preinscripción enviada. Número de solicitud: #${id}.`
-                  : 'Preinscripción enviada correctamente.',
-              })
-            }}
+          <FdcFormSectionIntro
+            title={page.ctaTitle}
+            fromLabel={fromLabel}
+            untilLabel={untilLabel}
+            formSection={page.formSection}
           />
-        </div>
-      </FdcSectionShell>
+          <div
+            id={FDC_FORM_SECTION_ID}
+            tabIndex={-1}
+            className="scroll-mt-[calc(var(--navbar-h,5rem)+5.5rem)] outline-none"
+          >
+            <FdcStallApplicationForm
+              formNotice={page.formNotice}
+              formOpen={formOpen}
+              windowMessage={windowMessage}
+              rubros={page.formRubros}
+              formEyebrow={page.formEyebrow}
+              formHeading={page.formHeading}
+              onSuccess={(result) => {
+                const id = result?.application?.id
+                const email = String(result?.application?.email || '').trim()
+                setSubmitSuccess({
+                  id,
+                  email,
+                  emailQueued: Boolean(result?.emailQueued || result?.emailSent),
+                })
+                setToast({
+                  variant: 'success',
+                  message: id
+                    ? `Preinscripción enviada. Número de solicitud: #${id}.`
+                    : 'Preinscripción enviada correctamente.',
+                })
+              }}
+            />
+          </div>
+        </FdcSectionShell>
+      ) : null}
     </>
   )
 }
