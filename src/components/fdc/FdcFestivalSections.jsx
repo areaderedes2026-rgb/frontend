@@ -16,7 +16,7 @@ export function FdcSectionTitle({
   if (!text) return null
   const isDark = tone === 'dark'
   return (
-    <header className={`mb-7 text-center sm:mb-9 ${className}`.trim()}>
+    <header className={`text-center ${className || 'mb-7 sm:mb-9'}`.trim()}>
       <h2
         className={`font-serif text-2xl font-bold uppercase tracking-[0.06em] sm:text-3xl lg:text-[2.35rem] ${
           isDark ? 'text-white' : 'text-[#171b22]'

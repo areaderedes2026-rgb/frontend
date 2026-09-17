@@ -309,8 +309,17 @@ export function FiestaDelCaballo() {
 
       {(page.artists?.items || []).some((a) => a?.name) ||
       String(page.artists?.posterImageUrl || '').trim() ? (
-        <FdcSectionShell id="cartelera" config={page.artists}>
-          <RevealOnScroll variant="slow">
+        <FdcSectionShell
+          id="cartelera"
+          config={page.artists}
+          pyClass="py-6 sm:py-8 lg:py-10"
+          className="flex min-h-[calc(100svh-var(--navbar-h,5rem)-4.75rem)] flex-col"
+          containerClassName="flex flex-1 flex-col justify-center max-w-[min(100%,100rem)]!"
+        >
+          <RevealOnScroll
+            variant="slow"
+            className="flex min-h-0 flex-1 flex-col justify-center"
+          >
             <FdcArtistsSection artists={page.artists} />
           </RevealOnScroll>
         </FdcSectionShell>

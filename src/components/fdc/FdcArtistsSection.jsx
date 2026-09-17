@@ -157,9 +157,119 @@ function PosterLightbox({ imageUrl, title, onClose, reduceMotion }) {
   )
 }
 
+function CarouselArrow({ direction, onClick, dark }) {
+  const isPrev = direction === 'prev'
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`absolute top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full text-lg transition md:inline-flex ${
+        isPrev ? 'left-0 -translate-x-1/2 lg:-translate-x-1/4' : 'right-0 translate-x-1/2 lg:translate-x-1/4'
+      } ${
+        dark
+          ? 'bg-white/12 text-white shadow-[0_12px_40px_-16px_rgba(0,0,0,0.65)] backdrop-blur-md hover:bg-white/22'
+          : 'border border-[#ddd7ca] bg-white text-[#171b22] shadow-md hover:bg-[#f7f7f5]'
+      }`}
+      aria-label={isPrev ? 'Artistas anteriores' : 'Artistas siguientes'}
+    >
+      {isPrev ? '←' : '→'}
+    </button>
+  )
+}
+
+function ArtistCard({ artist, idx, reduceMotion, dark }) {
+  const src = resolveMediaUrl(artist.photoUrl)
+  const badge = parseDateBadge(artist.dateTag)
+
+  return (
+    <Motion.article
+      initial={reduceMotion ? false : { opacity: 0, y: 28, scale: 0.94 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{
+        duration: reduceMotion ? 0.12 : 0.45,
+        delay: reduceMotion ? 0 : Math.min(idx, 8) * 0.05,
+        ease: softEase,
+      }}
+      whileHover={
+        reduceMotion
+          ? undefined
+          : {
+              y: -10,
+              transition: { duration: 0.35, ease: softEase },
+            }
+      }
+      className="group relative h-[min(54svh,22rem)] w-[calc(min(54svh,22rem)*0.72)] shrink-0 snap-center sm:h-[min(58svh,26rem)] sm:w-[calc(min(58svh,26rem)*0.72)] lg:h-[min(60svh,30rem)] lg:w-[calc(min(60svh,30rem)*0.72)] xl:h-[min(62svh,32rem)] xl:w-[calc(min(62svh,32rem)*0.72)]"
+    >
+      <div
+        className={`relative h-full w-full overflow-hidden rounded-[1.35rem] ${
+          dark
+            ? 'bg-[#151a22] shadow-[0_32px_70px_-30px_rgba(0,0,0,0.85)]'
+            : 'bg-[#1a1f28] shadow-[0_28px_60px_-28px_rgba(23,27,34,0.55)]'
+        }`}
+      >
+        {src ? (
+          <img
+            src={src}
+            alt={artist.name}
+            className="absolute inset-0 h-full w-full object-cover transition duration-700 ease-out group-hover:scale-[1.06]"
+            loading="lazy"
+            decoding="async"
+          />
+        ) : (
+          <div
+            className="absolute inset-0 flex items-center justify-center bg-linear-to-br from-[#2a3140] to-[#151a22] text-5xl text-[#d4b483]/35"
+            aria-hidden
+          >
+            ♪
+          </div>
+        )}
+
+        <div
+          className="pointer-events-none absolute inset-0 bg-linear-to-t from-[#0a0d12] via-[#0a0d12]/25 to-transparent opacity-95"
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-linear-to-b from-black/35 to-transparent"
+          aria-hidden
+        />
+
+        {badge.day || badge.num ? (
+          <div className="absolute left-3 top-3 z-10 overflow-hidden rounded-xl bg-[#d4b483] px-2.5 py-2 text-[#171b22] shadow-[0_10px_28px_-12px_rgba(212,180,131,0.7)] sm:left-4 sm:top-4 sm:px-3 sm:py-2.5">
+            {badge.day ? (
+              <span className="block text-[10px] font-bold uppercase leading-none tracking-[0.14em] sm:text-[11px]">
+                {badge.day}
+              </span>
+            ) : null}
+            {badge.num ? (
+              <span className="mt-1 block font-serif text-xl font-bold leading-none sm:text-2xl">
+                {badge.num}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
+
+        <div className="absolute inset-x-0 bottom-0 z-10 px-4 pb-5 pt-16 sm:px-5 sm:pb-6">
+          <div
+            className="mb-3 h-px w-10 origin-left bg-[#d4b483] transition duration-500 ease-out group-hover:w-16"
+            aria-hidden
+          />
+          <h3 className="font-serif text-lg font-bold uppercase leading-[1.15] tracking-[0.04em] text-white sm:text-xl lg:text-[1.35rem]">
+            {artist.name}
+          </h3>
+        </div>
+
+        <div
+          className="pointer-events-none absolute inset-0 rounded-[1.35rem] opacity-0 ring-1 ring-[#d4b483]/45 transition duration-500 group-hover:opacity-100"
+          aria-hidden
+        />
+      </div>
+    </Motion.article>
+  )
+}
+
 /**
- * Cartelera FDC: carrusel de artistas por defecto;
- * el CTA revela la cartelera completa (una sola imagen centrada) y se amplía al tocar.
+ * Cartelera FDC: carrusel de artistas a viewport;
+ * el CTA revela la cartelera completa (una sola imagen centrada).
  */
 export function FdcArtistsSection({ artists }) {
   const items = (artists?.items || []).filter((a) => a?.name)
@@ -192,6 +302,14 @@ export function FdcArtistsSection({ artists }) {
     scrollRef.current?.scrollBy({ left: delta, behavior: 'smooth' })
   }
 
+  function scrollStep(direction) {
+    const el = scrollRef.current
+    if (!el) return
+    const card = el.querySelector('[data-artist-card]')
+    const step = card ? card.getBoundingClientRect().width + 24 : 360
+    scrollBy(direction * step)
+  }
+
   if (items.length === 0 && !hasPoster) return null
 
   const cta = showingPoster ? (
@@ -217,10 +335,11 @@ export function FdcArtistsSection({ artists }) {
   const stageDuration = reduceMotion ? 0.15 : 0.4
 
   return (
-    <div>
+    <div className="flex min-h-0 flex-1 flex-col justify-center">
       <FdcSectionTitle
         title={title}
         tone={titleTone}
+        className="mb-5 shrink-0 sm:mb-6 lg:mb-7"
         subtitle={
           showingPoster
             ? 'Cartelera completa. Tocá la imagen para verla en grande.'
@@ -230,7 +349,7 @@ export function FdcArtistsSection({ artists }) {
       />
 
       <LayoutGroup>
-        <div className="relative min-h-[12rem] perspective-[1400px]">
+        <div className="relative flex min-h-0 flex-1 flex-col justify-center perspective-[1400px]">
           <AnimatePresence mode="wait" initial={false}>
             {showingPoster ? (
               <Motion.div
@@ -270,7 +389,7 @@ export function FdcArtistsSection({ artists }) {
                     type="button"
                     layoutId={reduceMotion ? undefined : 'fdc-full-poster'}
                     onClick={() => setLightboxOpen(true)}
-                    className="group relative w-full overflow-hidden rounded-2xl bg-[#efe8dc]/40 text-left shadow-[0_24px_60px_-36px_rgba(23,27,34,0.55)] ring-1 ring-[#e8e4dc] transition hover:ring-[#d4b483]/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d4b483]"
+                    className="group relative w-full overflow-hidden rounded-2xl bg-black/20 text-left shadow-[0_24px_60px_-36px_rgba(0,0,0,0.65)] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d4b483]"
                     whileHover={reduceMotion ? undefined : { y: -3, transition: { duration: 0.35 } }}
                     whileTap={reduceMotion ? undefined : { scale: 0.992 }}
                   >
@@ -278,7 +397,7 @@ export function FdcArtistsSection({ artists }) {
                       <img
                         src={posterSrc}
                         alt={title || 'Cartelera completa'}
-                        className="mx-auto h-auto max-h-[min(78vh,52rem)] w-auto max-w-full object-contain"
+                        className="mx-auto h-auto max-h-[min(70svh,48rem)] w-auto max-w-full object-contain"
                         loading="lazy"
                         decoding="async"
                       />
@@ -317,102 +436,57 @@ export function FdcArtistsSection({ artists }) {
               >
                 {items.length > 1 ? (
                   <>
-                    <button
-                      type="button"
-                      onClick={() => scrollBy(-300)}
-                      className="absolute left-0 top-1/2 z-20 hidden h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-[#ddd7ca] bg-white text-[#171b22] shadow-md transition hover:bg-[#f7f7f5] md:inline-flex lg:-translate-x-1/3"
-                      aria-label="Artistas anteriores"
-                    >
-                      ←
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => scrollBy(300)}
-                      className="absolute right-0 top-1/2 z-20 hidden h-11 w-11 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-[#ddd7ca] bg-white text-[#171b22] shadow-md transition hover:bg-[#f7f7f5] md:inline-flex lg:translate-x-1/3"
-                      aria-label="Artistas siguientes"
-                    >
-                      →
-                    </button>
+                    <CarouselArrow
+                      direction="prev"
+                      dark={usesDarkTone}
+                      onClick={() => scrollStep(-1)}
+                    />
+                    <CarouselArrow
+                      direction="next"
+                      dark={usesDarkTone}
+                      onClick={() => scrollStep(1)}
+                    />
                   </>
                 ) : null}
 
                 <div
                   ref={scrollRef}
-                  className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] md:gap-5 [&::-webkit-scrollbar]:hidden"
+                  className="flex items-center gap-5 overflow-x-auto px-1 py-3 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-6 sm:py-4 md:gap-7 [&::-webkit-scrollbar]:hidden"
                 >
-                  {items.map((artist, idx) => {
-                    const src = resolveMediaUrl(artist.photoUrl)
-                    const badge = parseDateBadge(artist.dateTag)
-                    return (
-                      <Motion.article
-                        key={artist.id || artist.name || idx}
-                        initial={reduceMotion ? false : { opacity: 0, x: 28 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{
-                          duration: reduceMotion ? 0.12 : 0.35,
-                          delay: reduceMotion ? 0 : Math.min(idx, 6) * 0.03,
-                          ease: softEase,
-                        }}
-                        className="group relative w-[min(72vw,14.5rem)] shrink-0 snap-start overflow-hidden rounded-xl shadow-[0_12px_36px_-24px_rgba(23,27,34,0.4)] ring-1 ring-[#e8e4dc] sm:w-[min(42vw,15.5rem)] lg:w-[13.75rem]"
-                      >
-                        <div className="relative aspect-3/4 bg-[#efe8dc]">
-                          {src ? (
-                            <img
-                              src={src}
-                              alt={artist.name}
-                              className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-                              loading="lazy"
-                              decoding="async"
-                            />
-                          ) : (
-                            <div
-                              className="flex h-full items-center justify-center text-4xl text-[#b08948]/40"
-                              aria-hidden
-                            >
-                              ♪
-                            </div>
-                          )}
-                          <div
-                            className="absolute inset-0 bg-linear-to-t from-black/85 via-black/15 to-transparent"
-                            aria-hidden
-                          />
-                          {badge.day || badge.num ? (
-                            <div className="absolute left-0 top-0 flex min-w-[2.75rem] flex-col items-center bg-[#d4b483] px-2 py-1.5 text-[#171b22]">
-                              {badge.day ? (
-                                <span className="text-[10px] font-bold uppercase leading-none tracking-wide">
-                                  {badge.day}
-                                </span>
-                              ) : null}
-                              {badge.num ? (
-                                <span className="mt-0.5 font-serif text-lg font-bold leading-none">
-                                  {badge.num}
-                                </span>
-                              ) : null}
-                            </div>
-                          ) : null}
-                          <h3 className="absolute inset-x-0 bottom-0 px-3 pb-4 text-center font-serif text-sm font-bold uppercase leading-snug tracking-wide text-white sm:text-[15px]">
-                            {artist.name}
-                          </h3>
-                        </div>
-                      </Motion.article>
-                    )
-                  })}
+                  {items.map((artist, idx) => (
+                    <div key={artist.id || artist.name || idx} data-artist-card>
+                      <ArtistCard
+                        artist={artist}
+                        idx={idx}
+                        reduceMotion={reduceMotion}
+                        dark={usesDarkTone}
+                      />
+                    </div>
+                  ))}
                 </div>
 
                 {items.length > 1 ? (
-                  <div className="mt-4 flex justify-center gap-2 md:hidden">
+                  <div className="mt-5 flex justify-center gap-3 md:hidden">
                     <button
                       type="button"
-                      onClick={() => scrollBy(-260)}
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#ddd7ca] bg-white text-[#171b22]"
+                      onClick={() => scrollStep(-1)}
+                      className={`inline-flex h-11 w-11 items-center justify-center rounded-full text-base transition ${
+                        usesDarkTone
+                          ? 'bg-white/12 text-white backdrop-blur-md hover:bg-white/22'
+                          : 'border border-[#ddd7ca] bg-white text-[#171b22]'
+                      }`}
                       aria-label="Anterior"
                     >
                       ←
                     </button>
                     <button
                       type="button"
-                      onClick={() => scrollBy(260)}
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#ddd7ca] bg-white text-[#171b22]"
+                      onClick={() => scrollStep(1)}
+                      className={`inline-flex h-11 w-11 items-center justify-center rounded-full text-base transition ${
+                        usesDarkTone
+                          ? 'bg-white/12 text-white backdrop-blur-md hover:bg-white/22'
+                          : 'border border-[#ddd7ca] bg-white text-[#171b22]'
+                      }`}
                       aria-label="Siguiente"
                     >
                       →
