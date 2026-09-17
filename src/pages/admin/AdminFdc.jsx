@@ -1065,63 +1065,109 @@ export function AdminFdc() {
             </label>
             <div>
               <p className="mb-2 text-sm font-medium text-slate-700">Actividades</p>
+              <p className="mb-3 text-xs text-slate-500">
+                Usá ↑ / ↓ para ordenar. El orden que veas acá es el que se muestra en la web.
+              </p>
               <div className="space-y-2">
-                {(dayModal.draft.items || []).map((it, itemIdx) => (
-                  <div
-                    key={it.id || itemIdx}
-                    className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50/70 p-3 sm:grid-cols-[6rem_1fr_auto]"
-                  >
-                    <label className={labelClass}>
-                      Hora
-                      <input
-                        className={inputClass}
-                        value={it.time || ''}
-                        disabled={saving}
-                        placeholder="18:00"
-                        onChange={(e) =>
-                          setDayModal((m) => {
-                            const items = [...(m.draft.items || [])]
-                            items[itemIdx] = { ...items[itemIdx], time: e.target.value }
-                            return { ...m, draft: { ...m.draft, items } }
-                          })
-                        }
-                      />
-                    </label>
-                    <label className={labelClass}>
-                      Actividad
-                      <input
-                        className={inputClass}
-                        value={it.text || ''}
-                        disabled={saving}
-                        onChange={(e) =>
-                          setDayModal((m) => {
-                            const items = [...(m.draft.items || [])]
-                            items[itemIdx] = { ...items[itemIdx], text: e.target.value }
-                            return { ...m, draft: { ...m.draft, items } }
-                          })
-                        }
-                      />
-                    </label>
-                    <div className="flex items-end">
-                      <button
-                        type="button"
-                        className={ACTION_DANGER}
-                        disabled={saving}
-                        onClick={() =>
-                          setDayModal((m) => ({
-                            ...m,
-                            draft: {
-                              ...m.draft,
-                              items: (m.draft.items || []).filter((_, i) => i !== itemIdx),
-                            },
-                          }))
-                        }
-                      >
-                        Quitar
-                      </button>
+                {(dayModal.draft.items || []).map((it, itemIdx) => {
+                  const itemsCount = (dayModal.draft.items || []).length
+                  return (
+                    <div
+                      key={it.id || itemIdx}
+                      className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50/70 p-3 sm:grid-cols-[6rem_1fr_auto]"
+                    >
+                      <label className={labelClass}>
+                        Hora
+                        <input
+                          className={inputClass}
+                          value={it.time || ''}
+                          disabled={saving}
+                          placeholder="18:00"
+                          onChange={(e) =>
+                            setDayModal((m) => {
+                              const items = [...(m.draft.items || [])]
+                              items[itemIdx] = { ...items[itemIdx], time: e.target.value }
+                              return { ...m, draft: { ...m.draft, items } }
+                            })
+                          }
+                        />
+                      </label>
+                      <label className={labelClass}>
+                        Actividad
+                        <input
+                          className={inputClass}
+                          value={it.text || ''}
+                          disabled={saving}
+                          onChange={(e) =>
+                            setDayModal((m) => {
+                              const items = [...(m.draft.items || [])]
+                              items[itemIdx] = { ...items[itemIdx], text: e.target.value }
+                              return { ...m, draft: { ...m.draft, items } }
+                            })
+                          }
+                        />
+                      </label>
+                      <div className="flex flex-wrap items-end gap-1.5">
+                        <button
+                          type="button"
+                          className={ACTION_NEUTRAL}
+                          disabled={saving || itemIdx === 0}
+                          aria-label="Subir actividad"
+                          title="Subir"
+                          onClick={() =>
+                            setDayModal((m) => {
+                              const items = [...(m.draft.items || [])]
+                              if (itemIdx <= 0) return m
+                              ;[items[itemIdx - 1], items[itemIdx]] = [
+                                items[itemIdx],
+                                items[itemIdx - 1],
+                              ]
+                              return { ...m, draft: { ...m.draft, items } }
+                            })
+                          }
+                        >
+                          ↑
+                        </button>
+                        <button
+                          type="button"
+                          className={ACTION_NEUTRAL}
+                          disabled={saving || itemIdx >= itemsCount - 1}
+                          aria-label="Bajar actividad"
+                          title="Bajar"
+                          onClick={() =>
+                            setDayModal((m) => {
+                              const items = [...(m.draft.items || [])]
+                              if (itemIdx >= items.length - 1) return m
+                              ;[items[itemIdx], items[itemIdx + 1]] = [
+                                items[itemIdx + 1],
+                                items[itemIdx],
+                              ]
+                              return { ...m, draft: { ...m.draft, items } }
+                            })
+                          }
+                        >
+                          ↓
+                        </button>
+                        <button
+                          type="button"
+                          className={ACTION_DANGER}
+                          disabled={saving}
+                          onClick={() =>
+                            setDayModal((m) => ({
+                              ...m,
+                              draft: {
+                                ...m.draft,
+                                items: (m.draft.items || []).filter((_, i) => i !== itemIdx),
+                              },
+                            }))
+                          }
+                        >
+                          Quitar
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
                 <button
                   type="button"
                   className={ACTION_ADD}
