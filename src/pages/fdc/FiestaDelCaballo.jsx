@@ -308,7 +308,7 @@ export function FiestaDelCaballo() {
       ) : null}
 
       {(page.artists?.items || []).some((a) => a?.name) ||
-      (page.artists?.dayPosters || []).some((p) => p?.imageUrl) ? (
+      String(page.artists?.posterImageUrl || '').trim() ? (
         <FdcSectionShell id="cartelera" config={page.artists}>
           <RevealOnScroll variant="slow">
             <FdcArtistsSection artists={page.artists} />

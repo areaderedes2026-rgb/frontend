@@ -124,6 +124,20 @@ export function normalizeFdcScheduleImages(schedule) {
 
 export const FDC_ARTISTS_MAX_DAY_POSTERS = 4
 
+/** Una sola imagen de cartelera completa (migra el primer afiche legacy si hace falta). */
+export function normalizeFdcArtistsPosterImageUrl(artists) {
+  const src = artists && typeof artists === 'object' ? artists : {}
+  const direct = String(src.posterImageUrl || '').trim()
+  if (direct) return direct
+  const list = Array.isArray(src.dayPosters) ? src.dayPosters : []
+  for (const item of list) {
+    const imageUrl = String(item?.imageUrl || '').trim()
+    if (imageUrl) return imageUrl
+  }
+  return ''
+}
+
+/** @deprecated Preferir posterImageUrl; se mantiene solo para migración legacy. */
 export function normalizeFdcArtistDayPosters(artists) {
   const src = artists && typeof artists === 'object' ? artists : {}
   const list = Array.isArray(src.dayPosters) ? src.dayPosters : []
@@ -152,8 +166,8 @@ export const DEFAULT_FDC_ARTISTS = {
   backgroundStyle: 'light',
   backgroundImageUrl: '',
   overlayOpacity: 55,
-  /** Afiches generales por día (hasta 4). Si hay al menos uno, el CTA alterna la vista. */
-  dayPosters: [],
+  /** Imagen única de la cartelera completa (todos los días). */
+  posterImageUrl: '',
   items: [
     {
       id: 'art-1',
@@ -933,11 +947,14 @@ export function mergeFdcContent(base, remote) {
       )
     })(),
     artists: (() => {
-      const merged = mergeNamedSection(defaults.artists, remote.artists, [
+      const remoteArtists =
+        remote.artists && typeof remote.artists === 'object' ? remote.artists : null
+      const merged = mergeNamedSection(defaults.artists, remoteArtists, [
         'title',
         'ctaLabel',
         'ctaHref',
         'items',
+        'posterImageUrl',
         'dayPosters',
         'backgroundStyle',
         'backgroundImageUrl',
@@ -946,15 +963,8 @@ export function mergeFdcContent(base, remote) {
       return withFdcSectionBackground(
         {
           ...merged,
-          dayPosters: normalizeFdcArtistDayPosters(
-            remote.artists && typeof remote.artists === 'object'
-              ? {
-                  dayPosters: Array.isArray(remote.artists.dayPosters)
-                    ? remote.artists.dayPosters
-                    : [],
-                }
-              : merged,
-          ),
+          posterImageUrl: normalizeFdcArtistsPosterImageUrl(remoteArtists || merged),
+          dayPosters: [],
         },
         defaults.artists,
       )

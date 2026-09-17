@@ -7,7 +7,7 @@ import { useFdcSectionTone } from './FdcSectionToneContext.jsx'
 import { FdcSectionTitle } from './FdcFestivalSections.jsx'
 
 const VIEW_CAROUSEL = 'carousel'
-const VIEW_DAYS = 'days'
+const VIEW_POSTER = 'poster'
 
 const softEase = [0.22, 1, 0.36, 1]
 
@@ -75,11 +75,11 @@ const ctaButtonClassLight =
 const ctaButtonClassDark =
   'inline-flex min-h-11 items-center justify-center rounded-md border border-white/75 px-5 text-[11px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-white hover:text-[#171b22] sm:text-xs'
 
-function DayPosterLightbox({ poster, onClose, reduceMotion }) {
+function PosterLightbox({ imageUrl, title, onClose, reduceMotion }) {
   const titleId = useId()
   const closeRef = useRef(null)
-  const src = resolveMediaUrl(poster.imageUrl) || poster.imageUrl
-  const label = String(poster.label || '').trim() || 'Cartelera del día'
+  const src = resolveMediaUrl(imageUrl) || imageUrl
+  const label = String(title || '').trim() || 'Cartelera completa'
 
   useEffect(() => {
     function onKey(e) {
@@ -101,7 +101,7 @@ function DayPosterLightbox({ poster, onClose, reduceMotion }) {
 
   return (
     <Motion.div
-      className="fixed inset-0 z-[160] flex items-center justify-center overflow-hidden p-3 sm:p-6"
+      className="fixed inset-0 z-[160] flex items-center justify-center overflow-hidden p-3 sm:p-5"
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
@@ -112,16 +112,16 @@ function DayPosterLightbox({ poster, onClose, reduceMotion }) {
     >
       <button
         type="button"
-        className="absolute inset-0 bg-[#0c1017]/72 backdrop-blur-md"
+        className="absolute inset-0 bg-[#0c1017]/75 backdrop-blur-md"
         aria-label="Cerrar cartelera ampliada"
         onClick={onClose}
       />
       <Motion.div
-        layoutId={reduceMotion ? undefined : `fdc-day-poster-${poster.id}`}
-        className="relative z-10 flex max-h-[min(94dvh,56rem)] w-full max-w-[min(96vw,28rem)] flex-col overflow-hidden rounded-2xl bg-[#171b22] shadow-[0_40px_100px_-40px_rgba(0,0,0,0.75)] ring-1 ring-white/10 sm:max-w-[min(92vw,34rem)]"
-        initial={reduceMotion ? false : { scale: 0.94, y: 16, filter: 'blur(4px)' }}
+        layoutId={reduceMotion ? undefined : 'fdc-full-poster'}
+        className="relative z-10 flex max-h-[min(96dvh,60rem)] w-full max-w-[min(96vw,44rem)] flex-col overflow-hidden rounded-2xl bg-[#0c1017] shadow-[0_40px_100px_-40px_rgba(0,0,0,0.75)] ring-1 ring-white/10"
+        initial={reduceMotion ? false : { scale: 0.96, y: 12, filter: 'blur(4px)' }}
         animate={{ scale: 1, y: 0, filter: 'blur(0px)' }}
-        exit={reduceMotion ? undefined : { scale: 0.96, y: 10, opacity: 0.7, filter: 'blur(2px)' }}
+        exit={reduceMotion ? undefined : { scale: 0.97, y: 8, opacity: 0.7, filter: 'blur(2px)' }}
         transition={{ duration: reduceMotion ? 0.12 : 0.36, ease: softEase }}
       >
         <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3 sm:px-5">
@@ -141,11 +141,11 @@ function DayPosterLightbox({ poster, onClose, reduceMotion }) {
             ✕
           </button>
         </div>
-        <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-[#0c1017] p-2 sm:p-3">
+        <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto bg-[#0c1017] p-3 sm:p-4">
           <img
             src={src}
             alt={label}
-            className="max-h-[min(calc(94dvh-7.5rem),50rem)] w-auto max-w-full object-contain"
+            className="mx-auto max-h-[min(calc(96dvh-7rem),54rem)] w-auto max-w-full object-contain"
             decoding="async"
           />
         </div>
@@ -159,48 +159,49 @@ function DayPosterLightbox({ poster, onClose, reduceMotion }) {
 
 /**
  * Cartelera FDC: carrusel de artistas por defecto;
- * el CTA revela afiches por día (hasta 4) con animación, y cada afiche se amplía al tocar.
+ * el CTA revela la cartelera completa (una sola imagen centrada) y se amplía al tocar.
  */
 export function FdcArtistsSection({ artists }) {
   const items = (artists?.items || []).filter((a) => a?.name)
-  const dayPosters = (artists?.dayPosters || []).filter((p) => p?.imageUrl)
+  const posterImageUrl = String(artists?.posterImageUrl || '').trim()
   const reduceMotion = usePrefersReducedMotion()
   const scrollRef = useRef(null)
   const [view, setView] = useState(VIEW_CAROUSEL)
-  const [expanded, setExpanded] = useState(null)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
 
   const title = String(artists?.title || 'Cartelera artística').trim()
   const ctaLabel = String(artists?.ctaLabel || '').trim() || 'Ver cartelera completa'
   const ctaHref = String(artists?.ctaHref || '').trim()
   const { titleTone, usesDarkTone } = useFdcSectionTone(artists)
   const ctaButtonClass = usesDarkTone ? ctaButtonClassDark : ctaButtonClassLight
-  const hasDayPosters = dayPosters.length > 0
-  const showingDays = hasDayPosters && (view === VIEW_DAYS || items.length === 0)
+  const hasPoster = Boolean(posterImageUrl)
+  const showingPoster = hasPoster && (view === VIEW_POSTER || items.length === 0)
+  const posterSrc = hasPoster ? resolveMediaUrl(posterImageUrl) || posterImageUrl : ''
 
-  const openDays = useCallback(() => {
-    setView(VIEW_DAYS)
-    setExpanded(null)
+  const openPoster = useCallback(() => {
+    setView(VIEW_POSTER)
+    setLightboxOpen(false)
   }, [])
 
   const openCarousel = useCallback(() => {
     setView(VIEW_CAROUSEL)
-    setExpanded(null)
+    setLightboxOpen(false)
   }, [])
 
   function scrollBy(delta) {
     scrollRef.current?.scrollBy({ left: delta, behavior: 'smooth' })
   }
 
-  if (items.length === 0 && !hasDayPosters) return null
+  if (items.length === 0 && !hasPoster) return null
 
-  const cta = showingDays ? (
+  const cta = showingPoster ? (
     items.length > 0 ? (
       <button type="button" className={ctaButtonClass} onClick={openCarousel}>
         Ver artistas
       </button>
     ) : null
-  ) : hasDayPosters ? (
-    <button type="button" className={ctaButtonClass} onClick={openDays}>
+  ) : hasPoster ? (
+    <button type="button" className={ctaButtonClass} onClick={openPoster}>
       {ctaLabel}
     </button>
   ) : ctaLabel ? (
@@ -221,8 +222,8 @@ export function FdcArtistsSection({ artists }) {
         title={title}
         tone={titleTone}
         subtitle={
-          showingDays
-            ? 'Cartelera general por día. Tocá un afiche para verlo en grande.'
+          showingPoster
+            ? 'Cartelera completa. Tocá la imagen para verla en grande.'
             : undefined
         }
         actions={cta}
@@ -231,19 +232,18 @@ export function FdcArtistsSection({ artists }) {
       <LayoutGroup>
         <div className="relative min-h-[12rem] perspective-[1400px]">
           <AnimatePresence mode="wait" initial={false}>
-            {showingDays ? (
+            {showingPoster ? (
               <Motion.div
-                key="days"
+                key="poster"
                 className="origin-center"
                 initial={
                   reduceMotion
                     ? { opacity: 0 }
                     : {
                         opacity: 0,
-                        rotateX: 10,
-                        y: 24,
+                        rotateX: 8,
+                        y: 20,
                         filter: 'blur(6px)',
-                        clipPath: 'inset(8% 12% 8% 12% round 1rem)',
                       }
                 }
                 animate={{
@@ -251,71 +251,45 @@ export function FdcArtistsSection({ artists }) {
                   rotateX: 0,
                   y: 0,
                   filter: 'blur(0px)',
-                  clipPath: 'inset(0% 0% 0% 0% round 0rem)',
                 }}
                 exit={
                   reduceMotion
                     ? { opacity: 0 }
                     : {
                         opacity: 0,
-                        rotateX: -6,
-                        y: -14,
+                        rotateX: -5,
+                        y: -12,
                         filter: 'blur(4px)',
-                        clipPath: 'inset(6% 8% 6% 8% round 0.75rem)',
                       }
                 }
                 transition={{ duration: stageDuration, ease: softEase }}
                 style={{ transformStyle: 'preserve-3d' }}
               >
-                <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4 lg:gap-6">
-                  {dayPosters.map((poster, idx) => {
-                    const src = resolveMediaUrl(poster.imageUrl) || poster.imageUrl
-                    const label = String(poster.label || '').trim() || `Día ${idx + 1}`
-                    return (
-                      <Motion.li
-                        key={poster.id || idx}
-                        initial={reduceMotion ? false : { opacity: 0, y: 20, scale: 0.96 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        transition={{
-                          duration: reduceMotion ? 0.15 : 0.38,
-                          delay: reduceMotion ? 0 : 0.05 + idx * 0.04,
-                          ease: softEase,
-                        }}
-                      >
-                        <Motion.button
-                          type="button"
-                          layoutId={reduceMotion ? undefined : `fdc-day-poster-${poster.id}`}
-                          onClick={() => setExpanded(poster)}
-                          className="group relative block w-full overflow-hidden rounded-2xl bg-[#efe8dc] text-left shadow-[0_18px_48px_-28px_rgba(23,27,34,0.55)] ring-1 ring-[#e8e4dc] transition hover:ring-[#d4b483]/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d4b483]"
-                          whileHover={reduceMotion ? undefined : { y: -4, transition: { duration: 0.35 } }}
-                          whileTap={reduceMotion ? undefined : { scale: 0.985 }}
-                        >
-                            <div className="relative aspect-3/4 overflow-hidden sm:aspect-[4/5]">
-                            <img
-                              src={src}
-                              alt={label}
-                              className="h-full w-full object-cover transition duration-700 ease-out group-hover:scale-[1.04]"
-                              loading="lazy"
-                              decoding="async"
-                            />
-                            <div
-                              className="pointer-events-none absolute inset-0 bg-linear-to-t from-[#0c1017]/80 via-transparent to-transparent opacity-90"
-                              aria-hidden
-                            />
-                            <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
-                              <p className="font-serif text-lg font-bold uppercase tracking-[0.08em] text-white sm:text-xl">
-                                {label}
-                              </p>
-                              <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#d4b483]">
-                                Ampliar cartelera
-                              </p>
-                            </div>
-                          </div>
-                        </Motion.button>
-                      </Motion.li>
-                    )
-                  })}
-                </ul>
+                <div className="mx-auto flex w-full max-w-[min(100%,36rem)] justify-center sm:max-w-[min(100%,40rem)]">
+                  <Motion.button
+                    type="button"
+                    layoutId={reduceMotion ? undefined : 'fdc-full-poster'}
+                    onClick={() => setLightboxOpen(true)}
+                    className="group relative w-full overflow-hidden rounded-2xl bg-[#efe8dc]/40 text-left shadow-[0_24px_60px_-36px_rgba(23,27,34,0.55)] ring-1 ring-[#e8e4dc] transition hover:ring-[#d4b483]/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d4b483]"
+                    whileHover={reduceMotion ? undefined : { y: -3, transition: { duration: 0.35 } }}
+                    whileTap={reduceMotion ? undefined : { scale: 0.992 }}
+                  >
+                    <div className="flex items-center justify-center px-3 py-4 sm:px-5 sm:py-6">
+                      <img
+                        src={posterSrc}
+                        alt={title || 'Cartelera completa'}
+                        className="mx-auto h-auto max-h-[min(78vh,52rem)] w-auto max-w-full object-contain"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    </div>
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-linear-to-t from-[#0c1017]/55 via-[#0c1017]/10 to-transparent px-4 pb-4 pt-12 text-center opacity-0 transition duration-300 group-hover:opacity-100 sm:px-5">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#d4b483]">
+                        Ampliar cartelera
+                      </p>
+                    </div>
+                  </Motion.button>
+                </div>
               </Motion.div>
             ) : (
               <Motion.div
@@ -454,11 +428,12 @@ export function FdcArtistsSection({ artists }) {
       {typeof document !== 'undefined'
         ? createPortal(
             <AnimatePresence>
-              {expanded ? (
-                <DayPosterLightbox
-                  key={expanded.id || expanded.imageUrl}
-                  poster={expanded}
-                  onClose={() => setExpanded(null)}
+              {lightboxOpen && hasPoster ? (
+                <PosterLightbox
+                  key={posterImageUrl}
+                  imageUrl={posterImageUrl}
+                  title={title}
+                  onClose={() => setLightboxOpen(false)}
                   reduceMotion={reduceMotion}
                 />
               ) : null}
