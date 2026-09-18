@@ -44,17 +44,20 @@ function mapsUrl(city, address) {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`
 }
 
-function ArrowIcon({ className = 'h-4 w-4' }) {
+function PaseshowWordmark() {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M7 17 17 7M9 7h8v8"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
+    <span className="inline-flex items-center gap-1.5 font-extrabold tracking-[0.14em] text-[1.15rem] leading-none sm:text-[1.35rem]">
+      PASESHOW
+      <svg className="h-3.5 w-3.5 sm:h-4 sm:w-4" viewBox="0 0 16 16" fill="none" aria-hidden>
+        <path
+          d="M3 13 13 3M6.5 3H13v6.5"
+          stroke="currentColor"
+          strokeWidth="2.1"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </span>
   )
 }
 
@@ -62,7 +65,6 @@ export function FdcTicketsSection({ tickets, hideHeading = false, embedded = fal
   const title = String(tickets?.title || '').trim()
   const { titleTone, usesDarkTone } = useFdcSectionTone(tickets)
   const body = String(tickets?.body || '').trim()
-  const bullets = (tickets?.bullets || []).filter(Boolean)
   const price = String(tickets?.price || '').trim()
   const pricePrefix = String(tickets?.pricePrefix || '$').trim() || '$'
   const partnerName = String(tickets?.partnerName || '').trim()
@@ -126,44 +128,32 @@ export function FdcTicketsSection({ tickets, hideHeading = false, embedded = fal
           </p>
         ) : null}
 
-        <div className="mt-5 flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
+        <div className="mt-6 flex flex-col items-center gap-3">
           {partnerName ? (
             <p className={`text-[11px] font-bold uppercase tracking-[0.22em] ${muted}`}>
-              Venta oficial · {partnerName}
+              Venta oficial
             </p>
           ) : null}
+
           {onlineUrl ? (
-            <>
-              {partnerName ? <span className={`hidden h-3 w-px sm:block ${line}`} aria-hidden /> : null}
-              <a
-                href={onlineUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`text-[11px] font-semibold uppercase tracking-[0.16em] ${ink} underline decoration-[#d4b483]/70 underline-offset-4 transition hover:decoration-[#d4b483]`}
-              >
+            <SmartLink
+              href={onlineUrl}
+              className="group inline-flex min-h-14 items-center gap-4 rounded-2xl bg-[#5c2d91] px-6 py-3 text-white shadow-[0_18px_40px_-18px_rgba(92,45,145,0.85)] transition hover:bg-[#6b35a8] hover:shadow-[0_22px_48px_-16px_rgba(92,45,145,0.95)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d4b483] sm:px-7"
+            >
+              <span className="flex flex-col items-start leading-none">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/75">
+                  {onlineLabel}
+                </span>
+                <span className="mt-1.5">
+                  <PaseshowWordmark />
+                </span>
+              </span>
+              <span className="hidden text-xs font-medium text-white/70 sm:inline">
                 {displayHost(onlineUrl)}
-              </a>
-            </>
+              </span>
+            </SmartLink>
           ) : null}
         </div>
-
-        {onlineUrl ? (
-          <SmartLink
-            href={onlineUrl}
-            className="group mt-7 inline-flex min-h-12 items-center gap-2 text-[12px] font-bold uppercase tracking-[0.18em] text-[#d4b483] transition hover:text-[#e8d0a2]"
-          >
-            {onlineLabel}
-            <ArrowIcon className="h-4 w-4 transition duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-          </SmartLink>
-        ) : null}
-
-        {bullets.length > 0 ? (
-          <ul className={`mt-6 flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs ${muted}`}>
-            {bullets.map((bullet) => (
-              <li key={bullet}>{bullet}</li>
-            ))}
-          </ul>
-        ) : null}
       </Motion.div>
 
       {salePoints.length > 0 ? (

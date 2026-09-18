@@ -242,6 +242,12 @@ export function normalizeFdcTicketSalePoints(input, fallback = DEFAULT_FDC_TICKE
   return out
 }
 
+export const LEGACY_FDC_TICKET_BULLETS = new Set([
+  'Acceso al predio',
+  'Promociones y beneficios',
+  'Compra 100% online',
+])
+
 export const DEFAULT_FDC_TICKETS = {
   title: 'Entradas',
   body: 'La podés adquirir por la web o de forma presencial en los puntos de venta habilitados.',
@@ -1071,6 +1077,9 @@ export function mergeFdcContent(base, remote) {
             ? fromRemote
             : normalizeFdcTicketSalePoints(defaults.tickets.salePoints)
         })(),
+        bullets: (Array.isArray(merged.bullets) ? merged.bullets : [])
+          .map((b) => String(b || '').trim())
+          .filter((b) => b && !LEGACY_FDC_TICKET_BULLETS.has(b)),
       }
     })(),
     news: withFdcSectionBackground(
