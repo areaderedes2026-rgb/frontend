@@ -43,6 +43,7 @@ export const ROUTES = {
   adminCatalogoGastronomico: '/admin/catalogo-gastronomico',
   adminFdc: '/admin/fdc',
   adminFdcSolicitudes: '/admin/fdc-solicitudes',
+  adminFdcConsultas: '/admin/fdc-consultas',
   adminNewsCreate: '/admin/news/create',
   adminNewsEdit: (id) => `/admin/news/edit/${id}`,
   adminUsers: '/admin/settings/users',

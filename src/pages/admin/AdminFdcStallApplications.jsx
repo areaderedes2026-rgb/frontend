@@ -585,6 +585,9 @@ export function AdminFdcStallApplications() {
         variant="plain"
         actions={
           <div className="flex flex-wrap gap-2">
+            <Link to={ROUTES.adminFdcConsultas} className={ACTION_NEUTRAL}>
+              Consultas FAQ
+            </Link>
             <Link to={ROUTES.adminFdc} className={ACTION_NEUTRAL}>
               Editar página FDC
             </Link>

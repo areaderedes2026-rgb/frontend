@@ -148,6 +148,7 @@ function mapContentToForm(content) {
         faq: {
           ...visit.faq,
           items: (visit.faq?.items || []).map((it) => ({ ...it })),
+          inquiryTopics: (visit.faq?.inquiryTopics || []).map((it) => ({ ...it })),
         },
       }
     })(),
@@ -201,7 +202,8 @@ const TABS = [
   { id: 'estadisticas', label: 'Estadísticas' },
   { id: 'cronograma', label: 'Cronograma' },
   { id: 'entradas', label: 'Entradas' },
-  { id: 'info-visita', label: 'Mapa y FAQ' },
+  { id: 'mapa', label: 'Mapa' },
+  { id: 'faq', label: 'FAQ y consultas' },
   { id: 'noticias', label: 'Noticias' },
   { id: 'galeria', label: 'Galería' },
   { id: 'auspiciantes', label: 'Auspiciantes' },
@@ -1681,9 +1683,14 @@ export function AdminFdc() {
         maxWidthClass="max-w-7xl"
         variant="plain"
         actions={
-          <Link to={ROUTES.adminFdcSolicitudes} className={ACTION_NEUTRAL}>
-            Ver solicitudes
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link to={ROUTES.adminFdcConsultas} className={ACTION_NEUTRAL}>
+              Consultas FAQ
+            </Link>
+            <Link to={ROUTES.adminFdcSolicitudes} className={ACTION_NEUTRAL}>
+              Ver solicitudes
+            </Link>
+          </div>
         }
       >
         {!apiAvailable ? (
@@ -2760,23 +2767,17 @@ export function AdminFdc() {
               </section>
             ) : null}
 
-            {/* Mapa interactivo y FAQ */}
-            {activeTab === 'info-visita' ? (
+            {/* Mapa interactivo */}
+            {activeTab === 'mapa' ? (
               <section className={SECTION_CARD}>
-                <h2 className="text-lg font-bold text-slate-900">
-                  Mapa interactivo y preguntas frecuentes
-                </h2>
+                <h2 className="text-lg font-bold text-slate-900">Mapa interactivo</h2>
                 <p className="mt-1 text-sm text-slate-600">
-                  Son dos secciones distintas en la web: primero el mapa y debajo las preguntas
-                  frecuentes. Cada una puede tener su propio fondo.
+                  Sección independiente en la web. Ancla: <code className="text-xs">#mapa-interactivo</code>
                 </p>
 
                 <div className="mt-8 space-y-8">
                   <div className="rounded-2xl border border-slate-200 p-4 sm:p-5">
-                    <h3 className="text-base font-bold text-slate-900">Mapa interactivo</h3>
-                    <p className="mt-1 text-sm text-slate-600">
-                      Ancla: <code className="text-xs">#mapa-interactivo</code>
-                    </p>
+                    <h3 className="text-base font-bold text-slate-900">Ubicaciones del festival</h3>
 
                     <div className="mt-5">
                       <FdcSectionBackgroundFields
@@ -3030,12 +3031,28 @@ export function AdminFdc() {
                       <FdcMapInteractiveSection visitInfo={form.visitInfo} />
                     </div>
                   </div>
+                </div>
+              </section>
+            ) : null}
 
+            {activeTab === 'faq' ? (
+              <section className={SECTION_CARD}>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <h2 className="text-lg font-bold text-slate-900">Preguntas frecuentes y consultas</h2>
+                    <p className="mt-1 text-sm text-slate-600">
+                      Sección independiente en la web. Ancla: <code className="text-xs">#preguntas-frecuentes</code>
+                      {' · '}formulario <code className="text-xs">#consulta-fdc</code>
+                    </p>
+                  </div>
+                  <Link to={ROUTES.adminFdcConsultas} className={ACTION_NEUTRAL}>
+                    Ver bandeja de consultas
+                  </Link>
+                </div>
+
+                <div className="mt-8 space-y-8">
                   <div className="rounded-2xl border border-slate-200 p-4 sm:p-5">
                     <h3 className="text-base font-bold text-slate-900">Preguntas frecuentes</h3>
-                    <p className="mt-1 text-sm text-slate-600">
-                      Ancla: <code className="text-xs">#preguntas-frecuentes</code>
-                    </p>
 
                     <div className="mt-5">
                       <FdcSectionBackgroundFields
@@ -3197,13 +3214,128 @@ export function AdminFdc() {
                     >
                       + Agregar pregunta
                     </button>
+                  </div>
 
-                    <div className="mt-6 overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#f7f7f5] p-4">
-                      <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                        Vista previa · FAQ
-                      </p>
-                      <FdcFaqSection visitInfo={form.visitInfo} />
+                  <div className="rounded-2xl border border-slate-200 p-4 sm:p-5">
+                    <h3 className="text-base font-bold text-slate-900">Formulario de consultas</h3>
+                    <p className="mt-1 text-sm text-slate-600">
+                      Las personas pueden preguntar con nombre completo, celular, motivo y un mensaje
+                      de hasta 50 palabras. Las respuestas se gestionan en la bandeja y se contestan
+                      por WhatsApp.
+                    </p>
+                    <label className="mt-4 flex cursor-pointer items-center gap-3">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-slate-300 text-sky-700 focus:ring-sky-600"
+                        checked={form.visitInfo?.faq?.inquiryEnabled !== false}
+                        disabled={saving}
+                        onChange={(e) =>
+                          updateVisitInfo((v) => ({
+                            ...v,
+                            faq: { ...(v.faq || {}), inquiryEnabled: e.target.checked },
+                          }))
+                        }
+                      />
+                      <span className="text-sm font-medium text-slate-800">Mostrar formulario en la web</span>
+                    </label>
+                    <div className="mt-4 grid gap-3">
+                      <label className={labelClass}>
+                        Título del formulario
+                        <input
+                          className={inputClass}
+                          value={form.visitInfo?.faq?.inquiryTitle || ''}
+                          disabled={saving || form.visitInfo?.faq?.inquiryEnabled === false}
+                          onChange={(e) =>
+                            updateVisitInfo((v) => ({
+                              ...v,
+                              faq: { ...(v.faq || {}), inquiryTitle: e.target.value },
+                            }))
+                          }
+                        />
+                      </label>
+                      <label className={labelClass}>
+                        Texto de ayuda
+                        <textarea
+                          className={textareaClass}
+                          rows={3}
+                          value={form.visitInfo?.faq?.inquiryIntro || ''}
+                          disabled={saving || form.visitInfo?.faq?.inquiryEnabled === false}
+                          onChange={(e) =>
+                            updateVisitInfo((v) => ({
+                              ...v,
+                              faq: { ...(v.faq || {}), inquiryIntro: e.target.value },
+                            }))
+                          }
+                        />
+                      </label>
                     </div>
+                    <div className="mt-5">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Motivos</p>
+                      <div className="mt-2 space-y-2">
+                        {(form.visitInfo?.faq?.inquiryTopics || []).map((topic, idx) => (
+                          <div key={topic.id || idx} className="flex gap-2">
+                            <input
+                              className={inputClass}
+                              value={topic.label || ''}
+                              disabled={saving}
+                              placeholder="Ej. Entradas y precios"
+                              onChange={(e) =>
+                                updateVisitInfo((v) => {
+                                  const inquiryTopics = [...(v.faq?.inquiryTopics || [])]
+                                  inquiryTopics[idx] = {
+                                    ...inquiryTopics[idx],
+                                    label: e.target.value,
+                                  }
+                                  return { ...v, faq: { ...(v.faq || {}), inquiryTopics } }
+                                })
+                              }
+                            />
+                            <button
+                              type="button"
+                              className={ACTION_DANGER}
+                              disabled={saving}
+                              onClick={() =>
+                                updateVisitInfo((v) => ({
+                                  ...v,
+                                  faq: {
+                                    ...(v.faq || {}),
+                                    inquiryTopics: (v.faq?.inquiryTopics || []).filter((_, i) => i !== idx),
+                                  },
+                                }))
+                              }
+                            >
+                              Quitar
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        className={`${ACTION_ADD} mt-3`}
+                        disabled={saving}
+                        onClick={() =>
+                          updateVisitInfo((v) => ({
+                            ...v,
+                            faq: {
+                              ...(v.faq || {}),
+                              inquiryTopics: [
+                                ...(v.faq?.inquiryTopics || []),
+                                { id: makeFdcItemId('faq-topic'), value: '', label: '' },
+                              ],
+                            },
+                          }))
+                        }
+                      >
+                        + Agregar motivo
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#f7f7f5] p-4">
+                    <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Vista previa · FAQ y consultas
+                    </p>
+                    <FdcFaqSection visitInfo={form.visitInfo} />
                   </div>
                 </div>
               </section>

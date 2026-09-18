@@ -158,7 +158,9 @@ export function AdminLayout() {
     pathname === ROUTES.adminFdc ||
     pathname.startsWith(`${ROUTES.adminFdc}/`) ||
     pathname === ROUTES.adminFdcSolicitudes ||
-    pathname.startsWith(`${ROUTES.adminFdcSolicitudes}/`)
+    pathname.startsWith(`${ROUTES.adminFdcSolicitudes}/`) ||
+    pathname === ROUTES.adminFdcConsultas ||
+    pathname.startsWith(`${ROUTES.adminFdcConsultas}/`)
   const nuestraCiudadActive =
     eventsActive ||
     ofertaAcademicaActive ||
@@ -405,8 +407,14 @@ export function AdminLayout() {
 
         <NavLink
           to={ROUTES.adminFdc}
-          onMouseEnter={() => preloadAdminRoute('fdc')}
-          onFocus={() => preloadAdminRoute('fdc')}
+          onMouseEnter={() => {
+            preloadAdminRoute('fdc')
+            preloadAdminRoute('fdcConsultas')
+          }}
+          onFocus={() => {
+            preloadAdminRoute('fdc')
+            preloadAdminRoute('fdcConsultas')
+          }}
           onClick={closeMobile}
           className={({ isActive }) => navClass({ isActive: isActive || fdcActive })}
         >

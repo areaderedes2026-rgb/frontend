@@ -21,6 +21,9 @@ const FDC_HASH_ALIASES = {
   mapa: 'mapa-interactivo',
   faq: 'preguntas-frecuentes',
   preguntas: 'preguntas-frecuentes',
+  consulta: 'consulta-fdc',
+  consultas: 'consulta-fdc',
+  'consulta-fdc': 'consulta-fdc',
 }
 
 export function resolveFdcHashTargetId(hash) {

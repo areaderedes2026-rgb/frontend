@@ -6,6 +6,7 @@ import {
 } from '../../data/fdcContent.js'
 import { FdcVisitMap } from './FdcVisitMap.jsx'
 import { FdcMapLocationIcon } from './FdcMapLocationIcon.jsx'
+import { FdcFaqInquiryForm } from './FdcFaqInquiryForm.jsx'
 import { useFdcSectionTone } from './FdcSectionToneContext.jsx'
 import { FdcSectionTitle } from './FdcFestivalSections.jsx'
 
@@ -262,23 +263,34 @@ function FaqAccordion({ items, dark }) {
   const safeOpenId = items.some((item) => item.id === openId) ? openId : (items[0]?.id ?? null)
 
   return (
-    <ul className={`divide-y ${dark ? 'divide-white/15' : 'divide-[#e8e4dc]/90'}`}>
-      {items.map((item) => {
+    <ul
+      className={`overflow-hidden rounded-3xl border ${
+        dark ? 'divide-white/12 border-white/14 bg-white/[0.05]' : 'divide-[#e8e4dc] border-[#ddd7ca] bg-[#fcfcfa]'
+      }`}
+    >
+      {items.map((item, index) => {
         const open = safeOpenId === item.id
         const hasAnswer = Boolean(String(item.answer || '').trim())
         return (
-          <li key={item.id}>
+          <li key={item.id} className={dark ? 'border-white/12' : 'border-[#e8e4dc]'}>
             <button
               type="button"
               id={`fdc-faq-btn-${item.id}`}
               aria-expanded={open}
               aria-controls={`fdc-faq-panel-${item.id}`}
               onClick={() => setOpenId(open ? null : item.id)}
-              className={`flex w-full items-start justify-between gap-4 py-4 text-left transition ${
-                dark ? 'text-white hover:text-white/90' : 'text-[#171b22] hover:text-[#2a313b]'
+              className={`flex w-full items-start gap-4 px-4 py-4 text-left transition sm:px-5 ${
+                dark ? 'text-white hover:bg-white/[0.04]' : 'text-[#171b22] hover:bg-[#f7f4ee]'
               }`}
             >
-              <span className="font-serif text-base font-semibold leading-snug sm:text-[17px]">
+              <span
+                className={`mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
+                  dark ? 'bg-[#d4b483]/20 text-[#d4b483]' : 'bg-sky-50 text-sky-800'
+                }`}
+              >
+                {String(index + 1).padStart(2, '0')}
+              </span>
+              <span className="min-w-0 flex-1 font-serif text-base font-semibold leading-snug sm:text-[17px]">
                 {item.question}
               </span>
               {hasAnswer ? (
@@ -301,7 +313,7 @@ function FaqAccordion({ items, dark }) {
               >
                 <div className="overflow-hidden">
                   <p
-                    className={`pb-4 text-sm leading-relaxed sm:text-[15px] ${
+                    className={`px-4 pb-4 text-sm leading-relaxed sm:px-5 sm:pl-[3.75rem] sm:text-[15px] ${
                       dark ? 'text-white/80' : 'text-[#4b505a]'
                     }`}
                   >
@@ -425,7 +437,7 @@ export function FdcMapInteractiveSection({ visitInfo }) {
   )
 }
 
-/** Sección pública: Preguntas frecuentes. */
+/** Sección pública: Preguntas frecuentes + consulta rápida. */
 export function FdcFaqSection({ visitInfo }) {
   if (!fdcVisitFaqHasContent(visitInfo)) return null
 
@@ -441,26 +453,42 @@ export function FdcFaqSection({ visitInfo }) {
   const ctaHref = String(faq.ctaHref || '').trim()
   const sectionTitle = String(faq.title || 'Preguntas frecuentes').trim()
   const showTitle = faq.showTitle !== false && Boolean(sectionTitle)
+  const showForm = faq.inquiryEnabled !== false
 
   const faqCtaClass = dark
     ? 'inline-flex min-h-11 items-center justify-center rounded-sm border border-white/75 px-5 text-[11px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-white hover:text-[#171b22] sm:text-xs'
     : 'inline-flex min-h-11 items-center justify-center rounded-sm border border-[#d4b483] px-5 text-[11px] font-bold uppercase tracking-[0.14em] text-[#171b22] transition hover:bg-[#d4b483]/10 sm:text-xs'
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-6xl">
       {showTitle ? <FdcSectionTitle title={sectionTitle} tone={titleTone} /> : null}
-      <FaqAccordion items={faqItems} dark={dark} />
-      {ctaLabel && ctaHref ? (
-        <div className="mt-6 flex justify-center">
-          <SmartLink href={ctaHref} className={faqCtaClass}>
-            {ctaLabel}
-          </SmartLink>
-        </div>
-      ) : ctaLabel ? (
-        <div className="mt-6 flex justify-center">
-          <span className={`${faqCtaClass} cursor-default opacity-80`}>{ctaLabel}</span>
-        </div>
-      ) : null}
+      <div
+        className={`grid items-start gap-8 ${
+          faqItems.length && showForm ? 'lg:grid-cols-12 lg:gap-10' : ''
+        }`}
+      >
+        {faqItems.length ? (
+          <div className={showForm ? 'lg:col-span-6' : 'mx-auto w-full max-w-3xl'}>
+            <FaqAccordion items={faqItems} dark={dark} />
+            {ctaLabel && ctaHref ? (
+              <div className="mt-6 flex justify-center lg:justify-start">
+                <SmartLink href={ctaHref} className={faqCtaClass}>
+                  {ctaLabel}
+                </SmartLink>
+              </div>
+            ) : ctaLabel ? (
+              <div className="mt-6 flex justify-center lg:justify-start">
+                <span className={`${faqCtaClass} cursor-default opacity-80`}>{ctaLabel}</span>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+        {showForm ? (
+          <div className={faqItems.length ? 'lg:col-span-6' : 'mx-auto w-full max-w-xl'}>
+            <FdcFaqInquiryForm faq={faq} dark={dark} />
+          </div>
+        ) : null}
+      </div>
     </div>
   )
 }

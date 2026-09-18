@@ -217,3 +217,128 @@ export async function updateFdcWhatsappTemplate(payload) {
     updatedAt: data.updatedAt || null,
   }
 }
+
+function mapFaqInquiry(value) {
+  if (!value || typeof value !== 'object') return null
+  const fullName = String(value.fullName || '').trim()
+  const parts = fullName.split(/\s+/).filter(Boolean)
+  return {
+    id: value.id != null ? Number(value.id) : null,
+    fullName,
+    firstName: String(value.firstName || parts[0] || ''),
+    lastName: String(value.lastName || parts.slice(1).join(' ')),
+    dni: '',
+    email: '',
+    phone: String(value.phone || ''),
+    topic: String(value.topic || ''),
+    message: String(value.message || ''),
+    status: String(value.status || 'sin_resolver'),
+    createdAt: value.createdAt || null,
+    updatedAt: value.updatedAt || null,
+  }
+}
+
+export async function createFdcFaqInquiry(payload) {
+  const b = base()
+  if (!b) throw new Error('Configurá VITE_API_URL para enviar la consulta.')
+  const res = await fetch(`${b}/api/fdc/faq-inquiries`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) {
+    throw new Error((await apiErrorMessage(res)) || 'No se pudo enviar la consulta.')
+  }
+  const data = await res.json().catch(() => ({}))
+  return mapFaqInquiry(data.inquiry)
+}
+
+export async function fetchFdcFaqInquiriesAdmin(status = '') {
+  const b = base()
+  if (!b) return []
+  const qs = status ? `?status=${encodeURIComponent(status)}` : ''
+  const res = await fetch(`${b}/api/fdc/admin/faq-inquiries${qs}`, { headers: jsonAuthHeaders() })
+  notifyUnauthorizedIfNeeded(res)
+  if (!res.ok) {
+    throw new Error((await apiErrorMessage(res)) || 'No se pudieron cargar las consultas.')
+  }
+  const data = await res.json().catch(() => ({}))
+  return Array.isArray(data.inquiries) ? data.inquiries.map(mapFaqInquiry).filter(Boolean) : []
+}
+
+export async function fetchFdcFaqInquiryAdminById(id) {
+  const b = base()
+  if (!b) return null
+  const res = await fetch(`${b}/api/fdc/admin/faq-inquiries/${id}`, { headers: jsonAuthHeaders() })
+  notifyUnauthorizedIfNeeded(res)
+  if (!res.ok) {
+    throw new Error((await apiErrorMessage(res)) || 'No se pudo cargar la consulta.')
+  }
+  const data = await res.json().catch(() => ({}))
+  return mapFaqInquiry(data.inquiry)
+}
+
+export async function updateFdcFaqInquiryStatus(id, status, expectedUpdatedAt, forceOverwrite = false) {
+  const b = base()
+  if (!b) throw new Error('Configurá VITE_API_URL.')
+  const res = await fetch(`${b}/api/fdc/admin/faq-inquiries/${id}/status`, {
+    method: 'PATCH',
+    headers: jsonAuthHeaders(),
+    body: JSON.stringify({ status, expectedUpdatedAt, forceOverwrite }),
+  })
+  notifyUnauthorizedIfNeeded(res)
+  if (!res.ok) {
+    throw await errorFromApiResponse(res, 'No se pudo actualizar el estado.')
+  }
+  const data = await res.json().catch(() => ({}))
+  return mapFaqInquiry(data.inquiry)
+}
+
+export async function deleteFdcFaqInquiry(id) {
+  const b = base()
+  if (!b) throw new Error('Configurá VITE_API_URL.')
+  const res = await fetch(`${b}/api/fdc/admin/faq-inquiries/${id}`, {
+    method: 'DELETE',
+    headers: jsonAuthHeaders(),
+  })
+  notifyUnauthorizedIfNeeded(res)
+  if (!res.ok) {
+    throw new Error((await apiErrorMessage(res)) || 'No se pudo eliminar la consulta.')
+  }
+}
+
+export async function fetchFdcFaqInquiryWhatsappTemplate() {
+  const b = base()
+  if (!b) return { message: '', updatedAt: null }
+  const res = await fetch(`${b}/api/fdc/admin/faq-inquiry-whatsapp-message`, {
+    headers: jsonAuthHeaders(),
+  })
+  notifyUnauthorizedIfNeeded(res)
+  if (!res.ok) {
+    throw new Error((await apiErrorMessage(res)) || 'No se pudo cargar la plantilla de WhatsApp.')
+  }
+  const data = await res.json().catch(() => ({}))
+  return {
+    message: String(data.message || ''),
+    updatedAt: data.updatedAt || null,
+  }
+}
+
+export async function updateFdcFaqInquiryWhatsappTemplate(payload) {
+  const b = base()
+  if (!b) throw new Error('Configurá VITE_API_URL.')
+  const res = await fetch(`${b}/api/fdc/admin/faq-inquiry-whatsapp-message`, {
+    method: 'PUT',
+    headers: jsonAuthHeaders(),
+    body: JSON.stringify(payload),
+  })
+  notifyUnauthorizedIfNeeded(res)
+  if (!res.ok) {
+    throw await errorFromApiResponse(res, 'No se pudo guardar la plantilla de WhatsApp.')
+  }
+  const data = await res.json().catch(() => ({}))
+  return {
+    message: String(data.message || ''),
+    updatedAt: data.updatedAt || null,
+  }
+}

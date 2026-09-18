@@ -41,6 +41,7 @@ const AdminOfertaAcademica = lazy(adminRouteLoaders.ofertaAcademica)
 const AdminGastronomicCatalog = lazy(adminRouteLoaders.gastronomicCatalog)
 const AdminFdc = lazy(adminRouteLoaders.fdc)
 const AdminFdcStallApplications = lazy(adminRouteLoaders.fdcSolicitudes)
+const AdminFdcFaqInquiries = lazy(adminRouteLoaders.fdcConsultas)
 const AdminUsers = lazy(adminRouteLoaders.settingsUsers)
 const AdminMyAreaServices = lazy(adminRouteLoaders.myAreaServices)
 const AdminAreaServiceEditor = lazy(adminRouteLoaders.areaServiceEditor)
@@ -240,6 +241,14 @@ export function AppRouter() {
             element={
               <Suspense fallback={<AdminRouteFallback />}>
                 <AdminFdcStallApplications />
+              </Suspense>
+            }
+          />
+          <Route
+            path="fdc-consultas"
+            element={
+              <Suspense fallback={<AdminRouteFallback />}>
+                <AdminFdcFaqInquiries />
               </Suspense>
             }
           />

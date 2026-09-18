@@ -166,7 +166,8 @@ export function Dashboard() {
               </p>
               <p className="mt-2 text-lg font-semibold text-slate-900">Contenido del festival</p>
               <p className="mt-1 text-sm leading-relaxed text-slate-600">
-                Portada, cronograma, cartelera, entradas, noticias, galería y preinscripción. Las solicitudes se gestionan en la bandeja.
+                Portada, cronograma, cartelera, entradas, mapa, FAQ y preinscripción. Las solicitudes
+                y consultas de la FAQ se gestionan en sus bandejas.
               </p>
               <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-sky-700 group-hover:text-sky-900">
                 Abrir sección <span aria-hidden>→</span>

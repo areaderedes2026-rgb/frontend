@@ -232,9 +232,9 @@ export function InquiryDetailPanel({
         <article className="rounded-xl border border-slate-200/80 bg-white p-4">
           <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Vecino</p>
           <p className="mt-1 text-base font-semibold text-slate-900">
-            {inquiry.firstName} {inquiry.lastName}
+            {inquiry.fullName || `${inquiry.firstName || ''} ${inquiry.lastName || ''}`.trim() || 'Sin nombre'}
           </p>
-          <p className="mt-1 text-sm text-slate-600">DNI {inquiry.dni}</p>
+          {inquiry.dni ? <p className="mt-1 text-sm text-slate-600">DNI {inquiry.dni}</p> : null}
         </article>
         <article className="rounded-xl border border-slate-200/80 bg-white p-4">
           <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Contacto</p>
@@ -280,14 +280,16 @@ export function InquiryDetailPanel({
             <WhatsAppGlyph />
             WhatsApp
           </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={onDownloadPdf}
-            className={BTN_NEUTRAL}
-          >
-            Descargar PDF
-          </button>
+          {typeof onDownloadPdf === 'function' ? (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={onDownloadPdf}
+              className={BTN_NEUTRAL}
+            >
+              Descargar PDF
+            </button>
+          ) : null}
         </div>
         {!canWhatsApp ? (
           <p className="mt-2 text-xs text-amber-700">

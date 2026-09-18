@@ -27,6 +27,23 @@ export function isFdcOtherRubro(label) {
   return String(label || '').trim().toLowerCase() === 'otro'
 }
 
+export const DEFAULT_FDC_FAQ_INQUIRY_TOPICS = [
+  { id: 'faq-topic-tickets', value: 'entradas', label: 'Entradas y precios' },
+  { id: 'faq-topic-access', value: 'acceso', label: 'Acceso, horarios y predio' },
+  { id: 'faq-topic-parking', value: 'estacionamiento', label: 'Estacionamiento' },
+  { id: 'faq-topic-schedule', value: 'cronograma', label: 'Cronograma y artistas' },
+  { id: 'faq-topic-other', value: 'otro', label: 'Otro motivo' },
+]
+
+export function countPlainWords(text) {
+  const t = String(text || '').trim()
+  if (!t) return 0
+  return t.split(/\s+/).filter(Boolean).length
+}
+
+export const FDC_FAQ_INQUIRY_MAX_WORDS = 50
+export const FDC_FAQ_INQUIRY_MIN_WORDS = 5
+
 /** Normaliza lista de rubros y garantiza «Otro» al final (no se puede quitar). */
 export function ensureFdcFormRubros(list, fallback = FDC_RUBROS) {
   const source = Array.isArray(list) && list.length ? list : fallback
@@ -506,8 +523,14 @@ export const DEFAULT_FDC_VISIT_INFO = {
     backgroundStyle: 'light',
     backgroundImageUrl: '',
     overlayOpacity: 55,
-    ctaLabel: 'Ver todas las preguntas',
+    ctaLabel: '',
     ctaHref: '',
+    inquiryEnabled: true,
+    inquiryTitle: '¿No encontraste tu respuesta?',
+    inquiryIntro:
+      'Dejanos tu consulta y te respondemos por WhatsApp. Completá tu nombre, celular, el motivo y un mensaje breve (hasta 50 palabras).',
+    inquiryTopics: DEFAULT_FDC_FAQ_INQUIRY_TOPICS.map((item) => ({ ...item })),
+    inquiryWhatsappMessage: '',
     items: [
       {
         id: 'faq-1',
@@ -612,6 +635,29 @@ function migrateLegacyFdcDirectionsPoints(directionsSrc, baseDirections = {}) {
     .filter(Boolean)
 }
 
+export function normalizeFdcFaqInquiryTopic(item, index = 0) {
+  const src = item && typeof item === 'object' ? item : { label: item }
+  const label = String(src.label ?? src.value ?? '').trim()
+  if (!label) return null
+  const valueRaw = String(src.value || '').trim()
+  const value =
+    valueRaw ||
+    label
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 40)
+  if (!value) return null
+  return {
+    id: String(src.id || '').trim() || makeFdcItemId('faq-topic'),
+    value,
+    label,
+    sortOrder: Number.isFinite(Number(src.sortOrder)) ? Number(src.sortOrder) : index,
+  }
+}
+
 export function normalizeFdcVisitFaqItem(item, index = 0) {
   const src = item && typeof item === 'object' ? item : {}
   const question = String(src.question ?? '').trim()
@@ -707,6 +753,31 @@ export function normalizeFdcVisitInfo(input, defaults = DEFAULT_FDC_VISIT_INFO) 
         ),
         ctaLabel: String(faqSrc.ctaLabel ?? base.faq?.ctaLabel ?? '').trim(),
         ctaHref: String(faqSrc.ctaHref ?? base.faq?.ctaHref ?? '').trim(),
+        inquiryEnabled: normalizeFdcVisitShowTitle(
+          faqSrc.inquiryEnabled,
+          base.faq?.inquiryEnabled !== false,
+        ),
+        inquiryTitle: String(
+          faqSrc.inquiryTitle ?? base.faq?.inquiryTitle ?? '¿No encontraste tu respuesta?',
+        ).trim(),
+        inquiryIntro: String(
+          faqSrc.inquiryIntro ??
+            base.faq?.inquiryIntro ??
+            '',
+        ).trim(),
+        inquiryTopics: (() => {
+          const raw =
+            hasInput && Array.isArray(faqSrc.inquiryTopics)
+              ? faqSrc.inquiryTopics
+              : base.faq?.inquiryTopics || []
+          return raw
+            .map((it, idx) => normalizeFdcFaqInquiryTopic(it, idx))
+            .filter(Boolean)
+            .slice(0, 16)
+        })(),
+        inquiryWhatsappMessage: String(
+          faqSrc.inquiryWhatsappMessage ?? base.faq?.inquiryWhatsappMessage ?? '',
+        ).trim(),
         items,
       }
     })(),
@@ -727,7 +798,10 @@ export function fdcVisitDirectionsHasContent(visitInfo) {
 
 export function fdcVisitFaqHasContent(visitInfo) {
   const normalized = normalizeFdcVisitInfo(visitInfo)
-  return (normalized.faq?.items || []).length > 0
+  const faq = normalized.faq || {}
+  const hasItems = (faq.items || []).length > 0
+  const hasForm = faq.inquiryEnabled !== false
+  return hasItems || hasForm
 }
 
 export function fdcVisitInfoHasContent(visitInfo) {
