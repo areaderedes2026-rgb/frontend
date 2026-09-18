@@ -2,21 +2,24 @@ import { Link } from 'react-router-dom'
 import { EventAgendaExperience } from '../events/EventAgendaExperience.jsx'
 import { Container } from '../ui/Container.jsx'
 import { ROUTES } from '../../utils/constants.js'
+import { SectionBottomWave, SectionTopWave } from './SectionTopWave.jsx'
+
+const AGENDA_SHELL =
+  'relative isolate z-10 overflow-visible border-t border-white/10 bg-[#171b22] py-12 text-white sm:py-14'
+
+function AgendaWaves() {
+  return (
+    <>
+      <SectionTopWave tone="accent" previousTone="light" />
+      <SectionBottomWave color="#171b22" />
+    </>
+  )
+}
 
 function AgendaSkeleton() {
   return (
-    <section className="relative isolate overflow-visible border-y border-white/10 bg-[#171b22] py-12 text-white sm:py-14">
-      <svg
-        className="pointer-events-none absolute inset-x-0 -top-12 z-0 h-12 w-full text-[#171b22]"
-        viewBox="0 0 1440 96"
-        preserveAspectRatio="none"
-        aria-hidden
-      >
-        <path
-          fill="currentColor"
-          d="M0 58L60 52C120 46 240 34 360 42C480 50 600 78 720 74C840 70 960 34 1080 30C1200 26 1320 54 1380 68L1440 82V96H0V58Z"
-        />
-      </svg>
+    <section className={AGENDA_SHELL}>
+      <AgendaWaves />
       <Container className="relative z-10">
         <div className="space-y-8">
           <div className="max-w-2xl">
@@ -38,21 +41,8 @@ export function HomeEventsAgenda({ events = [], loading = false }) {
   if (!Array.isArray(events) || events.length === 0) return null
 
   return (
-    <section
-      className="relative isolate overflow-visible border-y border-white/10 bg-[#171b22] py-12 text-white sm:py-14"
-      aria-labelledby="titulo-agenda-inicio"
-    >
-      <svg
-        className="pointer-events-none absolute inset-x-0 -top-12 z-0 h-12 w-full text-[#171b22]"
-        viewBox="0 0 1440 96"
-        preserveAspectRatio="none"
-        aria-hidden
-      >
-        <path
-          fill="currentColor"
-          d="M0 58L60 52C120 46 240 34 360 42C480 50 600 78 720 74C840 70 960 34 1080 30C1200 26 1320 54 1380 68L1440 82V96H0V58Z"
-        />
-      </svg>
+    <section className={AGENDA_SHELL} aria-labelledby="titulo-agenda-inicio">
+      <AgendaWaves />
 
       <Container className="relative z-10">
         <EventAgendaExperience

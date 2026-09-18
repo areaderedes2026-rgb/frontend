@@ -70,3 +70,17 @@ export function SectionTopWave({ tone = 'light', previousTone = 'light', classNa
     </svg>
   )
 }
+
+export function SectionBottomWave({ color = TONE_WAVE_COLOR.accent, className = '' }) {
+  return (
+    <svg
+      className={`pointer-events-none absolute inset-x-0 -bottom-12 z-0 h-12 w-full origin-center scale-y-[-1] ${className}`.trim()}
+      style={{ color }}
+      viewBox="0 0 1440 96"
+      preserveAspectRatio="none"
+      aria-hidden
+    >
+      <path fill="currentColor" d={SECTION_WAVE_PATH} />
+    </svg>
+  )
+}
