@@ -16,29 +16,9 @@ function AgendaWaves() {
   )
 }
 
-function AgendaSkeleton() {
-  return (
-    <section className={AGENDA_SHELL}>
-      <AgendaWaves />
-      <Container className="relative z-10">
-        <div className="space-y-8">
-          <div className="max-w-2xl">
-            <div className="h-6 w-40 animate-pulse rounded-full bg-white/10" />
-            <div className="mt-4 h-9 w-72 animate-pulse rounded-3xl bg-white/8" />
-          </div>
-          <div className="grid gap-5 lg:grid-cols-12 lg:gap-6">
-            <div className="h-80 animate-pulse rounded-3xl bg-white/8 lg:col-span-4" />
-            <div className="h-80 animate-pulse rounded-3xl bg-white/8 lg:col-span-8" />
-          </div>
-        </div>
-      </Container>
-    </section>
-  )
-}
-
 export function HomeEventsAgenda({ events = [], loading = false }) {
-  if (loading) return <AgendaSkeleton />
-  if (!Array.isArray(events) || events.length === 0) return null
+  const list = Array.isArray(events) ? events : []
+  if (!loading && list.length === 0) return null
 
   return (
     <section className={AGENDA_SHELL} aria-labelledby="titulo-agenda-inicio">
@@ -46,8 +26,8 @@ export function HomeEventsAgenda({ events = [], loading = false }) {
 
       <Container className="relative z-10">
         <EventAgendaExperience
-          events={events}
-          loading={false}
+          events={list}
+          loading={loading}
           variant="dark"
           headerId="titulo-agenda-inicio"
           headerAction={

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { RevealOnScroll } from '../home/RevealOnScroll.jsx'
@@ -174,12 +174,44 @@ function FlyerLightbox({ src, title, onClose }) {
   )
 }
 
-function EventFlyer({ event, contain = true, className = '' }) {
+function preloadFlyerUrls(events) {
+  if (typeof window === 'undefined' || !Array.isArray(events)) return
+  events.forEach((event) => {
+    const src = flyerSrc(event?.flyerUrl, 900)
+    if (!src) return
+    const img = new Image()
+    img.decoding = 'async'
+    img.src = src
+  })
+}
+
+function EventFlyer({ event, contain = true, className = '', priority = false }) {
   const [open, setOpen] = useState(false)
   const src = flyerSrc(event.flyerUrl, 900)
   const large = flyerSrc(event.flyerUrl, 1400)
+  const [shownSrc, setShownSrc] = useState(src)
 
-  if (!src) {
+  useEffect(() => {
+    if (!src) {
+      setShownSrc('')
+      return undefined
+    }
+
+    let cancelled = false
+    const img = new Image()
+    const commit = () => {
+      if (!cancelled) setShownSrc(src)
+    }
+    img.onload = commit
+    img.onerror = commit
+    img.src = src
+    if (img.complete) commit()
+    return () => {
+      cancelled = true
+    }
+  }, [src])
+
+  if (!shownSrc) {
     return (
       <div
         className={`flex h-full min-h-48 w-full flex-col items-center justify-center gap-2 text-sky-100/70 ${className}`.trim()}
@@ -200,18 +232,18 @@ function EventFlyer({ event, contain = true, className = '' }) {
         aria-label={`Ampliar flyer de ${event.title || 'evento'}`}
       >
         <img
-          src={src}
+          src={shownSrc}
           alt=""
           className={`mx-auto max-h-[min(28rem,70vh)] w-auto max-w-full rounded-xl shadow-[0_18px_40px_-24px_rgba(15,23,42,0.55)] ${
             contain ? 'object-contain' : 'object-cover'
           }`}
-          loading="lazy"
+          loading={priority ? 'eager' : 'lazy'}
           decoding="async"
         />
       </button>
       {open && typeof document !== 'undefined'
         ? createPortal(
-            <FlyerLightbox src={large || src} title={event.title} onClose={() => setOpen(false)} />,
+            <FlyerLightbox src={large || shownSrc} title={event.title} onClose={() => setOpen(false)} />,
             document.body,
           )
         : null}
@@ -280,9 +312,9 @@ function EventDetailCard({ event, index, total, theme, footerLink }) {
   const weekday = date ? date.toLocaleDateString('es-AR', { weekday: 'long' }) : ''
 
   return (
-    <article id={`evento-publico-${event.id}`} className={theme.card}>
+    <article id={`evento-publico-${event.id}`} className={`${theme.card} motion-reduce:transition-none`}>
       <div className={`${theme.flyerShell} order-1 lg:order-none`}>
-        <EventFlyer event={event} contain />
+        <EventFlyer event={event} contain priority />
       </div>
 
       <div className="flex min-w-0 flex-col p-5 sm:p-6">
@@ -312,13 +344,18 @@ function EventDetailCard({ event, index, total, theme, footerLink }) {
   )
 }
 
-function EventDetailCarousel({ events, carouselKey, theme, initialIndex = 0, footerLink }) {
-  const [index, setIndex] = useState(initialIndex)
+function EventDetailCarousel({ events, eventsSignature, theme, initialIndex = 0, footerLink }) {
   const total = events.length
+  const [index, setIndex] = useState(() => Math.min(Math.max(0, initialIndex), Math.max(0, total - 1)))
+
+  useLayoutEffect(() => {
+    const next = Math.min(Math.max(0, initialIndex), Math.max(0, total - 1))
+    setIndex(next)
+  }, [eventsSignature, initialIndex, total])
 
   useEffect(() => {
-    setIndex(initialIndex)
-  }, [carouselKey, events, initialIndex])
+    preloadFlyerUrls(events)
+  }, [events, eventsSignature])
 
   useEffect(() => {
     if (total <= 1) return undefined
@@ -338,66 +375,58 @@ function EventDetailCarousel({ events, carouselKey, theme, initialIndex = 0, foo
 
   if (total === 0) return null
 
-  if (total === 1) {
-    return <EventDetailCard event={events[0]} index={0} total={1} theme={theme} footerLink={footerLink} />
-  }
+  const safeIndex = Math.min(index, total - 1)
+  const current = events[safeIndex]
 
   return (
     <div className="flex h-full flex-col gap-3">
-      <div className="flex items-center justify-between gap-3">
-        <p className={theme.carouselLabel}>{total} eventos este día</p>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setIndex((current) => (current - 1 + total) % total)}
-            className={theme.carouselArrow}
-            aria-label="Evento anterior"
-          >
-            ←
-          </button>
-          <div className="flex items-center gap-1.5" role="tablist" aria-label="Eventos del día">
-            {events.map((event, dotIndex) => (
-              <button
-                key={event.id}
-                type="button"
-                role="tab"
-                aria-selected={dotIndex === index}
-                aria-label={`Evento ${dotIndex + 1}: ${event.title}`}
-                onClick={() => setIndex(dotIndex)}
-                className={`h-2 rounded-full transition-all duration-200 ${
-                  dotIndex === index ? theme.dotActive : theme.dotIdle
-                }`}
-              />
-            ))}
-          </div>
-          <button
-            type="button"
-            onClick={() => setIndex((current) => (current + 1) % total)}
-            className={theme.carouselArrow}
-            aria-label="Evento siguiente"
-          >
-            →
-          </button>
-        </div>
-      </div>
-
-      <div className="relative overflow-hidden" aria-live="polite">
-        <div
-          className="flex transition-transform duration-300 ease-out motion-reduce:transition-none"
-          style={{ transform: `translateX(-${index * 100}%)` }}
-        >
-          {events.map((event, eventIndex) => (
-            <div key={event.id} className="w-full shrink-0">
-              <EventDetailCard
-                event={event}
-                index={eventIndex}
-                total={total}
-                theme={theme}
-                footerLink={footerLink}
-              />
+      {total > 1 ? (
+        <div className="flex items-center justify-between gap-3">
+          <p className={theme.carouselLabel}>{total} eventos este día</p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIndex((currentIndex) => (currentIndex - 1 + total) % total)}
+              className={theme.carouselArrow}
+              aria-label="Evento anterior"
+            >
+              ←
+            </button>
+            <div className="flex items-center gap-1.5" role="tablist" aria-label="Eventos del día">
+              {events.map((event, dotIndex) => (
+                <button
+                  key={event.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={dotIndex === safeIndex}
+                  aria-label={`Evento ${dotIndex + 1}: ${event.title}`}
+                  onClick={() => setIndex(dotIndex)}
+                  className={`h-2 rounded-full transition-all duration-200 ${
+                    dotIndex === safeIndex ? theme.dotActive : theme.dotIdle
+                  }`}
+                />
+              ))}
             </div>
-          ))}
+            <button
+              type="button"
+              onClick={() => setIndex((currentIndex) => (currentIndex + 1) % total)}
+              className={theme.carouselArrow}
+              aria-label="Evento siguiente"
+            >
+              →
+            </button>
+          </div>
         </div>
+      ) : null}
+
+      <div className="min-h-72" aria-live="polite">
+        <EventDetailCard
+          event={current}
+          index={safeIndex}
+          total={total}
+          theme={theme}
+          footerLink={footerLink}
+        />
       </div>
     </div>
   )
@@ -433,7 +462,7 @@ function UpcomingRail({ events, selectedDay, onSelectDay, theme }) {
                     src={flyerSrc(event.flyerUrl, 240)}
                     alt=""
                     className="h-full w-full object-cover"
-                    loading="lazy"
+                    loading="eager"
                     decoding="async"
                   />
                 ) : (
@@ -546,7 +575,6 @@ export function EventAgendaExperience({
 
   const [selectedDay, setSelectedDay] = useState(initialDay)
   const [visibleMonth, setVisibleMonth] = useState(initialMonth)
-  const [detailKey, setDetailKey] = useState(0)
   const [carouselInitialIndex, setCarouselInitialIndex] = useState(0)
 
   useEffect(() => {
@@ -577,13 +605,17 @@ export function EventAgendaExperience({
     setSelectedDay(key)
     setVisibleMonth(startOfMonth(targetDate))
     setCarouselInitialIndex(eventIndex)
-    setDetailKey((value) => value + 1)
   }, [focusDate, focusEventId, events, eventsByDay])
 
   const selectedEvents = eventsByDay.get(selectedDay) || []
   const hasSelection = selectedEvents.length > 0
   const fallbackEvent = upcomingRail[0] || parsedEvents[parsedEvents.length - 1] || null
   const displayEvents = hasSelection ? selectedEvents : fallbackEvent ? [fallbackEvent] : []
+  const displaySignature = displayEvents.map((event) => event.id).join('|')
+
+  useEffect(() => {
+    preloadFlyerUrls([...displayEvents, ...upcomingRail])
+  }, [displayEvents, upcomingRail])
 
   function handleSelectDay(key, date, eventId = '') {
     setSelectedDay(key)
@@ -595,7 +627,6 @@ export function EventAgendaExperience({
     } else {
       setCarouselInitialIndex(0)
     }
-    setDetailKey((value) => value + 1)
   }
 
   function handleMoveMonth(delta) {
@@ -612,11 +643,9 @@ export function EventAgendaExperience({
     )
   }
 
-  const carouselKey = `${selectedDay}-${detailKey}-${carouselInitialIndex}`
-  const highlightedCarouselKey =
-    highlightEventId && selectedEvents.some((event) => String(event.id) === String(highlightEventId))
-      ? `${carouselKey}-${highlightEventId}`
-      : carouselKey
+  const highlighted =
+    Boolean(highlightEventId) &&
+    displayEvents.some((event) => String(event.id) === String(highlightEventId))
 
   return (
     <div id="agenda-eventos">
@@ -650,7 +679,7 @@ export function EventAgendaExperience({
       ) : null}
 
       <div className={`grid gap-5 lg:grid-cols-12 lg:gap-6 ${showHeader || infoAside ? 'mt-8' : ''}`}>
-        <RevealOnScroll variant="slow" className="lg:col-span-4">
+        <div className="lg:col-span-4">
           <AgendaCalendar
             theme={theme}
             eventsByDay={eventsByDay}
@@ -659,14 +688,12 @@ export function EventAgendaExperience({
             onSelectDay={handleSelectDay}
             onMoveMonth={handleMoveMonth}
           />
-        </RevealOnScroll>
+        </div>
 
-        <RevealOnScroll variant="slow" delayMs={100} className="lg:col-span-8">
+        <div className="lg:col-span-8">
           <div
-            key={detailKey}
-            className={`news-fade-up h-full ${
-              highlightEventId &&
-              displayEvents.some((event) => String(event.id) === String(highlightEventId))
+            className={`h-full transition-shadow duration-300 ${
+              highlighted
                 ? 'rounded-3xl shadow-[0_0_0_2px_rgba(56,189,248,0.65),0_12px_40px_-16px_rgba(56,189,248,0.35)]'
                 : ''
             }`}
@@ -678,7 +705,7 @@ export function EventAgendaExperience({
             ) : (
               <EventDetailCarousel
                 events={displayEvents}
-                carouselKey={highlightedCarouselKey}
+                eventsSignature={displaySignature}
                 theme={theme}
                 initialIndex={carouselInitialIndex}
                 footerLink={
@@ -695,7 +722,7 @@ export function EventAgendaExperience({
               />
             )}
           </div>
-        </RevealOnScroll>
+        </div>
       </div>
 
       <UpcomingRail
