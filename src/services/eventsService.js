@@ -14,7 +14,7 @@ const MOCK_EVENTS = [
     id: '1',
     slug: 'feria-gastronomica-local',
     title: 'Feria gastronómica local',
-    eventDate: '2026-07-04T18:30:00-03:00',
+    eventDate: '2026-10-04T18:30:00-03:00',
     place: 'Plaza principal',
     summary: 'Food trucks, cocina regional y espectáculos para toda la familia.',
     flyerUrl:
@@ -26,7 +26,7 @@ const MOCK_EVENTS = [
     id: '2',
     slug: 'carrera-trancas-10k',
     title: 'Carrera ciudad de Trancas 10K',
-    eventDate: '2026-07-13T08:00:00-03:00',
+    eventDate: '2026-10-13T08:00:00-03:00',
     place: 'Circuito urbano',
     summary: 'Competencia y circuito recreativo de 3K con inscripción gratuita.',
     flyerUrl:

@@ -17,43 +17,6 @@ import {
   pageHeroToHeaderProps,
 } from '../data/pageHeroCoverContent.js'
 
-function InscriptionsAside() {
-  return (
-    <article className="overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm">
-      <div className="grid gap-0 lg:grid-cols-12">
-        <div className="border-b border-[#ddd7ca] p-5 sm:p-6 lg:col-span-7 lg:border-r lg:border-b-0">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-800">Inscripciones</p>
-          <h3 className="mt-2 font-serif text-xl font-bold tracking-tight text-[#171b22] sm:text-2xl">
-            Reservá tu lugar a tiempo
-          </h3>
-          <p className="mt-3 text-sm leading-relaxed text-[#4b505a]">
-            Algunas actividades tienen cupos limitados. Consultá requisitos y confirmá tu participación con anticipación.
-          </p>
-        </div>
-        <aside className="p-5 sm:p-6 lg:col-span-5">
-          <ul className="space-y-2 text-sm text-[#3e434d]">
-            <li className="rounded-lg border border-[#ddd7ca] bg-[#f8f7f3] px-3 py-2">
-              Cupos limitados según actividad
-            </li>
-            <li className="rounded-lg border border-[#ddd7ca] bg-[#f8f7f3] px-3 py-2">
-              Confirmación por correo o WhatsApp
-            </li>
-            <li className="rounded-lg border border-[#ddd7ca] bg-[#f8f7f3] px-3 py-2">
-              Prioridad a residentes de Trancas
-            </li>
-          </ul>
-          <Link
-            to={ROUTES.atencionCiudadano}
-            className="mt-4 inline-flex text-sm font-semibold text-sky-800 transition hover:text-[#0f1319]"
-          >
-            Solicitar información →
-          </Link>
-        </aside>
-      </div>
-    </article>
-  )
-}
-
 export function Events() {
   const apiEnabled = isApiConfigured()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -161,7 +124,6 @@ export function Events() {
           focusEventId={focusEventId}
           highlightEventId={highlightEventId}
           railLimit={16}
-          infoAside={<InscriptionsAside />}
         />
 
         <RevealOnScroll variant="newsCardSlow" delayMs={140}>

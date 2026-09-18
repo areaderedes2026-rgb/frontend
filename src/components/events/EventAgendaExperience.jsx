@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { RevealOnScroll } from '../home/RevealOnScroll.jsx'
 import { ROUTES } from '../../utils/constants.js'
 import { formatDateTime, formatShortDate } from '../../utils/formatDate.js'
+import { resolveMediaUrl, withCloudinaryTransform } from '../../utils/imageUrl.js'
 import {
   MONTH_LABELS,
   WEEKDAY_LABELS,
@@ -72,8 +74,8 @@ function getTheme(variant) {
       ? 'absolute right-1 bottom-1 inline-flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-sky-300 px-0.5 text-[9px] font-bold text-slate-900'
       : 'absolute right-1 bottom-1 inline-flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-sky-700 px-0.5 text-[9px] font-bold text-white',
     card: isDark
-      ? 'group grid h-full min-h-72 gap-4 overflow-hidden rounded-3xl border border-white/12 bg-white/[0.07] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] backdrop-blur transition duration-300 hover:border-sky-200/35 hover:bg-white/10 sm:min-h-80 sm:grid-cols-[minmax(0,1fr)_11rem] sm:gap-5 sm:p-5 lg:grid-cols-[minmax(0,1fr)_12.5rem]'
-      : 'group grid h-full min-h-72 gap-4 overflow-hidden rounded-3xl border border-[#ddd7ca] bg-[#fcfcfa] p-4 shadow-sm ring-1 ring-[#1a1d24]/5 transition duration-300 hover:border-sky-200/80 hover:shadow-lg hover:shadow-sky-500/10 sm:min-h-80 sm:grid-cols-[minmax(0,1fr)_11rem] sm:gap-5 sm:p-5 lg:grid-cols-[minmax(0,1fr)_12.5rem]',
+      ? 'group grid h-full overflow-hidden rounded-3xl border border-white/12 bg-white/[0.07] shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] backdrop-blur transition duration-300 hover:border-sky-200/35 hover:bg-white/10 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]'
+      : 'group grid h-full overflow-hidden rounded-3xl border border-[#ddd7ca] bg-white shadow-sm ring-1 ring-[#1a1d24]/5 transition duration-300 hover:border-sky-200/80 hover:shadow-lg hover:shadow-sky-500/10 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]',
     datePill: isDark
       ? 'inline-flex items-center gap-2 rounded-full border border-sky-300/30 bg-sky-400/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-100'
       : 'inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-800',
@@ -92,8 +94,8 @@ function getTheme(variant) {
       ? 'mt-3 text-xs font-semibold uppercase tracking-[0.14em] text-sky-100/85'
       : 'mt-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500',
     flyerShell: isDark
-      ? 'relative flex min-h-44 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-[#0f1319] p-2 sm:min-h-52 sm:p-3 lg:min-h-0 lg:h-full'
-      : 'relative flex min-h-44 items-center justify-center overflow-hidden rounded-2xl border border-[#ddd7ca] bg-slate-900/95 p-2 sm:min-h-52 sm:p-3 lg:min-h-0 lg:h-full',
+      ? 'relative flex min-h-56 items-center justify-center bg-[#11151c] p-4 sm:min-h-64 lg:min-h-full lg:p-6'
+      : 'relative flex min-h-56 items-center justify-center bg-[#f3efe6] p-4 sm:min-h-64 lg:min-h-full lg:p-6',
     emptyState: isDark
       ? 'flex h-full min-h-72 items-center justify-center rounded-3xl border border-dashed border-white/16 bg-white/[0.04] px-6 text-center text-sm text-slate-300'
       : 'flex h-full min-h-72 items-center justify-center rounded-3xl border border-dashed border-[#ddd7ca] bg-[#f8f7f3] px-6 text-center text-sm text-[#4b505a]',
@@ -133,29 +135,87 @@ function getTheme(variant) {
   }
 }
 
-function EventFlyer({ event, contain = false }) {
-  if (event.flyerUrl) {
-    return (
-      <img
-        src={event.flyerUrl}
-        alt=""
-        className={`h-full w-full transition duration-500 group-hover:scale-[1.02] ${
-          contain ? 'object-contain object-center' : 'object-cover'
-        }`}
-        loading="lazy"
-        decoding="async"
+function flyerSrc(url, width = 900) {
+  const resolved = resolveMediaUrl(url)
+  if (!resolved) return ''
+  return withCloudinaryTransform(resolved, `f_auto,q_auto:good,c_limit,w_${width}`) || resolved
+}
+
+function FlyerLightbox({ src, title, onClose }) {
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', onKey)
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.body.style.overflow = prev
+    }
+  }, [onClose])
+
+  return (
+    <div className="fixed inset-0 z-[160] flex items-center justify-center p-4 sm:p-8" role="dialog" aria-modal="true">
+      <button
+        type="button"
+        className="absolute inset-0 bg-[#0c1017]/80 backdrop-blur-sm"
+        aria-label="Cerrar flyer"
+        onClick={onClose}
       />
+      <div className="relative z-10 max-h-[92dvh] w-full max-w-lg overflow-auto">
+        <img
+          src={src}
+          alt={title || 'Flyer del evento'}
+          className="mx-auto max-h-[88dvh] w-auto max-w-full rounded-xl object-contain shadow-2xl"
+        />
+      </div>
+    </div>
+  )
+}
+
+function EventFlyer({ event, contain = true, className = '' }) {
+  const [open, setOpen] = useState(false)
+  const src = flyerSrc(event.flyerUrl, 900)
+  const large = flyerSrc(event.flyerUrl, 1400)
+
+  if (!src) {
+    return (
+      <div
+        className={`flex h-full min-h-48 w-full flex-col items-center justify-center gap-2 text-sky-100/70 ${className}`.trim()}
+        aria-hidden
+      >
+        <CalendarIcon className="h-8 w-8" />
+        <span className="text-[10px] font-semibold uppercase tracking-[0.2em]">Evento</span>
+      </div>
     )
   }
 
   return (
-    <div
-      className="flex h-full w-full flex-col items-center justify-center gap-2 bg-linear-to-br from-slate-800 via-slate-900 to-[#171b22] text-sky-100/80"
-      aria-hidden
-    >
-      <CalendarIcon className="h-8 w-8" />
-      <span className="text-[10px] font-semibold uppercase tracking-[0.2em]">Evento</span>
-    </div>
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className={`block w-full cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 ${className}`.trim()}
+        aria-label={`Ampliar flyer de ${event.title || 'evento'}`}
+      >
+        <img
+          src={src}
+          alt=""
+          className={`mx-auto max-h-[min(28rem,70vh)] w-auto max-w-full rounded-xl shadow-[0_18px_40px_-24px_rgba(15,23,42,0.55)] ${
+            contain ? 'object-contain' : 'object-cover'
+          }`}
+          loading="lazy"
+          decoding="async"
+        />
+      </button>
+      {open && typeof document !== 'undefined'
+        ? createPortal(
+            <FlyerLightbox src={large || src} title={event.title} onClose={() => setOpen(false)} />,
+            document.body,
+          )
+        : null}
+    </>
   )
 }
 
@@ -221,7 +281,11 @@ function EventDetailCard({ event, index, total, theme, footerLink }) {
 
   return (
     <article id={`evento-publico-${event.id}`} className={theme.card}>
-      <div className="flex min-w-0 flex-col">
+      <div className={`${theme.flyerShell} order-1 lg:order-none`}>
+        <EventFlyer event={event} contain />
+      </div>
+
+      <div className="flex min-w-0 flex-col p-5 sm:p-6">
         <div className="flex flex-wrap items-center gap-2">
           <span className={theme.datePill}>
             <span className={theme.datePillDay}>{day}</span>
@@ -243,10 +307,6 @@ function EventDetailCard({ event, index, total, theme, footerLink }) {
         {event.summary ? <p className={theme.eventSummary}>{event.summary}</p> : null}
         {event.place ? <p className={theme.eventPlace}>{event.place}</p> : null}
         {footerLink}
-      </div>
-
-      <div className={theme.flyerShell}>
-        <EventFlyer event={event} contain />
       </div>
     </article>
   )
@@ -363,13 +423,30 @@ function UpcomingRail({ events, selectedDay, onSelectDay, theme }) {
               key={event.id}
               type="button"
               onClick={() => date && onSelectDay(key, date)}
-              className={`min-w-[11.5rem] shrink-0 snap-start rounded-2xl border p-3 text-left transition duration-200 sm:min-w-[12.5rem] ${
+              className={`flex min-w-[13rem] shrink-0 snap-start gap-3 rounded-2xl border p-2.5 text-left transition duration-200 sm:min-w-[15rem] ${
                 isSelected ? theme.railSelected : theme.railIdle
               }`}
             >
-              <p className={theme.railDate}>{date ? formatShortDate(event.eventDate) : 'Sin fecha'}</p>
-              <p className={theme.railEventTitle}>{event.title}</p>
-              <p className={theme.railMeta}>{event.place || formatDateTime(event.eventDate)}</p>
+              <div className="h-16 w-12 shrink-0 overflow-hidden rounded-lg bg-[#f3efe6]">
+                {event.flyerUrl ? (
+                  <img
+                    src={flyerSrc(event.flyerUrl, 240)}
+                    alt=""
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center text-[#d4b483]">
+                    <CalendarIcon className="h-5 w-5" />
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0 py-0.5">
+                <p className={theme.railDate}>{date ? formatShortDate(event.eventDate) : 'Sin fecha'}</p>
+                <p className={theme.railEventTitle}>{event.title}</p>
+                <p className={theme.railMeta}>{event.place || formatDateTime(event.eventDate)}</p>
+              </div>
             </button>
           )
         })}
@@ -386,7 +463,7 @@ function FeaturedEventSpotlight({ event, theme, onFocus }) {
     <RevealOnScroll variant="slow">
       <article className={theme.featuredShell}>
         <div className="grid gap-0 lg:grid-cols-12">
-          <div className="flex min-h-52 items-center justify-center border-b border-[#ddd7ca] bg-slate-900/95 p-4 lg:col-span-5 lg:min-h-64 lg:border-r lg:border-b-0">
+          <div className="flex min-h-56 items-center justify-center bg-[#f3efe6] p-5 lg:col-span-5 lg:min-h-72">
             <EventFlyer event={event} contain />
           </div>
           <div className="p-5 sm:p-6 lg:col-span-7">
@@ -530,7 +607,7 @@ export function EventAgendaExperience({
   if (parsedEvents.length === 0) {
     return (
       <div className={theme.emptyState}>
-        Todavía no hay eventos publicados en la agenda municipal.
+        Todavía no hay eventos próximos en la agenda municipal.
       </div>
     )
   }
