@@ -29,6 +29,7 @@ const ACTION_BTN_BASE =
 const ACTION_BTN_NEUTRAL = `${ACTION_BTN_BASE} border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50`
 const ACTION_BTN_PRIMARY = `${ACTION_BTN_BASE} bg-sky-700 text-white hover:bg-sky-800`
 const ACTION_BTN_WHATSAPP = `${ACTION_BTN_BASE} border border-emerald-200 bg-emerald-50 text-emerald-900 hover:border-emerald-300 hover:bg-emerald-100/90`
+const ACTION_BTN_DANGER = `${ACTION_BTN_BASE} border border-red-200 bg-white text-red-700 hover:border-red-300 hover:bg-red-50`
 
 const STATUS_FILTERS = [
   { value: 'all', label: 'Todas' },
@@ -121,6 +122,7 @@ export function AdminFdcFaqInquiries() {
   const [whatsappModalSaving, setWhatsappModalSaving] = useState(false)
   const [inquirySearch, setInquirySearch] = useState('')
   const [page, setPage] = useState(1)
+  const [pendingDelete, setPendingDelete] = useState(null)
   const dismissToast = useCallback(() => setToast(null), [])
 
   const stats = useMemo(() => {
@@ -224,13 +226,17 @@ export function AdminFdcFaqInquiries() {
   }
 
   async function handleDeleteInquiry() {
-    if (!selectedInquiry) return
+    const target = pendingDelete || selectedInquiry
+    if (!target?.id) return
     setDetailUpdating(true)
     try {
-      await deleteFdcFaqInquiry(selectedInquiry.id)
-      setInquiries((list) => list.filter((item) => item.id !== selectedInquiry.id))
-      setDetailOpen(false)
-      setSelectedInquiry(null)
+      await deleteFdcFaqInquiry(target.id)
+      setInquiries((list) => list.filter((item) => item.id !== target.id))
+      if (selectedInquiry?.id === target.id) {
+        setDetailOpen(false)
+        setSelectedInquiry(null)
+      }
+      setPendingDelete(null)
       setToast({ variant: 'success', message: 'Consulta eliminada.' })
     } catch (e) {
       setToast({ variant: 'error', message: e.message || 'No se pudo eliminar la consulta.' })
@@ -272,9 +278,10 @@ export function AdminFdcFaqInquiries() {
       <ConfirmDialog
         open={conflictOpen}
         title="La consulta cambió"
-        message="Otro operador actualizó esta consulta. Recargala para ver el estado más reciente."
+        description="Otro operador actualizó esta consulta. Recargala para ver el estado más reciente."
         confirmLabel="Recargar"
-        onCancel={() => setConflictOpen(false)}
+        variant="primary"
+        onClose={() => setConflictOpen(false)}
         onConfirm={() => {
           setConflictOpen(false)
           if (selectedInquiry?.id) void openDetail(selectedInquiry.id)
@@ -282,11 +289,28 @@ export function AdminFdcFaqInquiries() {
         }}
       />
       <ConfirmDialog
+        open={Boolean(pendingDelete)}
+        title="Eliminar consulta"
+        description={
+          pendingDelete
+            ? `¿Eliminar la consulta de ${pendingDelete.fullName || 'esta persona'}? Esta acción no se puede deshacer. Después, ese celular podrá volver a enviar una consulta.`
+            : '¿Eliminar esta consulta?'
+        }
+        confirmLabel="Eliminar"
+        variant="danger"
+        loading={detailUpdating}
+        onClose={() => {
+          if (!detailUpdating) setPendingDelete(null)
+        }}
+        onConfirm={() => void handleDeleteInquiry()}
+      />
+      <ConfirmDialog
         open={whatsappConflictOpen}
         title="La plantilla cambió"
-        message="Otro operador guardó la plantilla. Recargala antes de volver a editar."
+        description="Otro operador guardó la plantilla. Recargala antes de volver a editar."
         confirmLabel="Recargar"
-        onCancel={() => setWhatsappConflictOpen(false)}
+        variant="primary"
+        onClose={() => setWhatsappConflictOpen(false)}
         onConfirm={() => {
           setWhatsappConflictOpen(false)
           void loadWhatsappTemplate()
@@ -310,7 +334,7 @@ export function AdminFdcFaqInquiries() {
             busy={detailUpdating}
             onChangeStatus={(status) => void handleChangeInquiryStatus(status)}
             onWhatsApp={() => handleInquiryWhatsapp(selectedInquiry)}
-            onDelete={() => void handleDeleteInquiry()}
+            onDelete={() => setPendingDelete(selectedInquiry)}
           />
         ) : (
           <p className="text-sm text-slate-600">No se pudo cargar la consulta seleccionada.</p>
@@ -493,6 +517,13 @@ export function AdminFdcFaqInquiries() {
                               WP
                             </button>
                           ) : null}
+                          <button
+                            type="button"
+                            className={ACTION_BTN_DANGER}
+                            onClick={() => setPendingDelete(inquiry)}
+                          >
+                            Eliminar
+                          </button>
                         </div>
                       </td>
                     </tr>

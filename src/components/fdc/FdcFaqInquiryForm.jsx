@@ -30,7 +30,7 @@ export function FdcFaqInquiryForm({ faq, dark = false }) {
   const [form, setForm] = useState(EMPTY_FORM)
   const [sending, setSending] = useState(false)
   const [formError, setFormError] = useState('')
-  const [successId, setSuccessId] = useState(null)
+  const [success, setSuccess] = useState(false)
 
   const topics = useMemo(() => {
     const list = Array.isArray(faq?.inquiryTopics) ? faq.inquiryTopics : []
@@ -43,13 +43,13 @@ export function FdcFaqInquiryForm({ faq, dark = false }) {
   function updateField(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }))
     setFormError('')
-    setSuccessId(null)
+    setSuccess(false)
   }
 
   async function handleSubmit(e) {
     e.preventDefault()
     setFormError('')
-    setSuccessId(null)
+    setSuccess(false)
 
     const fullName = form.fullName.trim()
     const phone = form.phone.trim()
@@ -88,9 +88,9 @@ export function FdcFaqInquiryForm({ faq, dark = false }) {
 
     setSending(true)
     try {
-      const inquiry = await createFdcFaqInquiry({ fullName, phone, topic, message })
+      await createFdcFaqInquiry({ fullName, phone, topic, message })
       setForm(EMPTY_FORM)
-      setSuccessId(inquiry?.id || true)
+      setSuccess(true)
     } catch (err) {
       setFormError(err.message || 'No se pudo enviar la consulta. Intentá de nuevo.')
     } finally {
@@ -126,13 +126,12 @@ export function FdcFaqInquiryForm({ faq, dark = false }) {
           'Dejanos tu consulta y te respondemos por WhatsApp. El mensaje debe ser breve, de hasta 50 palabras.'}
       </p>
 
-      {successId ? (
+      {success ? (
         <p
           className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
           role="status"
         >
-          Recibimos tu consulta{typeof successId === 'number' ? ` N° ${successId}` : ''}. Te vamos a
-          responder por WhatsApp al celular que indicaste.
+          Recibimos tu consulta. Te vamos a responder por WhatsApp al celular que indicaste.
         </p>
       ) : null}
 
@@ -169,6 +168,7 @@ export function FdcFaqInquiryForm({ faq, dark = false }) {
             disabled={sending}
             placeholder="Ej. 381 555 1234"
           />
+          <span className={hintClass}>Solo se admite una consulta por celular.</span>
         </label>
 
         <label className={`flex min-w-0 flex-col gap-1.5 text-sm font-medium ${labelTone(dark)}`} htmlFor={`${formId}-motivo`}>
