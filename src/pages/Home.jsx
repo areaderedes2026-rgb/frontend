@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { HomeHeroBanner } from '../components/home/HomeHeroBanner.jsx'
+import { HomeFdcInvite } from '../components/home/HomeFdcInvite.jsx'
 import { HomeInteractiveMap } from '../components/home/HomeInteractiveMap.jsx'
 import { HomeEventsAgenda } from '../components/home/HomeEventsAgenda.jsx'
 import { HomeEmergencyNumbers } from '../components/home/HomeEmergencyNumbers.jsx'
@@ -143,6 +144,7 @@ export function Home() {
   return (
     <>
       <HomeHeroBanner content={homeHeroContent} loading={homeHeroLoading} />
+      <HomeFdcInvite />
 
       <StorySection
         eyebrow="Actualidad municipal"
