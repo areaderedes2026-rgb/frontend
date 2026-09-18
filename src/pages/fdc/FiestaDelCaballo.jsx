@@ -334,7 +334,7 @@ export function FiestaDelCaballo() {
       ) : null}
 
       {String(page.tickets?.title || '').trim() ? (
-        <FdcSectionShell id="entradas" config={page.tickets} containerClassName="max-w-[min(100%,72rem)]!">
+        <FdcSectionShell id="entradas" config={page.tickets}>
           <RevealOnScroll variant="slow">
             <FdcTicketsSection tickets={page.tickets} embedded />
           </RevealOnScroll>
