@@ -196,12 +196,65 @@ export const DEFAULT_FDC_ARTISTS = {
   ],
 }
 
+export const DEFAULT_FDC_TICKET_SALE_POINTS = [
+  {
+    id: 'sp-sde',
+    city: 'Santiago del Estero',
+    addresses: ['Av. Belgrano Sud 3375, Loc. Pago Fácil'],
+  },
+  {
+    id: 'sp-tuc',
+    city: 'Tucumán',
+    addresses: ['La Rockería — Buenos Aires 39, Loc. 6'],
+  },
+  {
+    id: 'sp-juy',
+    city: 'Jujuy',
+    addresses: ['E y M — Belgrano 969, Loc. 17, Loc. Pago Fácil'],
+  },
+  {
+    id: 'sp-sal',
+    city: 'Salta',
+    addresses: ['Alvarado 690', 'Atipiko — Zuviría 408'],
+  },
+]
+
+export function normalizeFdcTicketSalePoints(input, fallback = DEFAULT_FDC_TICKET_SALE_POINTS) {
+  const list = Array.isArray(input) ? input : Array.isArray(fallback) ? fallback : []
+  const out = []
+  for (const item of list.slice(0, 12)) {
+    const city = String(item?.city || '').trim()
+    if (!city) continue
+    const rawAddresses = Array.isArray(item?.addresses)
+      ? item.addresses
+      : String(item?.address || '')
+          .split('\n')
+          .map((x) => x.trim())
+          .filter(Boolean)
+    const addresses = rawAddresses.map((a) => String(a || '').trim()).filter(Boolean).slice(0, 6)
+    if (addresses.length === 0) continue
+    out.push({
+      id: String(item?.id || '').trim() || `sp-${out.length + 1}`,
+      city,
+      addresses,
+    })
+  }
+  return out
+}
+
 export const DEFAULT_FDC_TICKETS = {
-  title: 'Entradas online',
-  body: 'Comprá tus entradas de forma segura y accedé al predio sin filas innecesarias.',
-  bullets: ['Acceso al predio', 'Promociones y beneficios', 'Compra 100% online'],
-  ctaLabel: 'Comprar entradas',
-  ctaUrl: '',
+  title: 'Entradas',
+  body: 'La podés adquirir por la web o de forma presencial en los puntos de venta habilitados.',
+  bullets: [],
+  price: '20.000',
+  pricePrefix: '$',
+  partnerName: 'Paseshow',
+  onlineLabel: 'Comprá online',
+  onlineUrl: 'https://www.paseshow.com.ar',
+  ctaLabel: 'Comprá online',
+  ctaUrl: 'https://www.paseshow.com.ar',
+  salePointsTitle: 'Puntos de venta presenciales',
+  salePoints: DEFAULT_FDC_TICKET_SALE_POINTS,
   backgroundStyle: 'image',
   imageUrl:
     'https://images.unsplash.com/photo-1556740738-b6a63e27c4df?auto=format&fit=crop&w=1600&q=80',
@@ -970,20 +1023,54 @@ export function mergeFdcContent(base, remote) {
       )
     })(),
     tickets: (() => {
-      const merged = mergeNamedSection(defaults.tickets, remote.tickets, [
+      const remoteTickets =
+        remote.tickets && typeof remote.tickets === 'object' ? remote.tickets : null
+      const merged = mergeNamedSection(defaults.tickets, remoteTickets, [
         'title',
         'body',
         'bullets',
+        'price',
+        'pricePrefix',
+        'partnerName',
+        'onlineLabel',
+        'onlineUrl',
         'ctaLabel',
         'ctaUrl',
+        'salePointsTitle',
+        'salePoints',
         'backgroundStyle',
         'imageUrl',
         'overlayOpacity',
       ])
       const ticketImage = String(merged.imageUrl || '').trim()
+      const onlineUrl =
+        String(merged.onlineUrl || '').trim() ||
+        String(merged.ctaUrl || '').trim() ||
+        String(defaults.tickets.onlineUrl || '').trim()
       return {
         ...withFdcSectionBackground(merged, defaults.tickets),
         backgroundStyle: normalizeFdcSectionBackgroundStyle(merged.backgroundStyle, ticketImage),
+        price: String(merged.price || '').trim() || String(defaults.tickets.price || '').trim(),
+        pricePrefix: String(merged.pricePrefix || '').trim() || '$',
+        partnerName:
+          String(merged.partnerName || '').trim() || String(defaults.tickets.partnerName || '').trim(),
+        onlineLabel:
+          String(merged.onlineLabel || merged.ctaLabel || '').trim() ||
+          String(defaults.tickets.onlineLabel || '').trim(),
+        onlineUrl,
+        ctaLabel:
+          String(merged.ctaLabel || merged.onlineLabel || '').trim() ||
+          String(defaults.tickets.ctaLabel || '').trim(),
+        ctaUrl: onlineUrl,
+        salePointsTitle:
+          String(merged.salePointsTitle || '').trim() ||
+          String(defaults.tickets.salePointsTitle || '').trim(),
+        salePoints: (() => {
+          const fromRemote = normalizeFdcTicketSalePoints(remoteTickets?.salePoints, [])
+          return fromRemote.length
+            ? fromRemote
+            : normalizeFdcTicketSalePoints(defaults.tickets.salePoints)
+        })(),
       }
     })(),
     news: withFdcSectionBackground(

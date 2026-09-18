@@ -2,7 +2,7 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, LayoutGroup, motion as Motion } from 'motion/react'
 import { Link } from 'react-router-dom'
-import { resolveMediaUrl } from '../../utils/imageUrl.js'
+import { getResponsiveMediaImage, resolveMediaUrl, withCloudinaryTransform } from '../../utils/imageUrl.js'
 import { useFdcSectionTone } from './FdcSectionToneContext.jsx'
 import { FdcSectionTitle } from './FdcFestivalSections.jsx'
 
@@ -177,8 +177,67 @@ function CarouselArrow({ direction, onClick, dark }) {
   )
 }
 
+const ARTIST_CARD_SIZES =
+  '(max-width: 640px) 72vw, (max-width: 1024px) 280px, (max-width: 1280px) 320px, 360px'
+
+function OptimizedArtistPhoto({ artist, idx }) {
+  const [loaded, setLoaded] = useState(false)
+  const imgRef = useRef(null)
+  const image = getResponsiveMediaImage(artist.photoUrl, {
+    widths: [360, 480, 640, 800, 960],
+    fallbackWidth: 640,
+    sizes: ARTIST_CARD_SIZES,
+  })
+  const eager = idx < 3
+
+  useEffect(() => {
+    setLoaded(false)
+    if (imgRef.current?.complete && imgRef.current.naturalWidth > 0) {
+      setLoaded(true)
+    }
+  }, [image.src])
+
+  if (!image.src) {
+    return (
+      <div
+        className="absolute inset-0 flex items-center justify-center bg-linear-to-br from-[#2a3140] to-[#151a22] text-5xl text-[#d4b483]/35"
+        aria-hidden
+      >
+        ♪
+      </div>
+    )
+  }
+
+  return (
+    <>
+      {image.placeholder && !loaded ? (
+        <img
+          src={image.placeholder}
+          alt=""
+          aria-hidden
+          className="absolute inset-0 h-full w-full scale-110 object-cover blur-md"
+          decoding="async"
+        />
+      ) : null}
+      <img
+        ref={imgRef}
+        src={image.src}
+        srcSet={image.srcSet || undefined}
+        sizes={image.srcSet ? image.sizes : undefined}
+        alt={artist.name}
+        className={`absolute inset-0 h-full w-full object-cover transition-[opacity,transform] duration-700 ease-out group-hover:scale-[1.06] ${
+          loaded ? 'opacity-100' : 'opacity-0'
+        }`}
+        loading={eager ? 'eager' : 'lazy'}
+        fetchPriority={idx < 2 ? 'high' : 'low'}
+        decoding="async"
+        onLoad={() => setLoaded(true)}
+      />
+    </>
+  )
+}
+
 function ArtistCard({ artist, idx, reduceMotion, dark }) {
-  const src = resolveMediaUrl(artist.photoUrl)
   const badge = parseDateBadge(artist.dateTag)
 
   return (
@@ -207,22 +266,7 @@ function ArtistCard({ artist, idx, reduceMotion, dark }) {
             : 'bg-[#1a1f28] shadow-[0_28px_60px_-28px_rgba(23,27,34,0.55)]'
         }`}
       >
-        {src ? (
-          <img
-            src={src}
-            alt={artist.name}
-            className="absolute inset-0 h-full w-full object-cover transition duration-700 ease-out group-hover:scale-[1.06]"
-            loading="lazy"
-            decoding="async"
-          />
-        ) : (
-          <div
-            className="absolute inset-0 flex items-center justify-center bg-linear-to-br from-[#2a3140] to-[#151a22] text-5xl text-[#d4b483]/35"
-            aria-hidden
-          >
-            ♪
-          </div>
-        )}
+        <OptimizedArtistPhoto artist={artist} idx={idx} />
 
         <div
           className="pointer-events-none absolute inset-0 bg-linear-to-t from-[#0a0d12] via-[#0a0d12]/25 to-transparent opacity-95"
@@ -287,6 +331,16 @@ export function FdcArtistsSection({ artists }) {
   const hasPoster = Boolean(posterImageUrl)
   const showingPoster = hasPoster && (view === VIEW_POSTER || items.length === 0)
   const posterSrc = hasPoster ? resolveMediaUrl(posterImageUrl) || posterImageUrl : ''
+  const posterOptimized = posterSrc
+    ? withCloudinaryTransform(posterSrc, 'f_auto,q_auto:good,c_limit,w_1080') || posterSrc
+    : ''
+  const posterLightbox = posterSrc
+    ? withCloudinaryTransform(posterSrc, 'f_auto,q_auto:good,c_limit,w_1600') || posterSrc
+    : ''
+  const preloadKey = items
+    .slice(0, 3)
+    .map((a) => String(a?.photoUrl || ''))
+    .join('|')
 
   const openPoster = useCallback(() => {
     setView(VIEW_POSTER)
@@ -297,6 +351,30 @@ export function FdcArtistsSection({ artists }) {
     setView(VIEW_CAROUSEL)
     setLightboxOpen(false)
   }, [])
+
+  useEffect(() => {
+    if (typeof document === 'undefined' || !preloadKey) return undefined
+    const photos = preloadKey.split('|').filter(Boolean)
+    const links = photos.map((photoUrl) => {
+      const image = getResponsiveMediaImage(photoUrl, {
+        widths: [360, 480, 640],
+        fallbackWidth: 640,
+        sizes: ARTIST_CARD_SIZES,
+      })
+      if (!image.src) return null
+      const link = document.createElement('link')
+      link.rel = 'preload'
+      link.as = 'image'
+      link.href = image.src
+      if (image.srcSet) link.setAttribute('imagesrcset', image.srcSet)
+      if (image.sizes) link.setAttribute('imagesizes', image.sizes)
+      document.head.appendChild(link)
+      return link
+    })
+    return () => {
+      links.forEach((link) => link?.remove())
+    }
+  }, [preloadKey])
 
   function scrollBy(delta) {
     scrollRef.current?.scrollBy({ left: delta, behavior: 'smooth' })
@@ -395,7 +473,7 @@ export function FdcArtistsSection({ artists }) {
                   >
                     <div className="flex items-center justify-center px-3 py-4 sm:px-5 sm:py-6">
                       <img
-                        src={posterSrc}
+                        src={posterOptimized}
                         alt={title || 'Cartelera completa'}
                         className="mx-auto h-auto max-h-[min(70svh,48rem)] w-auto max-w-full object-contain"
                         loading="lazy"
@@ -505,7 +583,7 @@ export function FdcArtistsSection({ artists }) {
               {lightboxOpen && hasPoster ? (
                 <PosterLightbox
                   key={posterImageUrl}
-                  imageUrl={posterImageUrl}
+                  imageUrl={posterLightbox || posterImageUrl}
                   title={title}
                   onClose={() => setLightboxOpen(false)}
                   reduceMotion={reduceMotion}

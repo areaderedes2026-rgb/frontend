@@ -7,9 +7,9 @@ import {
   FdcScheduleSection,
   FdcSectionNav,
   FdcSponsorsSection,
-  FdcTicketsSection,
 } from '../../components/fdc/FdcFestivalSections.jsx'
 import { FdcArtistsSection } from '../../components/fdc/FdcArtistsSection.jsx'
+import { FdcTicketsSection } from '../../components/fdc/FdcTicketsSection.jsx'
 import { FdcFestivalHero } from '../../components/fdc/FdcFestivalHero.jsx'
 import { FdcFestivalStatsSection } from '../../components/fdc/FdcFestivalStatsSection.jsx'
 import { FdcHeroCountdown } from '../../components/fdc/FdcHeroCountdown.jsx'
@@ -334,7 +334,7 @@ export function FiestaDelCaballo() {
       ) : null}
 
       {String(page.tickets?.title || '').trim() ? (
-        <FdcSectionShell id="entradas" config={page.tickets}>
+        <FdcSectionShell id="entradas" config={page.tickets} containerClassName="max-w-[min(100%,72rem)]!">
           <RevealOnScroll variant="slow">
             <FdcTicketsSection tickets={page.tickets} embedded />
           </RevealOnScroll>

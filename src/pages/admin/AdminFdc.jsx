@@ -95,6 +95,10 @@ function mapContentToForm(content) {
     tickets: {
       ...merged.tickets,
       bullets: [...(merged.tickets?.bullets || [])],
+      salePoints: (merged.tickets?.salePoints || []).map((p) => ({
+        ...p,
+        addresses: [...(p.addresses || [])],
+      })),
       backgroundStyle: normalizeFdcSectionBackgroundStyle(
         merged.tickets?.backgroundStyle,
         merged.tickets?.imageUrl,
@@ -391,8 +395,24 @@ export function AdminFdc() {
         title: String(form.tickets?.title || '').trim(),
         body: String(form.tickets?.body || ''),
         bullets: (form.tickets?.bullets || []).map((b) => String(b || '').trim()).filter(Boolean),
-        ctaLabel: String(form.tickets?.ctaLabel || '').trim(),
-        ctaUrl: String(form.tickets?.ctaUrl || '').trim(),
+        price: String(form.tickets?.price || '').trim(),
+        pricePrefix: String(form.tickets?.pricePrefix || '').trim() || '$',
+        partnerName: String(form.tickets?.partnerName || '').trim(),
+        onlineLabel: String(form.tickets?.onlineLabel || form.tickets?.ctaLabel || '').trim(),
+        onlineUrl: String(form.tickets?.onlineUrl || form.tickets?.ctaUrl || '').trim(),
+        ctaLabel: String(form.tickets?.onlineLabel || form.tickets?.ctaLabel || '').trim(),
+        ctaUrl: String(form.tickets?.onlineUrl || form.tickets?.ctaUrl || '').trim(),
+        salePointsTitle: String(form.tickets?.salePointsTitle || '').trim(),
+        salePoints: (form.tickets?.salePoints || [])
+          .map((p, idx) => ({
+            id: String(p?.id || '').trim() || makeFdcItemId('sp'),
+            city: String(p?.city || '').trim(),
+            addresses: (Array.isArray(p?.addresses) ? p.addresses : String(p?.address || '').split('\n'))
+              .map((a) => String(a || '').trim())
+              .filter(Boolean),
+            sortOrder: idx,
+          }))
+          .filter((p) => p.city && p.addresses.length > 0),
         backgroundStyle: normalizeFdcSectionBackgroundStyle(
           form.tickets?.backgroundStyle,
           form.tickets?.imageUrl,
@@ -2524,6 +2544,10 @@ export function AdminFdc() {
             {activeTab === 'entradas' ? (
               <section className={SECTION_CARD}>
                 <h2 className="text-lg font-bold text-slate-900">Entradas</h2>
+                <p className="mt-1 text-sm text-slate-600">
+                  Precio, venta online (Paseshow) y puntos de venta presenciales. Se muestran en la
+                  web pública de forma interactiva.
+                </p>
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   <label className={labelClass}>
                     Título
@@ -2532,6 +2556,35 @@ export function AdminFdc() {
                       value={form.tickets?.title || ''}
                       disabled={saving}
                       onChange={(e) => updateTickets((t) => ({ ...t, title: e.target.value }))}
+                    />
+                  </label>
+                  <label className={labelClass}>
+                    Socio de venta
+                    <input
+                      className={inputClass}
+                      value={form.tickets?.partnerName || ''}
+                      disabled={saving}
+                      placeholder="Paseshow"
+                      onChange={(e) => updateTickets((t) => ({ ...t, partnerName: e.target.value }))}
+                    />
+                  </label>
+                  <label className={labelClass}>
+                    Precio (número)
+                    <input
+                      className={inputClass}
+                      value={form.tickets?.price || ''}
+                      disabled={saving}
+                      placeholder="20.000"
+                      onChange={(e) => updateTickets((t) => ({ ...t, price: e.target.value }))}
+                    />
+                  </label>
+                  <label className={labelClass}>
+                    Prefijo
+                    <input
+                      className={inputClass}
+                      value={form.tickets?.pricePrefix || '$'}
+                      disabled={saving}
+                      onChange={(e) => updateTickets((t) => ({ ...t, pricePrefix: e.target.value }))}
                     />
                   </label>
                   <div className="sm:col-span-2">
@@ -2545,9 +2598,40 @@ export function AdminFdc() {
                       />
                     </label>
                   </div>
+                  <label className={labelClass}>
+                    Texto del botón online
+                    <input
+                      className={inputClass}
+                      value={form.tickets?.onlineLabel || form.tickets?.ctaLabel || ''}
+                      disabled={saving}
+                      onChange={(e) =>
+                        updateTickets((t) => ({
+                          ...t,
+                          onlineLabel: e.target.value,
+                          ctaLabel: e.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                  <label className={labelClass}>
+                    URL de compra online
+                    <input
+                      className={inputClass}
+                      value={form.tickets?.onlineUrl || form.tickets?.ctaUrl || ''}
+                      disabled={saving}
+                      placeholder="https://www.paseshow.com.ar"
+                      onChange={(e) =>
+                        updateTickets((t) => ({
+                          ...t,
+                          onlineUrl: e.target.value,
+                          ctaUrl: e.target.value,
+                        }))
+                      }
+                    />
+                  </label>
                   <div className="sm:col-span-2">
                     <label className={labelClass}>
-                      Beneficios (uno por línea)
+                      Beneficios extra (uno por línea, opcional)
                       <textarea
                         className={textareaClass}
                         value={(form.tickets?.bullets || []).join('\n')}
@@ -2564,43 +2648,114 @@ export function AdminFdc() {
                       />
                     </label>
                   </div>
-                  <label className={labelClass}>
-                    Texto del botón
+                </div>
+
+                <div className="mt-6">
+                  <h3 className="text-base font-bold text-slate-900">Puntos de venta presenciales</h3>
+                  <label className={`${labelClass} mt-3 max-w-md`}>
+                    Título del bloque
                     <input
                       className={inputClass}
-                      value={form.tickets?.ctaLabel || ''}
+                      value={form.tickets?.salePointsTitle || ''}
                       disabled={saving}
-                      onChange={(e) => updateTickets((t) => ({ ...t, ctaLabel: e.target.value }))}
-                    />
-                  </label>
-                  <label className={labelClass}>
-                    URL del botón
-                    <input
-                      className={inputClass}
-                      value={form.tickets?.ctaUrl || ''}
-                      disabled={saving}
-                      placeholder="https://…"
-                      onChange={(e) => updateTickets((t) => ({ ...t, ctaUrl: e.target.value }))}
-                    />
-                  </label>
-                  <div className="sm:col-span-2">
-                    <FdcSectionBackgroundFields
-                      backgroundStyle={form.tickets?.backgroundStyle || 'light'}
-                      backgroundImageUrl={form.tickets?.imageUrl || ''}
-                      overlayOpacity={normalizeOverlay(form.tickets?.overlayOpacity, 55)}
-                      disabled={saving}
-                      labelClass={labelClass}
-                      imageLabel="Imagen de fondo"
-                      onNotify={setToast}
-                      onStyleChange={(style) =>
-                        updateTickets((t) => ({ ...t, backgroundStyle: style }))
-                      }
-                      onImageChange={(url) => updateTickets((t) => ({ ...t, imageUrl: url }))}
-                      onOverlayChange={(value) =>
-                        updateTickets((t) => ({ ...t, overlayOpacity: value }))
+                      placeholder="Puntos de venta presenciales"
+                      onChange={(e) =>
+                        updateTickets((t) => ({ ...t, salePointsTitle: e.target.value }))
                       }
                     />
+                  </label>
+                  <div className="mt-4 space-y-3">
+                    {(form.tickets?.salePoints || []).map((point, idx) => (
+                      <div key={point.id || idx} className={ITEM_CARD}>
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <label className={`${labelClass} min-w-[12rem] flex-1`}>
+                            Ciudad / provincia
+                            <input
+                              className={inputClass}
+                              value={point.city || ''}
+                              disabled={saving}
+                              placeholder="Tucumán"
+                              onChange={(e) =>
+                                updateTickets((t) => {
+                                  const salePoints = [...(t.salePoints || [])]
+                                  salePoints[idx] = { ...salePoints[idx], city: e.target.value }
+                                  return { ...t, salePoints }
+                                })
+                              }
+                            />
+                          </label>
+                          <button
+                            type="button"
+                            className={ACTION_DANGER}
+                            disabled={saving}
+                            onClick={() =>
+                              updateTickets((t) => ({
+                                ...t,
+                                salePoints: (t.salePoints || []).filter((_, i) => i !== idx),
+                              }))
+                            }
+                          >
+                            Quitar
+                          </button>
+                        </div>
+                        <label className={`${labelClass} mt-3`}>
+                          Direcciones (una por línea)
+                          <textarea
+                            className={textareaClass}
+                            rows={3}
+                            value={(point.addresses || []).join('\n')}
+                            disabled={saving}
+                            placeholder={'Alvarado 690\nAtipiko — Zuviría 408'}
+                            onChange={(e) =>
+                              updateTickets((t) => {
+                                const salePoints = [...(t.salePoints || [])]
+                                salePoints[idx] = {
+                                  ...salePoints[idx],
+                                  addresses: e.target.value.split('\n'),
+                                }
+                                return { ...t, salePoints }
+                              })
+                            }
+                          />
+                        </label>
+                      </div>
+                    ))}
                   </div>
+                  <button
+                    type="button"
+                    className={`${ACTION_ADD} mt-3`}
+                    disabled={saving}
+                    onClick={() =>
+                      updateTickets((t) => ({
+                        ...t,
+                        salePoints: [
+                          ...(t.salePoints || []),
+                          { id: makeFdcItemId('sp'), city: '', addresses: [''] },
+                        ],
+                      }))
+                    }
+                  >
+                    + Agregar ciudad
+                  </button>
+                </div>
+
+                <div className="mt-6">
+                  <FdcSectionBackgroundFields
+                    backgroundStyle={form.tickets?.backgroundStyle || 'light'}
+                    backgroundImageUrl={form.tickets?.imageUrl || ''}
+                    overlayOpacity={normalizeOverlay(form.tickets?.overlayOpacity, 55)}
+                    disabled={saving}
+                    labelClass={labelClass}
+                    imageLabel="Imagen de fondo"
+                    onNotify={setToast}
+                    onStyleChange={(style) =>
+                      updateTickets((t) => ({ ...t, backgroundStyle: style }))
+                    }
+                    onImageChange={(url) => updateTickets((t) => ({ ...t, imageUrl: url }))}
+                    onOverlayChange={(value) =>
+                      updateTickets((t) => ({ ...t, overlayOpacity: value }))
+                    }
+                  />
                 </div>
               </section>
             ) : null}
