@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { AnimatePresence, LayoutGroup, motion as Motion } from 'motion/react'
 import { Link } from 'react-router-dom'
 import { getResponsiveMediaImage, resolveMediaUrl, withCloudinaryTransform } from '../../utils/imageUrl.js'
-import { fdcArtistsShowDailyLineup } from '../../data/fdcContent.js'
+import { fdcArtistsShowDailyLineup, normalizeFdcArtistLineupDays } from '../../data/fdcContent.js'
 import { useFdcSectionTone } from './FdcSectionToneContext.jsx'
 import { FdcSectionTitle } from './FdcFestivalSections.jsx'
 
@@ -68,6 +68,50 @@ function parseDateBadge(tag) {
     }
   }
   return { day: raw.toUpperCase(), num: '' }
+}
+
+function PosterLineup({ days, usesDarkTone }) {
+  if (!days.length) return null
+  const panelClass = usesDarkTone
+    ? 'relative overflow-hidden rounded-[1.6rem] border border-[#d4b483]/35 bg-linear-to-b from-[#1c222c]/90 to-[#0c1017]/95 p-4 shadow-[0_32px_80px_-36px_rgba(0,0,0,0.75)] sm:p-5 lg:p-6'
+    : 'relative overflow-hidden rounded-[1.6rem] border border-[#d4b483]/50 bg-[#fcfaf6] p-4 shadow-[0_28px_70px_-38px_rgba(23,27,34,0.35)] sm:p-5 lg:p-6'
+  const dayTitleClass = usesDarkTone
+    ? 'font-serif text-lg font-bold uppercase tracking-[0.12em] text-[#d4b483] sm:text-xl'
+    : 'font-serif text-lg font-bold uppercase tracking-[0.12em] text-[#8a7048] sm:text-xl'
+  const nameClass = usesDarkTone
+    ? 'text-[12px] font-semibold uppercase leading-snug tracking-[0.08em] text-white/90 sm:text-[13px]'
+    : 'text-[12px] font-semibold uppercase leading-snug tracking-[0.08em] text-[#171b22]/90 sm:text-[13px]'
+  const ruleClass = usesDarkTone ? 'border-[#d4b483]/25' : 'border-[#d4b483]/40'
+
+  return (
+    <div className={panelClass}>
+      <p
+        className={
+          usesDarkTone
+            ? 'mb-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#d4b483]/80'
+            : 'mb-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#8a7048]/90'
+        }
+      >
+        Programación
+      </p>
+      <div className="grid gap-4 sm:grid-cols-2 sm:gap-5">
+        {days.map((day) => (
+          <article key={day.id || day.label} className={`min-w-0 border-t pt-3 ${ruleClass}`}>
+            <h3 className={dayTitleClass}>{day.label || 'Día'}</h3>
+            {day.names.length ? (
+              <ul className="mt-2.5 space-y-1.5">
+                {day.names.map((name, nameIdx) => (
+                  <li key={`${day.id || day.label}-${nameIdx}`} className={nameClass}>
+                    {name}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </article>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 const ctaButtonClassLight =
@@ -330,8 +374,10 @@ export function FdcArtistsSection({ artists }) {
   const { titleTone, usesDarkTone } = useFdcSectionTone(artists)
   const ctaButtonClass = usesDarkTone ? ctaButtonClassDark : ctaButtonClassLight
   const hasPoster = Boolean(posterImageUrl)
+  const lineupDays = normalizeFdcArtistLineupDays(artists?.lineupDays)
+  const hasLineup = lineupDays.some((day) => day.label || day.names.length > 0)
   const showDaily = fdcArtistsShowDailyLineup(artists) && items.length > 0
-  const showingPoster = hasPoster && (!showDaily || view === VIEW_POSTER)
+  const showingPoster = (hasPoster || hasLineup) && (!showDaily || view === VIEW_POSTER)
   const posterSrc = hasPoster ? resolveMediaUrl(posterImageUrl) || posterImageUrl : ''
   const posterOptimized = posterSrc
     ? withCloudinaryTransform(posterSrc, 'f_auto,q_auto:good,c_limit,w_1200') || posterSrc
@@ -396,7 +442,7 @@ export function FdcArtistsSection({ artists }) {
     scrollBy(direction * step)
   }
 
-  if (!hasPoster && !showDaily) return null
+  if (!hasPoster && !showDaily && !hasLineup) return null
 
   const cta = showingPoster
     ? showDaily ? (
@@ -477,35 +523,46 @@ export function FdcArtistsSection({ artists }) {
                 transition={{ duration: stageDuration, ease: softEase }}
                 style={{ transformStyle: 'preserve-3d' }}
               >
-                <figure className="mx-auto w-full max-w-[min(100%,26rem)] sm:max-w-[34rem] lg:max-w-[40rem]">
-                  <Motion.button
-                    type="button"
-                    layoutId={reduceMotion ? undefined : 'fdc-full-poster'}
-                    onClick={() => setLightboxOpen(true)}
-                    className={frameClass}
-                    whileHover={reduceMotion ? undefined : { y: -4, transition: { duration: 0.35 } }}
-                    whileTap={reduceMotion ? undefined : { scale: 0.992 }}
-                    aria-label="Ampliar cartelera"
-                  >
-                    <span className={`${goldCorner} left-3 top-3 border-t-2 border-l-2 rounded-tl-md`} />
-                    <span className={`${goldCorner} right-3 top-3 border-t-2 border-r-2 rounded-tr-md`} />
-                    <span className={`${goldCorner} bottom-3 left-3 border-b-2 border-l-2 rounded-bl-md`} />
-                    <span className={`${goldCorner} bottom-3 right-3 border-b-2 border-r-2 rounded-br-md`} />
-                    <img
-                      src={posterOptimized}
-                      alt={title || 'Cartelera completa'}
-                      className="mx-auto h-auto max-h-[min(78svh,54rem)] w-full rounded-[1.15rem] object-contain"
-                      loading="eager"
-                      decoding="async"
-                    />
-                    <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-linear-to-t from-[#0c1017]/70 via-[#0c1017]/5 to-transparent px-4 pb-4 pt-16 text-center opacity-0 transition duration-300 group-hover:opacity-100 sm:px-5">
-                      <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#d4b483]">
-                        Ampliar
-                      </span>
-                    </span>
-                  </Motion.button>
-                  <figcaption className={captionClass}>Tocá la imagen para verla en grande</figcaption>
-                </figure>
+                <div
+                  className={
+                    hasPoster && hasLineup
+                      ? 'grid items-center gap-6 lg:grid-cols-2 lg:gap-8 xl:grid-cols-[1.08fr_0.92fr] xl:gap-10'
+                      : 'mx-auto w-full max-w-[min(100%,40rem)]'
+                  }
+                >
+                  {hasPoster ? (
+                    <figure className="mx-auto w-full max-w-[min(100%,40rem)] lg:max-w-none">
+                      <Motion.button
+                        type="button"
+                        layoutId={reduceMotion ? undefined : 'fdc-full-poster'}
+                        onClick={() => setLightboxOpen(true)}
+                        className={frameClass}
+                        whileHover={reduceMotion ? undefined : { y: -4, transition: { duration: 0.35 } }}
+                        whileTap={reduceMotion ? undefined : { scale: 0.992 }}
+                        aria-label="Ampliar cartelera"
+                      >
+                        <span className={`${goldCorner} left-3 top-3 rounded-tl-md border-t-2 border-l-2`} />
+                        <span className={`${goldCorner} right-3 top-3 rounded-tr-md border-t-2 border-r-2`} />
+                        <span className={`${goldCorner} bottom-3 left-3 rounded-bl-md border-b-2 border-l-2`} />
+                        <span className={`${goldCorner} bottom-3 right-3 rounded-br-md border-b-2 border-r-2`} />
+                        <img
+                          src={posterOptimized}
+                          alt={title || 'Cartelera completa'}
+                          className="mx-auto h-auto max-h-[min(72svh,46rem)] w-full rounded-[1.15rem] object-contain"
+                          loading="eager"
+                          decoding="async"
+                        />
+                        <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-linear-to-t from-[#0c1017]/70 via-[#0c1017]/5 to-transparent px-4 pb-4 pt-16 text-center opacity-0 transition duration-300 group-hover:opacity-100 sm:px-5">
+                          <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#d4b483]">
+                            Ampliar
+                          </span>
+                        </span>
+                      </Motion.button>
+                      <figcaption className={captionClass}>Tocá la imagen para verla en grande</figcaption>
+                    </figure>
+                  ) : null}
+                  {hasLineup ? <PosterLineup days={lineupDays} usesDarkTone={usesDarkTone} /> : null}
+                </div>
               </Motion.div>
             ) : (
               <Motion.div

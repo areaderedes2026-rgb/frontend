@@ -327,7 +327,7 @@ export function FiestaDelCaballo() {
           containerClassName={
             fdcArtistsShowDailyLineup(page.artists)
               ? 'flex flex-1 flex-col justify-center max-w-[min(100%,100rem)]!'
-              : 'max-w-[min(100%,48rem)]!'
+              : 'max-w-[min(100%,88rem)]!'
           }
         >
           <RevealOnScroll

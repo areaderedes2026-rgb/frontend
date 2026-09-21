@@ -84,6 +84,10 @@ function mapContentToForm(content) {
     artists: {
       ...merged.artists,
       items: (merged.artists?.items || []).map((it) => ({ ...it })),
+      lineupDays: (merged.artists?.lineupDays || []).map((day) => ({
+        ...day,
+        names: [...(day.names || [])],
+      })),
       posterImageUrl: String(merged.artists?.posterImageUrl || '').trim(),
       showDailyArtists: merged.artists?.showDailyArtists === true,
       dayPosters: [],
@@ -385,6 +389,16 @@ export function AdminFdc() {
         overlayOpacity: normalizeOverlay(form.artists?.overlayOpacity, 55),
         posterImageUrl: String(form.artists?.posterImageUrl || '').trim(),
         showDailyArtists: form.artists?.showDailyArtists === true,
+        lineupDays: (form.artists?.lineupDays || [])
+          .map((day, idx) => ({
+            id: String(day?.id || '').trim() || makeFdcItemId('ld'),
+            label: String(day?.label || '').trim(),
+            names: (Array.isArray(day?.names) ? day.names : String(day?.namesText || '').split('\n'))
+              .map((n) => String(n || '').trim())
+              .filter(Boolean),
+            sortOrder: idx,
+          }))
+          .filter((day) => day.label || day.names.length > 0),
         dayPosters: [],
         items: (form.artists?.items || [])
           .map((it) => ({
@@ -2146,8 +2160,8 @@ export function AdminFdc() {
                 <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50/60 p-4 sm:p-5">
                   <h3 className="text-base font-bold text-slate-900">Cartelera completa</h3>
                   <p className="mt-1 text-sm text-slate-600">
-                    Una sola imagen con toda la programación. En el sitio se muestra centrada, sin
-                    recortar, y se puede ampliar al tocarla.
+                    Una sola imagen con toda la programación. En el sitio se muestra a la izquierda,
+                    junto a los días y artistas, y se puede ampliar al tocarla.
                   </p>
                   <div className="mt-4 max-w-xl">
                     <SingleImageUploadField
@@ -2172,6 +2186,120 @@ export function AdminFdc() {
                       />
                     </div>
                   ) : null}
+                </div>
+
+                <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+                  <h3 className="text-base font-bold text-slate-900">Días y artistas (junto al afiche)</h3>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Se muestran al lado de la cartelera general. Un día por tarjeta; un artista por
+                    línea.
+                  </p>
+                  <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                    {(form.artists?.lineupDays || []).map((day, idx) => (
+                      <div key={day.id || idx} className={ITEM_CARD}>
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                            Día {idx + 1}
+                          </span>
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              className={ACTION_NEUTRAL}
+                              disabled={saving || idx === 0}
+                              onClick={() =>
+                                updateArtists((a) => {
+                                  const next = [...(a.lineupDays || [])]
+                                  ;[next[idx - 1], next[idx]] = [next[idx], next[idx - 1]]
+                                  return { ...a, lineupDays: next }
+                                })
+                              }
+                            >
+                              Subir
+                            </button>
+                            <button
+                              type="button"
+                              className={ACTION_NEUTRAL}
+                              disabled={saving || idx === (form.artists?.lineupDays || []).length - 1}
+                              onClick={() =>
+                                updateArtists((a) => {
+                                  const next = [...(a.lineupDays || [])]
+                                  ;[next[idx], next[idx + 1]] = [next[idx + 1], next[idx]]
+                                  return { ...a, lineupDays: next }
+                                })
+                              }
+                            >
+                              Bajar
+                            </button>
+                            <button
+                              type="button"
+                              className={ACTION_DANGER}
+                              disabled={saving}
+                              onClick={() =>
+                                updateArtists((a) => ({
+                                  ...a,
+                                  lineupDays: (a.lineupDays || []).filter((_, i) => i !== idx),
+                                }))
+                              }
+                            >
+                              Quitar
+                            </button>
+                          </div>
+                        </div>
+                        <label className={`${labelClass} mt-3`}>
+                          Día
+                          <input
+                            className={inputClass}
+                            value={day.label || ''}
+                            disabled={saving}
+                            placeholder="Jueves 8"
+                            onChange={(e) =>
+                              updateArtists((a) => {
+                                const next = [...(a.lineupDays || [])]
+                                next[idx] = { ...next[idx], label: e.target.value }
+                                return { ...a, lineupDays: next }
+                              })
+                            }
+                          />
+                        </label>
+                        <label className={`${labelClass} mt-3`}>
+                          Artistas (uno por línea)
+                          <textarea
+                            className={textareaClass}
+                            rows={6}
+                            value={(day.names || []).join('\n')}
+                            disabled={saving}
+                            placeholder={'Abel Pintos\nNahuel Pennisi'}
+                            onChange={(e) =>
+                              updateArtists((a) => {
+                                const next = [...(a.lineupDays || [])]
+                                next[idx] = {
+                                  ...next[idx],
+                                  names: e.target.value.split(/\r?\n/).map((n) => n.trimEnd()),
+                                }
+                                return { ...a, lineupDays: next }
+                              })
+                            }
+                          />
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    className={`${ACTION_ADD} mt-3`}
+                    disabled={saving || (form.artists?.lineupDays || []).length >= 8}
+                    onClick={() =>
+                      updateArtists((a) => ({
+                        ...a,
+                        lineupDays: [
+                          ...(a.lineupDays || []),
+                          { id: makeFdcItemId('ld'), label: '', names: [], sortOrder: (a.lineupDays || []).length },
+                        ],
+                      }))
+                    }
+                  >
+                    + Agregar día
+                  </button>
                 </div>
 
                 <div className="mt-8">

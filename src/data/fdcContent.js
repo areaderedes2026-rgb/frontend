@@ -140,15 +140,76 @@ export function normalizeFdcScheduleImages(schedule) {
 }
 
 export const FDC_ARTISTS_MAX_DAY_POSTERS = 4
+export const FDC_ARTISTS_MAX_LINEUP_DAYS = 8
+export const FDC_ARTISTS_MAX_LINEUP_NAMES = 24
 
 export function fdcArtistsShowDailyLineup(artists) {
   return artists?.showDailyArtists === true || artists?.showDailyArtists === 1
 }
 
+export function parseFdcLineupNames(value) {
+  const raw = Array.isArray(value)
+    ? value
+    : String(value || '')
+        .split(/\r?\n/)
+        .flatMap((line) => line.split('·'))
+  const out = []
+  for (const item of raw) {
+    const name = String(item || '').trim()
+    if (!name || out.includes(name)) continue
+    out.push(name)
+    if (out.length >= FDC_ARTISTS_MAX_LINEUP_NAMES) break
+  }
+  return out
+}
+
+export function normalizeFdcArtistLineupDays(input) {
+  const list = Array.isArray(input) ? input : []
+  const out = []
+  for (const day of list.slice(0, FDC_ARTISTS_MAX_LINEUP_DAYS)) {
+    const label = String(day?.label || '').trim()
+    const names = parseFdcLineupNames(day?.names ?? day?.artists ?? day?.namesText)
+    if (!label && names.length === 0) continue
+    out.push({
+      id: String(day?.id || '').trim() || `ld-${out.length + 1}`,
+      label,
+      names,
+      sortOrder: Number.isFinite(Number(day?.sortOrder)) ? Number(day.sortOrder) : out.length,
+    })
+  }
+  out.sort((a, b) => a.sortOrder - b.sortOrder)
+  return out
+}
+
+export function lineupDaysFromArtistItems(items) {
+  const groups = new Map()
+  for (const it of Array.isArray(items) ? items : []) {
+    const name = String(it?.name || '').trim()
+    if (!name) continue
+    const label = String(it?.dateTag || '').trim() || 'Artistas'
+    if (!groups.has(label)) groups.set(label, [])
+    const names = groups.get(label)
+    if (!names.includes(name)) names.push(name)
+  }
+  return [...groups.entries()].map(([label, names], idx) => ({
+    id: `ld-from-items-${idx + 1}`,
+    label,
+    names: names.slice(0, FDC_ARTISTS_MAX_LINEUP_NAMES),
+    sortOrder: idx,
+  }))
+}
+
+export function fdcArtistsLineupHasContent(artists) {
+  return normalizeFdcArtistLineupDays(artists?.lineupDays).some(
+    (day) => day.label || day.names.length > 0,
+  )
+}
+
 export function fdcArtistsSectionHasPublicContent(artists) {
   const hasPoster = Boolean(normalizeFdcArtistsPosterImageUrl(artists))
+  const hasLineup = fdcArtistsLineupHasContent(artists)
   const hasNamedArtists = (artists?.items || []).some((a) => String(a?.name || '').trim())
-  return hasPoster || (fdcArtistsShowDailyLineup(artists) && hasNamedArtists)
+  return hasPoster || hasLineup || (fdcArtistsShowDailyLineup(artists) && hasNamedArtists)
 }
 
 /** Una sola imagen de cartelera completa (migra el primer afiche legacy si hace falta). */
@@ -197,6 +258,57 @@ export const DEFAULT_FDC_ARTISTS = {
   posterImageUrl: '',
   /** Carrusel de artistas por día. Desactivado por ahora; se puede volver a encender desde admin. */
   showDailyArtists: false,
+  /** Días y nombres al lado del afiche general. */
+  lineupDays: [
+    {
+      id: 'ld-1',
+      label: 'Jueves 8',
+      names: [
+        'LBC y Eugenia Quevedo',
+        'Christian Herrera',
+        'Los Tekis',
+        'Campedrinos',
+        'El Super de Huguito',
+      ],
+      sortOrder: 0,
+    },
+    {
+      id: 'ld-2',
+      label: 'Viernes 9',
+      names: [
+        'Rombai de Uruguay',
+        'Q Lokura',
+        'Lázaro Caballero',
+        'Destino San Javier',
+        'Dany Hoyos',
+      ],
+      sortOrder: 1,
+    },
+    {
+      id: 'ld-3',
+      label: 'Sábado 10',
+      names: [
+        'Abel Pintos',
+        'Nahuel Pennisi',
+        'Los Herrera',
+        'Karma Sudaka (30 años)',
+        'Orellana Lucca',
+        'Coroico',
+      ],
+      sortOrder: 2,
+    },
+    {
+      id: 'ld-4',
+      label: 'Domingo 11',
+      names: [
+        'Marama de Uruguay',
+        'El Chaqueño Palavecino',
+        'Karina',
+        'Las Voces de Oran',
+      ],
+      sortOrder: 3,
+    },
+  ],
   items: [
     {
       id: 'art-1',
@@ -1102,15 +1214,27 @@ export function mergeFdcContent(base, remote) {
         'posterImageUrl',
         'dayPosters',
         'showDailyArtists',
+        'lineupDays',
         'backgroundStyle',
         'backgroundImageUrl',
         'overlayOpacity',
       ])
+      const lineupDays = (() => {
+        const fromRemote = normalizeFdcArtistLineupDays(remoteArtists?.lineupDays)
+        if (fromRemote.length) return fromRemote
+        if (remoteArtists && Object.prototype.hasOwnProperty.call(remoteArtists, 'lineupDays')) {
+          return []
+        }
+        const fromDefaults = normalizeFdcArtistLineupDays(defaults.artists.lineupDays)
+        if (fromDefaults.length) return fromDefaults
+        return lineupDaysFromArtistItems(remoteArtists?.items || merged.items)
+      })()
       return withFdcSectionBackground(
         {
           ...merged,
           posterImageUrl: normalizeFdcArtistsPosterImageUrl(remoteArtists || merged),
           showDailyArtists: (remoteArtists || merged)?.showDailyArtists === true,
+          lineupDays,
           dayPosters: [],
         },
         defaults.artists,
