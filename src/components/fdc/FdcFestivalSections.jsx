@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
 import { getFdcSectionOutlineCtaClass } from '../../utils/fdcSectionBackground.js'
 import { useFdcSectionTone } from './FdcSectionToneContext.jsx'
+import { FdcSectionShareButton } from './FdcSectionShareButton.jsx'
 
 /** Título centrado del módulo FDC. */
 export function FdcSectionTitle({
@@ -115,7 +116,7 @@ function SmartLink({ href, className, children, ...rest }) {
   )
 }
 
-export function FdcSectionNav({ items = [], className = '', onHashNavigate }) {
+export function FdcSectionNav({ items = [], className = '', onHashNavigate, showShare = true }) {
   const navItems = (items || []).filter((n) => n?.label && n?.href)
   if (navItems.length === 0) return null
 
@@ -133,24 +134,34 @@ export function FdcSectionNav({ items = [], className = '', onHashNavigate }) {
       className={`sticky top-[calc(var(--navbar-h,5rem))] z-30 shrink-0 border-b border-white/10 bg-[#0c1017] ${className}`.trim()}
     >
       <div className="mx-auto w-full max-w-[min(100%,90rem)] px-2 sm:px-6 lg:px-8 xl:px-10">
-        <div className="flex justify-center overflow-x-auto py-2.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:py-3 [&::-webkit-scrollbar]:hidden">
-          <div className="flex w-max max-w-none shrink-0 items-stretch justify-center gap-0.5 sm:w-full sm:max-w-5xl sm:flex-wrap sm:gap-1.5 lg:flex-nowrap lg:gap-0">
-            {navItems.map((item) => (
-              <a
-                key={item.id || item.href}
-                href={item.href}
-                onClick={(e) => handleClick(e, item.href)}
-                className="group flex min-w-[4.75rem] flex-col items-center justify-center gap-1 rounded-lg px-2 py-2 text-center transition hover:bg-white/8 sm:min-w-0 sm:flex-1 sm:gap-1.5 sm:px-3 lg:px-4"
-              >
-                <span className="text-[#d4b483] transition group-hover:text-amber-200">
-                  <NavIcon name={item.icon} className="h-5 w-5" />
-                </span>
-                <span className="max-w-[6.5rem] text-[10px] font-bold uppercase leading-tight tracking-[0.08em] text-[#d4b483]/95 transition group-hover:text-amber-100 sm:max-w-none sm:text-[11px] lg:text-xs">
-                  {item.label}
-                </span>
-              </a>
-            ))}
+        <div className="flex items-center gap-1 py-2.5 sm:gap-2 sm:py-3">
+          <div className="min-w-0 flex-1 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex w-max max-w-none shrink-0 items-stretch justify-center gap-0.5 sm:w-full sm:max-w-5xl sm:flex-wrap sm:gap-1.5 lg:mx-auto lg:flex-nowrap lg:gap-0">
+              {navItems.map((item) => (
+                <a
+                  key={item.id || item.href}
+                  href={item.href}
+                  onClick={(e) => handleClick(e, item.href)}
+                  className="group flex min-w-[4.75rem] flex-col items-center justify-center gap-1 rounded-lg px-2 py-2 text-center transition hover:bg-white/8 sm:min-w-0 sm:flex-1 sm:gap-1.5 sm:px-3 lg:px-4"
+                >
+                  <span className="text-[#d4b483] transition group-hover:text-amber-200">
+                    <NavIcon name={item.icon} className="h-5 w-5" />
+                  </span>
+                  <span className="max-w-[6.5rem] text-[10px] font-bold uppercase leading-tight tracking-[0.08em] text-[#d4b483]/95 transition group-hover:text-amber-100 sm:max-w-none sm:text-[11px] lg:text-xs">
+                    {item.label}
+                  </span>
+                </a>
+              ))}
+            </div>
           </div>
+          {showShare ? (
+            <FdcSectionShareButton
+              sectionId="inicio"
+              usesDarkTone
+              compact
+              className="shrink-0"
+            />
+          ) : null}
         </div>
       </div>
     </nav>

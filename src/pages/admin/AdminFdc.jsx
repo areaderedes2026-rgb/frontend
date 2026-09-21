@@ -1783,6 +1783,7 @@ export function AdminFdc() {
                     <FdcSectionNav
                       items={(form.sectionNav || []).slice(0, 5)}
                       onHashNavigate={() => {}}
+                      showShare={false}
                     />
                   </div>
                 </div>

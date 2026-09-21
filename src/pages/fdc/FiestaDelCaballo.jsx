@@ -278,7 +278,10 @@ export function FiestaDelCaballo() {
     <>
       {toast ? <Toast variant={toast.variant} message={toast.message} onDismiss={dismissToast} /> : null}
 
-      <div className="relative -mt-[calc(var(--navbar-h,5rem)+1.5rem)] flex h-dvh max-h-dvh flex-col sm:-mt-[calc(var(--navbar-h,5rem)+2rem)]">
+      <div
+        id="inicio"
+        className="relative -mt-[calc(var(--navbar-h,5rem)+1.5rem)] flex h-dvh max-h-dvh flex-col sm:-mt-[calc(var(--navbar-h,5rem)+2rem)]"
+      >
         <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
           <FdcFestivalHero
             contentReady={hydrated}
@@ -392,7 +395,7 @@ export function FiestaDelCaballo() {
       ) : null}
 
       {(page.sponsors?.items || []).some((s) => s?.logoUrl || s?.name) ? (
-        <FdcSectionShell config={page.sponsors}>
+        <FdcSectionShell id="auspiciantes" config={page.sponsors}>
           <RevealOnScroll variant="slow">
             <FdcSponsorsSection sponsors={page.sponsors} />
           </RevealOnScroll>
@@ -401,6 +404,7 @@ export function FiestaDelCaballo() {
 
       {preinscriptionVisible ? (
         <FdcSectionShell
+          shareId={FDC_FORM_SECTION_ID}
           config={page.formSection}
           pyClass="py-10 sm:py-12 lg:py-14"
           containerClassName="max-w-[min(100%,96rem)]!"
