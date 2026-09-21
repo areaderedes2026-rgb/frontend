@@ -112,8 +112,8 @@ export function FdcSectionShareButton({
         aria-describedby={liveId}
         aria-label={title}
         title={title}
-        className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border text-[10px] font-bold uppercase tracking-[0.12em] shadow-sm backdrop-blur-md transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d4b483] sm:text-[11px] ${
-          compact ? 'min-w-11 px-0 sm:min-h-10 sm:min-w-10' : 'px-3 sm:min-h-10 sm:px-3.5'
+        className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border px-3 text-[10px] font-bold uppercase tracking-[0.12em] shadow-sm backdrop-blur-md transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d4b483] sm:min-h-10 sm:px-3.5 sm:text-[11px] ${
+          compact ? 'min-w-11 px-0 sm:min-w-10' : ''
         } ${toneClass}`}
       >
         {copied ? <CheckIcon className="h-4 w-4" /> : <ShareIcon className="h-4 w-4" />}

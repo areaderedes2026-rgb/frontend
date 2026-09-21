@@ -65,33 +65,33 @@ export function AdminConcejoDeliberante() {
 
   const buildPayload = useCallback(
     (forceOverwrite = false) => ({
-      expectedUpdatedAt: contentUpdatedAt,
+        expectedUpdatedAt: contentUpdatedAt,
       forceOverwrite,
-      heroEyebrow: form.heroEyebrow.trim(),
-      heroTitle: form.heroTitle.trim(),
-      heroSubtitle: form.heroSubtitle,
-      heroImageUrl: form.heroImageUrl.trim(),
-      introTitle: form.introTitle.trim(),
+        heroEyebrow: form.heroEyebrow.trim(),
+        heroTitle: form.heroTitle.trim(),
+        heroSubtitle: form.heroSubtitle,
+        heroImageUrl: form.heroImageUrl.trim(),
+        introTitle: form.introTitle.trim(),
       introLogoUrl: form.introLogoUrl.trim(),
-      introParagraphs: (form.introParagraphs || [])
-        .map((p) => String(p || '').trim())
-        .filter(Boolean),
-      presidentName: form.presidentName.trim(),
-      presidentRole: form.presidentRole.trim(),
-      presidentBio: form.presidentBio,
-      presidentPhotoUrl: form.presidentPhotoUrl.trim(),
-      sessionsTitle: form.sessionsTitle.trim(),
-      sessionsSchedule: form.sessionsSchedule.trim(),
-      sessionsLocation: form.sessionsLocation.trim(),
-      sessionsNote: form.sessionsNote,
+        introParagraphs: (form.introParagraphs || [])
+          .map((p) => String(p || '').trim())
+          .filter(Boolean),
+        presidentName: form.presidentName.trim(),
+        presidentRole: form.presidentRole.trim(),
+        presidentBio: form.presidentBio,
+        presidentPhotoUrl: form.presidentPhotoUrl.trim(),
+        sessionsTitle: form.sessionsTitle.trim(),
+        sessionsSchedule: form.sessionsSchedule.trim(),
+        sessionsLocation: form.sessionsLocation.trim(),
+        sessionsNote: form.sessionsNote,
       commissionsSchedule: form.commissionsSchedule.trim(),
       contactSectionTitle: form.contactSectionTitle.trim(),
       contactSectionSubtitle: form.contactSectionSubtitle.trim(),
-      contactEmail: form.contactEmail.trim(),
-      contactPhone: form.contactPhone.trim(),
-      contactAddress: form.contactAddress.trim(),
-      contactHours: form.contactHours.trim(),
-      members: form.members || [],
+        contactEmail: form.contactEmail.trim(),
+        contactPhone: form.contactPhone.trim(),
+        contactAddress: form.contactAddress.trim(),
+        contactHours: form.contactHours.trim(),
+        members: form.members || [],
       mainFunctions: form.mainFunctions || {},
       commissions: serializeCommissionsForSave(form.commissions || {}),
     }),
@@ -159,7 +159,7 @@ export function AdminConcejoDeliberante() {
 
       {toast ? (
         <Toast variant={toast.variant} message={toast.message} onDismiss={dismissToast} />
-      ) : null}
+          ) : null}
 
       <AdminPageShell
         showBackLink={false}
@@ -181,7 +181,7 @@ export function AdminConcejoDeliberante() {
             <div className="h-40 rounded-3xl border border-[#ddd7ca] bg-slate-100" />
             <div className="h-56 rounded-3xl border border-[#ddd7ca] bg-slate-100" />
             <div className="h-48 rounded-3xl border border-[#ddd7ca] bg-slate-100" />
-          </div>
+            </div>
         ) : (
           <AdminConcejoDeliberanteEditorPreview
             form={form}
