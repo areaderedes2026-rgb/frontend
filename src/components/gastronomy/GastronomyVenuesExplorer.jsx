@@ -4,7 +4,7 @@ import { AnimatePresence, motion as Motion } from 'motion/react'
 import { RevealOnScroll } from '../home/RevealOnScroll.jsx'
 import { NewsCoverMedia } from '../news/NewsCoverMedia.jsx'
 
-const ease = [0.16, 1, 0.3, 1]
+const ease = [0.22, 1, 0.36, 1]
 
 function digitsOnly(value) {
   return String(value || '').replace(/[^\d+]/g, '')
@@ -85,14 +85,6 @@ function SearchIcon({ className = 'h-4 w-4' }) {
   )
 }
 
-function WhatsAppIcon({ className = 'h-4 w-4' }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M20.52 3.48A11.8 11.8 0 0 0 12.06 0C5.5 0 .16 5.33.16 11.88c0 2.1.55 4.14 1.6 5.95L0 24l6.33-1.66a11.86 11.86 0 0 0 5.72 1.46h.01c6.55 0 11.88-5.33 11.88-11.88 0-3.17-1.24-6.16-3.42-8.44ZM12.06 21.7h-.01a9.84 9.84 0 0 1-5.01-1.37l-.36-.21-3.76.98 1-3.66-.23-.38a9.82 9.82 0 0 1-1.51-5.26c0-5.42 4.41-9.83 9.85-9.83 2.63 0 5.1 1.02 6.96 2.88a9.77 9.77 0 0 1 2.88 6.95c0 5.43-4.42 9.84-9.82 9.84Zm5.4-7.37c-.3-.15-1.75-.86-2.02-.96-.27-.1-.47-.15-.67.15-.2.3-.77.96-.94 1.16-.17.2-.35.22-.64.07-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.64-2.04-.17-.3-.02-.46.13-.6.13-.13.3-.35.44-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.61-.92-2.2-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.8.37-.27.3-1.05 1.02-1.05 2.5s1.07 2.9 1.22 3.1c.15.2 2.11 3.22 5.11 4.51.71.31 1.27.49 1.7.63.72.23 1.37.2 1.88.12.57-.09 1.75-.72 2-1.41.25-.7.25-1.29.17-1.41-.07-.13-.27-.2-.57-.35Z" />
-    </svg>
-  )
-}
-
 function venueContacts(venue) {
   return {
     call: telHref(venue.phone),
@@ -102,20 +94,14 @@ function venueContacts(venue) {
   }
 }
 
-function ActionButton({ href, children, tone = 'ghost', external = false, className = '' }) {
+function ActionLink({ href, children, external = false }) {
   if (!href) return null
-  const tones = {
-    ghost:
-      'border border-[#e4dfd4] bg-white text-[#171b22] hover:border-[#c9c2b3] hover:bg-[#faf8f4]',
-    dark: 'border border-[#171b22] bg-[#171b22] text-white hover:bg-[#2a2f38]',
-    wa: 'border border-transparent bg-[#128C7E] text-white hover:bg-[#0e7a6e]',
-  }
   return (
     <a
       href={href}
       {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-      className={`inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full px-3.5 text-[13px] font-semibold transition ${tones[tone] || tones.ghost} ${className}`}
       onClick={(e) => e.stopPropagation()}
+      className="inline-flex min-h-9 items-center rounded-full border border-[#ddd7ca] bg-white px-3 py-1.5 text-xs font-semibold text-[#171b22] transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-900"
     >
       {children}
     </a>
@@ -144,27 +130,27 @@ function VenueDetailSheet({ venue, onClose }) {
 
   return (
     <Motion.div
-      className="fixed inset-0 z-[150] flex items-end justify-center sm:items-center sm:p-5"
+      className="fixed inset-0 z-[150] flex items-end justify-center p-0 sm:items-center sm:p-5"
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.28, ease }}
+      transition={{ duration: 0.22, ease }}
     >
       <button
         type="button"
-        className="absolute inset-0 bg-[#0c1017]/55"
+        className="absolute inset-0 bg-slate-900/45 backdrop-blur-[2px]"
         aria-label="Cerrar ficha del local"
         onClick={onClose}
       />
       <Motion.div
-        className="relative z-10 flex max-h-[min(92dvh,44rem)] w-full max-w-xl flex-col overflow-hidden rounded-t-[1.6rem] bg-[#fcfcfa] shadow-[0_40px_100px_-36px_rgba(23,27,34,0.55)] sm:rounded-[1.6rem]"
-        initial={{ y: 48, opacity: 0.85 }}
+        className="relative z-10 flex max-h-[min(92dvh,44rem)] w-full max-w-xl flex-col overflow-hidden rounded-t-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-lg sm:rounded-2xl"
+        initial={{ y: 28, opacity: 0.96 }}
         animate={{ y: 0, opacity: 1 }}
-        exit={{ y: 32, opacity: 0 }}
-        transition={{ duration: 0.38, ease }}
+        exit={{ y: 16, opacity: 0 }}
+        transition={{ duration: 0.32, ease }}
       >
         <div className="relative shrink-0">
           <NewsCoverMedia
@@ -178,37 +164,35 @@ function VenueDetailSheet({ venue, onClose }) {
             ref={closeRef}
             type="button"
             onClick={onClose}
-            className="absolute top-3 right-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#0c1017]/55 text-white backdrop-blur-sm transition hover:bg-[#0c1017]/75"
+            className="absolute top-3 right-3 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/30 bg-[#171b22]/55 text-white backdrop-blur-sm transition hover:bg-[#171b22]/75"
             aria-label="Cerrar"
           >
             ✕
           </button>
-          {venue.category ? (
-            <span className="absolute bottom-3 left-3 rounded-full bg-white/92 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#171b22]">
-              {venue.category}
-            </span>
-          ) : null}
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">
-          <h3 id={titleId} className="font-serif text-2xl font-bold tracking-tight text-[#171b22]">
+          {venue.category ? (
+            <p className="text-[11px] font-bold uppercase tracking-wide text-sky-800">{venue.category}</p>
+          ) : null}
+          <h3 id={titleId} className="mt-1 font-serif text-2xl font-bold tracking-tight text-[#171b22]">
             {venue.name}
           </h3>
           <div className="mt-3 space-y-2 text-sm text-[#4b505a]">
             {venue.location ? (
               <p className="flex gap-2">
-                <PinIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#b45309]" />
+                <PinIcon className="mt-0.5 h-4 w-4 shrink-0 text-sky-800" />
                 <span>{venue.location}</span>
               </p>
             ) : null}
             {venue.hours ? (
               <p className="flex gap-2">
-                <ClockIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#b45309]" />
+                <ClockIcon className="mt-0.5 h-4 w-4 shrink-0 text-sky-800" />
                 <span>{venue.hours}</span>
               </p>
             ) : null}
             {venue.phone ? (
               <p className="flex gap-2">
-                <PhoneIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#b45309]" />
+                <PhoneIcon className="mt-0.5 h-4 w-4 shrink-0 text-sky-800" />
                 <span className="tabular-nums">{venue.phone}</span>
               </p>
             ) : null}
@@ -217,20 +201,17 @@ function VenueDetailSheet({ venue, onClose }) {
             <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-[#4b505a]">{venue.description}</p>
           ) : null}
         </div>
-        <div className="flex flex-wrap gap-2 border-t border-[#eee9df] bg-white px-5 py-4 sm:px-6">
-          <ActionButton href={contacts.wa} tone="wa" external className="flex-1 sm:flex-none">
-            <WhatsAppIcon />
+        <div className="flex flex-wrap gap-2 border-t border-[#ddd7ca] bg-white px-5 py-4 sm:px-6">
+          <ActionLink href={contacts.call}>Llamar</ActionLink>
+          <ActionLink href={contacts.wa} external>
             WhatsApp
-          </ActionButton>
-          <ActionButton href={contacts.call} tone="dark" className="flex-1 sm:flex-none">
-            Llamar
-          </ActionButton>
-          <ActionButton href={contacts.maps} external>
+          </ActionLink>
+          <ActionLink href={contacts.maps} external>
             Cómo llegar
-          </ActionButton>
-          <ActionButton href={contacts.ig} external>
+          </ActionLink>
+          <ActionLink href={contacts.ig} external>
             Instagram
-          </ActionButton>
+          </ActionLink>
         </div>
       </Motion.div>
     </Motion.div>
@@ -239,86 +220,80 @@ function VenueDetailSheet({ venue, onClose }) {
 
 function VenueCard({ venue, index, onOpen }) {
   const contacts = venueContacts(venue)
-  const primary = contacts.wa || contacts.call || contacts.maps
+  const hasActions = contacts.call || contacts.wa || contacts.maps || contacts.ig
 
   return (
     <Motion.article
       id={`local-${venue.id}`}
       layout
-      initial={{ opacity: 0, y: 18 }}
+      initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 8 }}
-      transition={{ duration: 0.4, delay: Math.min(index * 0.04, 0.2), ease }}
-      className="group flex h-full scroll-mt-[calc(var(--navbar-h,5rem)+5.5rem)] flex-col overflow-hidden rounded-[1.35rem] bg-white shadow-[0_18px_50px_-36px_rgba(23,27,34,0.45)] ring-1 ring-[#171b22]/6 transition hover:-translate-y-1 hover:shadow-[0_28px_60px_-34px_rgba(180,83,9,0.28)]"
+      transition={{ duration: 0.35, delay: Math.min(index * 0.035, 0.18), ease }}
+      className="group flex h-full scroll-mt-[calc(var(--navbar-h,5rem)+6rem)] flex-col overflow-hidden rounded-2xl border border-[#ddd7ca] bg-white shadow-sm transition duration-500 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-md sm:flex-row"
     >
       <button
         type="button"
         onClick={() => onOpen(venue)}
-        className="flex flex-1 flex-col text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#b45309] focus-visible:ring-offset-2"
+        className="flex min-w-0 flex-1 flex-col text-left sm:flex-row focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-inset"
       >
-        <div className="relative overflow-hidden">
+        <div className="relative w-full shrink-0 overflow-hidden sm:w-[42%] sm:min-h-[12.5rem]">
           <NewsCoverMedia
             imageUrl={venue.imageUrl}
-            className="aspect-[4/3] w-full"
-            imgClassName="h-full w-full object-cover transition duration-700 ease-out group-hover:scale-[1.05]"
+            className="aspect-16/10 h-full w-full sm:aspect-auto"
+            imgClassName="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
             loading={index < 4 ? 'eager' : 'lazy'}
           />
-          <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-[#171b22]/55 via-transparent to-transparent" />
-          {venue.category ? (
-            <span className="absolute top-3 left-3 rounded-full bg-white/92 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[#171b22]">
-              {venue.category}
-            </span>
-          ) : null}
         </div>
-        <div className="flex flex-1 flex-col px-4 pt-4 pb-3 sm:px-5">
-          <h3 className="font-serif text-xl font-bold tracking-tight text-[#171b22]">{venue.name}</h3>
-          <div className="mt-2 space-y-1 text-[13px] text-[#5c6169]">
+        <div className="flex min-w-0 flex-1 flex-col p-4 sm:p-5">
+          {venue.category ? (
+            <p className="text-[11px] font-bold uppercase tracking-wide text-sky-800">{venue.category}</p>
+          ) : null}
+          <h3 className="mt-1 font-serif text-lg font-bold tracking-tight text-[#171b22] group-hover:text-sky-900 sm:text-xl">
+            {venue.name}
+          </h3>
+          <div className="mt-2 space-y-1 text-sm text-[#4b505a]">
             {venue.location ? (
               <p className="flex items-start gap-1.5">
-                <PinIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#b45309]" />
+                <PinIcon className="mt-0.5 h-4 w-4 shrink-0 text-sky-800" />
                 <span className="line-clamp-2">{venue.location}</span>
               </p>
             ) : null}
             {venue.hours ? (
               <p className="flex items-start gap-1.5">
-                <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#b45309]" />
+                <ClockIcon className="mt-0.5 h-4 w-4 shrink-0 text-sky-800" />
                 <span className="line-clamp-1">{venue.hours}</span>
               </p>
             ) : null}
           </div>
           {venue.description ? (
-            <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[#5c6169]">{venue.description}</p>
+            <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[#4b505a]">{venue.description}</p>
           ) : null}
-          <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#b45309]">Ver ficha</p>
+          <span className="mt-3 text-sm font-semibold text-sky-800">Ver ficha →</span>
         </div>
       </button>
-      <div className="mt-auto flex flex-wrap gap-2 px-4 pb-4 sm:px-5">
-        {contacts.wa ? (
-          <ActionButton href={contacts.wa} tone="wa" external className="min-h-9 px-3 text-xs">
-            <WhatsAppIcon className="h-3.5 w-3.5" />
+      {hasActions ? (
+        <div className="flex flex-wrap gap-2 border-t border-[#eeeae2] px-4 py-3 sm:hidden">
+          <ActionLink href={contacts.call}>Llamar</ActionLink>
+          <ActionLink href={contacts.wa} external>
             WhatsApp
-          </ActionButton>
-        ) : null}
-        {contacts.maps ? (
-          <ActionButton href={contacts.maps} external className="min-h-9 px-3 text-xs">
+          </ActionLink>
+          <ActionLink href={contacts.maps} external>
             Cómo llegar
-          </ActionButton>
-        ) : null}
-        {!contacts.wa && contacts.call ? (
-          <ActionButton href={contacts.call} tone="dark" className="min-h-9 px-3 text-xs">
-            Llamar
-          </ActionButton>
-        ) : null}
-        {!primary ? (
-          <button
-            type="button"
-            onClick={() => onOpen(venue)}
-            className="inline-flex min-h-9 items-center rounded-full border border-[#e4dfd4] px-3 text-xs font-semibold text-[#171b22]"
-          >
-            Ver datos
-          </button>
-        ) : null}
-      </div>
+          </ActionLink>
+        </div>
+      ) : null}
+      {hasActions ? (
+        <div className="hidden flex-col justify-center gap-2 border-l border-[#eeeae2] px-3 py-4 sm:flex">
+          <ActionLink href={contacts.call}>Llamar</ActionLink>
+          <ActionLink href={contacts.wa} external>
+            WhatsApp
+          </ActionLink>
+          <ActionLink href={contacts.maps} external>
+            Cómo llegar
+          </ActionLink>
+        </div>
+      ) : null}
     </Motion.article>
   )
 }
@@ -377,21 +352,26 @@ export function GastronomyVenuesExplorer({
   return (
     <div id="catalogo-locales" className="scroll-mt-[calc(var(--navbar-h)+1rem)]">
       <RevealOnScroll variant="slow">
-        <div className="max-w-2xl">
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#b45309]">Dónde comer</p>
-          <h2 className="mt-1.5 font-serif text-3xl font-bold tracking-tight text-[#171b22] sm:text-4xl">
-            Locales de Trancas
-          </h2>
-          <p className="mt-2 text-sm leading-relaxed text-[#5c6169] sm:text-base">
-            Elegí el tipo, buscá por nombre o barrio y contactá al instante. Tocá una tarjeta para ver la ficha
-            completa.
+        <div className="flex flex-col gap-2 border-b border-[#ddd7ca] pb-5 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-800">Directorio</p>
+            <h2 className="mt-1 font-serif text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
+              Locales gastronómicos
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm text-[#4b505a]">
+              Filtrá por tipo o buscá por nombre. Tocá la tarjeta para ver la ficha, o llamá / escribí al
+              instante.
+            </p>
+          </div>
+          <p className="text-sm font-semibold text-[#171b22]">
+            {filtered.length} {filtered.length === 1 ? 'propuesta' : 'propuestas'}
           </p>
         </div>
       </RevealOnScroll>
 
-      <div className="sticky top-[calc(var(--navbar-h,5rem)-0.25rem)] z-30 -mx-1 mt-6 bg-[#f6f3ee]/92 px-1 py-3 backdrop-blur-md sm:mt-8">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] lg:flex-wrap lg:overflow-visible [&::-webkit-scrollbar]:hidden">
+      <div className="sticky top-[var(--navbar-h,5rem)] z-20 -mx-1 mt-5 bg-[#fcfcfa]/95 px-1 py-3 backdrop-blur-md">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] lg:flex-wrap lg:overflow-visible [&::-webkit-scrollbar]:hidden">
             {cats.map((cat) => {
               const active = cat === effectiveCategory
               const count = categoryCounts[cat] ?? 0
@@ -400,48 +380,41 @@ export function GastronomyVenuesExplorer({
                   key={cat}
                   type="button"
                   onClick={() => setActiveCategory(cat)}
-                  className={`inline-flex shrink-0 items-center gap-2 rounded-full px-3.5 py-2 text-sm font-semibold transition ${
+                  className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition ${
                     active
                       ? 'bg-[#171b22] text-white shadow-sm'
-                      : 'bg-white text-[#3e434d] ring-1 ring-[#e4dfd4] hover:ring-[#c9c2b3]'
+                      : 'border border-[#d8d5cd] bg-white text-[#3e434d] hover:border-sky-200 hover:text-[#171b22]'
                   }`}
                 >
                   {cat}
-                  <span
-                    className={`rounded-full px-1.5 py-0.5 text-[11px] tabular-nums ${
-                      active ? 'bg-white/15 text-white' : 'bg-[#f3efe6] text-[#5c6169]'
-                    }`}
-                  >
+                  <span className={`text-[11px] tabular-nums ${active ? 'text-white/70' : 'text-[#8a8f97]'}`}>
                     {count}
                   </span>
                 </button>
               )
             })}
           </div>
-          <label className="relative block w-full lg:ml-auto lg:max-w-xs">
+          <label className="relative block w-full lg:max-w-sm">
             <span className="sr-only">Buscar locales</span>
-            <SearchIcon className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-[#8a8580]" />
+            <SearchIcon className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
               type="search"
               value={query}
               onChange={(e) => onSearchChange?.(e.target.value)}
               placeholder={searchPlaceholder}
-              className="w-full rounded-full border-0 bg-white py-2.5 pr-4 pl-10 text-sm text-[#171b22] shadow-sm ring-1 ring-[#e4dfd4] transition placeholder:text-[#9a958d] focus:ring-2 focus:ring-[#b45309]/35 focus:outline-none"
+              className="w-full rounded-full border border-[#d6d0c3] bg-white py-2.5 pr-4 pl-10 text-sm text-[#171b22] shadow-sm transition placeholder:text-slate-400 focus:border-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-200/80"
             />
           </label>
         </div>
-        <p className="mt-2 text-xs font-medium text-[#7a756c]">
-          {filtered.length} {filtered.length === 1 ? 'lugar para visitar' : 'lugares para visitar'}
-        </p>
       </div>
 
       {filtered.length === 0 ? (
-        <div className="mt-4 rounded-[1.4rem] border border-dashed border-[#ddd6c8] bg-white/70 px-5 py-14 text-center">
-          <p className="font-serif text-xl font-bold text-[#171b22]">No encontramos ese lugar</p>
+        <div className="mt-6 rounded-2xl border border-dashed border-[#d8d5cd] bg-[#f8f7f3] px-5 py-12 text-center">
+          <p className="font-serif text-lg font-semibold text-[#171b22]">No hay locales para mostrar</p>
           <p className="mx-auto mt-2 max-w-md text-sm text-[#5c6169]">
-            Probá con otro nombre, barrio o tipo. El directorio lo actualiza la Municipalidad.
+            Probá otra categoría o buscá con otra palabra. El directorio se actualiza desde el panel municipal.
           </p>
-          {query || effectiveCategory !== 'Todos' ? (
+          {query || (effectiveCategory && effectiveCategory !== 'Todos') ? (
             <button
               type="button"
               className="mt-5 inline-flex min-h-10 items-center rounded-full bg-[#171b22] px-4 text-sm font-semibold text-white"
@@ -455,7 +428,7 @@ export function GastronomyVenuesExplorer({
           ) : null}
         </div>
       ) : (
-        <Motion.div layout className="mt-4 grid gap-4 sm:grid-cols-2 sm:gap-5 xl:grid-cols-3">
+        <Motion.div layout className="mt-6 grid gap-5 lg:grid-cols-1 xl:grid-cols-2">
           <AnimatePresence mode="popLayout">
             {filtered.map((venue, idx) => (
               <VenueCard key={venue.id} venue={venue} index={idx} onOpen={openVenue} />

@@ -73,102 +73,87 @@ export function CatalogoGastronomico() {
     },
   }
 
-  const liveStats = [
-    { label: 'Locales', value: String(venues.length) },
-    {
-      label: 'Tipos',
-      value: String(
-        new Set(venues.map((v) => v.category).filter((c) => c && c !== 'Todos')).size ||
-          Math.max((categories || []).filter((c) => c !== 'Todos').length, 0),
-      ),
-    },
-  ]
-
   return (
-    <section className="relative -mt-[calc(var(--navbar-h,5rem)+1.5rem)] overflow-hidden bg-[#f6f3ee] pb-16 sm:-mt-[calc(var(--navbar-h,5rem)+2rem)] sm:pb-20">
+    <section className="relative -mt-[calc(var(--navbar-h,5rem)+1.5rem)] overflow-hidden bg-linear-to-b from-[#f1eee8] via-[#f7f7f5] to-[#fcfcfa] pb-12 sm:-mt-[calc(var(--navbar-h,5rem)+2rem)] sm:pb-16">
       <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_40%_at_10%_-8%,rgba(180,83,9,0.1),transparent_55%)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_85%_45%_at_20%_-10%,rgba(56,189,248,0.12),transparent_60%)]"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_55%_45%_at_100%_10%,rgba(15,23,42,0.12),transparent_70%)]"
         aria-hidden
       />
 
       <PageListHeroHeader {...heroProps} />
 
-      <Container className="relative max-w-[min(100%,88rem)]!">
-        <p className="pt-6 text-sm font-medium text-[#7a4a1e] sm:pt-8">
-          <Link to={ROUTES.home} className="transition-colors hover:text-[#171b22]">
+      <Container className="relative max-w-[min(100%,96rem)]!">
+        <p className="pt-6 text-sm font-medium text-sky-700 sm:pt-8">
+          <Link to={ROUTES.home} className="transition-colors hover:text-sky-900">
             ← Volver al inicio
           </Link>
         </p>
 
-        <RevealOnScroll variant="slow">
-          <div className="mt-8 grid items-end gap-8 lg:grid-cols-[minmax(0,1.4fr)_minmax(16rem,0.7fr)] lg:gap-12">
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#b45309]">Contexto</p>
-              <h2 className="mt-2 font-serif text-3xl font-bold tracking-tight text-[#171b22] sm:text-[2.35rem]">
-                {page.introTitle}
-              </h2>
-              <div className="mt-4 max-w-2xl space-y-3 text-sm leading-relaxed text-[#5c6169] sm:text-base">
-                {(page.introParagraphs || []).map((paragraph) => (
-                  <p key={paragraph.slice(0, 48)}>{paragraph}</p>
-                ))}
-              </div>
-            </div>
-            <dl className="grid grid-cols-2 gap-3 sm:gap-4">
-              {liveStats.map((item) => (
-                <div
-                  key={item.label}
-                  className="rounded-[1.2rem] bg-white px-4 py-4 shadow-[0_16px_40px_-32px_rgba(23,27,34,0.5)] ring-1 ring-[#171b22]/6"
-                >
-                  <dt className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#b45309]">{item.label}</dt>
-                  <dd className="mt-1 font-serif text-3xl font-bold tabular-nums tracking-tight text-[#171b22]">
-                    {item.value}
-                  </dd>
-                </div>
-              ))}
-              {(page.highlights || []).length > 0 ? (
-                <div className="col-span-2 space-y-3 rounded-[1.2rem] bg-[#171b22] px-4 py-4 text-white">
-                  {(page.highlights || []).map((item) => (
-                    <div key={`${item.label}-${item.value}`}>
-                      <dt className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#f3d5b0]">{item.label}</dt>
-                      <dd className="mt-0.5 text-sm font-semibold leading-snug">{item.value}</dd>
-                    </div>
+        <article className="mt-5 overflow-hidden rounded-2xl border border-[#ddd7ca] bg-[#fcfcfa] shadow-sm">
+          <div className="space-y-10 p-5 sm:p-7 lg:p-10">
+            <RevealOnScroll variant="slow">
+              <section className="rounded-3xl border border-[#ddd7ca] bg-[#f8f7f3] p-6 sm:p-8">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-800">Contexto</p>
+                <h2 className="mt-2 font-serif text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
+                  {page.introTitle}
+                </h2>
+                <div className="mt-4 space-y-3 text-sm leading-relaxed text-[#4b505a] sm:text-base">
+                  {(page.introParagraphs || []).map((paragraph) => (
+                    <p key={paragraph.slice(0, 48)}>{paragraph}</p>
                   ))}
                 </div>
-              ) : null}
-            </dl>
-          </div>
-        </RevealOnScroll>
-
-        <div className="mt-12 sm:mt-16">
-          <GastronomyVenuesExplorer
-            categories={categories}
-            venues={venues}
-            searchPlaceholder={page.heroSearchPlaceholder}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-          />
-        </div>
-
-        {page.ctaTitle || page.ctaBody ? (
-          <RevealOnScroll variant="slow">
-            <section className="mt-14 overflow-hidden rounded-[1.6rem] bg-[#171b22] px-6 py-8 text-white sm:mt-16 sm:px-10 sm:py-10">
-              <div className="max-w-3xl">
-                <h2 className="font-serif text-2xl font-bold tracking-tight sm:text-3xl">{page.ctaTitle}</h2>
-                {page.ctaBody ? (
-                  <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-white/75 sm:text-base">
-                    {page.ctaBody}
-                  </p>
+                {page.highlights?.length > 0 ? (
+                  <dl className="mt-6 grid gap-3 sm:grid-cols-3">
+                    {page.highlights.map((item) => (
+                      <div
+                        key={`${item.label}-${item.value}`}
+                        className="rounded-2xl border border-[#ddd7ca] bg-white px-4 py-3"
+                      >
+                        <dt className="text-[11px] font-bold uppercase tracking-wide text-sky-800">
+                          {item.label}
+                        </dt>
+                        <dd className="mt-1 text-sm font-semibold text-[#171b22]">{item.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
                 ) : null}
-                <Link
-                  to={ROUTES.atencionCiudadano}
-                  className="mt-6 inline-flex min-h-11 items-center rounded-full bg-white px-5 text-sm font-semibold text-[#171b22] transition hover:bg-[#f3efe6]"
-                >
-                  Ir a atención al ciudadano
-                </Link>
-              </div>
-            </section>
-          </RevealOnScroll>
-        ) : null}
+              </section>
+            </RevealOnScroll>
+
+            <GastronomyVenuesExplorer
+              categories={categories}
+              venues={venues}
+              searchPlaceholder={page.heroSearchPlaceholder}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+            />
+
+            {page.ctaTitle || page.ctaBody ? (
+              <RevealOnScroll variant="slow">
+                <section className="rounded-3xl border border-[#ddd7ca] bg-linear-to-br from-sky-50/90 via-white to-[#f8f7f3] p-6 sm:p-8">
+                  <h2 className="font-serif text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
+                    {page.ctaTitle}
+                  </h2>
+                  {page.ctaBody ? (
+                    <p className="mt-3 max-w-3xl whitespace-pre-wrap text-sm leading-relaxed text-[#4b505a] sm:text-base">
+                      {page.ctaBody}
+                    </p>
+                  ) : null}
+                  <Link
+                    to={ROUTES.atencionCiudadano}
+                    className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-[#171b22] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#222831]"
+                  >
+                    Ir a atención al ciudadano
+                  </Link>
+                </section>
+              </RevealOnScroll>
+            ) : null}
+          </div>
+        </article>
       </Container>
     </section>
   )
