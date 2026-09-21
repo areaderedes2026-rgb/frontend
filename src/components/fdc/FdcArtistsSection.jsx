@@ -96,11 +96,63 @@ const ctaButtonClassLight =
 const ctaButtonClassDark =
   'inline-flex min-h-11 items-center justify-center rounded-md border border-white/75 px-5 text-[11px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-white hover:text-[#171b22] sm:text-xs'
 
-function PosterLightbox({ imageUrl, title, onClose, reduceMotion }) {
+const zoomEase = [0.16, 1, 0.3, 1]
+const zoomTransition = { duration: 0.52, ease: zoomEase }
+const zoomSpring = { type: 'spring', stiffness: 280, damping: 34, mass: 0.78 }
+
+function getPosterDestRect(originRect) {
+  const vw = typeof window === 'undefined' ? 1200 : window.innerWidth
+  const vh = typeof window === 'undefined' ? 800 : window.innerHeight
+  const padX = vw < 640 ? 14 : 28
+  const padY = vw < 640 ? 64 : 36
+  const maxW = Math.min(vw - padX * 2, 1280)
+  const maxH = vh - padY * 2
+  const aspect =
+    originRect?.width && originRect?.height ? originRect.width / originRect.height : 1.55
+  let width = maxW
+  let height = width / aspect
+  if (height > maxH) {
+    height = maxH
+    width = height * aspect
+  }
+  return {
+    width,
+    height,
+    left: (vw - width) / 2,
+    top: (vh - height) / 2,
+  }
+}
+
+function getFlipFrom(originRect, dest) {
+  if (!originRect?.width || !dest?.width) {
+    return { x: 0, y: 18, scale: 0.92 }
+  }
+  return {
+    x: originRect.left + originRect.width / 2 - (dest.left + dest.width / 2),
+    y: originRect.top + originRect.height / 2 - (dest.top + dest.height / 2),
+    scale: originRect.width / dest.width,
+  }
+}
+
+function PosterLightbox({ imageUrl, title, onClose, reduceMotion, originRect }) {
   const titleId = useId()
   const closeRef = useRef(null)
   const src = resolveMediaUrl(imageUrl) || imageUrl
   const label = String(title || '').trim() || 'Cartelera completa'
+  const [geom, setGeom] = useState(() => {
+    const dest = getPosterDestRect(originRect)
+    return { dest, from: getFlipFrom(originRect, dest) }
+  })
+
+  useEffect(() => {
+    function update() {
+      const dest = getPosterDestRect(originRect)
+      setGeom({ dest, from: getFlipFrom(originRect, dest) })
+    }
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [originRect])
 
   useEffect(() => {
     function onKey(e) {
@@ -120,61 +172,66 @@ function PosterLightbox({ imageUrl, title, onClose, reduceMotion }) {
     }
   }, [onClose])
 
+  const { dest, from } = geom
+  const imageTransition = reduceMotion ? { duration: 0.16, ease: 'easeOut' } : zoomSpring
+
   return (
-    <Motion.div
-      className="fixed inset-0 z-[160] flex items-center justify-center overflow-hidden p-3 sm:p-5"
+    <div
+      className="fixed inset-0 z-[160] overflow-hidden"
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: reduceMotion ? 0.12 : 0.28, ease: softEase }}
     >
-      <button
+      <Motion.button
         type="button"
-        className="absolute inset-0 bg-[#0c1017]/75 backdrop-blur-md"
+        className="absolute inset-0 bg-[#0c1017]/82"
         aria-label="Cerrar cartelera ampliada"
         onClick={onClose}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={reduceMotion ? { duration: 0.14 } : zoomTransition}
       />
-      <Motion.div
-        layoutId={reduceMotion ? undefined : 'fdc-full-poster'}
-        className="relative z-10 flex max-h-[min(96dvh,60rem)] w-full max-w-[min(96vw,44rem)] flex-col overflow-hidden rounded-2xl bg-[#0c1017] shadow-[0_40px_100px_-40px_rgba(0,0,0,0.75)] ring-1 ring-white/10"
-        initial={reduceMotion ? false : { scale: 0.96, y: 12, filter: 'blur(4px)' }}
-        animate={{ scale: 1, y: 0, filter: 'blur(0px)' }}
-        exit={reduceMotion ? undefined : { scale: 0.97, y: 8, opacity: 0.7, filter: 'blur(2px)' }}
-        transition={{ duration: reduceMotion ? 0.12 : 0.36, ease: softEase }}
+      <h2 id={titleId} className="sr-only">
+        {label}
+      </h2>
+      <Motion.img
+        src={src}
+        alt={label}
+        className="pointer-events-none fixed z-10 object-contain shadow-[0_40px_120px_-28px_rgba(0,0,0,0.7)]"
+        style={{
+          left: dest.left,
+          top: dest.top,
+          width: dest.width,
+          height: dest.height,
+          originX: 0.5,
+          originY: 0.5,
+          borderRadius: 18,
+        }}
+        initial={reduceMotion ? { opacity: 0 } : { x: from.x, y: from.y, scale: from.scale }}
+        animate={{ x: 0, y: 0, scale: 1, opacity: 1 }}
+        exit={reduceMotion ? { opacity: 0 } : { x: from.x, y: from.y, scale: from.scale }}
+        transition={imageTransition}
+        decoding="async"
+      />
+      <Motion.button
+        ref={closeRef}
+        type="button"
+        onClick={onClose}
+        className="absolute top-3 right-3 z-20 inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-[#0c1017]/55 text-white/85 transition hover:bg-white/15 hover:text-white sm:top-5 sm:right-5"
+        aria-label="Cerrar"
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.94 }}
+        transition={
+          reduceMotion
+            ? { duration: 0.12 }
+            : { delay: 0.18, duration: 0.28, ease: zoomEase }
+        }
       >
-        <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3 sm:px-5">
-          <p
-            id={titleId}
-            className="min-w-0 truncate font-serif text-sm font-bold uppercase tracking-[0.12em] text-[#d4b483] sm:text-base"
-          >
-            {label}
-          </p>
-          <button
-            ref={closeRef}
-            type="button"
-            onClick={onClose}
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/15 text-white/80 transition hover:bg-white/10 hover:text-white"
-            aria-label="Cerrar"
-          >
-            ✕
-          </button>
-        </div>
-        <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto bg-[#0c1017] p-3 sm:p-4">
-          <img
-            src={src}
-            alt={label}
-            className="mx-auto max-h-[min(calc(96dvh-7rem),54rem)] w-auto max-w-full object-contain"
-            decoding="async"
-          />
-        </div>
-        <p className="border-t border-white/10 px-4 py-2.5 text-center text-[11px] text-white/55 sm:text-xs">
-          Tocá fuera o Escape para cerrar
-        </p>
-      </Motion.div>
-    </Motion.div>
+        ✕
+      </Motion.button>
+    </div>
   )
 }
 
