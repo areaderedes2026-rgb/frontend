@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, LayoutGroup, motion as Motion } from 'motion/react'
-import { Link } from 'react-router-dom'
 import { getResponsiveMediaImage, resolveMediaUrl, withCloudinaryTransform } from '../../utils/imageUrl.js'
 import { fdcArtistsShowDailyLineup, normalizeFdcArtistLineupDays } from '../../data/fdcContent.js'
 import { useFdcSectionTone } from './FdcSectionToneContext.jsx'
@@ -25,29 +24,6 @@ function usePrefersReducedMotion() {
     return () => mq.removeEventListener('change', onChange)
   }, [])
   return reduce
-}
-
-function SmartLink({ href, className, children, ...rest }) {
-  const target = String(href || '').trim() || '#'
-  if (target.startsWith('http://') || target.startsWith('https://')) {
-    return (
-      <a href={target} className={className} target="_blank" rel="noopener noreferrer" {...rest}>
-        {children}
-      </a>
-    )
-  }
-  if (target.startsWith('#')) {
-    return (
-      <a href={target} className={className} {...rest}>
-        {children}
-      </a>
-    )
-  }
-  return (
-    <Link to={target} className={className} {...rest}>
-      {children}
-    </Link>
-  )
 }
 
 function parseDateBadge(tag) {
@@ -370,7 +346,6 @@ export function FdcArtistsSection({ artists }) {
 
   const title = String(artists?.title || 'Cartelera artística').trim()
   const ctaLabel = String(artists?.ctaLabel || '').trim() || 'Ver cartelera completa'
-  const ctaHref = String(artists?.ctaHref || '').trim()
   const { titleTone, usesDarkTone } = useFdcSectionTone(artists)
   const ctaButtonClass = usesDarkTone ? ctaButtonClassDark : ctaButtonClassLight
   const hasPoster = Boolean(posterImageUrl)
@@ -444,29 +419,21 @@ export function FdcArtistsSection({ artists }) {
 
   if (!hasPoster && !showDaily && !hasLineup) return null
 
-  const cta = showingPoster
-    ? showDaily ? (
-        <button type="button" className={ctaButtonClass} onClick={openCarousel}>
-          Ver artistas
-        </button>
-      ) : ctaHref && ctaLabel ? (
-        <SmartLink href={ctaHref} className={ctaButtonClass}>
-          {ctaLabel}
-        </SmartLink>
-      ) : null
-    : hasPoster ? (
-        <button type="button" className={ctaButtonClass} onClick={openPoster}>
-          {ctaLabel}
-        </button>
-      ) : ctaLabel ? (
-        ctaHref ? (
-          <SmartLink href={ctaHref} className={ctaButtonClass}>
-            {ctaLabel}
-          </SmartLink>
-        ) : (
-          <span className={`${ctaButtonClass} cursor-default opacity-80`}>{ctaLabel}</span>
+  const cta = showDaily
+    ? showingPoster
+      ? (
+          <button type="button" className={ctaButtonClass} onClick={openCarousel}>
+            Ver artistas
+          </button>
         )
-      ) : null
+      : hasPoster
+        ? (
+            <button type="button" className={ctaButtonClass} onClick={openPoster}>
+              {ctaLabel}
+            </button>
+          )
+        : null
+    : null
 
   const stageDuration = reduceMotion ? 0.15 : 0.4
   const captionClass = usesDarkTone

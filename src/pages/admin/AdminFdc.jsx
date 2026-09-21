@@ -2099,7 +2099,9 @@ export function AdminFdc() {
                     </span>
                   </span>
                 </label>
-                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <div
+                  className={`mt-4 grid gap-3 ${form.artists?.showDailyArtists ? 'sm:grid-cols-2' : ''}`}
+                >
                   <label className={labelClass}>
                     Título de sección
                     <input
@@ -2110,31 +2112,22 @@ export function AdminFdc() {
                       placeholder="Cartelera artística"
                     />
                   </label>
-                  <label className={labelClass}>
-                    Texto del botón
-                    <input
-                      className={inputClass}
-                      value={form.artists?.ctaLabel || ''}
-                      disabled={saving}
-                      onChange={(e) => updateArtists((a) => ({ ...a, ctaLabel: e.target.value }))}
-                      placeholder="Ver cartelera completa"
-                    />
-                  </label>
-                  <label className={labelClass}>
-                    Enlace del botón
-                    <input
-                      className={inputClass}
-                      value={form.artists?.ctaHref || ''}
-                      disabled={saving}
-                      onChange={(e) => updateArtists((a) => ({ ...a, ctaHref: e.target.value }))}
-                      placeholder="#cronograma o URL"
-                    />
-                    <span className="mt-1 text-xs font-normal text-slate-500">
-                      {form.artists?.showDailyArtists
-                        ? 'Con cartelera completa cargada, el botón alterna carrusel ↔ afiche y este enlace no se usa.'
-                        : 'Opcional. Si lo dejás vacío, no se muestra botón sobre el afiche general.'}
-                    </span>
-                  </label>
+                  {form.artists?.showDailyArtists ? (
+                    <label className={labelClass}>
+                      Texto del botón
+                      <input
+                        className={inputClass}
+                        value={form.artists?.ctaLabel || ''}
+                        disabled={saving}
+                        onChange={(e) => updateArtists((a) => ({ ...a, ctaLabel: e.target.value }))}
+                        placeholder="Ver cartelera completa"
+                      />
+                      <span className="mt-1 text-xs font-normal text-slate-500">
+                        Alterna el carrusel con el afiche general. No se muestra si el carrusel está
+                        desactivado.
+                      </span>
+                    </label>
+                  ) : null}
                 </div>
 
                 <div className="mt-5">
