@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { AnimatePresence, LayoutGroup, motion as Motion } from 'motion/react'
+import { AnimatePresence, motion as Motion } from 'motion/react'
 import { getResponsiveMediaImage, resolveMediaUrl, withCloudinaryTransform } from '../../utils/imageUrl.js'
 import { fdcArtistsShowDailyLineup, normalizeFdcArtistLineupDays } from '../../data/fdcContent.js'
 import { useFdcSectionTone } from './FdcSectionToneContext.jsx'
@@ -97,8 +97,7 @@ const ctaButtonClassDark =
   'inline-flex min-h-11 items-center justify-center rounded-md border border-white/75 px-5 text-[11px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-white hover:text-[#171b22] sm:text-xs'
 
 const zoomEase = [0.16, 1, 0.3, 1]
-const zoomTransition = { duration: 0.52, ease: zoomEase }
-const zoomSpring = { type: 'spring', stiffness: 280, damping: 34, mass: 0.78 }
+const zoomTransition = { duration: 0.5, ease: zoomEase }
 
 function getPosterDestRect(originRect) {
   const vw = typeof window === 'undefined' ? 1200 : window.innerWidth
@@ -149,7 +148,6 @@ function PosterLightbox({ imageUrl, title, onClose, reduceMotion, originRect }) 
       const dest = getPosterDestRect(originRect)
       setGeom({ dest, from: getFlipFrom(originRect, dest) })
     }
-    update()
     window.addEventListener('resize', update)
     return () => window.removeEventListener('resize', update)
   }, [originRect])
@@ -173,14 +171,18 @@ function PosterLightbox({ imageUrl, title, onClose, reduceMotion, originRect }) 
   }, [onClose])
 
   const { dest, from } = geom
-  const imageTransition = reduceMotion ? { duration: 0.16, ease: 'easeOut' } : zoomSpring
+  const imageTransition = reduceMotion ? { duration: 0.16, ease: 'easeOut' } : zoomTransition
 
   return (
-    <div
+    <Motion.div
       className="fixed inset-0 z-[160] overflow-hidden"
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
+      initial={{ opacity: 1 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 1 }}
+      transition={imageTransition}
     >
       <Motion.button
         type="button"
@@ -199,13 +201,13 @@ function PosterLightbox({ imageUrl, title, onClose, reduceMotion, originRect }) 
         src={src}
         alt={label}
         className="pointer-events-none fixed z-10 object-contain shadow-[0_40px_120px_-28px_rgba(0,0,0,0.7)]"
+        originX={0.5}
+        originY={0.5}
         style={{
           left: dest.left,
           top: dest.top,
           width: dest.width,
           height: dest.height,
-          originX: 0.5,
-          originY: 0.5,
           borderRadius: 18,
         }}
         initial={reduceMotion ? { opacity: 0 } : { x: from.x, y: from.y, scale: from.scale }}
@@ -220,18 +222,17 @@ function PosterLightbox({ imageUrl, title, onClose, reduceMotion, originRect }) 
         onClick={onClose}
         className="absolute top-3 right-3 z-20 inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-[#0c1017]/55 text-white/85 transition hover:bg-white/15 hover:text-white sm:top-5 sm:right-5"
         aria-label="Cerrar"
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.94 }}
-        transition={
-          reduceMotion
-            ? { duration: 0.12 }
-            : { delay: 0.18, duration: 0.28, ease: zoomEase }
-        }
+        initial={{ opacity: 0, scale: 0.92 }}
+        animate={{
+          opacity: 1,
+          scale: 1,
+          transition: { delay: 0.22, duration: 0.28, ease: zoomEase },
+        }}
+        exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.16, ease: zoomEase } }}
       >
         ✕
       </Motion.button>
-    </div>
+    </Motion.div>
   )
 }
 
@@ -398,8 +399,11 @@ export function FdcArtistsSection({ artists }) {
   const posterImageUrl = String(artists?.posterImageUrl || '').trim()
   const reduceMotion = usePrefersReducedMotion()
   const scrollRef = useRef(null)
+  const posterImgRef = useRef(null)
   const [view, setView] = useState(VIEW_POSTER)
   const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [thumbHidden, setThumbHidden] = useState(false)
+  const [originRect, setOriginRect] = useState(null)
 
   const title = String(artists?.title || 'Cartelera artística').trim()
   const ctaLabel = String(artists?.ctaLabel || '').trim() || 'Ver cartelera completa'
@@ -431,6 +435,22 @@ export function FdcArtistsSection({ artists }) {
 
   const openCarousel = useCallback(() => {
     setView(VIEW_CAROUSEL)
+    setLightboxOpen(false)
+  }, [])
+
+  const openLightbox = useCallback(() => {
+    const el = posterImgRef.current
+    if (el) {
+      const r = el.getBoundingClientRect()
+      setOriginRect({ left: r.left, top: r.top, width: r.width, height: r.height })
+    } else {
+      setOriginRect(null)
+    }
+    setThumbHidden(true)
+    setLightboxOpen(true)
+  }, [])
+
+  const closeLightbox = useCallback(() => {
     setLightboxOpen(false)
   }, [])
 
@@ -511,8 +531,7 @@ export function FdcArtistsSection({ artists }) {
         actions={cta}
       />
 
-      <LayoutGroup>
-        <div className="relative flex min-h-0 flex-1 flex-col justify-center perspective-[1400px]">
+      <div className="relative flex min-h-0 flex-1 flex-col justify-center perspective-[1400px]">
           <AnimatePresence mode="wait" initial={false}>
             {showingPoster ? (
               <Motion.div
@@ -558,11 +577,10 @@ export function FdcArtistsSection({ artists }) {
                     <figure className="mx-auto w-full max-w-[min(100%,40rem)] lg:max-w-none">
                       <Motion.button
                         type="button"
-                        layoutId={reduceMotion ? undefined : 'fdc-full-poster'}
-                        onClick={() => setLightboxOpen(true)}
+                        onClick={openLightbox}
                         className={frameClass}
-                        whileHover={reduceMotion ? undefined : { y: -4, transition: { duration: 0.35 } }}
-                        whileTap={reduceMotion ? undefined : { scale: 0.992 }}
+                        whileHover={reduceMotion || lightboxOpen ? undefined : { y: -3, transition: { duration: 0.4, ease: zoomEase } }}
+                        whileTap={reduceMotion ? undefined : { scale: 0.995 }}
                         aria-label="Ampliar cartelera"
                       >
                         <span className={`${goldCorner} left-3 top-3 rounded-tl-md border-t-2 border-l-2`} />
@@ -570,9 +588,12 @@ export function FdcArtistsSection({ artists }) {
                         <span className={`${goldCorner} bottom-3 left-3 rounded-bl-md border-b-2 border-l-2`} />
                         <span className={`${goldCorner} bottom-3 right-3 rounded-br-md border-b-2 border-r-2`} />
                         <img
+                          ref={posterImgRef}
                           src={posterOptimized}
                           alt={title || 'Cartelera completa'}
-                          className="mx-auto h-auto max-h-[min(72svh,46rem)] w-full rounded-[1.15rem] object-contain"
+                          className={`mx-auto h-auto max-h-[min(72svh,46rem)] w-full rounded-[1.15rem] object-contain transition-opacity duration-200 ${
+                            thumbHidden ? 'opacity-0' : 'opacity-100'
+                          }`}
                           loading="eager"
                           decoding="async"
                         />
@@ -675,17 +696,17 @@ export function FdcArtistsSection({ artists }) {
             )}
           </AnimatePresence>
         </div>
-      </LayoutGroup>
 
       {typeof document !== 'undefined'
         ? createPortal(
-            <AnimatePresence>
+            <AnimatePresence onExitComplete={() => setThumbHidden(false)}>
               {lightboxOpen && hasPoster ? (
                 <PosterLightbox
                   key={posterImageUrl}
-                  imageUrl={posterLightbox || posterImageUrl}
+                  imageUrl={posterOptimized || posterLightbox || posterImageUrl}
                   title={title}
-                  onClose={() => setLightboxOpen(false)}
+                  originRect={originRect}
+                  onClose={closeLightbox}
                   reduceMotion={reduceMotion}
                 />
               ) : null}
