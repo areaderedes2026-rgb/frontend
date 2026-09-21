@@ -24,6 +24,8 @@ import {
   fdcVisitDirectionsHasContent,
   fdcVisitFaqHasContent,
   formatFdcDateLabel,
+  fdcArtistsSectionHasPublicContent,
+  fdcArtistsShowDailyLineup,
   filterFdcPublicSectionNav,
   getFdcFormWindowState,
   isFdcPreinscriptionHref,
@@ -250,8 +252,9 @@ export function FiestaDelCaballo() {
     () =>
       filterFdcPublicSectionNav(page.sectionNav, {
         preinscriptionVisible,
+        carteleraVisible: fdcArtistsSectionHasPublicContent(page.artists),
       }),
-    [page.sectionNav, preinscriptionVisible],
+    [page.sectionNav, preinscriptionVisible, page.artists],
   )
 
   const showMapSection = fdcVisitDirectionsHasContent(page.visitInfo)
@@ -307,18 +310,33 @@ export function FiestaDelCaballo() {
         </FdcSectionShell>
       ) : null}
 
-      {(page.artists?.items || []).some((a) => a?.name) ||
-      String(page.artists?.posterImageUrl || '').trim() ? (
+      {fdcArtistsSectionHasPublicContent(page.artists) ? (
         <FdcSectionShell
           id="cartelera"
           config={page.artists}
-          pyClass="py-6 sm:py-8 lg:py-10"
-          className="flex min-h-[calc(100svh-var(--navbar-h,5rem)-4.75rem)] flex-col"
-          containerClassName="flex flex-1 flex-col justify-center max-w-[min(100%,100rem)]!"
+          pyClass={
+            fdcArtistsShowDailyLineup(page.artists)
+              ? 'py-6 sm:py-8 lg:py-10'
+              : 'py-12 sm:py-16 lg:py-20'
+          }
+          className={
+            fdcArtistsShowDailyLineup(page.artists)
+              ? 'flex min-h-[calc(100svh-var(--navbar-h,5rem)-4.75rem)] flex-col'
+              : undefined
+          }
+          containerClassName={
+            fdcArtistsShowDailyLineup(page.artists)
+              ? 'flex flex-1 flex-col justify-center max-w-[min(100%,100rem)]!'
+              : 'max-w-[min(100%,48rem)]!'
+          }
         >
           <RevealOnScroll
             variant="slow"
-            className="flex min-h-0 flex-1 flex-col justify-center"
+            className={
+              fdcArtistsShowDailyLineup(page.artists)
+                ? 'flex min-h-0 flex-1 flex-col justify-center'
+                : undefined
+            }
           >
             <FdcArtistsSection artists={page.artists} />
           </RevealOnScroll>

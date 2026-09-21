@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { AnimatePresence, LayoutGroup, motion as Motion } from 'motion/react'
 import { Link } from 'react-router-dom'
 import { getResponsiveMediaImage, resolveMediaUrl, withCloudinaryTransform } from '../../utils/imageUrl.js'
+import { fdcArtistsShowDailyLineup } from '../../data/fdcContent.js'
 import { useFdcSectionTone } from './FdcSectionToneContext.jsx'
 import { FdcSectionTitle } from './FdcFestivalSections.jsx'
 
@@ -312,15 +313,15 @@ function ArtistCard({ artist, idx, reduceMotion, dark }) {
 }
 
 /**
- * Cartelera FDC: carrusel de artistas a viewport;
- * el CTA revela la cartelera completa (una sola imagen centrada).
+ * Cartelera FDC: afiche general (por defecto) y, si está activado en admin,
+ * carrusel de artistas por día.
  */
 export function FdcArtistsSection({ artists }) {
   const items = (artists?.items || []).filter((a) => a?.name)
   const posterImageUrl = String(artists?.posterImageUrl || '').trim()
   const reduceMotion = usePrefersReducedMotion()
   const scrollRef = useRef(null)
-  const [view, setView] = useState(VIEW_CAROUSEL)
+  const [view, setView] = useState(VIEW_POSTER)
   const [lightboxOpen, setLightboxOpen] = useState(false)
 
   const title = String(artists?.title || 'Cartelera artística').trim()
@@ -329,18 +330,21 @@ export function FdcArtistsSection({ artists }) {
   const { titleTone, usesDarkTone } = useFdcSectionTone(artists)
   const ctaButtonClass = usesDarkTone ? ctaButtonClassDark : ctaButtonClassLight
   const hasPoster = Boolean(posterImageUrl)
-  const showingPoster = hasPoster && (view === VIEW_POSTER || items.length === 0)
+  const showDaily = fdcArtistsShowDailyLineup(artists) && items.length > 0
+  const showingPoster = hasPoster && (!showDaily || view === VIEW_POSTER)
   const posterSrc = hasPoster ? resolveMediaUrl(posterImageUrl) || posterImageUrl : ''
   const posterOptimized = posterSrc
-    ? withCloudinaryTransform(posterSrc, 'f_auto,q_auto:good,c_limit,w_1080') || posterSrc
+    ? withCloudinaryTransform(posterSrc, 'f_auto,q_auto:good,c_limit,w_1200') || posterSrc
     : ''
   const posterLightbox = posterSrc
-    ? withCloudinaryTransform(posterSrc, 'f_auto,q_auto:good,c_limit,w_1600') || posterSrc
+    ? withCloudinaryTransform(posterSrc, 'f_auto,q_auto:good,c_limit,w_1800') || posterSrc
     : ''
-  const preloadKey = items
-    .slice(0, 3)
-    .map((a) => String(a?.photoUrl || ''))
-    .join('|')
+  const preloadKey = showDaily
+    ? items
+        .slice(0, 3)
+        .map((a) => String(a?.photoUrl || ''))
+        .join('|')
+    : ''
 
   const openPoster = useCallback(() => {
     setView(VIEW_POSTER)
@@ -351,6 +355,10 @@ export function FdcArtistsSection({ artists }) {
     setView(VIEW_CAROUSEL)
     setLightboxOpen(false)
   }, [])
+
+  useEffect(() => {
+    if (!showDaily) setView(VIEW_POSTER)
+  }, [showDaily])
 
   useEffect(() => {
     if (typeof document === 'undefined' || !preloadKey) return undefined
@@ -388,41 +396,48 @@ export function FdcArtistsSection({ artists }) {
     scrollBy(direction * step)
   }
 
-  if (items.length === 0 && !hasPoster) return null
+  if (!hasPoster && !showDaily) return null
 
-  const cta = showingPoster ? (
-    items.length > 0 ? (
-      <button type="button" className={ctaButtonClass} onClick={openCarousel}>
-        Ver artistas
-      </button>
-    ) : null
-  ) : hasPoster ? (
-    <button type="button" className={ctaButtonClass} onClick={openPoster}>
-      {ctaLabel}
-    </button>
-  ) : ctaLabel ? (
-    ctaHref ? (
-      <SmartLink href={ctaHref} className={ctaButtonClass}>
-        {ctaLabel}
-      </SmartLink>
-    ) : (
-      <span className={`${ctaButtonClass} cursor-default opacity-80`}>{ctaLabel}</span>
-    )
-  ) : null
+  const cta = showingPoster
+    ? showDaily ? (
+        <button type="button" className={ctaButtonClass} onClick={openCarousel}>
+          Ver artistas
+        </button>
+      ) : ctaHref && ctaLabel ? (
+        <SmartLink href={ctaHref} className={ctaButtonClass}>
+          {ctaLabel}
+        </SmartLink>
+      ) : null
+    : hasPoster ? (
+        <button type="button" className={ctaButtonClass} onClick={openPoster}>
+          {ctaLabel}
+        </button>
+      ) : ctaLabel ? (
+        ctaHref ? (
+          <SmartLink href={ctaHref} className={ctaButtonClass}>
+            {ctaLabel}
+          </SmartLink>
+        ) : (
+          <span className={`${ctaButtonClass} cursor-default opacity-80`}>{ctaLabel}</span>
+        )
+      ) : null
 
   const stageDuration = reduceMotion ? 0.15 : 0.4
+  const captionClass = usesDarkTone
+    ? 'mt-4 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-[#d4b483]/90'
+    : 'mt-4 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8a7048]'
+  const frameClass = usesDarkTone
+    ? 'group relative w-full overflow-hidden rounded-[1.6rem] border border-[#d4b483]/35 bg-linear-to-b from-[#1c222c] to-[#0c1017] p-2.5 text-left shadow-[0_32px_80px_-36px_rgba(0,0,0,0.75)] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d4b483] sm:p-3.5'
+    : 'group relative w-full overflow-hidden rounded-[1.6rem] border border-[#d4b483]/50 bg-[#fcfaf6] p-2.5 text-left shadow-[0_28px_70px_-38px_rgba(23,27,34,0.45)] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d4b483] sm:p-3.5'
+
+  const goldCorner = 'pointer-events-none absolute z-10 h-7 w-7 border-[#d4b483]/80 sm:h-8 sm:w-8'
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col justify-center">
+    <div className={showDaily ? 'flex min-h-0 flex-1 flex-col justify-center' : ''}>
       <FdcSectionTitle
         title={title}
         tone={titleTone}
         className="mb-5 shrink-0 sm:mb-6 lg:mb-7"
-        subtitle={
-          showingPoster
-            ? 'Cartelera completa. Tocá la imagen para verla en grande.'
-            : undefined
-        }
         actions={cta}
       />
 
@@ -462,31 +477,35 @@ export function FdcArtistsSection({ artists }) {
                 transition={{ duration: stageDuration, ease: softEase }}
                 style={{ transformStyle: 'preserve-3d' }}
               >
-                <div className="mx-auto flex w-full max-w-[min(100%,36rem)] justify-center sm:max-w-[min(100%,40rem)]">
+                <figure className="mx-auto w-full max-w-[min(100%,26rem)] sm:max-w-[34rem] lg:max-w-[40rem]">
                   <Motion.button
                     type="button"
                     layoutId={reduceMotion ? undefined : 'fdc-full-poster'}
                     onClick={() => setLightboxOpen(true)}
-                    className="group relative w-full overflow-hidden rounded-2xl bg-black/20 text-left shadow-[0_24px_60px_-36px_rgba(0,0,0,0.65)] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d4b483]"
-                    whileHover={reduceMotion ? undefined : { y: -3, transition: { duration: 0.35 } }}
+                    className={frameClass}
+                    whileHover={reduceMotion ? undefined : { y: -4, transition: { duration: 0.35 } }}
                     whileTap={reduceMotion ? undefined : { scale: 0.992 }}
+                    aria-label="Ampliar cartelera"
                   >
-                    <div className="flex items-center justify-center px-3 py-4 sm:px-5 sm:py-6">
-                      <img
-                        src={posterOptimized}
-                        alt={title || 'Cartelera completa'}
-                        className="mx-auto h-auto max-h-[min(70svh,48rem)] w-auto max-w-full object-contain"
-                        loading="lazy"
-                        decoding="async"
-                      />
-                    </div>
-                    <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-linear-to-t from-[#0c1017]/55 via-[#0c1017]/10 to-transparent px-4 pb-4 pt-12 text-center opacity-0 transition duration-300 group-hover:opacity-100 sm:px-5">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#d4b483]">
-                        Ampliar cartelera
-                      </p>
-                    </div>
+                    <span className={`${goldCorner} left-3 top-3 border-t-2 border-l-2 rounded-tl-md`} />
+                    <span className={`${goldCorner} right-3 top-3 border-t-2 border-r-2 rounded-tr-md`} />
+                    <span className={`${goldCorner} bottom-3 left-3 border-b-2 border-l-2 rounded-bl-md`} />
+                    <span className={`${goldCorner} bottom-3 right-3 border-b-2 border-r-2 rounded-br-md`} />
+                    <img
+                      src={posterOptimized}
+                      alt={title || 'Cartelera completa'}
+                      className="mx-auto h-auto max-h-[min(78svh,54rem)] w-full rounded-[1.15rem] object-contain"
+                      loading="eager"
+                      decoding="async"
+                    />
+                    <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-linear-to-t from-[#0c1017]/70 via-[#0c1017]/5 to-transparent px-4 pb-4 pt-16 text-center opacity-0 transition duration-300 group-hover:opacity-100 sm:px-5">
+                      <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#d4b483]">
+                        Ampliar
+                      </span>
+                    </span>
                   </Motion.button>
-                </div>
+                  <figcaption className={captionClass}>Tocá la imagen para verla en grande</figcaption>
+                </figure>
               </Motion.div>
             ) : (
               <Motion.div

@@ -85,6 +85,7 @@ function mapContentToForm(content) {
       ...merged.artists,
       items: (merged.artists?.items || []).map((it) => ({ ...it })),
       posterImageUrl: String(merged.artists?.posterImageUrl || '').trim(),
+      showDailyArtists: merged.artists?.showDailyArtists === true,
       dayPosters: [],
       backgroundStyle: normalizeFdcSectionBackgroundStyle(
         merged.artists?.backgroundStyle,
@@ -383,6 +384,7 @@ export function AdminFdc() {
         backgroundImageUrl: String(form.artists?.backgroundImageUrl || '').trim(),
         overlayOpacity: normalizeOverlay(form.artists?.overlayOpacity, 55),
         posterImageUrl: String(form.artists?.posterImageUrl || '').trim(),
+        showDailyArtists: form.artists?.showDailyArtists === true,
         dayPosters: [],
         items: (form.artists?.items || [])
           .map((it) => ({
@@ -2059,6 +2061,30 @@ export function AdminFdc() {
             {activeTab === 'cartelera' ? (
               <section className={SECTION_CARD}>
                 <h2 className="text-lg font-bold text-slate-900">Cartelera artística</h2>
+                <p className="mt-1 text-sm text-slate-600">
+                  En el sitio se muestra la cartelera general. El carrusel por día queda guardado y
+                  podés volver a publicarlo cuando quieras.
+                </p>
+                <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-sky-700 focus:ring-sky-600"
+                    checked={form.artists?.showDailyArtists === true}
+                    disabled={saving}
+                    onChange={(e) =>
+                      updateArtists((a) => ({ ...a, showDailyArtists: e.target.checked }))
+                    }
+                  />
+                  <span>
+                    <span className="block text-sm font-medium text-slate-800">
+                      Mostrar cartelera por días (carrusel de artistas)
+                    </span>
+                    <span className="mt-0.5 block text-xs font-normal text-slate-500">
+                      Desactivado: el público solo ve el afiche general. Los artistas de la tabla no
+                      se borran.
+                    </span>
+                  </span>
+                </label>
                 <div className="mt-4 grid gap-3 sm:grid-cols-3">
                   <label className={labelClass}>
                     Título de sección
@@ -2090,8 +2116,9 @@ export function AdminFdc() {
                       placeholder="#cronograma o URL"
                     />
                     <span className="mt-1 text-xs font-normal text-slate-500">
-                      Si cargás la cartelera completa abajo, el botón alterna la vista (carrusel ↔
-                      cartelera) y este enlace no se usa.
+                      {form.artists?.showDailyArtists
+                        ? 'Con cartelera completa cargada, el botón alterna carrusel ↔ afiche y este enlace no se usa.'
+                        : 'Opcional. Si lo dejás vacío, no se muestra botón sobre el afiche general.'}
                     </span>
                   </label>
                 </div>
@@ -2119,10 +2146,8 @@ export function AdminFdc() {
                 <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50/60 p-4 sm:p-5">
                   <h3 className="text-base font-bold text-slate-900">Cartelera completa</h3>
                   <p className="mt-1 text-sm text-slate-600">
-                    Una sola imagen con la cartelera de todos los días. En el sitio público se muestra
-                    centrada y completa (sin recortar); el botón «
-                    {form.artists?.ctaLabel || 'Ver cartelera completa'}» la revela desde el carrusel
-                    de artistas.
+                    Una sola imagen con toda la programación. En el sitio se muestra centrada, sin
+                    recortar, y se puede ampliar al tocarla.
                   </p>
                   <div className="mt-4 max-w-xl">
                     <SingleImageUploadField
@@ -2149,7 +2174,15 @@ export function AdminFdc() {
                   ) : null}
                 </div>
 
-                <div className="mt-8 overflow-hidden rounded-2xl border border-slate-200">
+                <div className="mt-8">
+                  <h3 className="text-base font-bold text-slate-900">Artistas por día</h3>
+                  <p className="mt-1 text-sm text-slate-600">
+                    {form.artists?.showDailyArtists
+                      ? 'Estos artistas se muestran en el carrusel público.'
+                      : 'No se publican mientras el carrusel esté desactivado. Podés seguir editándolos para cuando lo reactives.'}
+                  </p>
+                </div>
+                <div className="mt-3 overflow-hidden rounded-2xl border border-slate-200">
                   <table className="w-full text-left text-sm">
                     <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
                       <tr>

@@ -141,6 +141,16 @@ export function normalizeFdcScheduleImages(schedule) {
 
 export const FDC_ARTISTS_MAX_DAY_POSTERS = 4
 
+export function fdcArtistsShowDailyLineup(artists) {
+  return artists?.showDailyArtists === true || artists?.showDailyArtists === 1
+}
+
+export function fdcArtistsSectionHasPublicContent(artists) {
+  const hasPoster = Boolean(normalizeFdcArtistsPosterImageUrl(artists))
+  const hasNamedArtists = (artists?.items || []).some((a) => String(a?.name || '').trim())
+  return hasPoster || (fdcArtistsShowDailyLineup(artists) && hasNamedArtists)
+}
+
 /** Una sola imagen de cartelera completa (migra el primer afiche legacy si hace falta). */
 export function normalizeFdcArtistsPosterImageUrl(artists) {
   const src = artists && typeof artists === 'object' ? artists : {}
@@ -185,6 +195,8 @@ export const DEFAULT_FDC_ARTISTS = {
   overlayOpacity: 55,
   /** Imagen única de la cartelera completa (todos los días). */
   posterImageUrl: '',
+  /** Carrusel de artistas por día. Desactivado por ahora; se puede volver a encender desde admin. */
+  showDailyArtists: false,
   items: [
     {
       id: 'art-1',
@@ -1089,6 +1101,7 @@ export function mergeFdcContent(base, remote) {
         'items',
         'posterImageUrl',
         'dayPosters',
+        'showDailyArtists',
         'backgroundStyle',
         'backgroundImageUrl',
         'overlayOpacity',
@@ -1097,6 +1110,7 @@ export function mergeFdcContent(base, remote) {
         {
           ...merged,
           posterImageUrl: normalizeFdcArtistsPosterImageUrl(remoteArtists || merged),
+          showDailyArtists: (remoteArtists || merged)?.showDailyArtists === true,
           dayPosters: [],
         },
         defaults.artists,
@@ -1350,10 +1364,17 @@ export function isFdcPreinscriptionHref(href) {
   )
 }
 
-export function filterFdcPublicSectionNav(items, { preinscriptionVisible = false } = {}) {
+export function filterFdcPublicSectionNav(
+  items,
+  { preinscriptionVisible = false, carteleraVisible = true } = {},
+) {
   const list = Array.isArray(items) ? items : []
-  if (preinscriptionVisible) return list
-  return list.filter((item) => !isFdcPreinscriptionHref(item?.href))
+  return list.filter((item) => {
+    const href = String(item?.href || '').trim().toLowerCase()
+    if (!preinscriptionVisible && isFdcPreinscriptionHref(item?.href)) return false
+    if (!carteleraVisible && href === '#cartelera') return false
+    return true
+  })
 }
 
 export function formatFdcDateLabel(ymd) {
