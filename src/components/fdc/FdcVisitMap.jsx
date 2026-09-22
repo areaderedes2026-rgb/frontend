@@ -5,9 +5,10 @@ import 'leaflet/dist/leaflet.css'
 import { CircleMarker, MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from 'react-leaflet'
 import { getFdcMapLocationEmoji, FdcMapLocationIcon } from './FdcMapLocationIcon.jsx'
 
-function buildMarkerIcon(active = false, dark = false, iconName = 'pin') {
-  const color = active ? '#c4a574' : dark ? '#0c1017' : '#171b22'
-  const border = active ? '#ffffff' : '#d4b483'
+function buildMarkerIcon(active = false, dark = false, iconName = 'pin', accent = 'gold') {
+  const sky = accent === 'sky'
+  const color = active ? (sky ? '#0369a1' : '#c4a574') : dark ? '#0c1017' : '#171b22'
+  const border = active ? '#ffffff' : sky ? '#7dd3fc' : '#d4b483'
   const size = active ? 40 : 34
   const emoji = getFdcMapLocationEmoji(iconName)
   return L.divIcon({
@@ -202,6 +203,7 @@ function LeafletMapView({
   focusToken = '',
   userLocation = null,
   routeCoordinates = null,
+  accent = 'gold',
 }) {
   const safeZoom = Math.min(18, Math.max(10, Number(zoom) || 14))
   const mapCenter = useMemo(
@@ -231,7 +233,7 @@ function LeafletMapView({
       const iconName = point?.icon || 'pin'
       const key = `${iconName}:${active ? '1' : '0'}`
       if (!cache.has(key)) {
-        cache.set(key, buildMarkerIcon(Boolean(active), dark, iconName))
+        cache.set(key, buildMarkerIcon(Boolean(active), dark, iconName, accent))
       }
       return cache.get(key)
     }
@@ -239,7 +241,7 @@ function LeafletMapView({
       iconFor,
       user: buildUserIcon(),
     }
-  }, [dark])
+  }, [accent, dark])
 
   const focusKey =
     fitBounds?.length >= 2
@@ -382,6 +384,7 @@ function FdcVisitMapFullscreen({
   points,
   activePointId,
   onSelectPoint,
+  accent = 'gold',
 }) {
   const titleId = useId()
   const closeRef = useRef(null)
@@ -704,6 +707,7 @@ function FdcVisitMapFullscreen({
             focusToken={String(focusToken)}
             userLocation={userLocation}
             routeCoordinates={route?.coordinates || null}
+            accent={accent}
             className="[&_.leaflet-control-attribution]:text-[10px]"
           />
         ) : (
@@ -724,20 +728,22 @@ function FdcVisitMapFullscreen({
                     onClick={() => handleSelect(point.id)}
                     className={`inline-flex max-w-[16rem] shrink-0 items-start gap-2 rounded-2xl border px-3 py-2 text-left transition ${
                       active
-                        ? 'border-[#d4b483] bg-[#d4b483] text-[#171b22] shadow-lg'
+                        ? accent === 'sky'
+                          ? 'border-sky-300 bg-sky-600 text-white shadow-lg'
+                          : 'border-[#d4b483] bg-[#d4b483] text-[#171b22] shadow-lg'
                         : 'border-white/20 bg-[#171b22]/85 text-white backdrop-blur hover:border-white/40'
                     }`}
                   >
                     <span
                       className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
-                        active ? 'bg-[#171b22]/10' : 'bg-white/10'
+                        active ? 'bg-black/10' : 'bg-white/10'
                       }`}
                       aria-hidden
                     >
                       <FdcMapLocationIcon
                         name={point.icon}
                         className="h-3.5 w-3.5"
-                        tone={active ? 'dark' : 'light'}
+                        tone={active && accent !== 'sky' ? 'dark' : 'light'}
                       />
                     </span>
                     <span className="min-w-0">
@@ -745,7 +751,7 @@ function FdcVisitMapFullscreen({
                       {point.address ? (
                         <span
                           className={`mt-0.5 block truncate text-[10px] sm:text-[11px] ${
-                            active ? 'text-[#171b22]/75' : 'text-white/55'
+                            active && accent !== 'sky' ? 'text-[#171b22]/75' : 'text-white/55'
                           }`}
                         >
                           {point.address}
@@ -778,6 +784,8 @@ export function FdcVisitMap({
   dark = false,
   className = '',
   fitBounds = null,
+  focusToken = '',
+  accent = 'gold',
 }) {
   const [fullscreenOpen, setFullscreenOpen] = useState(false)
 
@@ -822,12 +830,16 @@ export function FdcVisitMap({
           interactive={false}
           fitBounds={fitBounds}
           animateFocus
+          focusToken={String(focusToken || '')}
+          accent={accent}
         />
 
         <button
           type="button"
           onClick={() => setFullscreenOpen(true)}
-          className={`absolute inset-0 z-[600] flex cursor-pointer touch-none items-end justify-center p-4 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d4b483] ${
+          className={`absolute inset-0 z-[600] flex cursor-pointer touch-none items-end justify-center p-4 transition focus:outline-none focus-visible:ring-2 ${
+            accent === 'sky' ? 'focus-visible:ring-sky-400' : 'focus-visible:ring-[#d4b483]'
+          } ${
             dark
               ? 'bg-linear-to-t from-[#171b22]/70 via-[#171b22]/15 to-transparent hover:from-[#171b22]/80'
               : 'bg-linear-to-t from-[#171b22]/50 via-[#171b22]/10 to-transparent hover:from-[#171b22]/60'
@@ -849,6 +861,7 @@ export function FdcVisitMap({
         points={fullscreenPoints}
         activePointId={activePointId}
         onSelectPoint={onSelectPoint}
+        accent={accent}
       />
     </>
   )

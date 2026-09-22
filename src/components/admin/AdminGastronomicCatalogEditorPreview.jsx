@@ -3,11 +3,15 @@ import { Modal } from '../ui/Modal.jsx'
 import { ConfirmDialog } from '../ui/ConfirmDialog.jsx'
 import { PageListHeroHeader } from '../shared/PageListHeroHeader.jsx'
 import { SingleImageUploadField } from './SingleImageUploadField.jsx'
+import { GastronomyVenuesMap } from '../gastronomy/GastronomyVenuesMap.jsx'
 import { inputClass, labelClass, textareaClass } from '../ui/formStyles.js'
 import {
   GASTRONOMIC_VENUE_DESCRIPTION_MAX,
   gastronomyHeroToHeaderProps,
+  gastronomyVenueHasMapPoint,
+  parseOptionalGeoCoord,
 } from '../../data/gastronomicCatalogContent.js'
+import { parseMapUrlCoordinates } from '../../utils/fdcVisitMap.js'
 import { resolveMediaUrl } from '../../utils/imageUrl.js'
 
 const ACTION_BTN_BASE =
@@ -131,6 +135,8 @@ function emptyVenue(categories) {
     mapsUrl: '',
     instagram: '',
     whatsapp: '',
+    lat: '',
+    lng: '',
     isActive: true,
     sortOrder: 0,
   }
@@ -234,8 +240,19 @@ export function AdminGastronomicCatalogEditorPreview({
         instagram: String(draft?.instagram || '').trim(),
         whatsapp: String(draft?.whatsapp || '').trim(),
         isActive: draft?.isActive !== false,
-        sortOrder: Number.isFinite(Number(draft?.sortOrder)) ? Number(draft.sortOrder) : 0,
+        sortOrder: Number.isFinite(Number(draft.sortOrder)) ? Number(draft.sortOrder) : 0,
       }
+      let lat = parseOptionalGeoCoord(draft?.lat, -90, 90)
+      let lng = parseOptionalGeoCoord(draft?.lng, -180, 180)
+      if (lat == null || lng == null) {
+        const parsed = parseMapUrlCoordinates(venue.mapsUrl)
+        if (parsed) {
+          lat = parsed.lat
+          lng = parsed.lng
+        }
+      }
+      if (lat != null) venue.lat = lat
+      if (lng != null) venue.lng = lng
       if (!venue.name) return
       setForm((prev) => {
         const next = [...(prev.venues || [])]
@@ -478,7 +495,7 @@ export function AdminGastronomicCatalogEditorPreview({
             <SectionCard
               id="locales"
               title="Locales gastronómicos"
-              description="Nombre, ubicación, teléfono, descripción, foto y datos de contacto de cada propuesta."
+              description="Nombre, ubicación, coordenadas para el mapa, teléfono, descripción, foto y datos de contacto de cada propuesta."
               rightSlot={
                 <AddChip
                   label="Nuevo local"
@@ -532,6 +549,11 @@ export function AdminGastronomicCatalogEditorPreview({
                         <p className="mt-1 line-clamp-2 text-sm text-[#4b505a]">
                           {venue.location || venue.phone || venue.description || 'Sin datos de contacto'}
                         </p>
+                        {gastronomyVenueHasMapPoint(venue) ? (
+                          <p className="mt-2 text-[11px] font-semibold text-sky-800">En el mapa</p>
+                        ) : (
+                          <p className="mt-2 text-[11px] text-slate-400">Sin punto en el mapa</p>
+                        )}
                         <div className="mt-3 flex gap-2">
                           <EditChip
                             label="Editar"
@@ -593,6 +615,21 @@ export function AdminGastronomicCatalogEditorPreview({
                   {form.ctaBody || <span className="italic text-slate-400">(Sin texto)</span>}
                 </p>
               </div>
+            </SectionCard>
+
+            <SectionCard
+              id="mapa"
+              title="Mapa interactivo"
+              description="Vista previa del mapa público. Cada local necesita latitud y longitud, o un enlace de Google Maps que las incluya."
+            >
+              {(form.venues || []).some((v) => gastronomyVenueHasMapPoint(v)) ? (
+                <GastronomyVenuesMap venues={form.venues || []} compact sectionId="" includeInactive />
+              ) : (
+                <EmptyHint>
+                  Todavía no hay locales con coordenadas. Completá latitud y longitud, o pegá un enlace de Maps
+                  con @lat,lng y aplicá el local.
+                </EmptyHint>
+              )}
             </SectionCard>
           </div>
         </article>
@@ -801,6 +838,51 @@ export function AdminGastronomicCatalogEditorPreview({
                     placeholder="https://maps.google.com/..."
                   />
                 </label>
+                <label className={labelClass}>
+                  Latitud
+                  <input
+                    className={inputClass}
+                    inputMode="decimal"
+                    value={editor.draft?.lat ?? ''}
+                    onChange={(e) => setDraftField('lat', e.target.value)}
+                    disabled={saving}
+                    placeholder="-26.2312"
+                  />
+                </label>
+                <label className={labelClass}>
+                  Longitud
+                  <input
+                    className={inputClass}
+                    inputMode="decimal"
+                    value={editor.draft?.lng ?? ''}
+                    onChange={(e) => setDraftField('lng', e.target.value)}
+                    disabled={saving}
+                    placeholder="-65.2818"
+                  />
+                </label>
+                <div className="sm:col-span-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-xs text-slate-500">
+                    {gastronomyVenueHasMapPoint(editor.draft)
+                      ? 'Este local va a aparecer en el mapa público.'
+                      : 'Opcional. Si el enlace de Maps trae coordenadas, se completan al aplicar. También podés cargarlas a mano.'}
+                  </p>
+                  <button
+                    type="button"
+                    className="inline-flex min-h-9 items-center justify-center rounded-lg border border-sky-200 bg-sky-50 px-3 text-xs font-semibold text-sky-900 hover:bg-sky-100 disabled:opacity-50"
+                    disabled={saving || !parseMapUrlCoordinates(editor.draft?.mapsUrl)}
+                    onClick={() => {
+                      const parsed = parseMapUrlCoordinates(editor.draft?.mapsUrl)
+                      if (!parsed) return
+                      setEditor((prev) =>
+                        prev
+                          ? { ...prev, draft: { ...(prev.draft || {}), lat: parsed.lat, lng: parsed.lng } }
+                          : prev,
+                      )
+                    }}
+                  >
+                    Usar coordenadas del enlace
+                  </button>
+                </div>
                 <label className={`${labelClass} sm:col-span-2`}>
                   Descripción
                   <textarea

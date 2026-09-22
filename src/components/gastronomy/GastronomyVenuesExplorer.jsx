@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { AnimatePresence, motion as Motion } from 'motion/react'
 import { RevealOnScroll } from '../home/RevealOnScroll.jsx'
 import { NewsCoverMedia } from '../news/NewsCoverMedia.jsx'
+import { gastronomyVenueHasMapPoint } from '../../data/gastronomicCatalogContent.js'
 
 const ease = [0.22, 1, 0.36, 1]
 
@@ -108,7 +109,23 @@ function ActionLink({ href, children, external = false }) {
   )
 }
 
-function VenueDetailSheet({ venue, onClose }) {
+function MapActionButton({ onClick }) {
+  if (!onClick) return null
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation()
+        onClick()
+      }}
+      className="inline-flex min-h-9 items-center rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-900 transition hover:border-sky-300 hover:bg-sky-100"
+    >
+      Ver en el mapa
+    </button>
+  )
+}
+
+function VenueDetailSheet({ venue, onClose, onShowOnMap }) {
   const titleId = useId()
   const closeRef = useRef(null)
   const contacts = venueContacts(venue)
@@ -202,6 +219,14 @@ function VenueDetailSheet({ venue, onClose }) {
           ) : null}
         </div>
         <div className="flex flex-wrap gap-2 border-t border-[#ddd7ca] bg-white px-5 py-4 sm:px-6">
+          {gastronomyVenueHasMapPoint(venue) ? (
+            <MapActionButton
+              onClick={() => {
+                onClose()
+                onShowOnMap?.(venue)
+              }}
+            />
+          ) : null}
           <ActionLink href={contacts.call}>Llamar</ActionLink>
           <ActionLink href={contacts.wa} external>
             WhatsApp
@@ -218,9 +243,10 @@ function VenueDetailSheet({ venue, onClose }) {
   )
 }
 
-function VenueCard({ venue, index, onOpen }) {
+function VenueCard({ venue, index, onOpen, onShowOnMap }) {
   const contacts = venueContacts(venue)
-  const hasActions = contacts.call || contacts.wa || contacts.maps || contacts.ig
+  const showOnMap = gastronomyVenueHasMapPoint(venue) ? () => onShowOnMap?.(venue) : null
+  const hasActions = contacts.call || contacts.wa || contacts.maps || contacts.ig || showOnMap
 
   return (
     <Motion.article
@@ -274,6 +300,7 @@ function VenueCard({ venue, index, onOpen }) {
       </button>
       {hasActions ? (
         <div className="flex flex-wrap gap-2 border-t border-[#eeeae2] px-4 py-3 sm:hidden">
+          <MapActionButton onClick={showOnMap} />
           <ActionLink href={contacts.call}>Llamar</ActionLink>
           <ActionLink href={contacts.wa} external>
             WhatsApp
@@ -285,6 +312,7 @@ function VenueCard({ venue, index, onOpen }) {
       ) : null}
       {hasActions ? (
         <div className="hidden flex-col justify-center gap-2 border-l border-[#eeeae2] px-3 py-4 sm:flex">
+          <MapActionButton onClick={showOnMap} />
           <ActionLink href={contacts.call}>Llamar</ActionLink>
           <ActionLink href={contacts.wa} external>
             WhatsApp
@@ -304,6 +332,7 @@ export function GastronomyVenuesExplorer({
   searchPlaceholder = 'Buscar por nombre, barrio o tipo…',
   searchQuery = '',
   onSearchChange,
+  onShowOnMap,
 }) {
   const [activeCategory, setActiveCategory] = useState(categories[0] || 'Todos')
   const [selected, setSelected] = useState(null)
@@ -359,8 +388,8 @@ export function GastronomyVenuesExplorer({
               Locales gastronómicos
             </h2>
             <p className="mt-2 max-w-2xl text-sm text-[#4b505a]">
-              Filtrá por tipo o buscá por nombre. Tocá la tarjeta para ver la ficha, o llamá / escribí al
-              instante.
+              Filtrá por tipo o buscá por nombre. Tocá la tarjeta para ver la ficha, o usá «Ver en el mapa»
+              para volar hasta el local.
             </p>
           </div>
           <p className="text-sm font-semibold text-[#171b22]">
@@ -431,7 +460,13 @@ export function GastronomyVenuesExplorer({
         <Motion.div layout className="mt-6 grid gap-5 lg:grid-cols-1 xl:grid-cols-2">
           <AnimatePresence mode="popLayout">
             {filtered.map((venue, idx) => (
-              <VenueCard key={venue.id} venue={venue} index={idx} onOpen={openVenue} />
+              <VenueCard
+                key={venue.id}
+                venue={venue}
+                index={idx}
+                onOpen={openVenue}
+                onShowOnMap={onShowOnMap}
+              />
             ))}
           </AnimatePresence>
         </Motion.div>
@@ -441,7 +476,12 @@ export function GastronomyVenuesExplorer({
         ? createPortal(
             <AnimatePresence>
               {selected ? (
-                <VenueDetailSheet key={selected.id} venue={selected} onClose={() => setSelected(null)} />
+                <VenueDetailSheet
+                  key={selected.id}
+                  venue={selected}
+                  onClose={() => setSelected(null)}
+                  onShowOnMap={onShowOnMap}
+                />
               ) : null}
             </AnimatePresence>,
             document.body,

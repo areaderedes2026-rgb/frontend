@@ -1,12 +1,14 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { GastronomyVenuesExplorer } from '../../components/gastronomy/GastronomyVenuesExplorer.jsx'
+import { GastronomyVenuesMap } from '../../components/gastronomy/GastronomyVenuesMap.jsx'
 import { RevealOnScroll } from '../../components/home/RevealOnScroll.jsx'
 import { PageListHeroHeader } from '../../components/shared/PageListHeroHeader.jsx'
 import { Container } from '../../components/ui/Container.jsx'
 import {
   DEFAULT_GASTRONOMIC_CATALOG_CONTENT,
   gastronomyHeroToHeaderProps,
+  gastronomyVenueHasMapPoint,
   getActiveGastronomyVenues,
   mergeGastronomicCatalogContent,
 } from '../../data/gastronomicCatalogContent.js'
@@ -24,6 +26,8 @@ export function CatalogoGastronomico() {
   )
   const [pageContentHydrated, setPageContentHydrated] = useState(!apiEnabled)
   const [searchQuery, setSearchQuery] = useState('')
+  const [mapFocus, setMapFocus] = useState({ id: '', token: 0 })
+  const mapFocusTimer = useRef(null)
 
   useEffect(() => {
     let cancelled = false
@@ -56,6 +60,25 @@ export function CatalogoGastronomico() {
   const categories =
     page.categories?.length > 0 ? page.categories : DEFAULT_GASTRONOMIC_CATALOG_CONTENT.categories
   const venues = useMemo(() => getActiveGastronomyVenues(page), [page])
+
+  const showVenueOnMap = useCallback((venue) => {
+    if (!venue || !gastronomyVenueHasMapPoint(venue)) return
+    const id = String(venue.id || '').trim()
+    if (!id) return
+    const target = document.getElementById('catalogo-mapa')
+    target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    window.clearTimeout(mapFocusTimer.current)
+    mapFocusTimer.current = window.setTimeout(() => {
+      setMapFocus((prev) => ({ id, token: prev.token + 1 }))
+    }, 420)
+  }, [])
+
+  useEffect(
+    () => () => {
+      window.clearTimeout(mapFocusTimer.current)
+    },
+    [],
+  )
 
   const heroImage =
     page.heroImageUrl?.trim() || DEFAULT_GASTRONOMIC_CATALOG_CONTENT.heroImageUrl?.trim() || ''
@@ -95,6 +118,7 @@ export function CatalogoGastronomico() {
               searchPlaceholder={page.heroSearchPlaceholder}
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
+              onShowOnMap={showVenueOnMap}
             />
 
             {page.ctaTitle || page.ctaBody ? (
@@ -117,6 +141,12 @@ export function CatalogoGastronomico() {
                 </section>
               </RevealOnScroll>
             ) : null}
+
+            <GastronomyVenuesMap
+              venues={venues}
+              focusVenueId={mapFocus.id}
+              focusToken={String(mapFocus.token)}
+            />
           </div>
         </article>
       </Container>

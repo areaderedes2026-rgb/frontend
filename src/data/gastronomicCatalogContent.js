@@ -4,6 +4,7 @@
 
 import { mergePageHeroCover, pageHeroToHeaderProps } from './pageHeroCoverContent.js'
 import { normalizeHeroToggle } from './servicesPageContent.js'
+import { parseMapUrlCoordinates } from '../utils/fdcVisitMap.js'
 
 export const GASTRONOMIC_CATALOG_CATEGORIES = [
   'Todos',
@@ -17,6 +18,49 @@ export const GASTRONOMIC_CATALOG_CATEGORIES = [
 ]
 
 export const GASTRONOMIC_VENUE_DESCRIPTION_MAX = 2500
+
+export function parseOptionalGeoCoord(value, min, max) {
+  if (value === '' || value == null) return null
+  const n = Number(value)
+  if (!Number.isFinite(n) || n < min || n > max) return null
+  return Math.round(n * 1e6) / 1e6
+}
+
+export function resolveGastronomyVenueCoords(venue) {
+  const lat = parseOptionalGeoCoord(venue?.lat, -90, 90)
+  const lng = parseOptionalGeoCoord(venue?.lng, -180, 180)
+  if (lat != null && lng != null) return { lat, lng }
+  return parseMapUrlCoordinates(venue?.mapsUrl)
+}
+
+export function gastronomyVenueHasMapPoint(venue) {
+  return Boolean(resolveGastronomyVenueCoords(venue))
+}
+
+export function gastronomyVenuesToMapPoints(venues, options = {}) {
+  const includeInactive = Boolean(options.includeInactive)
+  const list = Array.isArray(venues) ? venues : []
+  const out = []
+  for (const venue of list) {
+    if (!venue || (!includeInactive && venue.isActive === false)) continue
+    const coords = resolveGastronomyVenueCoords(venue)
+    if (!coords) continue
+    const title = String(venue.name || '').trim()
+    if (!title) continue
+    out.push({
+      id: String(venue.id || '').trim(),
+      title,
+      subtitle: String(venue.category || '').trim(),
+      address: String(venue.location || '').trim(),
+      lat: coords.lat,
+      lng: coords.lng,
+      icon: 'food',
+      isActive: true,
+      sortOrder: Number.isFinite(Number(venue.sortOrder)) ? Number(venue.sortOrder) : out.length,
+    })
+  }
+  return out
+}
 
 function normalizeVenue(remote) {
   if (!remote || typeof remote !== 'object') return null
@@ -35,6 +79,8 @@ function normalizeVenue(remote) {
     mapsUrl: String(remote.mapsUrl || '').trim(),
     instagram: String(remote.instagram || '').trim(),
     whatsapp: String(remote.whatsapp || '').trim(),
+    lat: parseOptionalGeoCoord(remote.lat, -90, 90),
+    lng: parseOptionalGeoCoord(remote.lng, -180, 180),
     isActive: remote.isActive !== false,
     sortOrder: Number.isFinite(Number(remote.sortOrder)) ? Number(remote.sortOrder) : 0,
   }
@@ -133,8 +179,8 @@ export function mergeGastronomicCatalogContent(base, remote) {
       Array.isArray(remote.categories) && remote.categories.length > 0
         ? remote.categories.map((c) => String(c || '').trim()).filter(Boolean)
         : [...(defaults.categories?.length ? defaults.categories : GASTRONOMIC_CATALOG_CATEGORIES)],
-    venues: venuesOut,
-    ctaTitle: String(remote.ctaTitle ?? defaults.ctaTitle ?? ''),
+      venues: venuesOut,
+      ctaTitle: String(remote.ctaTitle ?? defaults.ctaTitle ?? ''),
     ctaBody: String(remote.ctaBody ?? defaults.ctaBody ?? ''),
     updatedAt: remote.updatedAt ?? null,
   }

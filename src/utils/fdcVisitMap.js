@@ -5,22 +5,34 @@ export const FDC_DEFAULT_VISIT_MAP = {
   zoom: 14,
 }
 
+function coordsIfValid(latRaw, lngRaw) {
+  const lat = Number(latRaw)
+  const lng = Number(lngRaw)
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null
+  return { lat: Math.round(lat * 1e6) / 1e6, lng: Math.round(lng * 1e6) / 1e6 }
+}
+
 export function parseMapUrlCoordinates(url) {
   const raw = String(url || '').trim()
   if (!raw) return null
 
   const atMatch = raw.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/)
   if (atMatch) {
-    const lat = Number(atMatch[1])
-    const lng = Number(atMatch[2])
-    if (Number.isFinite(lat) && Number.isFinite(lng)) return { lat, lng }
+    const coords = coordsIfValid(atMatch[1], atMatch[2])
+    if (coords) return coords
   }
 
-  const qMatch = raw.match(/[?&]query=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/)
+  const bangMatch = raw.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/)
+  if (bangMatch) {
+    const coords = coordsIfValid(bangMatch[1], bangMatch[2])
+    if (coords) return coords
+  }
+
+  const qMatch = raw.match(/[?&](?:q|query|ll)=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/i)
   if (qMatch) {
-    const lat = Number(qMatch[1])
-    const lng = Number(qMatch[2])
-    if (Number.isFinite(lat) && Number.isFinite(lng)) return { lat, lng }
+    const coords = coordsIfValid(qMatch[1], qMatch[2])
+    if (coords) return coords
   }
 
   return null
