@@ -32,6 +32,7 @@ const ourCityLinks = [
     end: true,
   },
   { to: '/catalogo-gastronomico', label: 'Catálogo gastronómico', preload: 'gastronomy' },
+  { to: '/catalogo-hospedajes', label: 'Catálogo de hospedajes', preload: 'lodging' },
   { to: '/turismo', label: 'Turismo', preload: 'tourism' },
   { to: '/history', label: 'Historia', preload: 'history' },
 ]

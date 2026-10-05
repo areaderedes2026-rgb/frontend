@@ -83,6 +83,14 @@ export function Footer() {
               </li>
               <li>
                 <Link
+                  to={ROUTES.catalogoHospedajes}
+                  className="text-white/88 transition-colors hover:text-white"
+                >
+                  Catálogo de hospedajes
+                </Link>
+              </li>
+              <li>
+                <Link
                   to={ROUTES.atencionCiudadano}
                   className="text-white/88 transition-colors hover:text-white"
                 >

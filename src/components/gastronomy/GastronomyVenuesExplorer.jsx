@@ -326,6 +326,20 @@ function VenueCard({ venue, index, onOpen, onShowOnMap }) {
   )
 }
 
+const DEFAULT_DIRECTORY_COPY = {
+  sectionId: 'catalogo-locales',
+  eyebrow: 'Directorio',
+  title: 'Locales gastronómicos',
+  lead: 'Filtrá por tipo o buscá por nombre. Tocá la tarjeta para ver la ficha, o usá «Ver en el mapa» para volar hasta el local.',
+  itemSingular: 'propuesta',
+  itemPlural: 'propuestas',
+  searchAria: 'Buscar locales',
+  emptyTitle: 'No hay locales para mostrar',
+  emptyBody:
+    'Probá otra categoría o buscá con otra palabra. El directorio se actualiza desde el panel municipal.',
+  emptyReset: 'Ver todos los locales',
+}
+
 export function GastronomyVenuesExplorer({
   categories = [],
   venues = [],
@@ -333,7 +347,9 @@ export function GastronomyVenuesExplorer({
   searchQuery = '',
   onSearchChange,
   onShowOnMap,
+  copy = DEFAULT_DIRECTORY_COPY,
 }) {
+  const directory = { ...DEFAULT_DIRECTORY_COPY, ...copy }
   const [activeCategory, setActiveCategory] = useState(categories[0] || 'Todos')
   const [selected, setSelected] = useState(null)
   const query = searchQuery
@@ -379,21 +395,18 @@ export function GastronomyVenuesExplorer({
   }, [])
 
   return (
-    <div id="catalogo-locales" className="scroll-mt-[calc(var(--navbar-h)+1rem)]">
+    <div id={directory.sectionId} className="scroll-mt-[calc(var(--navbar-h)+1rem)]">
       <RevealOnScroll variant="slow">
         <div className="flex flex-col gap-2 border-b border-[#ddd7ca] pb-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-800">Directorio</p>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-800">{directory.eyebrow}</p>
             <h2 className="mt-1 font-serif text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
-              Locales gastronómicos
+              {directory.title}
             </h2>
-            <p className="mt-2 max-w-2xl text-sm text-[#4b505a]">
-              Filtrá por tipo o buscá por nombre. Tocá la tarjeta para ver la ficha, o usá «Ver en el mapa»
-              para volar hasta el local.
-            </p>
+            <p className="mt-2 max-w-2xl text-sm text-[#4b505a]">{directory.lead}</p>
           </div>
           <p className="text-sm font-semibold text-[#171b22]">
-            {filtered.length} {filtered.length === 1 ? 'propuesta' : 'propuestas'}
+            {filtered.length} {filtered.length === 1 ? directory.itemSingular : directory.itemPlural}
           </p>
         </div>
       </RevealOnScroll>
@@ -424,7 +437,7 @@ export function GastronomyVenuesExplorer({
             })}
           </div>
           <label className="relative block w-full lg:max-w-sm">
-            <span className="sr-only">Buscar locales</span>
+            <span className="sr-only">{directory.searchAria}</span>
             <SearchIcon className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
               type="search"
@@ -439,10 +452,8 @@ export function GastronomyVenuesExplorer({
 
       {filtered.length === 0 ? (
         <div className="mt-6 rounded-2xl border border-dashed border-[#d8d5cd] bg-[#f8f7f3] px-5 py-12 text-center">
-          <p className="font-serif text-lg font-semibold text-[#171b22]">No hay locales para mostrar</p>
-          <p className="mx-auto mt-2 max-w-md text-sm text-[#5c6169]">
-            Probá otra categoría o buscá con otra palabra. El directorio se actualiza desde el panel municipal.
-          </p>
+          <p className="font-serif text-lg font-semibold text-[#171b22]">{directory.emptyTitle}</p>
+          <p className="mx-auto mt-2 max-w-md text-sm text-[#5c6169]">{directory.emptyBody}</p>
           {query || (effectiveCategory && effectiveCategory !== 'Todos') ? (
             <button
               type="button"
@@ -452,7 +463,7 @@ export function GastronomyVenuesExplorer({
                 onSearchChange?.('')
               }}
             >
-              Ver todos los locales
+              {directory.emptyReset}
             </button>
           ) : null}
         </div>

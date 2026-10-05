@@ -1,74 +1,103 @@
 /**
- * Contenido público del Catálogo gastronómico (vista ciudadana + valores por defecto del panel).
+ * Contenido público del Catálogo de hospedajes (vista ciudadana + valores por defecto del panel).
  */
 
 import { mergePageHeroCover, pageHeroToHeaderProps } from './pageHeroCoverContent.js'
 import { normalizeHeroToggle } from './servicesPageContent.js'
-import { parseMapUrlCoordinates } from '../utils/fdcVisitMap.js'
+import {
+  gastronomyVenueHasMapPoint,
+  gastronomyVenuesToMapPoints,
+  getActiveGastronomyVenues,
+  parseOptionalGeoCoord,
+} from './gastronomicCatalogContent.js'
 
-export const GASTRONOMIC_CATALOG_CATEGORIES = [
+export const LODGING_CATALOG_CATEGORIES = [
   'Todos',
-  'Bares',
-  'Cafeterías',
-  'Restaurantes',
-  'Rotiserías',
-  'Heladerías',
-  'Panaderías',
+  'Hoteles',
+  'Hosterías',
+  'Cabañas',
+  'Hostels',
+  'Departamentos',
+  'Campings',
+  'Estancias',
   'Otros',
 ]
 
-export const GASTRONOMIC_VENUE_DESCRIPTION_MAX = 2500
+export const LODGING_VENUE_DESCRIPTION_MAX = 2500
 
-export function parseOptionalGeoCoord(value, min, max) {
-  if (value === '' || value == null) return null
-  const n = Number(value)
-  if (!Number.isFinite(n) || n < min || n > max) return null
-  return Math.round(n * 1e6) / 1e6
+export const lodgingVenueHasMapPoint = gastronomyVenueHasMapPoint
+
+export function lodgingVenuesToMapPoints(venues, options = {}) {
+  return gastronomyVenuesToMapPoints(venues, { ...options, icon: options.icon || 'hotel' })
 }
 
-export function resolveGastronomyVenueCoords(venue) {
-  const lat = parseOptionalGeoCoord(venue?.lat, -90, 90)
-  const lng = parseOptionalGeoCoord(venue?.lng, -180, 180)
-  if (lat != null && lng != null) return { lat, lng }
-  return parseMapUrlCoordinates(venue?.mapsUrl)
+export function getActiveLodgingVenues(content) {
+  return getActiveGastronomyVenues(content)
 }
 
-export function gastronomyVenueHasMapPoint(venue) {
-  return Boolean(resolveGastronomyVenueCoords(venue))
+export const LODGING_DIRECTORY_COPY = {
+  sectionId: 'catalogo-hospedajes',
+  eyebrow: 'Directorio',
+  title: 'Hospedajes',
+  lead: 'Filtrá por tipo o buscá por nombre. Tocá la tarjeta para ver la ficha, o usá «Ver en el mapa» para volar hasta el alojamiento.',
+  itemSingular: 'propuesta',
+  itemPlural: 'propuestas',
+  searchAria: 'Buscar hospedajes',
+  emptyTitle: 'No hay hospedajes para mostrar',
+  emptyBody:
+    'Probá otra categoría o buscá con otra palabra. El directorio se actualiza desde el panel municipal.',
+  emptyReset: 'Ver todos los hospedajes',
 }
 
-export function gastronomyVenuesToMapPoints(venues, options = {}) {
-  const includeInactive = Boolean(options.includeInactive)
-  const list = Array.isArray(venues) ? venues : []
-  const out = []
-  for (const venue of list) {
-    if (!venue || (!includeInactive && venue.isActive === false)) continue
-    const coords = resolveGastronomyVenueCoords(venue)
-    if (!coords) continue
-    const title = String(venue.name || '').trim()
-    if (!title) continue
-    out.push({
-      id: String(venue.id || '').trim(),
-      title,
-      subtitle: String(venue.category || '').trim(),
-      address: String(venue.location || '').trim(),
-      lat: coords.lat,
-      lng: coords.lng,
-      icon: options.icon || 'food',
-      isActive: true,
-      sortOrder: Number.isFinite(Number(venue.sortOrder)) ? Number(venue.sortOrder) : out.length,
-    })
-  }
-  return out
+export const LODGING_MAP_COPY = {
+  listTitle: 'Hospedajes en el mapa',
+  listAria: 'Hospedajes en el mapa',
+  searchId: 'lodging-map-search',
+  searchAria: 'Buscar hospedaje en el mapa',
+  searchPlaceholder: 'Buscar hospedaje...',
+  emptySearch: 'No hay hospedajes que coincidan.',
+  emptyHint: 'Probá con otro nombre o barrio.',
+  emptyNone: 'Todavía no hay hospedajes con ubicación en el mapa.',
+  countLabel: (n) => `${n} hospedaje${n === 1 ? '' : 's'} con ubicación`,
+  eyebrow: 'Cómo llegar',
+  title: 'Mapa de hospedajes',
+  lead: 'Elegí un hospedaje en la lista o tocá «Ver en el mapa» en una tarjeta. El mapa vuela hasta el punto y se puede abrir en grande para trazar la ruta.',
+}
+
+export const LODGING_EDITOR_LABELS = {
+  idPrefix: 'hospedaje',
+  venueEditorTitle: 'Editar hospedaje',
+  categoriesDescription: 'La primera («Todos») es fija. El resto se usa para filtrar hospedajes.',
+  categoryRemoveBody: 'Los hospedajes se reasignarán a la primera categoría disponible.',
+  venuesSectionId: 'hospedajes',
+  venuesTitle: 'Hospedajes',
+  venuesDescription:
+    'Nombre, ubicación, coordenadas para el mapa, teléfono, descripción, foto y datos de contacto de cada alojamiento.',
+  addVenue: 'Nuevo hospedaje',
+  emptyVenues: 'Todavía no hay hospedajes. Sumá el primero con nombre, ubicación, teléfono y descripción.',
+  removeVenueTitle: '¿Quitar este hospedaje?',
+  unnamedVenue: 'este hospedaje',
+  nameLabel: 'Nombre del hospedaje',
+  photoLabel: 'Foto del hospedaje',
+  visibleLabel: 'Visible en el catálogo público',
+  onMap: 'Este hospedaje va a aparecer en el mapa público.',
+  offMap:
+    'Opcional. Si el enlace de Maps trae coordenadas, se completan al aplicar. También podés cargarlas a mano.',
+  mapDescription:
+    'Vista previa del mapa público. Cada hospedaje necesita latitud y longitud, o un enlace de Google Maps que las incluya.',
+  mapEmpty:
+    'Todavía no hay hospedajes con coordenadas. Completá latitud y longitud, o pegá un enlace de Maps con @lat,lng y aplicá el hospedaje.',
+  ctaDescription:
+    'Mensaje final para invitar a sumar un hospedaje o consultar. En la vista pública queda al final de la página.',
 }
 
 function normalizeVenue(remote) {
   if (!remote || typeof remote !== 'object') return null
   const name = String(remote.name || '').trim()
-  const description = String(remote.description || '').trim().slice(0, GASTRONOMIC_VENUE_DESCRIPTION_MAX)
+  const description = String(remote.description || '').trim().slice(0, LODGING_VENUE_DESCRIPTION_MAX)
   if (!name && !description) return null
   return {
-    id: String(remote.id || '').trim() || `local-${Math.random().toString(36).slice(2, 10)}`,
+    id: String(remote.id || '').trim() || `hospedaje-${Math.random().toString(36).slice(2, 10)}`,
     category: String(remote.category || '').trim() || 'Otros',
     name,
     location: String(remote.location || '').trim(),
@@ -86,13 +115,13 @@ function normalizeVenue(remote) {
   }
 }
 
-export const DEFAULT_GASTRONOMIC_CATALOG_CONTENT = {
+export const DEFAULT_LODGING_CATALOG_CONTENT = {
   heroEyebrow: 'Nuestra ciudad',
-  heroTitle: 'Catálogo gastronómico de Trancas',
+  heroTitle: 'Catálogo de hospedajes de Trancas',
   heroSubtitle:
-    'Bares, cafeterías, restaurantes y otros espacios locales para comer, tomar algo y encontrarte con la comunidad.',
+    'Hoteles, cabañas, hostels y otros alojamientos locales para quedarte y conocer el departamento.',
   heroImageUrl:
-    'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1800&q=80',
+    'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1800&q=80',
   overlayOpacity: 65,
   heroSearchPlaceholder: 'Buscar por nombre, barrio o tipo…',
   showHeroBadge: true,
@@ -100,30 +129,30 @@ export const DEFAULT_GASTRONOMIC_CATALOG_CONTENT = {
   showHeroSubtitle: true,
   showSearch: true,
   showPrimaryButton: true,
-  heroPrimaryLabel: 'Ver locales',
-  heroPrimaryHref: '#catalogo-locales',
+  heroPrimaryLabel: 'Ver hospedajes',
+  heroPrimaryHref: '#catalogo-hospedajes',
   showSecondaryButton: true,
   heroSecondaryLabel: 'Turismo',
   heroSecondaryHref: '/turismo',
-  introTitle: 'Sabores de Trancas',
+  introTitle: 'Dónde quedarte en Trancas',
   introParagraphs: [
-    'Este catálogo reúne propuestas gastronómicas del departamento: bares, cafeterías, restaurantes y otros espacios que recibieron a vecinos y visitantes.',
-    'La información (nombre, ubicación, teléfono y descripción) la aportan los propios locales. Confirmá horarios y disponibilidad antes de ir.',
+    'Este catálogo reúne alojamientos del departamento: hoteles, cabañas, hostels y otras opciones para vecinos y visitantes.',
+    'La información (nombre, ubicación, teléfono y descripción) la aportan los propios establecimientos. Confirmá disponibilidad y tarifas antes de reservar.',
   ],
   highlights: [
-    { label: 'Propuestas', value: 'Locales de Trancas' },
-    { label: 'Tipos', value: 'Bares, cafeterías y más' },
+    { label: 'Propuestas', value: 'Alojamientos de Trancas' },
+    { label: 'Tipos', value: 'Hoteles, cabañas y más' },
     { label: 'Actualización', value: 'Directorio municipal' },
   ],
-  categories: [...GASTRONOMIC_CATALOG_CATEGORIES],
+  categories: [...LODGING_CATALOG_CATEGORIES],
   venues: [],
-  ctaTitle: '¿Querés sumar tu local?',
+  ctaTitle: '¿Querés sumar tu hospedaje?',
   ctaBody:
-    'Si tenés un bar, cafetería u otro espacio gastronómico en Trancas, acercate a la Municipalidad o escribinos por Atención al ciudadano para incorporarte al catálogo.',
+    'Si tenés un hotel, cabañas u otro alojamiento en Trancas, acercate a la Municipalidad o escribinos por Atención al ciudadano para incorporarte al catálogo.',
 }
 
-export function mergeGastronomicCatalogContent(base, remote) {
-  const defaults = base || DEFAULT_GASTRONOMIC_CATALOG_CONTENT
+export function mergeLodgingCatalogContent(base, remote) {
+  const defaults = base || DEFAULT_LODGING_CATALOG_CONTENT
   if (!remote || typeof remote !== 'object') {
     return { ...defaults, venues: [...(defaults.venues || [])] }
   }
@@ -178,16 +207,16 @@ export function mergeGastronomicCatalogContent(base, remote) {
     categories:
       Array.isArray(remote.categories) && remote.categories.length > 0
         ? remote.categories.map((c) => String(c || '').trim()).filter(Boolean)
-        : [...(defaults.categories?.length ? defaults.categories : GASTRONOMIC_CATALOG_CATEGORIES)],
-      venues: venuesOut,
-      ctaTitle: String(remote.ctaTitle ?? defaults.ctaTitle ?? ''),
+        : [...(defaults.categories?.length ? defaults.categories : LODGING_CATALOG_CATEGORIES)],
+    venues: venuesOut,
+    ctaTitle: String(remote.ctaTitle ?? defaults.ctaTitle ?? ''),
     ctaBody: String(remote.ctaBody ?? defaults.ctaBody ?? ''),
     updatedAt: remote.updatedAt ?? null,
   }
 }
 
-function gastronomyHeroDefaults() {
-  const d = DEFAULT_GASTRONOMIC_CATALOG_CONTENT
+function lodgingHeroDefaults() {
+  const d = DEFAULT_LODGING_CATALOG_CONTENT
   return {
     heroImageUrl: d.heroImageUrl,
     overlayOpacity: d.overlayOpacity ?? 65,
@@ -208,9 +237,9 @@ function gastronomyHeroDefaults() {
   }
 }
 
-export function gastronomyContentToHeroCover(content) {
+export function lodgingContentToHeroCover(content) {
   const c = content && typeof content === 'object' ? content : {}
-  return mergePageHeroCover(gastronomyHeroDefaults(), {
+  return mergePageHeroCover(lodgingHeroDefaults(), {
     heroImageUrl: c.heroImageUrl,
     overlayOpacity: c.overlayOpacity,
     heroBadge: c.heroEyebrow,
@@ -230,8 +259,8 @@ export function gastronomyContentToHeroCover(content) {
   })
 }
 
-export function applyHeroCoverToGastronomyContent(content, draft) {
-  const merged = mergePageHeroCover(gastronomyHeroDefaults(), draft)
+export function applyHeroCoverToLodgingContent(content, draft) {
+  const merged = mergePageHeroCover(lodgingHeroDefaults(), draft)
   return {
     ...(content && typeof content === 'object' ? content : {}),
     heroImageUrl: merged.heroImageUrl,
@@ -253,23 +282,6 @@ export function applyHeroCoverToGastronomyContent(content, draft) {
   }
 }
 
-export function gastronomyHeroToHeaderProps(content, options) {
-  return pageHeroToHeaderProps(
-    gastronomyContentToHeroCover(content),
-    gastronomyHeroDefaults(),
-    options,
-  )
-}
-
-export function getActiveGastronomyVenues(content) {
-  const venues = Array.isArray(content?.venues) ? content.venues : []
-  return venues
-    .filter((v) => v && v.isActive !== false && String(v.name || '').trim())
-    .slice()
-    .sort((a, b) => {
-      const orderA = Number(a.sortOrder) || 0
-      const orderB = Number(b.sortOrder) || 0
-      if (orderA !== orderB) return orderA - orderB
-      return String(a.name).localeCompare(String(b.name), 'es')
-    })
+export function lodgingHeroToHeaderProps(content, options) {
+  return pageHeroToHeaderProps(lodgingContentToHeroCover(content), lodgingHeroDefaults(), options)
 }

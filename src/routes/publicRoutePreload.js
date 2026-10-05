@@ -40,6 +40,10 @@ export const publicRouteLoaders = {
     () => import('../pages/gastronomy/CatalogoGastronomico.jsx'),
     'CatalogoGastronomico',
   ),
+  lodging: namedLazy(
+    () => import('../pages/lodging/CatalogoHospedajes.jsx'),
+    'CatalogoHospedajes',
+  ),
   fdc: namedLazy(() => import('../pages/fdc/FiestaDelCaballo.jsx'), 'FiestaDelCaballo'),
   newsList: namedLazy(() => import('../pages/news/NewsList.jsx'), 'NewsList'),
   newsDetail: namedLazy(() => import('../pages/news/NewsDetail.jsx'), 'NewsDetail'),

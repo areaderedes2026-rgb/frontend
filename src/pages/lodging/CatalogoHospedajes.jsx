@@ -6,23 +6,25 @@ import { RevealOnScroll } from '../../components/home/RevealOnScroll.jsx'
 import { PageListHeroHeader } from '../../components/shared/PageListHeroHeader.jsx'
 import { Container } from '../../components/ui/Container.jsx'
 import {
-  DEFAULT_GASTRONOMIC_CATALOG_CONTENT,
-  gastronomyHeroToHeaderProps,
-  gastronomyVenueHasMapPoint,
-  getActiveGastronomyVenues,
-  mergeGastronomicCatalogContent,
-} from '../../data/gastronomicCatalogContent.js'
-import { fetchGastronomicCatalogContent } from '../../services/gastronomicCatalogService.js'
+  DEFAULT_LODGING_CATALOG_CONTENT,
+  LODGING_DIRECTORY_COPY,
+  LODGING_MAP_COPY,
+  getActiveLodgingVenues,
+  lodgingHeroToHeaderProps,
+  lodgingVenueHasMapPoint,
+  mergeLodgingCatalogContent,
+} from '../../data/lodgingCatalogContent.js'
+import { fetchLodgingCatalogContent } from '../../services/lodgingCatalogService.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
 import { ROUTES } from '../../utils/constants.js'
 
-export function CatalogoGastronomico() {
+export function CatalogoHospedajes() {
   const apiEnabled = isApiConfigured()
   const location = useLocation()
   const [page, setPage] = useState(() =>
     apiEnabled
-      ? { ...DEFAULT_GASTRONOMIC_CATALOG_CONTENT, heroImageUrl: '' }
-      : { ...DEFAULT_GASTRONOMIC_CATALOG_CONTENT },
+      ? { ...DEFAULT_LODGING_CATALOG_CONTENT, heroImageUrl: '' }
+      : { ...DEFAULT_LODGING_CATALOG_CONTENT },
   )
   const [pageContentHydrated, setPageContentHydrated] = useState(!apiEnabled)
   const [searchQuery, setSearchQuery] = useState('')
@@ -34,11 +36,11 @@ export function CatalogoGastronomico() {
     async function load() {
       if (!apiEnabled) return
       try {
-        const remote = await fetchGastronomicCatalogContent()
-        const merged = mergeGastronomicCatalogContent(DEFAULT_GASTRONOMIC_CATALOG_CONTENT, remote || {})
+        const remote = await fetchLodgingCatalogContent()
+        const merged = mergeLodgingCatalogContent(DEFAULT_LODGING_CATALOG_CONTENT, remote || {})
         if (!cancelled) setPage(merged)
       } catch {
-        if (!cancelled) setPage({ ...DEFAULT_GASTRONOMIC_CATALOG_CONTENT })
+        if (!cancelled) setPage({ ...DEFAULT_LODGING_CATALOG_CONTENT })
       } finally {
         if (!cancelled) setPageContentHydrated(true)
       }
@@ -58,14 +60,14 @@ export function CatalogoGastronomico() {
   }, [location.hash, pageContentHydrated, page.venues])
 
   const categories =
-    page.categories?.length > 0 ? page.categories : DEFAULT_GASTRONOMIC_CATALOG_CONTENT.categories
-  const venues = useMemo(() => getActiveGastronomyVenues(page), [page])
+    page.categories?.length > 0 ? page.categories : DEFAULT_LODGING_CATALOG_CONTENT.categories
+  const venues = useMemo(() => getActiveLodgingVenues(page), [page])
 
   const showVenueOnMap = useCallback((venue) => {
-    if (!venue || !gastronomyVenueHasMapPoint(venue)) return
+    if (!venue || !lodgingVenueHasMapPoint(venue)) return
     const id = String(venue.id || '').trim()
     if (!id) return
-    const target = document.getElementById('catalogo-mapa')
+    const target = document.getElementById('catalogo-hospedajes-mapa')
     target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     window.clearTimeout(mapFocusTimer.current)
     mapFocusTimer.current = window.setTimeout(() => {
@@ -81,17 +83,17 @@ export function CatalogoGastronomico() {
   )
 
   const heroImage =
-    page.heroImageUrl?.trim() || DEFAULT_GASTRONOMIC_CATALOG_CONTENT.heroImageUrl?.trim() || ''
+    page.heroImageUrl?.trim() || DEFAULT_LODGING_CATALOG_CONTENT.heroImageUrl?.trim() || ''
 
   const heroProps = {
-    ...(pageContentHydrated ? gastronomyHeroToHeaderProps(page) : {}),
+    ...(pageContentHydrated ? lodgingHeroToHeaderProps(page) : {}),
     imageUrl: pageContentHydrated ? heroImage : '',
     contentReady: pageContentHydrated,
     searchQuery,
     onSearchChange: setSearchQuery,
     onSearchSubmit: (e) => {
       e?.preventDefault?.()
-      const target = document.getElementById('catalogo-locales')
+      const target = document.getElementById('catalogo-hospedajes')
       target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     },
   }
@@ -119,12 +121,16 @@ export function CatalogoGastronomico() {
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
               onShowOnMap={showVenueOnMap}
+              copy={LODGING_DIRECTORY_COPY}
             />
 
             <GastronomyVenuesMap
               venues={venues}
               focusVenueId={mapFocus.id}
               focusToken={String(mapFocus.token)}
+              sectionId="catalogo-hospedajes-mapa"
+              mapIcon="hotel"
+              copy={LODGING_MAP_COPY}
             />
 
             {page.ctaTitle || page.ctaBody ? (

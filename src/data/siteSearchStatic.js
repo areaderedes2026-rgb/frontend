@@ -17,6 +17,7 @@ export const SITE_SEARCH_STATIC_ENTRIES = [
   { path: '/fiesta-del-caballo', title: 'Fiesta del Caballo', hints: ['fiesta', 'caballo', 'fdc', 'puestos', 'preinscripcion', 'preinscripción', 'faq', 'consultas'] },
   { path: '/gobierno/oferta-academica', title: 'Oferta académica', hints: ['oferta', 'academica', 'académica', 'educación', 'escuelas'] },
   { path: '/catalogo-gastronomico', title: 'Catálogo gastronómico', hints: ['gastronomia', 'gastronómico', 'bares', 'cafeterias', 'cafeterías', 'restaurantes', 'comida', 'catalogo'] },
+  { path: '/catalogo-hospedajes', title: 'Catálogo de hospedajes', hints: ['hospedaje', 'hospedajes', 'hoteles', 'cabañas', 'hostels', 'alojamiento', 'dormir'] },
 ]
 
 export function filterStaticSiteSearch(query) {

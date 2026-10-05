@@ -15,6 +15,7 @@ export const ROUTES = {
   concejoDeliberante: '/gobierno/concejo-deliberante',
   ofertaAcademica: '/gobierno/oferta-academica',
   catalogoGastronomico: '/catalogo-gastronomico',
+  catalogoHospedajes: '/catalogo-hospedajes',
   fiestaDelCaballo: '/fiesta-del-caballo',
   /** Link directo a la preinscripción de puestos (ancla en la página del festival). */
   fiestaDelCaballoPreinscripcion: '/fiesta-del-caballo#solicitud-puestos',
@@ -41,6 +42,7 @@ export const ROUTES = {
   adminTourismPlaces: '/admin/tourism-places',
   adminOfertaAcademica: '/admin/oferta-academica',
   adminCatalogoGastronomico: '/admin/catalogo-gastronomico',
+  adminCatalogoHospedajes: '/admin/catalogo-hospedajes',
   adminFdc: '/admin/fdc',
   adminFdcSolicitudes: '/admin/fdc-solicitudes',
   adminFdcConsultas: '/admin/fdc-consultas',

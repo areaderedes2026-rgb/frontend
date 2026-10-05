@@ -20,6 +20,33 @@ const ACTION_BTN_PRIMARY = `${ACTION_BTN_BASE} bg-sky-700 text-white hover:bg-sk
 
 const MAX_HIGHLIGHTS = 6
 
+const DEFAULT_EDITOR_LABELS = {
+  idPrefix: 'local',
+  venueEditorTitle: 'Editar local',
+  categoriesDescription: 'La primera («Todos») es fija. El resto se usa para filtrar locales.',
+  categoryRemoveBody: 'Los locales se reasignarán a la primera categoría disponible.',
+  venuesSectionId: 'locales',
+  venuesTitle: 'Locales gastronómicos',
+  venuesDescription:
+    'Nombre, ubicación, coordenadas para el mapa, teléfono, descripción, foto y datos de contacto de cada propuesta.',
+  addVenue: 'Nuevo local',
+  emptyVenues: 'Todavía no hay locales. Sumá el primero con nombre, ubicación, teléfono y descripción.',
+  removeVenueTitle: '¿Quitar este local?',
+  unnamedVenue: 'este local',
+  nameLabel: 'Nombre del local',
+  photoLabel: 'Foto del local',
+  visibleLabel: 'Visible en el catálogo público',
+  onMap: 'Este local va a aparecer en el mapa público.',
+  offMap:
+    'Opcional. Si el enlace de Maps trae coordenadas, se completan al aplicar. También podés cargarlas a mano.',
+  mapDescription:
+    'Vista previa del mapa público. Cada local necesita latitud y longitud, o un enlace de Google Maps que las incluya.',
+  mapEmpty:
+    'Todavía no hay locales con coordenadas. Completá latitud y longitud, o pegá un enlace de Maps con @lat,lng y aplicá el local.',
+  ctaDescription:
+    'Mensaje final para invitar a sumar un local o consultar. En la vista pública queda al final de la página.',
+}
+
 function Spinner({ tone = 'sky', size = 'sm' }) {
   const dim = size === 'sm' ? 'h-4 w-4 border-2' : 'h-5 w-5 border-2'
   const color =
@@ -122,9 +149,9 @@ function firstRealCategory(categories) {
   return found || 'Otros'
 }
 
-function emptyVenue(categories) {
+function emptyVenue(categories, idPrefix = 'local') {
   return {
-    id: `local-${Date.now()}`,
+    id: `${idPrefix}-${Date.now()}`,
     category: firstRealCategory(categories),
     name: '',
     location: '',
@@ -142,12 +169,12 @@ function emptyVenue(categories) {
   }
 }
 
-function editorTitle(kind) {
+function editorTitle(kind, labels = DEFAULT_EDITOR_LABELS) {
   if (kind === 'introTitle') return 'Editar título de contexto'
   if (kind === 'paragraph') return 'Editar párrafo'
   if (kind === 'highlight') return 'Editar destacado'
   if (kind === 'category') return 'Editar categoría'
-  if (kind === 'venue') return 'Editar local'
+  if (kind === 'venue') return labels.venueEditorTitle
   if (kind === 'cta') return 'Editar cierre'
   return 'Editar'
 }
@@ -161,7 +188,14 @@ export function AdminGastronomicCatalogEditorPreview({
   onChangeCover,
   onSubmit,
   apiAvailable,
+  labels = DEFAULT_EDITOR_LABELS,
+  heroToHeaderPropsFn = gastronomyHeroToHeaderProps,
+  venueHasMapPoint = gastronomyVenueHasMapPoint,
+  descriptionMax = GASTRONOMIC_VENUE_DESCRIPTION_MAX,
+  mapIcon = 'food',
+  mapCopy,
 }) {
+  const L = { ...DEFAULT_EDITOR_LABELS, ...labels }
   const [editor, setEditor] = useState(null)
   const [confirmRemove, setConfirmRemove] = useState(null)
 
@@ -170,7 +204,7 @@ export function AdminGastronomicCatalogEditorPreview({
     [form.categories],
   )
 
-  const heroProps = gastronomyHeroToHeaderProps(form)
+  const heroProps = heroToHeaderPropsFn(form)
 
   function openEditor(kind, index = null, draft = null) {
     setEditor({ kind, index, draft })
@@ -228,12 +262,12 @@ export function AdminGastronomicCatalogEditorPreview({
       })
     } else if (kind === 'venue') {
       const venue = {
-        id: String(draft?.id || '').trim() || `local-${Date.now()}`,
+        id: String(draft?.id || '').trim() || `${L.idPrefix}-${Date.now()}`,
         category: String(draft?.category || '').trim() || firstRealCategory(form.categories),
         name: String(draft?.name || '').trim(),
         location: String(draft?.location || '').trim(),
         phone: String(draft?.phone || '').trim(),
-        description: String(draft?.description || '').trim().slice(0, GASTRONOMIC_VENUE_DESCRIPTION_MAX),
+        description: String(draft?.description || '').trim().slice(0, descriptionMax),
         imageUrl: String(draft?.imageUrl || '').trim(),
         hours: String(draft?.hours || '').trim(),
         mapsUrl: String(draft?.mapsUrl || '').trim(),
@@ -432,7 +466,7 @@ export function AdminGastronomicCatalogEditorPreview({
             <SectionCard
               id="categorias"
               title="Categorías"
-              description="La primera («Todos») es fija. El resto se usa para filtrar locales."
+              description={L.categoriesDescription}
               rightSlot={
                 <AddChip
                   label="Nueva categoría"
@@ -472,8 +506,7 @@ export function AdminGastronomicCatalogEditorPreview({
                                 title: '¿Quitar esta categoría?',
                                 description: (
                                   <>
-                                    Vas a eliminar <span className="font-semibold">«{c}»</span>. Los locales se
-                                    reasignarán a la primera categoría disponible.
+                                    Vas a eliminar <span className="font-semibold">«{c}»</span>. {L.categoryRemoveBody}
                                   </>
                                 ),
                               })
@@ -493,15 +526,15 @@ export function AdminGastronomicCatalogEditorPreview({
             </SectionCard>
 
             <SectionCard
-              id="locales"
-              title="Locales gastronómicos"
-              description="Nombre, ubicación, coordenadas para el mapa, teléfono, descripción, foto y datos de contacto de cada propuesta."
+              id={L.venuesSectionId}
+              title={L.venuesTitle}
+              description={L.venuesDescription}
               rightSlot={
                 <AddChip
-                  label="Nuevo local"
+                  label={L.addVenue}
                   onClick={() => {
                     if (!categoryOptions.length) return
-                    openEditor('venue', null, emptyVenue(form.categories))
+                    openEditor('venue', null, emptyVenue(form.categories, L.idPrefix))
                   }}
                   disabled={saving || !categoryOptions.length}
                 />
@@ -513,10 +546,10 @@ export function AdminGastronomicCatalogEditorPreview({
                 </div>
               ) : (form.venues || []).length === 0 ? (
                 <EmptyHint
-                  onAdd={() => openEditor('venue', null, emptyVenue(form.categories))}
-                  addLabel="Nuevo local"
+                  onAdd={() => openEditor('venue', null, emptyVenue(form.categories, L.idPrefix))}
+                  addLabel={L.addVenue}
                 >
-                  Todavía no hay locales. Sumá el primero con nombre, ubicación, teléfono y descripción.
+                  {L.emptyVenues}
                 </EmptyHint>
               ) : (
                 <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -549,7 +582,7 @@ export function AdminGastronomicCatalogEditorPreview({
                         <p className="mt-1 line-clamp-2 text-sm text-[#4b505a]">
                           {venue.location || venue.phone || venue.description || 'Sin datos de contacto'}
                         </p>
-                        {gastronomyVenueHasMapPoint(venue) ? (
+                        {venueHasMapPoint(venue) ? (
                           <p className="mt-2 text-[11px] font-semibold text-sky-800">En el mapa</p>
                         ) : (
                           <p className="mt-2 text-[11px] text-slate-400">Sin punto en el mapa</p>
@@ -557,7 +590,7 @@ export function AdminGastronomicCatalogEditorPreview({
                         <div className="mt-3 flex gap-2">
                           <EditChip
                             label="Editar"
-                            onClick={() => openEditor('venue', idx, { ...emptyVenue(form.categories), ...venue })}
+                            onClick={() => openEditor('venue', idx, { ...emptyVenue(form.categories, L.idPrefix), ...venue })}
                             disabled={saving}
                           />
                           <button
@@ -567,11 +600,11 @@ export function AdminGastronomicCatalogEditorPreview({
                               setConfirmRemove({
                                 kind: 'venue',
                                 index: idx,
-                                title: '¿Quitar este local?',
+                                title: L.removeVenueTitle,
                                 description: (
                                   <>
                                     Vas a eliminar{' '}
-                                    <span className="font-semibold">«{venue.name || 'este local'}»</span> del
+                                    <span className="font-semibold">«{venue.name || L.unnamedVenue}»</span> del
                                     catálogo.
                                   </>
                                 ),
@@ -591,9 +624,28 @@ export function AdminGastronomicCatalogEditorPreview({
             </SectionCard>
 
             <SectionCard
+              id="mapa"
+              title="Mapa interactivo"
+              description={L.mapDescription}
+            >
+              {(form.venues || []).some((v) => venueHasMapPoint(v)) ? (
+                <GastronomyVenuesMap
+                  venues={form.venues || []}
+                  compact
+                  sectionId=""
+                  includeInactive
+                  mapIcon={mapIcon}
+                  copy={mapCopy}
+                />
+              ) : (
+                <EmptyHint>{L.mapEmpty}</EmptyHint>
+              )}
+            </SectionCard>
+
+            <SectionCard
               id="cta"
               title="Bloque de cierre"
-              description="Mensaje final para invitar a sumar un local o consultar."
+              description={L.ctaDescription}
               rightSlot={
                 <EditChip
                   label="Editar"
@@ -615,21 +667,6 @@ export function AdminGastronomicCatalogEditorPreview({
                   {form.ctaBody || <span className="italic text-slate-400">(Sin texto)</span>}
                 </p>
               </div>
-            </SectionCard>
-
-            <SectionCard
-              id="mapa"
-              title="Mapa interactivo"
-              description="Vista previa del mapa público. Cada local necesita latitud y longitud, o un enlace de Google Maps que las incluya."
-            >
-              {(form.venues || []).some((v) => gastronomyVenueHasMapPoint(v)) ? (
-                <GastronomyVenuesMap venues={form.venues || []} compact sectionId="" includeInactive />
-              ) : (
-                <EmptyHint>
-                  Todavía no hay locales con coordenadas. Completá latitud y longitud, o pegá un enlace de Maps
-                  con @lat,lng y aplicá el local.
-                </EmptyHint>
-              )}
             </SectionCard>
           </div>
         </article>
@@ -659,7 +696,7 @@ export function AdminGastronomicCatalogEditorPreview({
       <Modal
         open={Boolean(editor)}
         onClose={closeEditor}
-        title={editorTitle(editor?.kind)}
+        title={editorTitle(editor?.kind, L)}
         size={editor?.kind === 'venue' ? 'wide' : 'default'}
       >
         {editor ? (
@@ -744,7 +781,7 @@ export function AdminGastronomicCatalogEditorPreview({
             {editor.kind === 'venue' ? (
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className={`${labelClass} sm:col-span-2`}>
-                  Nombre del local
+                  {L.nameLabel}
                   <input
                     className={inputClass}
                     value={editor.draft?.name || ''}
@@ -862,9 +899,7 @@ export function AdminGastronomicCatalogEditorPreview({
                 </label>
                 <div className="sm:col-span-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-xs text-slate-500">
-                    {gastronomyVenueHasMapPoint(editor.draft)
-                      ? 'Este local va a aparecer en el mapa público.'
-                      : 'Opcional. Si el enlace de Maps trae coordenadas, se completan al aplicar. También podés cargarlas a mano.'}
+                    {venueHasMapPoint(editor.draft) ? L.onMap : L.offMap}
                   </p>
                   <button
                     type="button"
@@ -891,16 +926,16 @@ export function AdminGastronomicCatalogEditorPreview({
                     onChange={(e) =>
                       setDraftField(
                         'description',
-                        e.target.value.slice(0, GASTRONOMIC_VENUE_DESCRIPTION_MAX),
+                        e.target.value.slice(0, descriptionMax),
                       )
                     }
                     disabled={saving}
-                    maxLength={GASTRONOMIC_VENUE_DESCRIPTION_MAX}
+                    maxLength={descriptionMax}
                   />
                 </label>
                 <div className="sm:col-span-2">
                   <SingleImageUploadField
-                    label="Foto del local"
+                    label={L.photoLabel}
                     value={editor.draft?.imageUrl || ''}
                     onChange={(url) => setDraftField('imageUrl', url || '')}
                     disabled={saving}
@@ -914,7 +949,7 @@ export function AdminGastronomicCatalogEditorPreview({
                     onChange={(e) => setDraftField('isActive', e.target.checked)}
                     disabled={saving}
                   />
-                  Visible en el catálogo público
+                  {L.visibleLabel}
                 </label>
               </div>
             ) : null}

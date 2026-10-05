@@ -141,6 +141,13 @@ function routeSeo(pathname) {
         'Bares, cafeterias, restaurantes y propuestas gastronomicas de Trancas: nombre, ubicacion, telefono y descripcion de cada local.',
     }
   }
+  if (pathname === '/catalogo-hospedajes') {
+    return {
+      title: 'Catalogo de hospedajes | Municipalidad de Trancas',
+      description:
+        'Hoteles, cabanas, hostels y alojamientos de Trancas: nombre, ubicacion, telefono y descripcion de cada hospedaje.',
+    }
+  }
   if (pathname === '/history') {
     return {
       title: 'Historia y patrimonio | Municipalidad de Trancas',

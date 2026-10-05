@@ -28,6 +28,8 @@ function LocationsPanel({
   onClearSearch,
   activePointId,
   onSelect,
+  copy,
+  mapIcon,
 }) {
   const searchRef = useRef(null)
   const isSearching = Boolean(normalizeSearchText(searchQuery.trim()))
@@ -35,22 +37,22 @@ function LocationsPanel({
   return (
     <aside className="flex min-w-0 flex-col">
       <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-sky-800 sm:text-[11px]">
-        Locales en el mapa
+        {copy.listTitle}
       </p>
       <div className="relative mb-3">
-        <label htmlFor="gastronomy-map-search" className="sr-only">
-          Buscar local en el mapa
+        <label htmlFor={copy.searchId} className="sr-only">
+          {copy.searchAria}
         </label>
         <span className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-slate-400">
           <SearchIcon />
         </span>
         <input
           ref={searchRef}
-          id="gastronomy-map-search"
+          id={copy.searchId}
           type="search"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Buscar local..."
+          placeholder={copy.searchPlaceholder}
           autoComplete="off"
           className="w-full rounded-full border border-[#d6d0c3] bg-white py-2.5 pr-10 pl-10 text-sm text-[#171b22] shadow-sm transition placeholder:text-slate-400 focus:border-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-200/80"
         />
@@ -74,7 +76,7 @@ function LocationsPanel({
       {isSearching ? (
         <p className="mb-2 text-xs font-medium text-slate-500">
           {filteredPoints.length === 0 ? (
-            'No hay locales que coincidan.'
+            copy.emptySearch
           ) : (
             <>
               <span className="font-semibold text-sky-800">{filteredPoints.length}</span>
@@ -87,11 +89,11 @@ function LocationsPanel({
       <ul
         className="flex max-h-[18rem] flex-col gap-2 overflow-y-auto pr-1 sm:max-h-[22rem] lg:max-h-[26rem]"
         role="listbox"
-        aria-label="Locales gastronómicos en el mapa"
+        aria-label={copy.listAria}
       >
         {filteredPoints.length === 0 ? (
           <li className="rounded-2xl border border-dashed border-[#d8d5cd] bg-[#f8f7f3] px-4 py-6 text-center text-sm text-slate-500">
-            {isSearching ? 'Probá con otro nombre o barrio.' : 'Todavía no hay locales con ubicación en el mapa.'}
+            {isSearching ? copy.emptyHint : copy.emptyNone}
           </li>
         ) : (
           filteredPoints.map((point) => {
@@ -115,7 +117,7 @@ function LocationsPanel({
                     }`}
                     aria-hidden
                   >
-                    <FdcMapLocationIcon name="food" className="h-4 w-4" />
+                    <FdcMapLocationIcon name={mapIcon} className="h-4 w-4" />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block font-serif text-[15px] font-bold leading-snug sm:text-base">
@@ -140,11 +142,26 @@ function LocationsPanel({
       </ul>
       {!isSearching && points.length > 0 ? (
         <p className="mt-2 text-[11px] text-slate-400">
-          {points.length} local{points.length === 1 ? '' : 'es'} con ubicación
+          {copy.countLabel(points.length)}
         </p>
       ) : null}
     </aside>
   )
+}
+
+const DEFAULT_MAP_COPY = {
+  listTitle: 'Locales en el mapa',
+  listAria: 'Locales gastronómicos en el mapa',
+  searchId: 'gastronomy-map-search',
+  searchAria: 'Buscar local en el mapa',
+  searchPlaceholder: 'Buscar local...',
+  emptySearch: 'No hay locales que coincidan.',
+  emptyHint: 'Probá con otro nombre o barrio.',
+  emptyNone: 'Todavía no hay locales con ubicación en el mapa.',
+  countLabel: (n) => `${n} local${n === 1 ? '' : 'es'} con ubicación`,
+  eyebrow: 'Cómo llegar',
+  title: 'Mapa de locales',
+  lead: 'Elegí un local en la lista o tocá «Ver en el mapa» en una tarjeta. El mapa vuela hasta el punto y se puede abrir en grande para trazar la ruta.',
 }
 
 export function GastronomyVenuesMap({
@@ -155,10 +172,13 @@ export function GastronomyVenuesMap({
   sectionId = 'catalogo-mapa',
   compact = false,
   includeInactive = false,
+  mapIcon = 'food',
+  copy = DEFAULT_MAP_COPY,
 }) {
+  const mapCopy = { ...DEFAULT_MAP_COPY, ...copy }
   const points = useMemo(
-    () => gastronomyVenuesToMapPoints(venues, { includeInactive }),
-    [includeInactive, venues],
+    () => gastronomyVenuesToMapPoints(venues, { includeInactive, icon: mapIcon }),
+    [includeInactive, mapIcon, venues],
   )
   const [activePointId, setActivePointId] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
@@ -212,14 +232,11 @@ export function GastronomyVenuesMap({
     >
       {compact ? null : (
         <div className="border-b border-[#ddd7ca] pb-5">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-800">Cómo llegar</p>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-800">{mapCopy.eyebrow}</p>
           <h2 className="mt-1 font-serif text-2xl font-bold tracking-tight text-[#171b22] sm:text-3xl">
-            Mapa de locales
+            {mapCopy.title}
           </h2>
-          <p className="mt-2 max-w-2xl text-sm text-[#4b505a]">
-            Elegí un local en la lista o tocá «Ver en el mapa» en una tarjeta. El mapa vuela hasta el punto y
-            se puede abrir en grande para trazar la ruta.
-          </p>
+          <p className="mt-2 max-w-2xl text-sm text-[#4b505a]">{mapCopy.lead}</p>
         </div>
       )}
 
@@ -236,6 +253,8 @@ export function GastronomyVenuesMap({
           onClearSearch={() => setSearchQuery('')}
           activePointId={activePointId}
           onSelect={setActivePointId}
+          copy={mapCopy}
+          mapIcon={mapIcon}
         />
         <FdcVisitMap
           center={center}

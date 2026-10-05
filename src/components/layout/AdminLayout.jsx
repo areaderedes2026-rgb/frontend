@@ -154,6 +154,9 @@ export function AdminLayout() {
   const gastronomicCatalogActive =
     pathname === ROUTES.adminCatalogoGastronomico ||
     pathname.startsWith(`${ROUTES.adminCatalogoGastronomico}/`)
+  const lodgingCatalogActive =
+    pathname === ROUTES.adminCatalogoHospedajes ||
+    pathname.startsWith(`${ROUTES.adminCatalogoHospedajes}/`)
   const fdcActive =
     pathname === ROUTES.adminFdc ||
     pathname.startsWith(`${ROUTES.adminFdc}/`) ||
@@ -165,6 +168,7 @@ export function AdminLayout() {
     eventsActive ||
     ofertaAcademicaActive ||
     gastronomicCatalogActive ||
+    lodgingCatalogActive ||
     tourismActive ||
     historyActive
 
@@ -378,6 +382,17 @@ export function AdminLayout() {
                 }
               >
                 Catálogo gastronómico
+              </NavLink>
+              <NavLink
+                to={ROUTES.adminCatalogoHospedajes}
+                onMouseEnter={() => preloadAdminRoute('lodgingCatalog')}
+                onFocus={() => preloadAdminRoute('lodgingCatalog')}
+                onClick={closeMobile}
+                className={({ isActive }) =>
+                  subNavClass({ isActive: isActive || lodgingCatalogActive })
+                }
+              >
+                Catálogo de hospedajes
               </NavLink>
               <NavLink
                 to={ROUTES.adminTourismPlaces}
