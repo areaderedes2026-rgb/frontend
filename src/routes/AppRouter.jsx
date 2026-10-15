@@ -15,6 +15,7 @@ import { AdminIndexRedirect } from './AdminIndexRedirect.jsx'
 import { NotFound } from '../pages/NotFound.jsx'
 import { adminRouteLoaders } from './adminRoutePreload.js'
 import { publicRouteLoaders } from './publicRoutePreload.js'
+import { useFdcPublic } from '../hooks/useFdcPublic.js'
 
 const Dashboard = lazy(adminRouteLoaders.dashboard)
 const AdminNews = lazy(adminRouteLoaders.news)
@@ -74,6 +75,17 @@ function AdminRouteFallback() {
     <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm">
       Cargando sección...
     </div>
+  )
+}
+
+function PublicFdcRoute() {
+  const { isPublic, ready } = useFdcPublic()
+  if (!ready) return <PublicRouteFallback />
+  if (!isPublic) return <NotFound />
+  return (
+    <Suspense fallback={<PublicRouteFallback />}>
+      <FiestaDelCaballo />
+    </Suspense>
   )
 }
 
@@ -451,14 +463,7 @@ export function AppRouter() {
             </Suspense>
           }
         />
-        <Route
-          path="/fiesta-del-caballo"
-          element={
-            <Suspense fallback={<PublicRouteFallback />}>
-              <FiestaDelCaballo />
-            </Suspense>
-          }
-        />
+        <Route path="/fiesta-del-caballo" element={<PublicFdcRoute />} />
         <Route
           path="/areas"
           element={

@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from 'react'
 import { useLocation } from 'react-router-dom'
+import { useFdcPublic } from '../../hooks/useFdcPublic.js'
 
 const DEFAULT_TITLE = 'Municipalidad de Trancas'
 const DEFAULT_DESCRIPTION =
@@ -35,7 +36,7 @@ function ensureCanonical() {
   return node
 }
 
-function routeSeo(pathname) {
+function routeSeo(pathname, { fdcPublic = false } = {}) {
   if (pathname === '/') {
     return {
       title: 'Municipalidad de Trancas | Portal Oficial',
@@ -121,6 +122,9 @@ function routeSeo(pathname) {
     }
   }
   if (pathname === '/fiesta-del-caballo') {
+    if (!fdcPublic) {
+      return { title: DEFAULT_TITLE, description: DEFAULT_DESCRIPTION, noIndex: true }
+    }
     return {
       title: 'Fiesta del Caballo 2026 | Municipalidad de Trancas',
       description:
@@ -197,7 +201,8 @@ function setJsonLd(baseUrl) {
 
 export function SeoManager() {
   const { pathname } = useLocation()
-  const seo = useMemo(() => routeSeo(pathname), [pathname])
+  const { isPublic: fdcPublic } = useFdcPublic()
+  const seo = useMemo(() => routeSeo(pathname, { fdcPublic }), [pathname, fdcPublic])
 
   useEffect(() => {
     const baseUrl = window.location.origin
@@ -210,7 +215,12 @@ export function SeoManager() {
       'content',
       seo.description || DEFAULT_DESCRIPTION,
     )
-    ensureMetaByName('robots').setAttribute('content', 'index, follow, max-image-preview:large')
+    ensureMetaByName('robots').setAttribute(
+      'content',
+      seo.noIndex
+        ? 'noindex, nofollow'
+        : 'index, follow, max-image-preview:large',
+    )
 
     ensureMetaByProperty('og:type').setAttribute('content', 'website')
     ensureMetaByProperty('og:site_name').setAttribute('content', 'Municipalidad de Trancas')

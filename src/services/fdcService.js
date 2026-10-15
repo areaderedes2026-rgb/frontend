@@ -1,10 +1,55 @@
-import { DEFAULT_FDC_CONTENT, mergeFdcContent } from '../data/fdcContent.js'
+import { DEFAULT_FDC_CONTENT, isFdcPublicEnabled, mergeFdcContent } from '../data/fdcContent.js'
 import { getApiBase } from '../utils/apiConfig.js'
 import { jsonAuthHeaders, notifyUnauthorizedIfNeeded } from '../utils/authStorage.js'
 import { errorFromApiResponse } from '../utils/concurrencyConflict.js'
 
 function base() {
   return getApiBase().trim()
+}
+
+const fdcPublicListeners = new Set()
+
+export function notifyFdcPublicStatus(isPublic) {
+  const next = isPublic === true
+  fdcPublicListeners.forEach((cb) => {
+    try {
+      cb(next)
+    } catch {
+      /* ignore subscriber errors */
+    }
+  })
+}
+
+export function subscribeFdcPublicStatus(cb) {
+  if (typeof cb !== 'function') return () => {}
+  fdcPublicListeners.add(cb)
+  return () => fdcPublicListeners.delete(cb)
+}
+
+export async function fetchFdcPublicStatus() {
+  const b = base()
+  if (!b) return false
+  try {
+    const res = await fetch(`${b}/api/fdc/public-status`)
+    if (res.ok) {
+      const data = await res.json().catch(() => ({}))
+      const next = data.isPublic === true
+      notifyFdcPublicStatus(next)
+      return next
+    }
+  } catch {
+    /* fallback al contenido público */
+  }
+  try {
+    const res = await fetch(`${b}/api/fdc/content`)
+    if (!res.ok) return false
+    const data = await res.json().catch(() => ({}))
+    const next = isFdcPublicEnabled(data.content)
+    notifyFdcPublicStatus(next)
+    return next
+  } catch {
+    return false
+  }
 }
 
 async function apiErrorMessage(res) {
@@ -72,7 +117,9 @@ export async function updateFdcContent(payload) {
     throw await errorFromApiResponse(res, 'No se pudo guardar Fiesta del Caballo.')
   }
   const data = await res.json().catch(() => ({}))
-  return mergeFdcContent(DEFAULT_FDC_CONTENT, data.content ?? {})
+  const merged = mergeFdcContent(DEFAULT_FDC_CONTENT, data.content ?? {})
+  notifyFdcPublicStatus(merged.isPublic === true)
+  return merged
 }
 
 export async function createFdcStallApplication(payload) {

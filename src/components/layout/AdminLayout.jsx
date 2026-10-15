@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useId, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
+import { FdcAdminInactiveBadge } from '../admin/FdcAdminModuleStatus.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
+import { useFdcPublic } from '../../hooks/useFdcPublic.js'
 import { APP_NAME, ROUTES } from '../../utils/constants.js'
 import { Container } from '../ui/Container.jsx'
 import { Button } from '../ui/Button.jsx'
@@ -103,6 +105,7 @@ function ChevronDownIcon({ open }) {
 export function AdminLayout() {
   const { pathname } = useLocation()
   const { user, logout } = useAuth()
+  const { isPublic: fdcPublic } = useFdcPublic()
   const sessionLabel = user?.username || user?.name || 'Usuario'
   const navId = useId()
   const desktopNavId = `${navId}-desktop`
@@ -433,7 +436,14 @@ export function AdminLayout() {
           onClick={closeMobile}
           className={({ isActive }) => navClass({ isActive: isActive || fdcActive })}
         >
-          Fiesta Caballo
+          {({ isActive }) => (
+            <>
+              <span className="min-w-0 flex-1 truncate">Fiesta Caballo</span>
+              {fdcPublic ? null : (
+                <FdcAdminInactiveBadge onDark={isActive || fdcActive} />
+              )}
+            </>
+          )}
         </NavLink>
         <NavLink
           to={ROUTES.adminCitizenAttention}

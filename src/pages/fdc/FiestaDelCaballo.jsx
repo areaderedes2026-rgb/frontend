@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import {
   FdcGallerySection,
   FdcFormSectionIntro,
@@ -30,6 +30,7 @@ import {
   getFdcFormWindowState,
   isFdcPreinscriptionHref,
   isFdcPreinscriptionVisible,
+  isFdcPublicEnabled,
   mergeFdcContent,
   resolveFdcFaqSectionBackgroundConfig,
 } from '../../data/fdcContent.js'
@@ -260,6 +261,10 @@ export function FiestaDelCaballo() {
   const showMapSection = fdcVisitDirectionsHasContent(page.visitInfo)
   const showFaqSection = fdcVisitFaqHasContent(page.visitInfo)
   const faqSectionBg = resolveFdcFaqSectionBackgroundConfig(page.visitInfo)
+
+  if (hydrated && !isFdcPublicEnabled(page)) {
+    return <Navigate to="/" replace />
+  }
 
   if (submitSuccess) {
     return (

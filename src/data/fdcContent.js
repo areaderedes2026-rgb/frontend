@@ -1087,7 +1087,14 @@ export const DEFAULT_FDC_CONTENT = {
   ctaTitle: '¿Querés sumar tu puesto?',
   ctaBody: '',
   whatsappMessage: '',
+  /** Visible en el sitio público. Si falta en el backend, se trata como inactivo. */
+  isPublic: false,
   updatedAt: null,
+}
+
+export function isFdcPublicEnabled(content) {
+  if (!content || typeof content !== 'object') return false
+  return content.isPublic === true || content.usefulInfo?.isPublic === true
 }
 
 function mergeNamedSection(defaults, remote, keys) {
@@ -1107,6 +1114,7 @@ export function mergeFdcContent(base, remote) {
   }
   return {
     ...defaults,
+    isPublic: isFdcPublicEnabled(remote),
     heroEyebrow: String(remote.heroEyebrow ?? defaults.heroEyebrow ?? ''),
     heroTitle: String(remote.heroTitle ?? defaults.heroTitle ?? ''),
     heroSubtitle: String(remote.heroSubtitle ?? defaults.heroSubtitle ?? ''),

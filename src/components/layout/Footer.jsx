@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom'
+import { useFdcPublic } from '../../hooks/useFdcPublic.js'
 import { APP_NAME, ROUTES } from '../../utils/constants.js'
 import { Container } from '../ui/Container.jsx'
 
 export function Footer() {
   const year = new Date().getFullYear()
+  const { isPublic: fdcPublic } = useFdcPublic()
   return (
     <footer className="relative mt-auto overflow-hidden bg-[#171b22] text-white">
       <div className="absolute inset-x-0 top-0 h-24 bg-slate-50" aria-hidden />
@@ -57,14 +59,16 @@ export function Footer() {
                   Áreas municipales
                 </Link>
               </li>
-              <li>
-                <Link
-                  to={ROUTES.fiestaDelCaballo}
-                  className="text-white/88 transition-colors hover:text-white"
-                >
-                  Fiesta del Caballo
-                </Link>
-              </li>
+              {fdcPublic ? (
+                <li>
+                  <Link
+                    to={ROUTES.fiestaDelCaballo}
+                    className="text-white/88 transition-colors hover:text-white"
+                  >
+                    Fiesta del Caballo
+                  </Link>
+                </li>
+              ) : null}
               <li>
                 <Link
                   to={ROUTES.ofertaAcademica}

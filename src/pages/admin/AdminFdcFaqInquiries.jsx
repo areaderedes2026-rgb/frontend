@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
+import { FdcAdminModuleStatusBanner } from '../../components/admin/FdcAdminModuleStatus.jsx'
 import { InquiryDetailPanel, InquiryStatusPill } from '../../components/admin/InquiryDetailPanel.jsx'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
 import { Modal } from '../../components/ui/Modal.jsx'
@@ -14,6 +15,7 @@ import {
   updateFdcFaqInquiryStatus,
   updateFdcFaqInquiryWhatsappTemplate,
 } from '../../services/fdcService.js'
+import { useFdcPublic } from '../../hooks/useFdcPublic.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
 import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
 import { ROUTES } from '../../utils/constants.js'
@@ -103,6 +105,7 @@ function WhatsAppGlyph({ className = 'h-4 w-4' }) {
 }
 
 export function AdminFdcFaqInquiries() {
+  const { isPublic: fdcPublic } = useFdcPublic()
   const [statusFilter, setStatusFilter] = useState('all')
   const [inquiries, setInquiries] = useState([])
   const [inquiriesLoading, setInquiriesLoading] = useState(true)
@@ -410,6 +413,7 @@ export function AdminFdcFaqInquiries() {
           </div>
         }
       >
+        <FdcAdminModuleStatusBanner isPublic={fdcPublic} />
         {!isApiConfigured() ? (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
             Esta sección requiere conexión activa con el backend.

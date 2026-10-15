@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { Container } from '../ui/Container.jsx'
 import { preloadPublicRoute } from '../../routes/publicRoutePreload.js'
+import { useFdcPublic } from '../../hooks/useFdcPublic.js'
 import { useSiteSearch } from '../../hooks/useSiteSearch.js'
 import { SearchOpenButton, SiteSearchPanel } from './SiteSearchPanel.jsx'
 
@@ -124,6 +125,11 @@ function mobileSubLinkClass({ isActive }) {
 }
 
 export function Navbar() {
+  const { isPublic: fdcPublic } = useFdcPublic()
+  const navStartLinks = useMemo(
+    () => (fdcPublic ? startLinks : startLinks.filter((link) => link.to !== '/fiesta-del-caballo')),
+    [fdcPublic],
+  )
   const [open, setOpen] = useState(false)
   const [governmentOpen, setGovernmentOpen] = useState(false)
   const [cityOpen, setCityOpen] = useState(false)
@@ -364,7 +370,7 @@ export function Navbar() {
             className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-y-contain bg-[#1a1d24] px-4 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] [-webkit-overflow-scrolling:touch]"
             aria-label="Principal móvil"
           >
-            {startLinks.map((link) => (
+            {navStartLinks.map((link) => (
               <NavLink
                 key={link.to}
                 to={link.to}
@@ -637,7 +643,7 @@ export function Navbar() {
             aria-hidden={desktopSearchOpen || undefined}
           >
             <nav className="flex min-w-0 items-center justify-end gap-0.5" aria-label="Principal">
-              {startLinks.map((link) => (
+              {navStartLinks.map((link) => (
                 <DesktopNavLink
                   key={link.to}
                   to={link.to}

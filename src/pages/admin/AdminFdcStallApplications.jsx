@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
+import { FdcAdminModuleStatusBanner } from '../../components/admin/FdcAdminModuleStatus.jsx'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog.jsx'
 import { Modal } from '../../components/ui/Modal.jsx'
 import { Toast } from '../../components/ui/Toast.jsx'
@@ -15,6 +16,7 @@ import {
   updateFdcWhatsappTemplate,
 } from '../../services/fdcService.js'
 import { isFdcOtherRubro } from '../../data/fdcContent.js'
+import { useFdcPublic } from '../../hooks/useFdcPublic.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
 import { isConcurrencyConflictError } from '../../utils/concurrencyConflict.js'
 import { ROUTES } from '../../utils/constants.js'
@@ -110,6 +112,7 @@ function rubroFilterLabel(key, sampleApp) {
 }
 
 export function AdminFdcStallApplications() {
+  const { isPublic: fdcPublic } = useFdcPublic()
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('all')
@@ -612,6 +615,7 @@ export function AdminFdcStallApplications() {
           </div>
         }
       >
+        <FdcAdminModuleStatusBanner isPublic={fdcPublic} />
         {!isApiConfigured() ? (
           <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
             Configurá el backend para gestionar solicitudes.

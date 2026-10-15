@@ -20,12 +20,13 @@ export const SITE_SEARCH_STATIC_ENTRIES = [
   { path: '/catalogo-hospedajes', title: 'Catálogo de hospedajes', hints: ['hospedaje', 'hospedajes', 'hoteles', 'cabañas', 'hostels', 'alojamiento', 'dormir'] },
 ]
 
-export function filterStaticSiteSearch(query) {
+export function filterStaticSiteSearch(query, { includeFdc = false } = {}) {
   const ql = String(query || '')
     .trim()
     .toLowerCase()
   if (ql.length < 2) return []
   return SITE_SEARCH_STATIC_ENTRIES.filter((entry) => {
+    if (!includeFdc && entry.path === '/fiesta-del-caballo') return false
     if (entry.title.toLowerCase().includes(ql)) return true
     return (entry.hints || []).some((h) => h.includes(ql) || ql.includes(h))
   }).map((entry) => ({

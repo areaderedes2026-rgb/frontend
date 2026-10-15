@@ -1,7 +1,9 @@
 import { startTransition, useCallback, useEffect, useRef, useState } from 'react'
 import { fetchGlobalSearch } from '../services/siteSearchService.js'
+import { useFdcPublic } from './useFdcPublic.js'
 
 export function useSiteSearch(debounceMs = 280) {
+  const { isPublic: includeFdc } = useFdcPublic()
   const [query, setQuery] = useState('')
   const [debounced, setDebounced] = useState('')
   const [items, setItems] = useState([])
@@ -30,7 +32,7 @@ export function useSiteSearch(debounceMs = 280) {
       setLoading(true)
     })
 
-    fetchGlobalSearch(debounced, ac.signal)
+    fetchGlobalSearch(debounced, ac.signal, { includeFdc })
       .then((res) => {
         if (ac.signal.aborted || reqId.current !== id) return
         setItems(res.items || [])
@@ -45,7 +47,7 @@ export function useSiteSearch(debounceMs = 280) {
       })
 
     return () => ac.abort()
-  }, [debounced])
+  }, [debounced, includeFdc])
 
   const reset = useCallback(() => {
     reqId.current += 1

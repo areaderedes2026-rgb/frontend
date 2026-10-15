@@ -1,11 +1,14 @@
 import { Link } from 'react-router-dom'
 import { AdminPageShell } from '../../components/admin/AdminPageShell.jsx'
+import { FdcAdminInactiveBadge } from '../../components/admin/FdcAdminModuleStatus.jsx'
+import { useFdcPublic } from '../../hooks/useFdcPublic.js'
 import { useNewsList } from '../../hooks/useNewsList.js'
 import { isApiConfigured } from '../../utils/apiConfig.js'
 import { ROUTES } from '../../utils/constants.js'
 
 export function Dashboard() {
   const { items, loading, error } = useNewsList()
+  const { isPublic: fdcPublic } = useFdcPublic()
 
   return (
     <AdminPageShell
@@ -161,13 +164,15 @@ export function Dashboard() {
               to={ROUTES.adminFdc}
               className="group rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-sky-200/80 hover:shadow-md sm:p-6"
             >
-              <p className="text-xs font-bold uppercase tracking-wide text-amber-800">
+              <p className="flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-wide text-amber-800">
                 Fiesta del Caballo
+                {fdcPublic ? null : <FdcAdminInactiveBadge />}
               </p>
               <p className="mt-2 text-lg font-semibold text-slate-900">Contenido del festival</p>
               <p className="mt-1 text-sm leading-relaxed text-slate-600">
-                Portada, cronograma, cartelera, entradas, mapa, FAQ y preinscripción. Las solicitudes
-                y consultas de la FAQ se gestionan en sus bandejas.
+                {fdcPublic
+                  ? 'Portada, cronograma, cartelera, entradas, mapa, FAQ y preinscripción. Las solicitudes y consultas de la FAQ se gestionan en sus bandejas.'
+                  : 'Módulo inactivo: no se muestra al público. El contenido, las solicitudes y las consultas se conservan para la próxima edición.'}
               </p>
               <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-sky-700 group-hover:text-sky-900">
                 Abrir sección <span aria-hidden>→</span>

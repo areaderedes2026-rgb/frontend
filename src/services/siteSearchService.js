@@ -166,13 +166,13 @@ async function fetchAreaServiceFallbackItems(base, query, signal) {
  * @param {AbortSignal} [signal]
  * @returns {Promise<{ items: Array<{ kind: string, id: string, title: string, subtitle: string, path: string }> }>}
  */
-export async function fetchGlobalSearch(query, signal) {
+export async function fetchGlobalSearch(query, signal, { includeFdc = false } = {}) {
   const trimmed = String(query || '').trim()
   if (trimmed.length < 2) {
     return { items: [] }
   }
 
-  const staticItems = filterStaticSiteSearch(trimmed)
+  const staticItems = filterStaticSiteSearch(trimmed, { includeFdc })
   const base = getApiBase()
 
   if (!base) {

@@ -512,6 +512,7 @@ export function AdminFdc() {
       formOpenUntil: form.formOpenUntil || null,
       ctaTitle: String(form.ctaTitle || '').trim(),
       ctaBody: String(form.ctaBody || ''),
+      isPublic: form.isPublic === true,
     }),
     [contentUpdatedAt, form],
   )
@@ -1724,6 +1725,33 @@ export function AdminFdc() {
           <div className="h-64 animate-pulse rounded-3xl bg-slate-100" />
         ) : (
           <div className="space-y-4">
+            <div
+              className={`rounded-2xl border px-5 py-4 ${
+                form.isPublic === true
+                  ? 'border-emerald-200 bg-emerald-50'
+                  : 'border-slate-200 bg-slate-50'
+              }`}
+            >
+              <label className="flex cursor-pointer items-start gap-3">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4 rounded border-slate-300 text-sky-700 focus:ring-sky-600"
+                  checked={form.isPublic === true}
+                  disabled={saving}
+                  onChange={(e) => setForm((p) => ({ ...p, isPublic: e.target.checked }))}
+                />
+                <span>
+                  <span className="block text-sm font-semibold text-slate-900">
+                    Visible en el sitio público
+                  </span>
+                  <span className="mt-1 block text-sm leading-relaxed text-slate-600">
+                    {form.isPublic === true
+                      ? 'El módulo está activo: aparece en el menú, el pie y la búsqueda, y la página es pública.'
+                      : 'El módulo está inactivo: no se muestra al público. El contenido, las solicitudes y las consultas se conservan para la próxima edición. Guardá los cambios para aplicar el estado.'}
+                  </span>
+                </span>
+              </label>
+            </div>
             {/* Horizontal tabs */}
             <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm">
               <div className="flex min-w-max gap-1">
